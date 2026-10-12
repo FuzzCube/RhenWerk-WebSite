@@ -1,0 +1,150 @@
+[
+  {
+    "key": "start",
+    "kind": "trigger",
+    "type": "n8n-nodes-base.executeWorkflowTrigger",
+    "version": 1.2,
+    "config": {
+      "name": "Aufruf aus Hauptworkflow",
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "storage_path": "requests/example/manual.pdf",
+          "mime_type": "application/pdf",
+          "attachment": {
+            "download_url": "https://example.private.blob.vercel-storage.com/manual.pdf",
+            "mime_type": "application/pdf"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "key": "download",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Formular-Datei herunterladen",
+      "parameters": {
+        "method": "GET",
+        "url": "@@{{ $json.attachment.download_url ?? $json.attachment.url }}",
+        "options": {
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "verify",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Dateiinhalt prüfen",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item=$input.first();const b=await this.helpers.getBinaryDataBuffer(0,'data');\nconst meta=$('Aufruf aus Hauptworkflow').first().json;\nif(b.length<1||b.length>5242880)throw new Error('Ungültige Dateigröße');\nconst t=meta.mime_type??meta.attachment?.mime_type;\nconst magic=t==='application/pdf'?b.subarray(0,5).toString()==='%PDF-':t==='image/png'?b.subarray(0,8).toString('hex')==='89504e470d0a1a0a':t==='image/jpeg'?b[0]===255&&b[1]===216:false;\nif(!magic)throw new Error('Dateityp stimmt nicht mit dem Inhalt überein');\nreturn [{json:{...meta,verified_size:b.length},binary:item.binary}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "storage_path": "requests/example/manual.pdf",
+          "mime_type": "application/pdf",
+          "attachment": {
+            "mime_type": "application/pdf"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "key": "upload",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Datei privat in Supabase speichern",
+      "parameters": {
+        "method": "POST",
+        "url": "@@{{ 'http://host.docker.internal:54321/storage/v1/object/dashboard/'+$json.storage_path.split('/').map(encodeURIComponent).join('/') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "@@{{ $json.attachment.mime_type }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "done",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Dateiübertragung prüfen",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r=$input.first().json;const x=$('Aufruf aus Hauptworkflow').first().json;if(!(r.statusCode>=200&&r.statusCode<300)&&r.statusCode!==409&&String(r.body?.statusCode)!=='409')throw new Error('Datei konnte nicht gespeichert werden');return [{json:{...x,uploaded:true}}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "uploaded": true
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,994 @@
+{
+  "rows": [
+    {
+      "id": "RW-001",
+      "key": "kaeser_sx",
+      "manufacturer": "KAESER",
+      "series": "SX",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-002",
+      "key": "kaeser_sm",
+      "manufacturer": "KAESER",
+      "series": "SM",
+      "category": "compressor",
+      "models": [
+        "SM 10",
+        "SM 13",
+        "SM 16"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-003",
+      "key": "kaeser_sk",
+      "manufacturer": "KAESER",
+      "series": "SK",
+      "category": "compressor",
+      "models": [
+        "SK 22",
+        "SK 25"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-004",
+      "key": "kaeser_ask",
+      "manufacturer": "KAESER",
+      "series": "ASK",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-005",
+      "key": "kaeser_asd",
+      "manufacturer": "KAESER",
+      "series": "ASD",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-006",
+      "key": "kaeser_bsd",
+      "manufacturer": "KAESER",
+      "series": "BSD",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-007",
+      "key": "kaeser_csd",
+      "manufacturer": "KAESER",
+      "series": "CSD",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-008",
+      "key": "atlas_copco_gx",
+      "manufacturer": "Atlas Copco",
+      "series": "GX",
+      "category": "compressor",
+      "models": [
+        "GX 2",
+        "GX 7",
+        "GX 11"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Enthält auch frühere Generationen aus dem Gesamtkatalog."
+    },
+    {
+      "id": "RW-009",
+      "key": "atlas_copco_g",
+      "manufacturer": "Atlas Copco",
+      "series": "G",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständige Typenbezeichnung zur Bestimmung der Ausführung anfordern."
+    },
+    {
+      "id": "RW-010",
+      "key": "atlas_copco_ga",
+      "manufacturer": "Atlas Copco",
+      "series": "GA",
+      "category": "compressor",
+      "models": [
+        "GA 37 VSD+",
+        "GA 160 VSD FF"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "GA, GA+, VSD, VSD+, VSDs und FF als unterschiedliche Ausführungen erhalten."
+    },
+    {
+      "id": "RW-011",
+      "key": "atlas_copco_zr_zt",
+      "manufacturer": "Atlas Copco",
+      "series": "ZR / ZT",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "ZR,ZT",
+      "note": "Technologie modellabhängig: Schraube oder Drehzahn. Vollständiges Modell anfordern."
+    },
+    {
+      "id": "RW-012",
+      "key": "atlas_copco_sf",
+      "manufacturer": "Atlas Copco",
+      "series": "SF",
+      "category": "compressor",
+      "models": [
+        "SF 4+"
+      ],
+      "object_level": "equipment",
+      "aliases": "SF+",
+      "note": "SF und SF+ sind Scrollkompressoren. Pluszeichen erhalten."
+    },
+    {
+      "id": "RW-013",
+      "key": "atlas_copco_le",
+      "manufacturer": "Atlas Copco",
+      "series": "LE",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-014",
+      "key": "atlas_copco_lf",
+      "manufacturer": "Atlas Copco",
+      "series": "LF",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-015",
+      "key": "boge_c",
+      "manufacturer": "BOGE",
+      "series": "C",
+      "category": "compressor",
+      "models": [
+        "C 7 PM",
+        "C 9 DR -350"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "C und C-2 als getrennte Baureihen behandeln."
+    },
+    {
+      "id": "RW-016",
+      "key": "boge_c_2",
+      "manufacturer": "BOGE",
+      "series": "C-2",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "C 2",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-017",
+      "key": "boge_s_4",
+      "manufacturer": "BOGE",
+      "series": "S-4",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "S 4",
+      "note": "Vollständigen Typ und Ausführung klären."
+    },
+    {
+      "id": "RW-018",
+      "key": "boge_eo",
+      "manufacturer": "BOGE",
+      "series": "EO",
+      "category": "compressor",
+      "models": [
+        "EO 7 D",
+        "EO 17",
+        "EO 23"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "EO bezeichnet Scrollkompressoren; nicht als Schraubenkompressor klassifizieren."
+    },
+    {
+      "id": "RW-019",
+      "key": "compair_l",
+      "manufacturer": "CompAir",
+      "series": "L",
+      "category": "compressor",
+      "models": [
+        "L07",
+        "L11",
+        "L15",
+        "L22"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "RS ist eine drehzahlgeregelte Ausführung. Führende Null in L07 erhalten."
+    },
+    {
+      "id": "RW-020",
+      "key": "compair_d",
+      "manufacturer": "CompAir",
+      "series": "D",
+      "category": "compressor",
+      "models": [
+        "D37",
+        "D75",
+        "D160"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "D und DH unterscheiden. Ein H im Modellcode nicht entfernen."
+    },
+    {
+      "id": "RW-021",
+      "key": "compair_dh",
+      "manufacturer": "CompAir",
+      "series": "DH",
+      "category": "compressor",
+      "models": [
+        "D15H",
+        "D37H"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Wassereingespritzte, ölfreie Baureihe. Modellmuster D + Zahl + H der Baureihe DH zuordnen."
+    },
+    {
+      "id": "RW-022",
+      "key": "compair_ultima",
+      "manufacturer": "CompAir",
+      "series": "Ultima",
+      "category": "compressor",
+      "models": [
+        "U55",
+        "U160"
+      ],
+      "object_level": "equipment",
+      "aliases": "ULTIMA",
+      "note": "Modellbezeichnungen verwenden den Präfix U."
+    },
+    {
+      "id": "RW-023",
+      "key": "ingersoll_rand_up6",
+      "manufacturer": "Ingersoll Rand",
+      "series": "UP6",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "UP6S nicht automatisch als Synonym von UP6 behandeln."
+    },
+    {
+      "id": "RW-024",
+      "key": "ingersoll_rand_rs",
+      "manufacturer": "Ingersoll Rand",
+      "series": "RS",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "Next Generation RS",
+      "note": "Next Generation RS. Größe und Suffixe anhand des Typenschilds klären."
+    },
+    {
+      "id": "RW-025",
+      "key": "ingersoll_rand_e_series",
+      "manufacturer": "Ingersoll Rand",
+      "series": "E-Series",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "E Series",
+      "note": "Referenz: E-Series 55-90 kW. Exakte Modellbezeichnung separat anfordern."
+    },
+    {
+      "id": "RW-026",
+      "key": "almig_combi_xp",
+      "manufacturer": "ALMiG",
+      "series": "COMBI XP",
+      "category": "compressor",
+      "models": [
+        "COMBI XP 4",
+        "COMBI XP 11",
+        "COMBI XP 22"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Kompakte Station. Behälterausstattung hängt von der Ausführung ab."
+    },
+    {
+      "id": "RW-027",
+      "key": "almig_f_drive",
+      "manufacturer": "ALMiG",
+      "series": "F-Drive",
+      "category": "compressor",
+      "models": [
+        "F-Drive 6",
+        "F-Drive 11",
+        "F-Drive 15"
+      ],
+      "object_level": "equipment",
+      "aliases": "F Drive,FDRIVE",
+      "note": "Schraubenbaureihe mit Drehzahlregelung."
+    },
+    {
+      "id": "RW-028",
+      "key": "almig_lento",
+      "manufacturer": "ALMiG",
+      "series": "LENTO",
+      "category": "compressor",
+      "models": [
+        "LENTO 15",
+        "LENTO 22",
+        "LENTO 37"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Ölfreie Verdichtung mit Wassereinspritzung."
+    },
+    {
+      "id": "RW-029",
+      "key": "almig_simplexx",
+      "manufacturer": "ALMiG",
+      "series": "SIMPLEXX",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Industrielle ölfreie Schraubenbaureihe."
+    },
+    {
+      "id": "RW-030",
+      "key": "renner_rs_pro",
+      "manufacturer": "RENNER",
+      "series": "RS-PRO",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "RS PRO",
+      "note": "Riemengetriebene Baureihe. RSF-PRO separat behandeln."
+    },
+    {
+      "id": "RW-031",
+      "key": "renner_rsf_pro",
+      "manufacturer": "RENNER",
+      "series": "RSF-PRO",
+      "category": "compressor",
+      "models": [
+        "RSF-PRO 55,0 D"
+      ],
+      "object_level": "equipment",
+      "aliases": "RSF PRO",
+      "note": "Ausführung mit Frequenzregelung."
+    },
+    {
+      "id": "RW-032",
+      "key": "renner_reko",
+      "manufacturer": "RENNER",
+      "series": "REKO",
+      "category": "compressor",
+      "models": [
+        "REKO 410D/90",
+        "REKO 710-B",
+        "REKO 970-B"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "W/D, H, Behältervolumen und weitere Suffixe erhalten."
+    },
+    {
+      "id": "RW-033",
+      "key": "renner_riko",
+      "manufacturer": "RENNER",
+      "series": "RIKO",
+      "category": "compressor",
+      "models": [
+        "RIKO H 960 B-S"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständige Typenbezeichnung zur Bestimmung der Ausführung anfordern."
+    },
+    {
+      "id": "RW-034",
+      "key": "abac_spinn",
+      "manufacturer": "ABAC",
+      "series": "SPINN",
+      "category": "compressor",
+      "models": [
+        "SPINN D2.2"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Ausführungen mit fester und variabler Drehzahl."
+    },
+    {
+      "id": "RW-035",
+      "key": "abac_formula",
+      "manufacturer": "ABAC",
+      "series": "FORMULA",
+      "category": "compressor",
+      "models": [
+        "FORMULA E 30 13 400/50 CE"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständiger Code enthält Ausführungs- und elektrische Angaben."
+    },
+    {
+      "id": "RW-036",
+      "key": "abac_genesis",
+      "manufacturer": "ABAC",
+      "series": "GENESIS",
+      "category": "compressor",
+      "models": [
+        "GENESIS 7,5 13 400/50 500 CE",
+        "GENESIS EI 7.5 13 400/50 270CE"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Stationen auf Behälter. Ausführungssuffixe erhalten."
+    },
+    {
+      "id": "RW-037",
+      "key": "abac_a29",
+      "manufacturer": "ABAC",
+      "series": "A29",
+      "category": "compressor",
+      "models": [
+        "A29-50 CM2",
+        "A29B-100 CM3"
+      ],
+      "object_level": "equipment",
+      "aliases": "A29B",
+      "note": "A29 / A29B bezeichnen den Verdichterblock. Vollständigen Kompressorcode anfordern."
+    },
+    {
+      "id": "RW-038",
+      "key": "abac_a39",
+      "manufacturer": "ABAC",
+      "series": "A39",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "A39B",
+      "note": "A39 / A39B bezeichnen den Verdichterblock. Vollständigen Kompressorcode anfordern."
+    },
+    {
+      "id": "RW-039",
+      "key": "abac_a49",
+      "manufacturer": "ABAC",
+      "series": "A49",
+      "category": "compressor",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "A49B",
+      "note": "A49 / A49B bezeichnen den Verdichterblock. Vollständigen Kompressorcode anfordern."
+    },
+    {
+      "id": "RW-040",
+      "key": "grundfos_nb",
+      "manufacturer": "Grundfos",
+      "series": "NB",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Block-/Kupplungsausführung anhand des vollständigen Typs klären."
+    },
+    {
+      "id": "RW-041",
+      "key": "grundfos_nk",
+      "manufacturer": "Grundfos",
+      "series": "NK",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständigen Typ, Kupplung und Dichtung klären."
+    },
+    {
+      "id": "RW-042",
+      "key": "grundfos_cr",
+      "manufacturer": "Grundfos",
+      "series": "CR",
+      "category": "pump",
+      "models": [
+        "CR 10-4"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "CR, CRI, CRN und CRE nicht pauschal gleichsetzen; Werkstoff und Antrieb prüfen."
+    },
+    {
+      "id": "RW-043",
+      "key": "grundfos_tp",
+      "manufacturer": "Grundfos",
+      "series": "TP",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "TP und elektronisch geregelte TPE-Ausführung unterscheiden."
+    },
+    {
+      "id": "RW-044",
+      "key": "grundfos_cm",
+      "manufacturer": "Grundfos",
+      "series": "CM",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "CM und CME unterscheiden; Werkstoff- und Dichtungscode erhalten."
+    },
+    {
+      "id": "RW-045",
+      "key": "ksb_etanorm",
+      "manufacturer": "KSB",
+      "series": "Etanorm",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Norm-/Prozessbauweise. MyFlow und Pro als Ausführungen erhalten."
+    },
+    {
+      "id": "RW-046",
+      "key": "ksb_etabloc",
+      "manufacturer": "KSB",
+      "series": "Etabloc",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Blockbauweise. Nicht mit Etanorm gleichsetzen."
+    },
+    {
+      "id": "RW-047",
+      "key": "ksb_movitec",
+      "manufacturer": "KSB",
+      "series": "Movitec",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Diese Zeile gilt für die vertikale Basisbaureihe; H(S)I und VCI separat klären."
+    },
+    {
+      "id": "RW-048",
+      "key": "ksb_amarex",
+      "manufacturer": "KSB",
+      "series": "Amarex",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Laufradcode und Aufstellungsart klären; KRT, NS und Pro nicht gleichsetzen."
+    },
+    {
+      "id": "RW-049",
+      "key": "wilo_atmos_giga_n",
+      "manufacturer": "Wilo",
+      "series": "Atmos GIGA-N",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "Atmos GIGA N",
+      "note": "Normpumpe; Baugröße, Dichtung und Antrieb anfordern."
+    },
+    {
+      "id": "RW-050",
+      "key": "wilo_helix_v",
+      "manufacturer": "Wilo",
+      "series": "Helix V",
+      "category": "pump",
+      "models": [
+        "Helix V 1004-1/16/E/S/400-50"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Vollständige Suffixe erhalten; V und VE nicht pauschal gleichsetzen."
+    },
+    {
+      "id": "RW-051",
+      "key": "wilo_cronoline_il",
+      "manufacturer": "Wilo",
+      "series": "CronoLine-IL",
+      "category": "pump",
+      "models": [
+        "CronoLine-IL 32/150-2,2/2"
+      ],
+      "object_level": "equipment",
+      "aliases": "CronoLine IL",
+      "note": "Trockenläufer-Inlinepumpe; IL, IL-E und ILD unterscheiden."
+    },
+    {
+      "id": "RW-052",
+      "key": "sulzer_ahlstar_apt",
+      "manufacturer": "Sulzer",
+      "series": "AHLSTAR APT",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Prozesspumpe; Fördermedium, Werkstoff und Dichtung klären."
+    },
+    {
+      "id": "RW-053",
+      "key": "sulzer_abs_xfp",
+      "manufacturer": "Sulzer",
+      "series": "ABS XFP",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "XFP",
+      "note": "Abwasser-Tauchmotorpumpe; vollständigen XFP-Typ und Laufradcode anfordern."
+    },
+    {
+      "id": "RW-054",
+      "key": "netzsch_nemo",
+      "manufacturer": "NETZSCH",
+      "series": "NEMO",
+      "category": "pump",
+      "models": [
+        "NM045 BY"
+      ],
+      "object_level": "equipment",
+      "aliases": "NEMO NM",
+      "note": "NM ist ein Modellpräfix. Stator, Rotor und Medium klären."
+    },
+    {
+      "id": "RW-055",
+      "key": "netzsch_tornado",
+      "manufacturer": "NETZSCH",
+      "series": "TORNADO",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Rotierende Verdrängerpumpe; genaue Baugröße und Ausführung klären."
+    },
+    {
+      "id": "RW-056",
+      "key": "netzsch_notos",
+      "manufacturer": "NETZSCH",
+      "series": "NOTOS",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Mehrspindelige Pumpe; Spindel-/Baureihencode und Ausführung anfordern."
+    },
+    {
+      "id": "RW-057",
+      "key": "netzsch_peripro",
+      "manufacturer": "NETZSCH",
+      "series": "PERIPRO",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Schlauchpumpe; Schlauchwerkstoff und Medium anfordern."
+    },
+    {
+      "id": "RW-058",
+      "key": "alfa_laval_lkh",
+      "manufacturer": "Alfa Laval",
+      "series": "LKH",
+      "category": "pump",
+      "models": [
+        "LKH-10",
+        "LKH-20",
+        "LKH-25"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Basisbaureihe; LKH Prime, UltraPure und Multistage separat klären."
+    },
+    {
+      "id": "RW-059",
+      "key": "alfa_laval_sru",
+      "manufacturer": "Alfa Laval",
+      "series": "SRU",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Hygienische Drehkolbenpumpe; Rotor-, Dichtungs- und Größenangaben erhalten."
+    },
+    {
+      "id": "RW-060",
+      "key": "alfa_laval_duracirc",
+      "manufacturer": "Alfa Laval",
+      "series": "DuraCirc",
+      "category": "pump",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Umfangskolbenpumpe; nicht als SRU-Drehkolbenpumpe klassifizieren."
+    },
+    {
+      "id": "RW-061",
+      "key": "systemair_geniox",
+      "manufacturer": "Systemair",
+      "series": "Geniox",
+      "category": "ventilation",
+      "models": [
+        "Geniox 10"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Baugröße allein beschreibt die Konfiguration nicht. Geräteauftrag und Sektionen anfordern."
+    },
+    {
+      "id": "RW-062",
+      "key": "systemair_topvex",
+      "manufacturer": "Systemair",
+      "series": "Topvex",
+      "category": "ventilation",
+      "models": [
+        "Topvex SR",
+        "Topvex SC"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "SR/SC sind Unterbaureihen, keine vollständigen Gerätetypen; Größe und Ausführung klären."
+    },
+    {
+      "id": "RW-063",
+      "key": "flaktgroup_eq_master",
+      "manufacturer": "FläktGroup",
+      "series": "eQ Master",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "eQMaster",
+      "note": "Modular konfiguriert; Geräteauftrag, Sektionen und Regelung klären."
+    },
+    {
+      "id": "RW-064",
+      "key": "flaktgroup_eq_prime",
+      "manufacturer": "FläktGroup",
+      "series": "eQ Prime",
+      "category": "ventilation",
+      "models": [
+        "eQ Prime S",
+        "eQ Prime T"
+      ],
+      "object_level": "equipment",
+      "aliases": "eQPrime",
+      "note": "S und T als Anschlussvarianten unterscheiden; vollständige Größe anfordern."
+    },
+    {
+      "id": "RW-065",
+      "key": "trox_x_cube",
+      "manufacturer": "TROX",
+      "series": "X-CUBE",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "X CUBE",
+      "note": "Anlagenspezifische Konfiguration; nicht mit X-CUBE compact gleichsetzen."
+    },
+    {
+      "id": "RW-066",
+      "key": "trox_x_cube_compact",
+      "manufacturer": "TROX",
+      "series": "X-CUBE compact",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "X CUBE compact",
+      "note": "Separate Kompaktbaureihe; längere Bezeichnung vor X-CUBE abgleichen."
+    },
+    {
+      "id": "RW-067",
+      "key": "wolf_kg_top",
+      "manufacturer": "WOLF",
+      "series": "KG Top",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "KG TOP",
+      "note": "Geräteauftrag, Baugröße und Sektionen anfordern."
+    },
+    {
+      "id": "RW-068",
+      "key": "wolf_kg_flex",
+      "manufacturer": "WOLF",
+      "series": "KG Flex",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Individuell konfiguriertes RLT-Gerät; Sektionen und Auftragsnummer klären."
+    },
+    {
+      "id": "RW-069",
+      "key": "wolf_ckl_evo",
+      "manufacturer": "WOLF",
+      "series": "CKL evo",
+      "category": "ventilation",
+      "models": [
+        "CKL evo 1400",
+        "CKL evo 2400"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Plattenwärmetauscher; vollständige Innen-/Außenausführung bestätigen."
+    },
+    {
+      "id": "RW-070",
+      "key": "wolf_crl_evo_max",
+      "manufacturer": "WOLF",
+      "series": "CRL evo max",
+      "category": "ventilation",
+      "models": [
+        "CRL evo max 11.000",
+        "CRL evo max 13.500"
+      ],
+      "object_level": "equipment",
+      "aliases": "-",
+      "note": "Rotationswärmetauscher; CRL, CRL evo und CRL evo max nicht gleichsetzen."
+    },
+    {
+      "id": "RW-071",
+      "key": "ziehl_abegg_zabluefin",
+      "manufacturer": "ZIEHL-ABEGG",
+      "series": "ZAbluefin",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "component",
+      "aliases": "-",
+      "note": "Nur Ventilatorkomponente: vollständigen Ventilatortyp und übergeordnetes RLT-Gerät anfordern."
+    },
+    {
+      "id": "RW-072",
+      "key": "ziehl_abegg_zaplus",
+      "manufacturer": "ZIEHL-ABEGG",
+      "series": "ZAplus",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "component",
+      "aliases": "-",
+      "note": "Axialventilatorsystem als Komponente; Hersteller der Gesamtanlage separat erfassen."
+    },
+    {
+      "id": "RW-073",
+      "key": "ebm_papst_radipac",
+      "manufacturer": "ebm-papst",
+      "series": "RadiPac",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "component",
+      "aliases": "-",
+      "note": "Nur Ventilatorkomponente: Artikel-/Typnummer, Generation und Gesamtanlage klären."
+    },
+    {
+      "id": "RW-074",
+      "key": "ebm_papst_radical",
+      "manufacturer": "ebm-papst",
+      "series": "RadiCal",
+      "category": "ventilation",
+      "models": [],
+      "object_level": "component",
+      "aliases": "-",
+      "note": "Nur Ventilatorkomponente; nicht automatisch dem RadiPac zuordnen."
+    }
+  ],
+  "aliases": {
+    "KAESER": [
+      "Kaeser",
+      "Käser",
+      "Kaeser Kompressoren"
+    ],
+    "Atlas Copco": [
+      "AtlasCopco",
+      "Atlas-Copco"
+    ],
+    "BOGE": [
+      "Boge",
+      "Boge Kompressoren"
+    ],
+    "CompAir": [
+      "Compair",
+      "Comp Air",
+      "Comp-Air"
+    ],
+    "Ingersoll Rand": [
+      "Ingersoll-Rand",
+      "IngersollRand"
+    ],
+    "ALMiG": [
+      "Almig",
+      "ALMIG Kompressoren"
+    ],
+    "RENNER": [
+      "Renner",
+      "Renner Kompressoren"
+    ],
+    "ABAC": [
+      "Abac"
+    ],
+    "Grundfos": [
+      "Grundfos"
+    ],
+    "KSB": [
+      "KSB"
+    ],
+    "Wilo": [
+      "Wilo"
+    ],
+    "Sulzer": [
+      "Sulzer",
+      "ABS"
+    ],
+    "NETZSCH": [
+      "NETZSCH",
+      "Netzsch Pumps & Systems"
+    ],
+    "Alfa Laval": [
+      "Alfa Laval",
+      "Alfa-Laval",
+      "AlfaLaval"
+    ],
+    "Systemair": [
+      "Systemair",
+      "System Air"
+    ],
+    "FläktGroup": [
+      "FläktGroup",
+      "FlaktGroup",
+      "Fläkt Group"
+    ],
+    "TROX": [
+      "TROX"
+    ],
+    "WOLF": [
+      "WOLF"
+    ],
+    "ZIEHL-ABEGG": [
+      "ZIEHL-ABEGG",
+      "Ziehl Abegg",
+      "ZiehlAbegg"
+    ],
+    "ebm-papst": [
+      "ebm-papst",
+      "ebm papst",
+      "ebmpapst"
+    ]
+  }
+}

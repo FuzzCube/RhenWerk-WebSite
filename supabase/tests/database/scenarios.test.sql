@@ -329,6 +329,7 @@ select throws_ok(
   '42501', null, 'S4: dashboard users cannot confirm delivery'
 );
 reset role;
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 select is(
   (public.confirm_message_sent((select id from public.messages where request_id = '00000000-0000-0000-0000-000000000001' and kind = 'invoice'),
@@ -356,10 +357,12 @@ select public.create_message_draft('00000000-0000-0000-0000-000000000003', (sele
 select public.queue_message((select id from public.messages where kind = 'receipt' and request_id = '00000000-0000-0000-0000-000000000003'), (select version from public.requests where id = '00000000-0000-0000-0000-000000000003'));
 select public.queue_message((select id from public.messages where kind = 'clarification' and request_id = '00000000-0000-0000-0000-000000000003'), (select version from public.requests where id = '00000000-0000-0000-0000-000000000003'));
 reset role;
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 select public.confirm_message_sent((select id from public.messages where kind = 'receipt' and request_id = '00000000-0000-0000-0000-000000000003'));
 reset role;
 select is((select first_substantive_response_at from public.requests where id = '00000000-0000-0000-0000-000000000003'), null, 'S4: receipt does not count as first response');
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 select public.confirm_message_sent((select id from public.messages where kind = 'clarification' and request_id = '00000000-0000-0000-0000-000000000003'), sent_at => '2027-03-01 09:30+01');
 reset role;

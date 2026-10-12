@@ -1,8 +1,8 @@
-# n8n-Vertrag (künftige Integration)
+# n8n-Vertrag (lokale Integration mit OpenAI)
 
-> **Stand: nur dokumentiert, nicht angebunden.** Es gibt keinen n8n-Workflow und keine Gmail-Anbindung. Das Website-Formular leitet Anfragen weiterhin über `/api/service-request` an Make weiter (siehe [decisions.md](decisions.md)); Live-Anfragen entstehen dadurch noch nicht in Supabase. E-Mails des Dashboards enden als Entwurf oder in der Warteschlange (`queued`) und werden **nicht versendet**. Der Status `sent` entsteht ausschließlich durch eine Versandbestätigung der künftigen Integration.
+> **Stand 12.10.2026: lokale Integration aktiviert und real geprüft.** Alle sechs Workflows sind veröffentlicht. Gmail `rheinwerk.industrieservice@gmail.com`, OpenAI `gpt-4.1-mini` (`OpenAI account 3`) und lokale Supabase funktionieren. Die lokale Website nutzt `N8N_WEBHOOK_URL=http://127.0.0.1:5678/webhook/rheinwerk-service-request`; Blob-Token ist lokal konfiguriert. PDF/Foto wurden über API-Upload, privaten Blob, n8n-Dateikopie und echten OpenAI-Aufruf geprüft. Die öffentliche Website wurde nicht umgestellt, das externe Make-Konto nicht verändert.
 
-Dieser Vertrag beschreibt, wie ein n8n-Workflow in einer späteren Stufe mit der Datenbank zusammenarbeitet (Spezifikation Abschnitt 8). Er legt Ein- und Ausgaben, Idempotenz, Versionsprüfung, Warteschlange und Gmail-Zuordnung fest. Fachliche Zustände und Rechte prüft immer die Datenbank; n8n schreibt nie direkt in Tabellen, sondern nur über die unten genannten Funktionen.
+Dieser Vertrag beschreibt, wie die lokale n8n-Integration mit der Datenbank zusammenarbeitet (Spezifikation Abschnitt 8). Er legt Ein- und Ausgaben, Idempotenz, Versionsprüfung, Warteschlange und Gmail-Zuordnung fest. Fachliche Zustände und Rechte prüft immer die Datenbank; n8n schreibt nie direkt in Tabellen, sondern nur über die unten genannten Funktionen.
 
 ## Grundsätze
 
@@ -17,20 +17,28 @@ Dieser Vertrag beschreibt, wie ein n8n-Workflow in einer späteren Stufe mit der
 | Zeit | Zeitstempel als ISO 8601 mit Offset; fachliche Tage in Europe/Berlin |
 | Rekursion | Statusänderungen durch den Workflow lösen keinen weiteren Analyse-Lauf aus (siehe Auslöser) |
 
-## Vorhandene und noch zu bauende Funktionen
+## Integrationsfunktionen
 
 | Funktion | Stand | Zweck |
 | --- | --- | --- |
 | `confirm_message_sent(message_id, sent_at?, mailbox_key?, gmail_message_id?, gmail_thread_id?, mime_message_id?)` | **vorhanden**, nur `service_role` | bestätigter Versand: `queued` → `sent`, Provider-IDs, ggf. `first_substantive_response_at` und Rechnung `issued` → `sent`; Wiederholung liefert das bestehende Ergebnis; Demo-Anfragen werden abgewiesen |
 | `link_message(message_id, request_id, expected_version)` | **vorhanden**, Dashboard (Inhaber des Posteingangs, Manager, Admin) | manuelle Zuordnung einer unzugeordneten eingehenden Mail |
 | `queue_message(message_id, expected_version)` | **vorhanden**, Dashboard | Freigabe eines Entwurfs in die Warteschlange |
-| `ingest_submission(payload)` | zu bauen | Einreichung speichern (Abschnitt 1) |
-| `start_automation_run(operation_key, step, request_id?, message_id?, input_version?, workflow_execution_id?)` | zu bauen | Lauf idempotent anlegen bzw. bestehenden liefern |
-| `finish_automation_run(run_id, status, decision?, confidence?, result?, error_code?, error_text?)` | zu bauen | Lauf beenden, Ergebnis speichern |
-| `apply_analysis_result(run_id, request_id, expected_version, result)` | zu bauen | Analyseergebnis auf die Anfrage anwenden (Abschnitt 2) |
-| `record_incoming_message(payload)` | zu bauen | eingehende Gmail-Nachricht speichern und zuordnen (Abschnitt 3) |
-| `claim_queued_messages(limit, lease_seconds)` | zu bauen | versandbereite Nachrichten mit Sperrfrist abholen (Abschnitt 4) |
-| `mark_message_failed(message_id, error_text, permanent)` | zu bauen | endgültiger Fehler → `failed` mit `error_text`; vorübergehender Fehler lässt `queued` |
+| `ingest_submission(payload)` | **vorhanden**, nur `service_role` | Einreichung speichern (Abschnitt 1) |
+| `start_automation_run(operation_key, step, request_id?, message_id?, input_version?, workflow_execution_id?)` | **vorhanden**, nur `service_role` | Lauf idempotent anlegen bzw. bestehenden liefern |
+| `finish_automation_run(run_id, status, decision?, confidence?, result?, error_code?, error_text?, workflow_execution_id?)` | **vorhanden**, nur `service_role` | Lauf beenden, Ergebnis speichern |
+| `apply_analysis_result(run_id, request_id, expected_version, result)` | **vorhanden**, nur `service_role` | Analyseergebnis auf die Anfrage anwenden (Abschnitt 2) |
+| `record_incoming_message(payload)` | **vorhanden**, nur `service_role` | eingehende Gmail-Nachricht speichern und zuordnen (Abschnitt 3) |
+| `claim_queued_messages(batch_limit, lease_seconds)` | **vorhanden**, nur `service_role` | versandbereite Nachrichten mit Sperrfrist abholen (Abschnitt 4) |
+| `mark_message_failed(message_id, error_text, permanent)` | **vorhanden**, nur `service_role` | endgültiger Fehler → `failed` mit `error_text`; vorübergehender Fehler lässt `queued` |
+
+| `find_submission(submission_id)` | **vorhanden**, nur `service_role` | vor dem Dateikopieren auf Wiederholung prüfen |
+| `get_analysis_context(request_id, message_id?)` | **vorhanden**, nur `service_role` | Anfrage, letzte 20 Nachrichten und private Anhänge lesen |
+| `list_pending_analyses(batch_limit?)` | **vorhanden**, nur `service_role` | unbearbeitete Anfragen und vollständige Kundenantworten |
+| `register_incoming_attachment(message_id, file_name, mime_type, size_bytes, storage_path)` | **vorhanden**, nur `service_role` | eingehenden Anhang idempotent registrieren |
+| `complete_incoming_message(message_id, warnings?)` | **vorhanden**, nur `service_role` | Antwort erst nach allen Anhängen zur Analyse freigeben; Dateiprobleme menschlich prüfen |
+| `list_incomplete_incoming(batch_limit?)` | **vorhanden**, nur `service_role` | abgebrochene Verarbeitung eingehender Anhänge erneut aufnehmen |
+| `list_orphaned_integration_files()` | **vorhanden**, nur `service_role` | verwaiste Speicherobjekte nur auflisten; keine Löschung |
 
 Die vorhandenen Tabellen enthalten bereits alle Felder für diese Funktionen (`requests.source_event_key`, `automation_runs.operation_key`/`input_version`/`workflow_execution_id`, `messages.mailbox_key`/`gmail_message_id`/`gmail_thread_id`/`mime_message_id`/`in_reply_to`/`references_header`, `attachments.bucket`/`storage_path`).
 
@@ -42,13 +50,13 @@ Die vorhandenen Tabellen enthalten bereits alle Felder für diese Funktionen (`r
 
 1. Nutzlast erneut validieren (`validatePayload`, Anhänge: PDF/JPEG/PNG, ≤ 5 MB, ≤ 3 Dateien, Pfad `service-requests/<submission_id>/`).
 2. `source_event_key = "website_form:" + submission_id` bilden.
-3. Anhänge in den privaten Bucket `dashboard` unter `staging/<submission_id>/<datei>` kopieren (Speicher ist nicht Teil der Datenbanktransaktion).
-4. `ingest_submission(payload)` in **einer** Transaktion: Anfrage mit `source = website_form`, `raw_payload`, gemappten Feldern; Anhänge als `attachments` (Pfade nach `requests/<request_id>/…` verschieben bzw. registrieren); Ereignis `submission_received`. Die Anfragenummer `RIS-JJJJ-NNNNN` vergibt die Datenbank.
-5. Erst nach erfolgreichem Speichern antwortet der Workflow der Website (`201` mit `request_number`, `human_review`). Die Analyse startet danach asynchron.
+3. Nach `find_submission` die Anhänge in den privaten Bucket `dashboard` unter `requests/<submission_id>/<index>_<datei>` kopieren. Die UUID der Einreichung wird auch die `requests.id`; ein Verschieben ist nicht nötig. Speicher ist nicht Teil der Datenbanktransaktion. HTTPS-URLs müssen zu Vercel Blob gehören; Dateisignatur und 5-MB-Grenze werden geprüft.
+4. `ingest_submission(payload)` in **einer** Transaktion: Anfrage mit `source = website_form`, `raw_payload`, gemappten Feldern; Anhänge als `attachments` (private Pfade unter `requests/<request_id>/…` registrieren); Ereignis `submission_received`. Die Anfragenummer `RIS-JJJJ-NNNNN` vergibt die Datenbank.
+5. Erst nach erfolgreichem Speichern antwortet der Workflow der Website (`201` mit `request_number`, `human_review`). Eine neue gespeicherte Anfrage wird über `Analyse asynchron starten` an den Analyse-Workflow übergeben. Wiederholte Formulare geben dieselbe Anfrage zurück und starten keine neue direkte Analyse. Der veröffentlichte Worker prüft außerdem alle zwei Minuten offene Anfragen und vollständig registrierte Kundenantworten.
 
 **Wiederholung:** derselbe `source_event_key` liefert die bestehende Anfrage (kein zweiter Datensatz, kein zweites Ereignis); die Website erhält dieselbe Antwort.
 
-**Dateien:** Schlägt die Transaktion fehl, löscht der Workflow `staging/<submission_id>/`. Ein täglicher Aufräumlauf entfernt Staging-Dateien älter als 24 h ohne zugehörige Anfrage. Dateien werden nie öffentlich; Downloads laufen über die App mit Zugriffsprüfung.
+**Dateien:** Schlägt die Transaktion nach dem Kopieren fehl, bleiben unregistrierte Dateien zunächst privat gespeichert. `list_orphaned_integration_files` listet solche Objekte nach 24 Stunden nur auf. Die automatische Prüfung hat eine tägliche Löschung wegen möglichem Verlust benötigter Dateien abgewiesen; kein Löschworkflow wurde angelegt. Downloads registrierter Dateien laufen über die App mit Zugriffsprüfung.
 
 **Feldzuordnung Formular → `requests`:**
 
@@ -109,14 +117,14 @@ Wiederholte Läufe, Rückfragen und Einsätze erhöhen nicht die Zahl der Erstbe
    3. Anfragenummer `RIS-JJJJ-NNNNN` im Betreff.
    Absenderadresse allein reicht nie für eine Zuordnung.
 3. **Gefunden** (`decision = matched`): Nachricht mit `request_id`, `direction = incoming`, `kind = customer_reply`, Anhänge registriert; Ereignis `message_received`. Steht die Anfrage auf `awaiting_customer`, startet eine `reply_analysis` (Abschnitt 2).
-4. **Nicht gefunden** (`decision = unmatched`): Nachricht ohne `request_id` im Posteingang eines Dispatchers (`inbox_dispatcher_id`, z. B. reihum unter aktiven Dispatchern). Der Dispatcher ordnet sie mit `link_message` zu.
+4. **Nicht gefunden oder mehrdeutig** (`decision = unmatched`): Nachricht ohne `request_id` im Posteingang eines Dispatchers (`inbox_dispatcher_id`, z. B. reihum unter aktiven Dispatchern). Der Dispatcher ordnet sie mit `link_message` zu.
 5. Nachrichten an Demo-Anfragen werden nicht verarbeitet.
 
 ## 4. Ausgehende Gmail-Nachrichten
 
 **Nur** Nachrichten mit `direction = outgoing`, `status = queued`, an Live-Anfragen (`is_demo = false`) und mit Freigabe (`approved_by`, `approved_at`).
 
-1. `claim_queued_messages(limit, lease_seconds)` liefert versandbereite Nachrichten und legt je Nachricht einen Lauf `email_send` mit `operation_key = "email_send:<message_id>"` an. Der eindeutige Schlüssel verhindert, dass zwei Workflow-Ausführungen dieselbe Nachricht gleichzeitig senden; eine abgelaufene Sperrfrist erlaubt eine erneute Übernahme.
+1. `claim_queued_messages(batch_limit, lease_seconds)` liefert versandbereite Nachrichten und legt je Nachricht einen Lauf `email_send` mit `operation_key = "email_send:<message_id>"` an. Der eindeutige Schlüssel verhindert, dass zwei Workflow-Ausführungen dieselbe Nachricht gleichzeitig senden; eine abgelaufene Sperrfrist erlaubt eine erneute Übernahme.
 2. Versand über die Gmail-API mit `From` = Mailbox, eigenem Header `X-RheinWerk-Message-Id: <message_id>` und einer daraus abgeleiteten `Message-ID` (`<message_id>@rheinwerk-dashboard>`), bei Antworten mit `In-Reply-To`/`References` und `threadId`.
 3. Erfolg: `confirm_message_sent(message_id, sent_at, mailbox_key, gmail_message_id, gmail_thread_id, mime_message_id)`. Erst dadurch werden `sent_at`, `first_substantive_response_at` (nur `clarification`/`other`) und der Rechnungsstatus `sent` gesetzt.
 4. Endgültiger Fehler (z. B. ungültige Adresse): `mark_message_failed(…, permanent = true)` → `failed` mit `error_text`, sichtbar auf der Anfrageseite. Vorübergehender Fehler: Lauf `failed`, Nachricht bleibt `queued`, neuer Versuch mit Backoff.
@@ -134,13 +142,50 @@ Wiederholte Läufe, Rückfragen und Einsätze erhöhen nicht die Zahl der Erstbe
 
 Statusänderungen durch den Workflow selbst (`apply_analysis_result`, `confirm_message_sent`) sind **keine** Auslöser. Datenbank-Trigger oder Webhooks auf `requests`/`request_events` werden nicht verwendet, damit eine Statusänderung keine erneute Analyse derselben Anfrage auslöst. Jeder Lauf ist über `operation_key` an genau eine Eingabeversion gebunden.
 
+## Modellabgleich und Anhänge
+
+Quelle: `docs/equipment/RheinWerk_Anlagenkatalog_DE.md` (74 Serienzeilen). Der Modellabgleich ist deterministisch; Hersteller-Aliasse, Leerzeichen und die beschriebenen Zahlenschreibweisen werden normalisiert, Suffixe erhalten. Nur ein eindeutiges vollständig gelistetes Gerätemodell gilt als `listed_model`. Serienübereinstimmung, Komponenten, widersprüchliche oder unbekannte Modelle und fremde Anlagenarten gehen an einen Menschen. Es gibt keine automatische Ablehnung.
+
+PDF und PNG/JPEG werden mit dem nativen OpenAI-Responses-Node ausgewertet (`gpt-4.1-mini`, striktes JSON-Schema, `store: false`). Die Projektentscheidung für OpenAI und die Verarbeitung technischer Texte, Korrespondenz und Dokumente wurden vom Nutzer am 12.10.2026 bestätigt. Supabase bleibt die einzige Projekt-Persistenz für die Gesprächshistorie; keine OpenAI-Konversation wird als Gedächtnis verwendet. Nur technische Formularfelder, relevante Nachrichtentexte und Dokumentinhalte gehen an das Modell; separate Kontakt- und Standortfelder sind nicht im KI-Eingang enthalten. Nachrichtentexte und Anhänge können dennoch personenbezogene Angaben enthalten. Bei Reparaturen genügt „kaputt“ oder „funktioniert nicht richtig“ nicht: mindestens ein konkretes beobachtbares Symptom oder ein Fehlercode ist nötig. Wartung und Inspektion benötigen keine Fehlerbeschreibung. Der private Gmail-Zwischenschritt verhindert die Antwortanalyse vor Abschluss der Anhänge. Unvollständige registrierte Gmail-Eingänge werden nach fünf Minuten erneut geladen. Zusätzlich werden alle 15 Minuten die neuesten bis zu 100 RIS-Antworten im Posteingang der letzten sieben Tage idempotent erneut eingelesen, auch wenn die erste RPC-Registrierung zuvor ausfiel; Dateiprobleme erfordern menschliche Prüfung.
+
 ## Sicherheit und Datenschutz
 
 - Kein Gmail-Token, n8n-Schlüssel oder Secret in `settings` oder im Repository; Zugangsdaten nur in n8n-Credentials bzw. Server-Umgebungsvariablen.
 - n8n erhält keine Nutzersitzungen und umgeht RLS nur über die oben genannten Funktionen.
 - `raw_payload` und Nachrichtentexte bleiben in Supabase; die KI-Analyse erhält nur die für die Einstufung nötigen Felder.
-- Demo-Daten (`is_demo`) werden nie versendet und nie analysiert.
+- Gesäte Dashboard-Demo-Daten (`is_demo = true`) werden nie versendet und nie analysiert. Die ausdrücklich autorisierten Integrationstests verwenden fiktive Kontakt-/Anlagendaten über den normalen Formularpfad (`is_demo = false`); Testempfänger ist die eigene Adresse des Nutzers.
 
-## Abgrenzung dieser Stufe
+## Workflows und Prüfung
 
-Umgesetzt sind Datenmodell, Warteschlange, Freigabe, manuelle Zuordnung und `confirm_message_sent` mit Tests ([testing.md](testing.md)). Nicht umgesetzt sind der Workflow selbst, die mit „zu bauen“ markierten Funktionen, die Gmail-Anbindung und die Umstellung des Formulars von Make auf n8n. Gmail-Versand ist damit **nicht funktionsfähig**; das Dashboard zeigt Nachrichten in der Warteschlange ausdrücklich als „In Warteschlange, nicht versendet“.
+Alle Workflows liegen im lokalen n8n unter `http://localhost:5678`. Alle Nodes bleiben auf Wunsch des Nutzers ohne visuelle Gruppen. Aktuelle importierbare Graphen liegen unter `n8n/workflows/*.workflow.json`, SDK-Quellen unter `*.n8n`; die Exporte enthalten den tatsächlichen Aktivierungsstand.
+
+- Serviceanfragen: `lw1QxoJbeSU0H17E`, veröffentlicht, 23 Nodes.
+- Anfrage analysieren: `wO3EgSMM8l1wRKsc`, veröffentlicht, 18 Nodes, OpenAI und Zwei-Minuten-Worker aktiv.
+- Anhänge analysieren: `RE6MpFCDoYXgVyIm`, veröffentlicht, 7 Nodes, OpenAI für PDF/Foto.
+- Formularanhang speichern: `Tr5Ird7F1iSTQe0o`, veröffentlicht, 5 Nodes.
+- Gmail Eingang: `rGQGvOLDJUuHt4bO`, veröffentlicht, 27 Nodes, minütlicher Eingang, Wiederaufnahme nach fünf Minuten und RIS-Nachlesen alle 15 Minuten.
+- Gmail Versand: `IlH4b7AKuSXyMiOd`, veröffentlicht, 19 Nodes; freigegebene Nachrichten jede Minute, Wiederaufnahme über interne Header-ID.
+
+Historische Prüfung vom 08.10.2026: echte lokale Formularannahme per MCP (5653, `RIS-2026-00267`), Wiederholung ohne Duplikat (5657), Ablehnung fehlender Einwilligung (5658). Gmail-/Katalog-/Dateizweige wurden damals mit simulierten Providerantworten geprüft. Diese damaligen Tests waren kein echter Versand und kein Modellaufruf.
+
+Echte Prüfung vom 12.10.2026:
+
+- Gmail/Supabase-Diagnose 6762 bestätigte das richtige Postfach und die lokale Datenbank.
+- OpenAI-Textanalyse 6768; JSON-Adapter 6769 mit der zuvor tatsächlich gelieferten Antwort geprüft. Der native Responses-Node liefert den JSON-Schema-Inhalt als Objekt, nicht immer als String.
+- 6770 und 6771: echte OpenAI-Aufrufe mit synthetischem PDF und Typenschild-PNG erkannten KAESER SM 13, Seriennummer und E42. Die Prüfungen verwenden die Fixtures unter `n8n/tests/fixtures/`; die Formular-Dateikopie selbst ist noch nicht echt geprüft.
+- 6774/6775: eine zu ungenaue Reparaturbeschreibung wurde zunächst fälschlich als vollständig angesehen (`RIS-2026-00354`). Danach wurde die Symptomregel im Prompt verschärft. 6772 und der neue echte Formularlauf 6777/6778 bestätigten eine konkrete Rückfrage für „kaputt“ (`RIS-2026-00355`). Die frühere Testzeile bleibt als Nachweis dieser Regression erhalten.
+- Der Entwurf wurde über einen echten Dispatcher-Demo-Login und `queue_message` regulär freigegeben. 6779 hat genau das autorisierte Testmail an `fuzz.cube.studio@gmail.com` gesendet; Gmail-ID `1a12f64a6abf0475`, Status `sent`, Anfrage `awaiting_customer`. Der Nutzer bestätigte den Empfang.
+- Gmail-Trigger 6782 empfing die echte Antwort `1a12f680da8197ad`. Dabei wurden ein fehlender `payload`-Wrapper beim RPC und eine falsche Workflow-ID-Darstellung im Analyse-Scheduler entdeckt und behoben. 6789 spielte die bereits empfangene Nachricht erneut ein; es war keine simulierte Kundenantwort. Sie wurde der bestehenden Anfrage über Thread-ID zugeordnet.
+- 6790/6791 analysierten die echte Antwort samt Supabase-Historie mit OpenAI: Druck nur 5 statt 8 bar, Abschaltung nach zehn Minuten, Zischen; Katalog `listed_model`/`RW-002`, Entscheidung `ready_for_planning`. `RIS-2026-00355` ist `processed`, Version 6, eingehende Nachricht behandelt; kein zweiter Anfrage-Datensatz und kein neuer Rückfrage-Entwurf.
+- 6797 wiederholte denselben realen Eingang ohne Duplikat. Produktions-Scheduler 6787, 6794 und 6795 liefen nach der Korrektur erfolgreich. 6796 prüfte OpenAI live mit synthetischem SM 999 und gepinnten Datenbankknoten: die deterministische Regel setzte `human_review`/`series_match`.
+- SQL-Smoke-Test mit ROLLBACK, `test:db` 532/532, `test:unit` 58/58, lint, typecheck und build bestanden. SDK-Validierung: Analyse, Dokumentenanalyse und Gmail-Eingang gültig.
+
+Gmail-Versand ist für die freigegebene Testnachricht **echt nachgewiesen**. Der Versandzeitplan ist veröffentlicht. Alle sechs Workflows sind veröffentlicht; die Exporte enthalten den tatsächlichen Aktivierungsstand. Die lokale Website nutzt den n8n-Webhooks, nicht den Make-Fallback.
+
+Weitere echte Prüfung: privater PDF-/PNG-Upload mit dem unveränderten Client-SDK über `/api/upload` (HTTP 200), API-Formularübermittlung mit leeren Hersteller-/Modellfeldern (HTTP 201), Kopie beider Dateien (6813/6814), OpenAI-Dokumenten-/Anfrageanalyse 6815 und persistierte Modellfelder. RIS-2026-00356 ist processed; KAESER SM 13, Seriennummer DEMO-SM13-001, Katalog RW-002. Nach wiederholten Übermittlungen genau eine Anfrage, ein submission_received-Ereignis, ein Analyselauf und zwei Dateien/Anhänge. Ein Sandbox-Fehler bei `new URL` im Hauptworkflow wurde durch eine enge HTTPS-Private-Blob-Hostprüfung behoben; Weiterleitungen bleiben verboten. Eine neue Gate-Node verhindert direkte Neu-Analyse bei Formularduplikaten (6833/6834).
+
+Gmail hat die originale MIME-Message-ID beim echten Versand ersetzt; `X-RheinWerk-Message-Id` blieb erhalten. Vor erneutem Senden werden bis zu 100 gesendete Nachrichten desselben Empfängers geladen und die exakte interne ID abgeglichen. Bei weiteren Seiten, mehrdeutigem Treffer oder Lesefehler wird nicht automatisch erneut gesendet. 6825 bestätigte dieses Verhalten gegen den echten Postausgang; Queue und DB-Bestätigung waren für den Replay gepinnt, der Send-Node wurde nicht erreicht. Nach Provider-Annahme wird die tatsächliche MIME-ID erneut gelesen und gespeichert. Dieser Zweig wurde mit gepinntem Send-Ergebnis und echtem Metadaten-Get in 6839 geprüft; keine zweite Test-E-Mail wurde versendet. Der veröffentlichte Versand-Scheduler 6837 lief erfolgreich, die genehmigte Warteschlange war leer.
+
+Die neue 15-Minuten-RIS-Wiederaufnahme wurde in 6828 mit echten Gmail-Daten geprüft: die schon verarbeitete Antwort wurde korrekt als duplicate erkannt. Sie erfasst die letzten sieben Tage bis zu 100 Nachrichten; längere Ausfälle oder mehr Nachrichten benötigen eine gezielte Nachbearbeitung. Der eigentliche Erstversand ist real nachgewiesen; ein absichtlich herbeigeführter Bestätigungsverlust nach einem weiteren echten Versand wurde nicht getestet.
+
+lint, build und typecheck bestanden. SQL-Smoke-Test mit ROLLBACK und test:db 532/532 wurden unmittelbar zuvor gegen dieselbe Datenbank geprüft; in diesem Schritt gab es keine SQL-Änderung. Unit-Checks nach Dokumentationsabgleich erneut 58/58 bestanden. DB-Reset und API/Auth/UI-Regression wurden in diesem Schritt nicht wiederholt; keine Browser-Sichtprüfung der Upload-Oberfläche. Die öffentliche Website wurde nicht umgestellt: produktiver Turnstile-Schlüssel und geschützter Maschinenzugriff über Cloudflare sind gesonderte Deployment-Konfiguration. Kein Make-Szenario im externen Konto deaktiviert, kein Push und kein Website-Deployment.

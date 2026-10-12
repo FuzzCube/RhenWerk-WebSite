@@ -1,0 +1,780 @@
+{
+  "id": "IlH4b7AKuSXyMiOd",
+  "name": "RheinWerk · Gmail Versand",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "5c7415fc-bbb3-4eb3-b9fc-0cbc0c694a4e",
+      "name": "Freigegebene E-Mails jede Minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "fe09c770-4eee-4b94-b8bb-042844a98450",
+      "name": "Versandpostfach prüfen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        260,
+        0
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json;const mailbox=String(r.body?.emailAddress??r.emailAddress??'').toLowerCase();if(mailbox!=='rheinwerk.industrieservice@gmail.com')throw new Error('RheinWerk Gmail-Konto nicht bestätigt');return [{json:{mailbox_verified:true}}];"
+      },
+      "id": "8c97e6db-32b7-4ef7-9691-d072d5b7072c",
+      "name": "Versandpostfach bestätigen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/claim_queued_messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {batch_limit:5,lease_seconds:600} }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "88a7e8bd-9594-43db-8b88-cd7e5d47fad9",
+      "name": "Freigegebene Nachrichten reservieren",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        780,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const m=$input.first().json;const mailbox='rheinwerk.industrieservice@gmail.com';\nif(m.direction!=='outgoing'||m.status!=='queued'||!m.approved_by||!m.approved_at)throw new Error('Freigegebene Nachricht erforderlich');\nif(!/^[0-9a-f-]{36}$/i.test(m.id)||!/^[^\\s<>@]+@[^\\s<>@]+\\.[^\\s<>@]+$/.test(m.to_address??''))throw new Error('Ungültige Nachrichtenidentität oder Empfängeradresse');\nconst clean=s=>String(s??'').replace(/[\\r\\n]/g,' ').trim();const messageId='<'+m.id+'@rheinwerk-service.online>';\nconst subj=clean(m.subject);const chunks=Array.from(subj.matchAll(/.{1,30}/gu),x=>'=?UTF-8?B?'+Buffer.from(x[0]).toString('base64')+'?=');\nconst headers=['From: RheinWerk Industrieservice <'+mailbox+'>','To: '+m.to_address,'Subject: '+chunks.join('\\r\\n '),'Message-ID: '+messageId,'X-RheinWerk-Message-Id: '+m.id,'Date: '+new Date().toUTCString(),'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64'];\nconst refs=[...(Array.isArray(m.references_header)?m.references_header:[]),m.in_reply_to].filter(x=>typeof x==='string'&&/^<[^<>\\s]+>$/.test(x));\nif(m.in_reply_to&&/^<[^<>\\s]+>$/.test(m.in_reply_to))headers.push('In-Reply-To: '+m.in_reply_to);\nif(refs.length)headers.push('References: '+[...new Set(refs)].slice(-20).join(' '));\nconst body=Buffer.from(String(m.body_text??''),'utf8').toString('base64').match(/.{1,76}/g)?.join('\\r\\n')??'';\nconst raw=Buffer.from(headers.join('\\r\\n')+'\\r\\n\\r\\n'+body).toString('base64url');\nreturn [{json:{message_id:m.id,mime_message_id:messageId,recipient:m.to_address,search_query:'in:sent to:'+m.to_address,send_body:{raw,...(m.gmail_thread_id?{threadId:m.gmail_thread_id}:{})}}}];"
+      },
+      "id": "ee6fbbec-6334-4fa3-86d3-5c0484bc5c7e",
+      "name": "MIME mit stabiler Nachrichten-ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.search_query }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "100"
+            }
+          ]
+        }
+      },
+      "id": "65c5a0b5-61e8-4339-b46a-ab0dc181bce3",
+      "name": "Bereits gesendete Nachricht suchen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1560,
+        0
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ ($json.body.messages ?? []).length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b9aa2b64-efc7-486b-889a-a19cfb61d710",
+      "name": "Versand bereits nachgewiesen?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2860,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://gmail.googleapis.com/gmail/v1/users/me/messages/'+encodeURIComponent($json.body.messages?.[0]?.id ?? $json.body.id) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "metadata"
+            }
+          ]
+        }
+      },
+      "id": "dcaea51b-b0af-45a1-b093-b12f216bcc67",
+      "name": "Bestehenden Versand nachlesen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3380,
+        -100
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r=$input.first().json;const meta=$('MIME mit stabiler Nachrichten-ID').item.json;const b=r.body??r;\nconst ok=r.statusCode>=200&&r.statusCode<300&&typeof b.id==='string'&&typeof b.threadId==='string';\nconst actualMime=b.payload?.headers?.find(h=>String(h.name).toLowerCase()==='message-id')?.value;\nreturn [{json:{...meta,ok,confirmation:{message_id:meta.message_id,mailbox_key:'rheinwerk.industrieservice@gmail.com',gmail_message_id:b.id??null,gmail_thread_id:b.threadId??null,mime_message_id:actualMime??meta.mime_message_id,sent_at:new Date().toISOString()},failure:{message_id:meta.message_id,permanent:r.statusCode===400,error_text:String(b.error?.message??r.error?.message??'Gmail delivery outcome unknown').slice(0,1000)}}}];"
+      },
+      "id": "bc1c9c3c-b612-4dc1-b4cc-9a979ba4cd86",
+      "name": "Provider-Ergebnis auswerten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3640,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('MIME mit stabiler Nachrichten-ID').item.json.send_body }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "e7f2f90b-adae-47f5-9ab0-821c1f1aca25",
+      "name": "Freigegebene E-Mail senden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3120,
+        160
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "3c4e4552-7a3b-430d-b6a7-ad328a1cec2b",
+      "name": "Nachrichten einzeln versenden",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "310abdd1-e6a8-4f14-a7e6-bdb01d380792",
+      "name": "Versand bestätigt?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3900,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/confirm_message_sent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.confirmation }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "66f8f4f3-cbd8-4d74-9ed3-1960b6238193",
+      "name": "Bestätigten Versand speichern",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4160,
+        -100
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/mark_message_failed",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.failure }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "f3d71faf-4982-4df0-8e97-50ede98490ef",
+      "name": "Versandfehler mit Backoff speichern",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4160,
+        160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Local"
+        }
+      }
+    },
+    {
+      "id": "cd633b19-6462-4ca5-8c5a-635f9957e6a9",
+      "name": "Versandkandidaten vorbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1820,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const b=$input.first().json.body??{};\nif(b.nextPageToken)throw new Error('Mehr als 100 gesendete Kandidaten: manuelle Versandprüfung erforderlich, kein erneuter Versand');\nconst messages=b.messages??[];return messages.length?messages.map(m=>({json:{candidate_id:m.id},pairedItem:{item:0}})):[{json:{skip_candidate:true},pairedItem:{item:0}}];"
+      }
+    },
+    {
+      "id": "3c497a39-ee4f-44a2-bc1b-3dcd4ec3f4e0",
+      "name": "Versandkandidat vorhanden?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2080,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.skip_candidate !== true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a5eb6e81-e840-49c8-96b7-9b6c07dc2aa0",
+      "name": "Versandkandidat laden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2340,
+        -100
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://gmail.googleapis.com/gmail/v1/users/me/messages/'+encodeURIComponent($json.candidate_id) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "metadata"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    {
+      "id": "378af478-37c8-42c6-9de0-5d3eed66c4df",
+      "name": "Interne Versand-ID abgleichen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const meta=$('MIME mit stabiler Nachrichten-ID').item.json;const matches=[];\nfor(const item of $input.all()){if(item.json.skip_candidate)continue;const b=item.json.body;\nif(item.json.statusCode!==200||!b?.id||!Array.isArray(b.payload?.headers))throw new Error('Gmail-Versandprüfung unvollständig: kein erneuter Versand');\nconst header=name=>b.payload.headers.find(h=>String(h.name).toLowerCase()===name)?.value??'';\nconst recipient=header('to').toLowerCase().includes(meta.recipient.toLowerCase());\nconst identity=header('x-rheinwerk-message-id')===meta.message_id||[meta.mime_message_id,'<'+meta.message_id+'@rheinwerk-dashboard>'].includes(header('message-id'));\nif(recipient&&identity)matches.push({id:b.id,threadId:b.threadId});}\nif(matches.length>1)throw new Error('Mehrere Gmail-Versände mit derselben internen ID: manuelle Prüfung erforderlich');\nreturn [{json:{body:{messages:matches}},pairedItem:{item:0}}];"
+      }
+    },
+    {
+      "id": "0edd506d-4e53-41ee-b51e-ff1394769761",
+      "name": "Gmail-Versand angenommen?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3380,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.statusCode >= 200 && $json.statusCode < 300 && typeof $json.body?.id === \"string\" }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Freigegebene E-Mails jede Minute": {
+      "main": [
+        [
+          {
+            "node": "Versandpostfach prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versandpostfach prüfen": {
+      "main": [
+        [
+          {
+            "node": "Versandpostfach bestätigen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versandpostfach bestätigen": {
+      "main": [
+        [
+          {
+            "node": "Freigegebene Nachrichten reservieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Freigegebene Nachrichten reservieren": {
+      "main": [
+        [
+          {
+            "node": "Nachrichten einzeln versenden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MIME mit stabiler Nachrichten-ID": {
+      "main": [
+        [
+          {
+            "node": "Bereits gesendete Nachricht suchen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versand bereits nachgewiesen?": {
+      "main": [
+        [
+          {
+            "node": "Bestehenden Versand nachlesen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Freigegebene E-Mail senden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bestehenden Versand nachlesen": {
+      "main": [
+        [
+          {
+            "node": "Provider-Ergebnis auswerten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Provider-Ergebnis auswerten": {
+      "main": [
+        [
+          {
+            "node": "Versand bestätigt?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nachrichten einzeln versenden": {
+      "main": [
+        [],
+        [
+          {
+            "node": "MIME mit stabiler Nachrichten-ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versand bestätigt?": {
+      "main": [
+        [
+          {
+            "node": "Bestätigten Versand speichern",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Versandfehler mit Backoff speichern",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bestätigten Versand speichern": {
+      "main": [
+        [
+          {
+            "node": "Nachrichten einzeln versenden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versandfehler mit Backoff speichern": {
+      "main": [
+        [
+          {
+            "node": "Nachrichten einzeln versenden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bereits gesendete Nachricht suchen": {
+      "main": [
+        [
+          {
+            "node": "Versandkandidaten vorbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versandkandidaten vorbereiten": {
+      "main": [
+        [
+          {
+            "node": "Versandkandidat vorhanden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versandkandidat vorhanden?": {
+      "main": [
+        [
+          {
+            "node": "Versandkandidat laden",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Interne Versand-ID abgleichen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versandkandidat laden": {
+      "main": [
+        [
+          {
+            "node": "Interne Versand-ID abgleichen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interne Versand-ID abgleichen": {
+      "main": [
+        [
+          {
+            "node": "Versand bereits nachgewiesen?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Freigegebene E-Mail senden": {
+      "main": [
+        [
+          {
+            "node": "Gmail-Versand angenommen?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail-Versand angenommen?": {
+      "main": [
+        [
+          {
+            "node": "Bestehenden Versand nachlesen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Provider-Ergebnis auswerten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "versionId": "924976ff-ddf2-486e-b6d0-423961821827",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "description": "RheinWerk Gmail: отправка только одобренных сообщений каждую минуту. Дубликаты проверяются по внутреннему заголовку; сохраняется фактический Gmail Message-ID."
+}

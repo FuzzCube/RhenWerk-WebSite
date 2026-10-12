@@ -1,0 +1,852 @@
+[
+  {
+    "key": "start",
+    "kind": "trigger",
+    "type": "n8n-nodes-base.gmailTrigger",
+    "version": 1.4,
+    "config": {
+      "name": "Neue Gmail-Antwort",
+      "parameters": {
+        "authentication": "oAuth2",
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "messageReceived",
+        "simple": false,
+        "maxResults": 5,
+        "filters": {
+          "q": "in:inbox -from:rheinwerk.industrieservice@gmail.com",
+          "readStatus": "both",
+          "includeSpamTrash": false,
+          "includeDrafts": false
+        },
+        "options": {
+          "downloadAttachments": true,
+          "dataPropertyAttachmentsPrefixName": "attachment_"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "id": "gmail-example",
+          "threadId": "thread-example",
+          "text": "Antwort",
+          "from": {
+            "value": [
+              {
+                "address": "customer@example.com"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "key": "mailloop",
+    "kind": "splitInBatches",
+    "type": "n8n-nodes-base.splitInBatches",
+    "version": 3,
+    "config": {
+      "name": "Eingehende E-Mails einzeln",
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "profile",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Empfangspostfach prüfen",
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "body": {
+            "emailAddress": "rheinwerk.industrieservice@gmail.com"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "key": "mailbox",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Empfangspostfach bestätigen",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r=$input.first().json;const mailbox=String(r.body?.emailAddress??r.emailAddress??'').toLowerCase();if(mailbox!=='rheinwerk.industrieservice@gmail.com')throw new Error('RheinWerk Gmail-Konto nicht bestätigt');return [{json:{mailbox_verified:true}}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "mailbox_verified": true
+        }
+      }
+    ]
+  },
+  {
+    "key": "normalize",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Gmail-Antwort normalisieren",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item=$('Eingehende E-Mails einzeln').item;const m=item.json;const h=m.headers??{};\nconst header=n=>{let v=Array.isArray(h)?h.find(x=>String(x.name).toLowerCase()===n)?.value:h[n]??h[n.replace(/-([a-z])/g,(_,c)=>c.toUpperCase())];return typeof v==='string'?v:v?.text??'';};\nconst from=m.from?.value?.[0]?.address??m.from?.address??header('from')??'';const address=String(from).match(/<([^<>]+)>/)?.[1]??String(from).trim();\nconst references=m.references??header('references');const refs=Array.isArray(references)?references:String(references??'').match(/<[^<>\\s]+>/g)??[];\nif(!m.id||!address)throw new Error('Gmail-Nachrichtenidentität fehlt');\nlet text=m.text??m.bodyText??'';if(!text&&m.html)text=String(m.html).replace(/<[^>]*>/g,' ').replace(/\\s+/g,' ').trim();\nconst p={contract_version:'1.0',mailbox_key:'rheinwerk.industrieservice@gmail.com',gmail_message_id:m.id,gmail_thread_id:m.threadId,mime_message_id:m.messageId??header('message-id')??null,in_reply_to:m.inReplyTo??header('in-reply-to')??null,references_header:refs,from_address:address,subject:m.subject??header('subject')??'',body_text:String(text),received_at:m.date?new Date(m.date).toISOString():new Date().toISOString()};\nreturn [{json:{payload:p},binary:item.binary}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "payload": {
+            "contract_version": "1.0"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "key": "record",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Gmail-Nachricht speichern und zuordnen",
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/record_incoming_message",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "@@{{ {payload:$json.payload} }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "neverError": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "id": "message-example",
+          "request_id": "request-example",
+          "ignored": false
+        }
+      }
+    ]
+  },
+  {
+    "key": "valid",
+    "kind": "ifElse",
+    "type": "n8n-nodes-base.if",
+    "version": 2.3,
+    "config": {
+      "name": "Verarbeitbare Nachricht?",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "@@{{ $json.ignored !== true && !!$json.id }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "files",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Gmail-Anhänge vorbereiten",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const message=$input.first().json;const original=$('Gmail-Antwort normalisieren').item;const all=Object.entries(original.binary??{});const warnings=[];const files=[];\nfor(const [i,[key,b]] of all.entries()){if(i>=3){warnings.push('Mehr als drei E-Mail-Anhänge');continue;}if(!['application/pdf','image/jpeg','image/png'].includes(b.mimeType)){warnings.push('Nicht unterstützter Anhang: '+(b.fileName??key));continue;}\nconst name=String(b.fileName??key).replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,140);files.push({json:{message_id:message.id,request_id:message.request_id,mime_type:b.mimeType,file_name:b.fileName??key,storage_path:'messages/'+message.id+'/'+i+'_'+name,skip_file:false,warnings},binary:{data:b}});}\nif(!files.length)return [{json:{message_id:message.id,request_id:message.request_id,skip_file:true,warnings}}];return files;"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "message_id": "message-example",
+          "storage_path": "messages/example/photo.png",
+          "mime_type": "image/png",
+          "skip_file": false,
+          "warnings": []
+        }
+      }
+    ]
+  },
+  {
+    "key": "fileloop",
+    "kind": "splitInBatches",
+    "type": "n8n-nodes-base.splitInBatches",
+    "version": 3,
+    "config": {
+      "name": "Gmail-Anhänge einzeln",
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "hasfile",
+    "kind": "ifElse",
+    "type": "n8n-nodes-base.if",
+    "version": 2.3,
+    "config": {
+      "name": "Gmail-Anhang vorhanden?",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "@@{{ $json.skip_file !== true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "verify",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Gmail-Dateiinhalt prüfen",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item=$input.first();const b=await this.helpers.getBinaryDataBuffer(0,'data');const m=item.json;const t=m.mime_type;\nconst magic=t==='application/pdf'?b.subarray(0,5).toString()==='%PDF-':t==='image/png'?b.subarray(0,8).toString('hex')==='89504e470d0a1a0a':t==='image/jpeg'?b[0]===255&&b[1]===216:false;\nif(b.length<1||b.length>5242880||!magic)return [{json:{...m,skip_file:true,warnings:[...m.warnings,'Dateityp oder Größe ungültig: '+m.file_name]}}];\nreturn [{json:{...m,size_bytes:b.length},binary:item.binary}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "skip_file": false,
+          "storage_path": "messages/example/photo.png",
+          "mime_type": "image/png",
+          "file_name": "photo.png",
+          "size_bytes": 100
+        }
+      }
+    ]
+  },
+  {
+    "key": "fileok",
+    "kind": "ifElse",
+    "type": "n8n-nodes-base.if",
+    "version": 2.3,
+    "config": {
+      "name": "Gmail-Anhang gültig?",
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "@@{{ $json.skip_file !== true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "upload",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Gmail-Anhang privat speichern",
+      "parameters": {
+        "method": "POST",
+        "url": "@@{{ 'http://host.docker.internal:54321/storage/v1/object/dashboard/'+$json.storage_path.split('/').map(encodeURIComponent).join('/') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "@@{{ $json.mime_type }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "uploadcheck",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Gmail-Dateiübertragung bestätigen",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r=$input.first().json;const m=$('Gmail-Dateiinhalt prüfen').item.json;const ok=(r.statusCode>=200&&r.statusCode<300)||r.statusCode===409||String(r.body?.statusCode)==='409';if(!ok)throw new Error('Gmail-Anhang konnte nicht gespeichert werden');return [{json:m}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "message_id": "example",
+          "file_name": "photo.png",
+          "mime_type": "image/png",
+          "size_bytes": 100,
+          "storage_path": "messages/example/photo.png"
+        }
+      }
+    ]
+  },
+  {
+    "key": "register",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Gmail-Anhang registrieren",
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/register_incoming_attachment",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "@@{{ {message_id:$json.message_id,file_name:$json.file_name,mime_type:$json.mime_type,size_bytes:$json.size_bytes,storage_path:$json.storage_path} }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "neverError": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "registered",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Gmail-Anhang abgeschlossen",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:$('Gmail-Dateiinhalt prüfen').item.json}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "warnings": []
+        }
+      }
+    ]
+  },
+  {
+    "key": "finish",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Eingang vollständig vorbereiten",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const m=$('Gmail-Nachricht speichern und zuordnen').item.json;const warnings=[...new Set($input.all().flatMap(x=>x.json.warnings??[]))];return [{json:{message_id:m.id,warnings}}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "message_id": "message-example",
+          "warnings": []
+        }
+      }
+    ]
+  },
+  {
+    "key": "complete",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Antwort für Analyse freigeben",
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/complete_incoming_message",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "@@{{ $json }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "neverError": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "sweep",
+    "kind": "trigger",
+    "type": "n8n-nodes-base.scheduleTrigger",
+    "version": 1.4,
+    "config": {
+      "name": "Verpasste Antworten alle 15 Minuten",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "sweepprofile",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Postfach für verpasste Antworten prüfen",
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "body": {
+            "emailAddress": "rheinwerk.industrieservice@gmail.com"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "key": "sweepguard",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Postfach für verpasste Antworten bestätigen",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r=$input.first().json;const mailbox=String(r.body?.emailAddress??r.emailAddress??'').toLowerCase();if(mailbox!=='rheinwerk.industrieservice@gmail.com')throw new Error('RheinWerk Gmail-Konto nicht bestätigt');return [{json:{mailbox_verified:true}}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "mailbox_verified": true
+        }
+      }
+    ]
+  },
+  {
+    "key": "sweepmail",
+    "kind": "node",
+    "type": "n8n-nodes-base.gmail",
+    "version": 2.2,
+    "config": {
+      "name": "RIS-Antworten der letzten 7 Tage laden",
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "authentication": "oAuth2",
+        "returnAll": false,
+        "limit": 100,
+        "simple": false,
+        "filters": {
+          "q": "in:inbox -from:rheinwerk.industrieservice@gmail.com newer_than:7d subject:RIS",
+          "readStatus": "both",
+          "includeSpamTrash": false
+        },
+        "options": {
+          "downloadAttachments": true,
+          "dataPropertyAttachmentsPrefixName": "attachment_"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "id": "gmail-example",
+          "from": {
+            "value": [
+              {
+                "address": "customer@example.com"
+              }
+            ]
+          },
+          "text": "Antwort"
+        }
+      }
+    ]
+  },
+  {
+    "key": "recovery",
+    "kind": "trigger",
+    "type": "n8n-nodes-base.scheduleTrigger",
+    "version": 1.4,
+    "config": {
+      "name": "Unvollständige Antworten alle 5 Minuten",
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {}
+      }
+    ]
+  },
+  {
+    "key": "recoveryprofile",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Wiederherstellungspostfach prüfen",
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "body": {
+            "emailAddress": "rheinwerk.industrieservice@gmail.com"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "key": "recoveryguard",
+    "kind": "node",
+    "type": "n8n-nodes-base.code",
+    "version": 2,
+    "config": {
+      "name": "Wiederherstellungspostfach bestätigen",
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r=$input.first().json;const mailbox=String(r.body?.emailAddress??r.emailAddress??'').toLowerCase();if(mailbox!=='rheinwerk.industrieservice@gmail.com')throw new Error('RheinWerk Gmail-Konto nicht bestätigt');return [{json:{mailbox_verified:true}}];"
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "mailbox_verified": true
+        }
+      }
+    ]
+  },
+  {
+    "key": "pending",
+    "kind": "node",
+    "type": "n8n-nodes-base.httpRequest",
+    "version": 4.5,
+    "config": {
+      "name": "Unvollständige Antworten laden",
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/list_incomplete_incoming",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "@@{{ {batch_limit:5} }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "neverError": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "gmail_message_id": "gmail-example"
+        }
+      }
+    ]
+  },
+  {
+    "key": "reload",
+    "kind": "node",
+    "type": "n8n-nodes-base.gmail",
+    "version": 2.2,
+    "config": {
+      "name": "Gmail-Antwort erneut laden",
+      "parameters": {
+        "resource": "message",
+        "operation": "get",
+        "authentication": "oAuth2",
+        "messageId": "@@{{ $json.gmail_message_id }}",
+        "simple": false,
+        "options": {
+          "downloadAttachments": true,
+          "dataPropertyAttachmentsPrefixName": "attachment_"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    "output": [
+      {
+        "json": {
+          "id": "gmail-example",
+          "from": {
+            "value": [
+              {
+                "address": "customer@example.com"
+              }
+            ]
+          },
+          "text": "Antwort"
+        }
+      }
+    ]
+  }
+]

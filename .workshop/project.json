@@ -5,7 +5,7 @@
   "status": "active",
   "workshopType": null,
   "owner": null,
-  "description": "Geschützter Mitarbeiterbereich /dashboard in der bestehenden RheinWerk-Website (Next.js 16, Supabase) für Erstbearbeitung, Einsatzplanung, Arbeitserfassung, Rechnungen und Analytik eines fiktiven Industrieservice-Unternehmens. Demonstrationsprojekt mit Demodaten; n8n und Gmail werden in einer späteren Stufe angebunden.",
+  "description": "Geschützter Mitarbeiterbereich /dashboard in der bestehenden RheinWerk-Website (Next.js 16, Supabase) für Erstbearbeitung, Einsatzplanung, Arbeitserfassung, Rechnungen und Analytik eines fiktiven Industrieservice-Unternehmens. Demonstrationsprojekt mit Demodaten; Lokales n8n, OpenAI und Gmail sind für Formularverarbeitung und Rückfragen angebunden.",
   "createdAt": "2026-10-07T08:39:55Z",
-  "updatedAt": "2026-10-08T14:26:27Z"
+  "updatedAt": "2026-10-12T09:56:52Z"
 }

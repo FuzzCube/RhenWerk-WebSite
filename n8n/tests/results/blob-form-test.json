@@ -1,0 +1,27 @@
+{
+  "submissionId": "fd430000-0000-4000-8000-000000000001",
+  "attachments": [
+    {
+      "file_name": "nameplate.pdf",
+      "pathname": "service-requests/fd430000-0000-4000-8000-000000000001/nameplate-9HxQJCDR2cQ5NEplquJQlhOPG2TRJt.pdf",
+      "mime_type": "application/pdf",
+      "size_bytes": 1229,
+      "upload_status": "uploaded"
+    },
+    {
+      "file_name": "nameplate.png",
+      "pathname": "service-requests/fd430000-0000-4000-8000-000000000001/nameplate-TggnnIxbPhgLb5PALMAvIcVwQRH72S.png",
+      "mime_type": "image/png",
+      "size_bytes": 35892,
+      "upload_status": "uploaded"
+    }
+  ],
+  "response": {
+    "status": "created",
+    "ticket_key": "RIS-2026-00356",
+    "request_number": "RIS-2026-00356",
+    "request_id": "fd430000-0000-4000-8000-000000000001",
+    "human_review": false
+  },
+  "submittedAt": "2026-10-12T09:50:47.241Z"
+}

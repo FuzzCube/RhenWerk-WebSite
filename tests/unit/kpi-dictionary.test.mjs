@@ -31,14 +31,17 @@ test("jedes Feld der Zeitreihe ist erklärt", () => {
   assert.match(dictionary, /`saved_requests`, `saved_minutes`/);
 });
 
-test("n8n-Vertrag deckt Abschnitt 8 ab und beschreibt Gmail nicht als funktionsfähig", () => {
+test("n8n-Vertrag deckt Abschnitt 8 ab und trennt echte Tests von offener Aktivierung", () => {
   for (const heading of ["## 1. Einreichung", "## 2. Analyse", "## 3. Eingehende Gmail-Nachrichten", "## 4. Ausgehende Gmail-Nachrichten", "## 5. Auslöser und Rekursion"]) {
     assert.ok(contract.includes(heading), heading);
   }
   for (const topic of ["source_event_key", "expected_version", "contract_version", "operation_key", "Unklarer Versandausgang", "mailbox_key, gmail_message_id"]) {
     assert.ok(contract.includes(topic), topic);
   }
-  assert.match(contract, /Gmail-Versand ist damit \*\*nicht funktionsfähig\*\*/);
+  assert.match(contract, /Gmail-Versand ist für die freigegebene Testnachricht \*\*echt nachgewiesen\*\*/);
+  assert.match(contract, /Der Versandzeitplan ist veröffentlicht/);
+  assert.match(contract, /Alle sechs Workflows sind veröffentlicht/);
+  assert.match(contract, /Die öffentliche Website wurde nicht umgestellt/);
 });
 
 test("Stand der Funktionen im n8n-Vertrag entspricht den Migrationen", () => {

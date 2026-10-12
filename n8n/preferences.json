@@ -1,0 +1,11 @@
+{
+  "visual_node_groups": false,
+  "gmail_credential_id": "rw46346a76655347",
+  "supabase_credential_id": "rwdda8aefff1e947",
+  "mailbox": "rheinwerk.industrieservice@gmail.com",
+  "main_workflow_id": "lw1QxoJbeSU0H17E",
+  "ai_provider": "openai",
+  "ai_model": "gpt-4.1-mini",
+  "openai_credential_id": "qK86QY5Bm6EfR9Zz",
+  "test_recipient": "fuzz.cube.studio@gmail.com"
+}

@@ -75,8 +75,9 @@ export async function POST(request: Request) {
   if (!await verifyTurnstile(payload.turnstile_token, ip)) {
     return NextResponse.json({ status: "turnstile_failed", message: "Die Sicherheitsprüfung ist abgelaufen oder fehlgeschlagen." }, { status: 400 });
   }
-  const webhookUrl = process.env.MAKE_WEBHOOK_URL;
-  if (!webhookUrl) return NextResponse.json({ status: "not_configured", message: "The Make webhook is not configured." }, { status: 503 });
+  const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+  const webhookUrl = n8nWebhookUrl || process.env.MAKE_WEBHOOK_URL;
+  if (!webhookUrl) return NextResponse.json({ status: "not_configured", message: "The service request webhook is not configured." }, { status: 503 });
 
   let attachments: Attachment[];
   try {
@@ -87,25 +88,25 @@ export async function POST(request: Request) {
   const { turnstile_token: _turnstileToken, ...forwardPayload } = payload;
   void _turnstileToken;
   const humanReview = requiresHumanReview(payload);
-  const makePayload = {
+  const integrationPayload = {
     ...forwardPayload,
     request: { ...payload.request, requires_human_review: humanReview },
     contract_and_attachments: { ...payload.contract_and_attachments, attachments },
   };
   try {
     const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json" };
-    if (process.env.MAKE_API_KEY) headers["x-make-apikey"] = process.env.MAKE_API_KEY;
-    const makeResponse = await fetch(webhookUrl, { method: "POST", headers, body: JSON.stringify(makePayload), cache: "no-store", signal: AbortSignal.timeout(175_000) });
-    const responseText = await makeResponse.text();
+    if (!n8nWebhookUrl && process.env.MAKE_API_KEY) headers["x-make-apikey"] = process.env.MAKE_API_KEY;
+    const integrationResponse = await fetch(webhookUrl, { method: "POST", headers, body: JSON.stringify(integrationPayload), cache: "no-store", signal: AbortSignal.timeout(175_000) });
+    const responseText = await integrationResponse.text();
     let responseBody: unknown;
-    try { responseBody = responseText ? JSON.parse(responseText) : {}; } catch { responseBody = { status: "upstream_error", message: responseText || "Unexpected response from Make." }; }
-    if (makeResponse.status >= 500) {
+    try { responseBody = responseText ? JSON.parse(responseText) : {}; } catch { responseBody = { status: "upstream_error", message: responseText || "Unexpected response from the service request workflow." }; }
+    if (integrationResponse.status >= 500) {
       return NextResponse.json({ status: "upstream_error", message: "Die Serviceanfrage konnte im Verarbeitungssystem nicht abgeschlossen werden." }, { status: 502 });
     }
-    if (makeResponse.status === 201 && responseBody && typeof responseBody === "object") {
+    if (integrationResponse.status === 201 && responseBody && typeof responseBody === "object") {
       responseBody = { ...responseBody, human_review: humanReview || (responseBody as { human_review?: boolean }).human_review === true };
     }
-    return NextResponse.json(responseBody, { status: makeResponse.status });
+    return NextResponse.json(responseBody, { status: integrationResponse.status });
   } catch {
     return NextResponse.json({ status: "upstream_error", message: "Die Serviceanfrage konnte nicht gesendet werden." }, { status: 502 });
   }

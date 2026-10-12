@@ -1,0 +1,782 @@
+{
+  "id": "lw1QxoJbeSU0H17E",
+  "name": "RheinWerk · Serviceanfragen",
+  "active": true,
+  "nodes": [
+    {
+      "id": "bd4f5dfa-0f20-4e91-b77e-0ca683718f78",
+      "name": "Formular empfangen",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rheinwerk-service-request",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "bc8f1279-1587-404a-ac6f-6b2c8d8a350b"
+    },
+    {
+      "id": "0e6127db-bcc3-4b7e-b57d-383631f33dfb",
+      "name": "Formular prüfen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const x=$input.first().json; const p=x.body??x; const invalid=[];\nconst fields=['contact.company_name','contact.contact_name','contact.business_email','contact.phone','site_and_equipment.street_and_number','site_and_equipment.postal_code','site_and_equipment.city','site_and_equipment.equipment_type','request.service_type','request.description','request.urgency','request.known_safety_hazard','request.preferred_service_date'];\nfor(const f of fields){const v=f.split('.').reduce((o,k)=>o?.[k],p);if(typeof v!=='string'||!v.trim())invalid.push(f);}\nif(p.schema_version!=='1.0'||(p.contract_version&&p.contract_version!=='1.0'))invalid.push('schema_version');\nif(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(p.submission_id??''))invalid.push('submission_id');\nif(p.privacy_consent!==true)invalid.push('privacy_consent');\nif(!/^[^@\\s]+@[^@\\s.]+\\.[a-z]{2,}$/i.test(p.contact?.business_email??''))invalid.push('contact.business_email');\nif(!/^[+0][\\d\\s()/-]{6,}$/.test(p.contact?.phone??''))invalid.push('contact.phone');\nif(!/^\\d{5}$/.test(p.site_and_equipment?.postal_code??''))invalid.push('site_and_equipment.postal_code');\nif((p.request?.description??'').trim().length<10)invalid.push('request.description');\nif(!['pump','compressor','ventilation','other'].includes(p.site_and_equipment?.equipment_type))invalid.push('site_and_equipment.equipment_type');\nif(!['inspection','maintenance','repair'].includes(p.request?.service_type))invalid.push('request.service_type');\nif(!['planned','time_sensitive','significant','production_stop'].includes(p.request?.urgency))invalid.push('request.urgency');\nif(!['no','yes','unclear'].includes(p.request?.known_safety_hazard))invalid.push('request.known_safety_hazard');\nif(!/^\\d{4}-\\d{2}-\\d{2}$/.test(p.request?.preferred_service_date??''))invalid.push('request.preferred_service_date');\nconst a=p.contract_and_attachments?.attachments;\nif(!Array.isArray(a)||a.length>3)invalid.push('contract_and_attachments.attachments');\nelse for(const f of a){if(!f.pathname?.startsWith('service-requests/'+p.submission_id+'/')||!['application/pdf','image/jpeg','image/png'].includes(f.mime_type)||!Number.isInteger(f.size_bytes)||f.size_bytes<1||f.size_bytes>5242880||f.upload_status!=='uploaded'||!f.file_name)invalid.push('contract_and_attachments.attachments');}\nconst {turnstile_token,...clean}=p;return [{json:{payload:{...clean,contract_version:'1.0'},valid:invalid.length===0,invalid_fields:[...new Set(invalid)]}}];"
+      }
+    },
+    {
+      "id": "d66ad9d8-bf59-4085-9e7c-a98a98ffc84d",
+      "name": "Formular gültig?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "89556186-9404-485b-9d6c-f12888268cb5",
+      "name": "Anfrage in Supabase speichern",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2240,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/ingest_submission",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { payload: $json.payload } }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Local"
+        }
+      }
+    },
+    {
+      "id": "08324d46-ad8a-4f64-9ac1-3b5c185be3d7",
+      "name": "Anfrage gespeichert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2520,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.statusCode >= 200 && $json.statusCode < 300 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "a08e260a-5b59-4b1d-a8d0-39f548ced3c5",
+      "name": "Eingang bestätigen",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2800,
+        -160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {status:'created',ticket_key:$json.body.request_number,request_number:$json.body.request_number,request_id:$json.body.id,human_review:$json.body.human_review_required} }}",
+        "options": {
+          "responseCode": 201
+        }
+      }
+    },
+    {
+      "id": "f55cfd3a-b623-4344-9cfc-21fd5419a550",
+      "name": "Speicherfehler melden",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2800,
+        160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": {
+          "status": "upstream_error",
+          "message": "Die Anfrage konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+        },
+        "options": {
+          "responseCode": 503
+        }
+      }
+    },
+    {
+      "id": "05131bc5-d469-466e-a7c5-b795f6201f91",
+      "name": "Ungültiges Formular melden",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        840,
+        460
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {status:'invalid',message:'Bitte prüfen Sie die Formulardaten.',invalid_fields:$json.invalid_fields} }}",
+        "options": {
+          "responseCode": 400
+        }
+      }
+    },
+    {
+      "id": "4a4be6b3-61f8-463d-a0a5-e9a6dc89d601",
+      "name": "Verbindungen prüfen",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        760
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "b419dd73-27d2-4191-8bf7-8743038167c0",
+      "name": "Lokale Supabase prüfen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        280,
+        760
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:54321/rest/v1/requests?select=id&limit=0",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Local"
+        }
+      }
+    },
+    {
+      "id": "5cc85894-8450-4db6-a371-3c49d8363d51",
+      "name": "Gmail-Konto prüfen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        560,
+        760
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "rw46346a76655347",
+          "name": "RheinWerk Gmail"
+        }
+      }
+    },
+    {
+      "id": "b4d54073-a381-42e4-985f-7af56bc14f1b",
+      "name": "RheinWerk-Mailbox verifizieren",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        840,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const r=$input.first().json;return [{json:{supabase:'connected',expected_mailbox:'rheinwerk.industrieservice@gmail.com',actual_mailbox:r.body?.emailAddress??null,mailbox_verified:r.statusCode===200&&r.body?.emailAddress?.toLowerCase()==='rheinwerk.industrieservice@gmail.com',gmail_error:r.body?.error?.message??null}}];"
+      }
+    },
+    {
+      "id": "5608f711-b677-4b54-9937-03cbfb25cda5",
+      "name": "Повторную заявку найти",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        840,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/find_submission",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { submission_id: $json.payload.submission_id } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Local"
+        }
+      }
+    },
+    {
+      "id": "c79095a7-9332-4fe7-878b-353fae0b5e0e",
+      "name": "Заявка уже сохранена?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "8e16ecbc-8326-4d14-a9db-00cb18b356b1",
+      "name": "Существующую заявку вернуть",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        -300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{statusCode:200,body:$input.first().json.request}}];"
+      }
+    },
+    {
+      "id": "04d0d495-3fef-42a9-aee7-84af10fd13e0",
+      "name": "Файлы формы подготовить",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const p=$('Formular prüfen').first().json.payload;const files=p.contract_and_attachments.attachments;\nconst normalized=files.map((a,i)=>{const url=a.download_url??a.url;if(typeof url!=='string'||!url)throw new Error('Нет приватной ссылки на вложение');if(!/^https:\\/\\/[a-z0-9]+\\.private\\.blob\\.vercel-storage\\.com\\/(?!\\/)[^\\s\\\\]*$/i.test(url))throw new Error('Недопустимый источник вложения');const fname=a.file_name.replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,100);return {...a,storage_path:'requests/'+p.submission_id.toLowerCase()+'/'+i+'_'+fname};});\nconst payload={...p,contract_and_attachments:{...p.contract_and_attachments,attachments:normalized}};\nreturn normalized.length?normalized.map(a=>({json:{payload,attachment:a,storage_path:a.storage_path,skip_file:false}})):[{json:{payload,skip_file:true}}];"
+      }
+    },
+    {
+      "id": "3c3e8f27-b736-4298-93c0-ac344392bfb8",
+      "name": "Файлы по очереди",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1680,
+        160
+      ],
+      "parameters": {
+        "batchSize": 1
+      }
+    },
+    {
+      "id": "652bc71d-bf54-431d-ad32-fade4defd370",
+      "name": "Есть файл?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1960,
+        330
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !$json.skip_file }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "de094c10-b6bc-4e64-8ebc-97acb8bf3394",
+      "name": "Приватный файл сохранить",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2240,
+        330
+      ],
+      "parameters": {
+        "source": "database",
+        "mode": "once",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Tr5Ird7F1iSTQe0o"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "8219f503-7512-49d9-b385-00f6f2db3d38",
+      "name": "Вернуть форму с файлами",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{payload:$('Файлы формы подготовить').first().json.payload}}];"
+      }
+    },
+    {
+      "id": "3b5d1311-a4e4-4759-8e8b-477129c8a826",
+      "name": "Analyseauftrag vorbereiten",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3380,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "analysis-request-id",
+              "name": "request_id",
+              "type": "string",
+              "value": "={{ $json.body.id }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "9b2a24f0-54f1-43a1-9c74-bebc44310ea9",
+      "name": "Analyse asynchron starten",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3660,
+        0
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "wO3EgSMM8l1wRKsc"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      }
+    },
+    {
+      "id": "01494d98-c263-4994-970a-52918e9a3682",
+      "name": "Новая заявка для анализа?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3100,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Повторную заявку найти').first().json.exists !== true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Formular empfangen": {
+      "main": [
+        [
+          {
+            "node": "Formular prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formular prüfen": {
+      "main": [
+        [
+          {
+            "node": "Formular gültig?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formular gültig?": {
+      "main": [
+        [
+          {
+            "node": "Повторную заявку найти",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ungültiges Formular melden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anfrage in Supabase speichern": {
+      "main": [
+        [
+          {
+            "node": "Anfrage gespeichert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anfrage gespeichert?": {
+      "main": [
+        [
+          {
+            "node": "Eingang bestätigen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Speicherfehler melden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verbindungen prüfen": {
+      "main": [
+        [
+          {
+            "node": "Lokale Supabase prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lokale Supabase prüfen": {
+      "main": [
+        [
+          {
+            "node": "Gmail-Konto prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail-Konto prüfen": {
+      "main": [
+        [
+          {
+            "node": "RheinWerk-Mailbox verifizieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Повторную заявку найти": {
+      "main": [
+        [
+          {
+            "node": "Заявка уже сохранена?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Заявка уже сохранена?": {
+      "main": [
+        [
+          {
+            "node": "Существующую заявку вернуть",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Файлы формы подготовить",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Существующую заявку вернуть": {
+      "main": [
+        [
+          {
+            "node": "Anfrage gespeichert?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Файлы формы подготовить": {
+      "main": [
+        [
+          {
+            "node": "Файлы по очереди",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Файлы по очереди": {
+      "main": [
+        [
+          {
+            "node": "Вернуть форму с файлами",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Есть файл?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Вернуть форму с файлами": {
+      "main": [
+        [
+          {
+            "node": "Anfrage in Supabase speichern",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть файл?": {
+      "main": [
+        [
+          {
+            "node": "Приватный файл сохранить",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Файлы по очереди",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Приватный файл сохранить": {
+      "main": [
+        [
+          {
+            "node": "Файлы по очереди",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyseauftrag vorbereiten": {
+      "main": [
+        [
+          {
+            "node": "Analyse asynchron starten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Eingang bestätigen": {
+      "main": [
+        [
+          {
+            "node": "Новая заявка для анализа?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Новая заявка для анализа?": {
+      "main": [
+        [
+          {
+            "node": "Analyseauftrag vorbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "nodeGroups": [],
+  "versionId": "1c2c376a-89b0-4bf7-acbd-ffee053f29c6",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "description": "Форма → приватные вложения → Supabase → OpenAI. Повторная отправка возвращает прежнюю заявку без нового анализа. Локальный вебхук активен."
+}

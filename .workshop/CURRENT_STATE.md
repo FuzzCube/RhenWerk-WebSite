@@ -2,7 +2,7 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v3 mit 11 Phasen und 35 Tasks. Fortschritt 85,12 % (Gewicht 103 von 121, 31 von 35 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v3 mit 11 Phasen und 35 Tasks. Fortschritt 91,74 % (Gewicht 111 von 121, 32 von 35 Tasks).
 
 ## Aktive Phase
 
@@ -12,9 +12,11 @@ Phasen 0–8 sind abgeschlossen; in Phase 9 fehlt nur die Gesamtprüfung `task-9
 
 `task-10-3` (in Arbeit seit 08.10.2026, Umsetzung fertig, wartet auf Abnahme): Dashboard-Design nach Claude-Design-Canvas „RheinWerk Übersicht Redesign“ (https://claude.ai/artifact/G3RskvctFeRLgdwryWxjJz; Spezifikation und Zustände sind das Regelwerk). Umgesetzt und im Browser (Port 3100) je Rolle geprüft: Bausteine, Übersicht (Admin, Manager), Anfragen (Liste, Detail), Einsatzplanung mit Vorschlägen, Techniker mobil (Mein Tag, Einsatz), Rechnungen, Auswertung. Neue Migration `20261008170000_technician_experience.sql`. Verifikation: test:unit 58/58, test:db 532/532, test:auth und test:ui (170) bestanden, lint, typecheck, build erfolgreich. Ergänzt am 09.10.2026 auf Nutzerwunsch: Deaktivierte Mitarbeitende und Tarife sind in Verwaltung und Team-Tabelle der Übersicht standardmäßig ausgeblendet (Umschalter „Aktive | Alle“, `?status=alle`); test:ui 174, test:unit 58, lint, typecheck, build erfolgreich. Danach Karte „Warteschlangen“ der Admin-Übersicht nachgebessert (Engpass-Kennzeichen einheitlich unter dem Namen, ein gemeinsamer Hinweis statt drei). Auswertung hat Reiter statt Sprungmarken (`?bereich=…`, nur gewählter Bereich sichtbar; test:ui 184). Weitere Nachbesserungen nach Nutzerhinweisen: Rechnungen-Kopf als zwei gleich hohe Karten (Link „Alle“ springt zur Liste), Auswertung/Automatisierung gleich hohe Diagramme, Handlungsbedarf der Admin-Übersicht als vier aufklappbare Kacheln (test:ui 189). Nach Abnahme: Task abschließen, danach `task-9-2`. Details in `docs/architecture.md` (Abschnitt Design-Überarbeitung).
 
-`task-10-4` bleibt blockiert bis zur Gmail-OAuth-Anmeldung und Zustimmung zur externen Gemini-Analyse.
+`task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-10-4`: lokale n8n/OpenAI/Gmail-Integration. Vollständiger API-Formularpfad mit privatem PDF und PNG: RIS-2026-00356 processed, KAESER SM 13 aus Dokumenten, keine Duplikate. Versandwiederaufnahme und verpasste RIS-Eingänge geprüft. Kein Push/Website-Deployment.
 
 `task-10-1`: Testkonten automatischer Tests (`api-`/`ui-`/`e2e-…@example.com`) löscht `demo:seed`; `test:api` und `test:ui` deaktivieren ihre Konten am Ende; `demo:verify` prüft aktives Personal (18 Prüfungen). Davor `task-9-1` (Kennzahlen-Wörterbuch, n8n-Vertrag).
 
@@ -25,12 +27,14 @@ Phasen 0–8 sind abgeschlossen; in Phase 9 fehlt nur die Gesamtprüfung `task-9
 
 ## Blockiert
 
-`task-10-4`: Credential „RheinWerk Gmail“ benötigt Anmeldung als rheinwerk.industrieservice@gmail.com; Diagnoselauf 5670 meldet fehlenden Access-Token. Die automatische Genehmigungsprüfung verlangt Zustimmung, bevor technische Antragstexte, E-Mail-Texte und PDF/Fotos an Google Gemini gehen. Gemini-Nodes und Analyse-Zeitplan deaktiviert; keine Analyseverbindung vom Formular, keine Aktivierung. Make bleibt bis zur vollständigen Prüfung aktiv.
+Keine blockierte Roadmap-Aufgabe. task-10-3 bleibt unverändert in_progress und wartet auf Design-Abnahme. Lokale Integration task-10-4 nach den tatsächlich geprüften Definition-of-Done-Punkten abgeschlossen; die frühere Blockierung ist behoben. Dokumentierte Lifecycle-Korrektur blocked → completed für die bereits begonnene und ausdrücklich wiederaufgenommene Arbeit; keine zweite Aufgabe in_progress eingeführt.
+
+12.10.2026: Alle sechs Workflows veröffentlicht, Nodes ohne Gruppen. Lokales N8N_WEBHOOK_URL gesetzt. Echte E-Mail-Rückfrage und Antwortgedächtnis RIS-2026-00355 geprüft. Private Uploads über tatsächlichen API-/Clientpfad und OpenAI-Dateiauswertung RIS-2026-00356 geprüft. Send-Recovery nutzt den von Gmail erhaltenen internen Header; faktische MIME-ID wird nachgelesen. Inbox-Nachlesen für RIS-Antworten letzte sieben Tage alle 15 Minuten; vollständige registrierte Eingänge zusätzlich alle fünf Minuten. Details und Grenzen in docs/n8n-contract.md.
 
 ## Wichtige Entscheidungen
 
 - Design-Überarbeitung (Nutzerentscheidungen 08.10.2026 zu den offenen Punkten der Spezifikation): Kennzahl-Richtungen bleiben wie in `KPI_INFO` (Automatisierungsanteil und Zeitersparnis „besser“ bei Anstieg; Warteschlangen, offene und überfällige Forderungen: niedriger ist besser). Einheitlicher Anzeigestatus aus Erstbearbeitung × Arbeit; nicht vorgesehene Kombinationen fallen auf die Erstbearbeitung zurück. „Zahlung erfassen“ (`record_payment`) in der Rechnungsliste und auf der Anfrageseite. Foto beim Einsatzabschluss nicht Pflicht. Einsatzvorschläge: zuerst Techniker mit abgeschlossenen Einsätzen bei derselben Firma (Kundennummer, sonst Firmenname); bei Neukunden Erfahrung mit Anlagentyp/Hersteller, dann geringere Auslastung, dann frühestes Fenster.
-- n8n-Vertrag: lokale Integrations-RPCs mit Idempotenz, `expected_version`, Audit und Versandfreigabe sind vorhanden. Sechs ungruppierte Entwürfe; aktuelle JSON-Graphen unter n8n/workflows/*.workflow.json. Unbekannte/mehrdeutige Modelle gehen an Menschen, nie automatisch ablehnen. Anhänge privat, Antwortanalyse erst nach abgeschlossener Registrierung. Unfertige Gmail-Eingänge werden erneut aufgenommen. Keine automatische Speicherlöschung (Genehmigungsprüfung abgewiesen); Rollenprüfung weiterhin strikt service_role. Test-JWTs für service_role korrigiert. Team-Kennzahlen zählen nach aktueller Zuweisung.
+- n8n-Vertrag: lokale Integrations-RPCs mit Idempotenz, `expected_version`, Audit und Versandfreigabe sind vorhanden. Sechs ungruppierte veröffentlichte Workflows; aktuelle JSON-Graphen unter n8n/workflows/*.workflow.json. Unbekannte/mehrdeutige Modelle gehen an Menschen, nie automatisch ablehnen. Anhänge privat, Antwortanalyse erst nach abgeschlossener Registrierung. Unfertige Gmail-Eingänge werden erneut aufgenommen. Keine automatische Speicherlöschung (Genehmigungsprüfung abgewiesen); Rollenprüfung weiterhin strikt service_role. Test-JWTs für service_role korrigiert. Team-Kennzahlen zählen nach aktueller Zuweisung.
 - Verwaltung: Mitarbeitende werden deaktiviert, nie gelöscht; aktive Zuweisungen gehen dabei in einer Transaktion an eine Vertretung derselben Rolle, der Login wird gesperrt. Rollenwechsel nur ohne aktive Zuweisungen, eigenes Konto weder Rollenwechsel noch Deaktivierung. Öffentliche Registrierung aus (`[auth] enable_signup = false`; `[auth.email]` bleibt an, sonst ist die E-Mail-Anmeldung lokal aus). Einstellungen wirken nur auf spätere Vorgänge.
 - Diagramme: Recharts, Farben `lib/chart-colors.ts` (Dataviz-validiert, feste Reihenfolge), je Abbildung Datentabelle; nur helle Darstellung.
 - Manager-Übersicht verlinkt jede Kennzahl auf Anfrage- oder Rechnungsliste (`feld`/`von`/`bis`, `modus`, `status`); Definitionen in `lib/analytics.ts`.
@@ -75,8 +79,8 @@ Phasen 0–8 sind abgeschlossen; in Phase 9 fehlt nur die Gesamtprüfung `task-9
 
 ## Prüfung der n8n-Integration
 
-Echte lokale Webhook-Annahme RIS-2026-00267, genau eine Anfrage/ein Ereignis bei Wiederholung; ungültige Einwilligung abgewiesen. SQL-Integrationstests zurückgerollt; test:db 521/521, test:unit 40/40, lint/typecheck/build erfolgreich. Gmail- und Modellzweige sowie PNG-Dateisignatur und Wiederaufnahme mit simulierten externen Antworten geprüft. Kein echtes Gmail-Senden und keine Gemini-Abfrage. Vollständiger Echtlauf, Website-Dateitransfer, PDF-/Bildanalyse und OAuth-Zustellung offen. DB-Reset sowie API/Auth/UI-Regression nicht ausgeführt. Kein Push oder Deployment.
+Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zuordnung; privates PDF und PNG aus dem API-Formularpfad vollständig in Supabase kopiert und ausgewertet. RIS-2026-00356 processed, Modell aus Dokumenten erkannt, zwei private Dateien; Wiederholung ohne zusätzliche Anfrage, Ereignisse oder Analyse. Tatsächliches bereits gesendetes Gmail-Mail per internem Header wiedergefunden ohne erneut zu senden; neue Provider-Metadaten-Strecke mit gepinntem Send-Ergebnis und echtem Get geprüft. Produktions-Send-/Analyse-Scheduler erfolgreich. Node-/SDK-Validierung, lint, build und typecheck bestanden. DB 532/532 und SQL-Smoke-Test ROLLBACK unmittelbar davor; keine neue SQL-Änderung. Unit-Doku-Abgleich abschließend 58/58 bestanden. DB-Reset und API/Auth/UI-Regression nicht wiederholt; keine Sichtprüfung der Formular-Oberfläche im Browser. Kein Push/Website-Deployment.
 
 ## Empfohlener nächster Schritt
 
-Ausstehende Nutzereingaben zu Gmail und Gemini abwarten; anschließend task-10-4 wieder aufnehmen, Konto verifizieren, reale Analyse und freigegebenen Versand prüfen und erst dann Make ersetzen. task-10-2 und task-10-3 sind weiterhin ready; nicht automatisch starten.
+Design task-10-3 abnehmen; danach task-9-2 Gesamtprüfung. task-10-2 Zahlungserinnerungen bleibt ready. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.
