@@ -16,11 +16,14 @@ if(m.direction!=='outgoing'||m.status!=='queued'||!m.approved_by||!m.approved_at
 if(!/^[0-9a-f-]{36}$/i.test(m.id)||!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(m.to_address??''))throw new Error('Ungültige Nachrichtenidentität oder Empfängeradresse');
 const clean=s=>String(s??'').replace(/[\r\n]/g,' ').trim();const messageId='<'+m.id+'@rheinwerk-service.online>';
 const subj=clean(m.subject);const chunks=Array.from(subj.matchAll(/.{1,30}/gu),x=>'=?UTF-8?B?'+Buffer.from(x[0]).toString('base64')+'?=');
-const headers=['From: RheinWerk Industrieservice <'+mailbox+'>','To: '+m.to_address,'Subject: '+chunks.join('\r\n '),'Message-ID: '+messageId,'X-RheinWerk-Message-Id: '+m.id,'Date: '+new Date().toUTCString(),'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64'];
+const headers=['From: RheinWerk Industrieservice <'+mailbox+'>','To: '+m.to_address,'Subject: '+chunks.join('\r\n '),'Message-ID: '+messageId,'X-RheinWerk-Message-Id: '+m.id,'Date: '+new Date().toUTCString(),'MIME-Version: 1.0'];
 const refs=[...(Array.isArray(m.references_header)?m.references_header:[]),m.in_reply_to].filter(x=>typeof x==='string'&&/^<[^<>\s]+>$/.test(x));
 if(m.in_reply_to&&/^<[^<>\s]+>$/.test(m.in_reply_to))headers.push('In-Reply-To: '+m.in_reply_to);
 if(refs.length)headers.push('References: '+[...new Set(refs)].slice(-20).join(' '));
-const body=Buffer.from(String(m.body_text??''),'utf8').toString('base64').match(/.{1,76}/g)?.join('\r\n')??'';
+const b64=s=>Buffer.from(String(s??''),'utf8').toString('base64').match(/.{1,76}/g)?.join('\r\n')??'';
+const part=(type,s)=>'Content-Type: '+type+'; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n'+b64(s);
+let body;if(m.body_html){const boundary='rw-alt-'+m.id;headers.push('Content-Type: multipart/alternative; boundary="'+boundary+'"');body=['--'+boundary,part('text/plain',m.body_text),'--'+boundary,part('text/html',m.body_html),'--'+boundary+'--',''].join('\r\n');}
+else{headers.push('Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64');body=b64(m.body_text);}
 const raw=Buffer.from(headers.join('\r\n')+'\r\n\r\n'+body).toString('base64url');
 return [{json:{message_id:m.id,mime_message_id:messageId,recipient:m.to_address,search_query:'in:sent to:'+m.to_address,send_body:{raw,...(m.gmail_thread_id?{threadId:m.gmail_thread_id}:{})}}}];"""
 sent_candidates = r"""const b=$input.first().json.body??{};

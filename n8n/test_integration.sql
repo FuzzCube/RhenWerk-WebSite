@@ -8,6 +8,24 @@ begin
   req:=public.ingest_submission(p);
   repeat_req:=public.ingest_submission(p);
   if req.id<>repeat_req.id or (select count(*) from public.request_events where request_id=req.id and event_type='submission_received')<>1 then raise exception 'Ingest dedup failed'; end if;
+  -- task-10-6: exactly one system-approved receipt per submission, also after a repeated submission
+  select * into item from public.messages where request_id=req.id and kind='receipt';
+  if (select count(*) from public.messages where request_id=req.id and kind='receipt')<>1 or item.status<>'queued'
+     or item.approved_by is not null or item.approved_at is null or item.to_address<>req.business_email
+     or position(req.request_number in item.subject)=0 or position(req.request_number in item.body_text)=0
+     or position(req.request_number in item.body_html)=0 or position('{{' in item.body_html||item.body_text)>0 then raise exception 'Receipt failed'; end if;
+  if (select count(*) from public.request_events where request_id=req.id and event_type='message_queued')<>1 then raise exception 'Receipt event failed'; end if;
+  select m into msg from public.claim_queued_messages(20,180) m where m->>'id'=item.id::text;
+  if msg is null or msg->>'approved_by'<>'system' then raise exception 'Receipt claim failed'; end if;
+  begin
+    insert into public.messages(request_id,direction,kind,status,to_address,subject,body_text,approved_at)
+    values(req.id,'outgoing','other','queued','x@example.com','x','x',now());
+    raise exception 'System approval accepted for non-receipt';
+  exception when check_violation then null; end;
+  p:=jsonb_set(jsonb_set(p,'{submission_id}','"ddaa0000-0000-4000-8000-000000000009"'),'{contact,business_email}','"max@mail.firma-test.de"');
+  repeat_req:=public.ingest_submission(p);
+  if repeat_req.business_email<>'max@mail.firma-test.de' then raise exception 'Subdomain e-mail rejected'; end if;
+  p:=jsonb_set(jsonb_set(p,'{submission_id}','"ddaa0000-0000-4000-8000-000000000001"'),'{contact,business_email}',to_jsonb(req.business_email));
   ctx:=public.get_analysis_context(req.id);
   if ctx->'request'->>'request_number'<>req.request_number then raise exception 'Context failed'; end if;
   run:=public.start_automation_run('test_analysis:'||req.id,'intake_analysis',req.id,null,req.version,'test-exec');
@@ -51,7 +69,7 @@ begin
   result:=jsonb_set(result,'{clarification_draft}','{"subject":"Rückfrage","body_text":"Bitte beschreiben Sie die Störung genauer."}');
   finished:=public.finish_automation_run((run->>'id')::uuid,'succeeded','ask_customer',0.9,result,null,null,'test-exec');
   applied:=public.apply_analysis_result(finished.id,req.id,req.version,result);
-  select * into item from public.messages where request_id=req.id and direction='outgoing';
+  select * into item from public.messages where request_id=req.id and direction='outgoing' and kind='clarification';
   if item.status<>'draft' or applied.intake_status='awaiting_customer' then raise exception 'Draft gate failed'; end if;
   select id into dispatcher from public.profiles where role='dispatcher' and is_active limit 1;
   update public.messages set status='queued',approved_by=dispatcher,approved_at=now() where id=item.id;

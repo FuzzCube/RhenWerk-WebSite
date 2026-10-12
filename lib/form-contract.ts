@@ -76,7 +76,7 @@ export function validatePayload(input: unknown): RequiredField[] {
   const invalid: RequiredField[] = [];
   if (text(data.contact?.company_name).length < 2) invalid.push("contact.company_name");
   if (text(data.contact?.contact_name).length < 2) invalid.push("contact.contact_name");
-  if (!/^[^@\s]+@[^@\s.]+\.[a-z]{2,}$/i.test(text(data.contact?.business_email))) invalid.push("contact.business_email");
+  if (!/^[^@\s]+@(?:[^@\s.]+\.)+[a-z]{2,}$/i.test(text(data.contact?.business_email))) invalid.push("contact.business_email");
   if (!/^[+0][\d\s()/-]{6,}$/.test(text(data.contact?.phone))) invalid.push("contact.phone");
   if (text(data.site_and_equipment?.street_and_number).length < 4) invalid.push("site_and_equipment.street_and_number");
   if (!/^\d{5}$/.test(text(data.site_and_equipment?.postal_code))) invalid.push("site_and_equipment.postal_code");

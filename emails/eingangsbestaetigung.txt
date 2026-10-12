@@ -1,0 +1,43 @@
+RHEINWERK INDUSTRIESERVICE · EINGANGSBESTÄTIGUNG
+
+Guten Tag {{contact_name}},
+
+vielen Dank für Ihre Serviceanfrage. Sie ist bei uns eingegangen
+und hat die Nummer {{request_number}}.
+
+  ANFRAGENUMMER: {{request_number}}
+
+IHRE ANGABEN
+- Unternehmen:  {{company_name}}
+- Standort:     {{street}}, {{postal_code}} {{city}}
+- Leistung:     {{service_kind}}
+- Wunschtermin: {{preferred_date}}
+
+SO GEHT ES WEITER
+1. Unser Service Desk prüft die Anfrage.
+2. Wir melden uns mit einem Terminvorschlag oder mit Rückfragen.
+
+Mit dieser Bestätigung ist noch kein Auftrag erteilt. Priorität,
+Termin und Konditionen bestätigen wir nach der Prüfung.
+
+WICHTIG: Bei Produktionsstillstand oder Sicherheitsgefahr rufen
+Sie uns bitte zusätzlich an: +49 621 00000-0
+
+Antworten Sie bei Fragen einfach auf diese E-Mail oder nennen Sie
+die Nummer {{request_number}} im Betreff.
+
+Mit freundlichen Grüßen
+RheinWerk Industrieservice · Service Desk
+
+--
+RheinWerk Industrieservice GmbH
+Rheinwerkstraße 12, 68169 Mannheim
+Telefon +49 621 00000-0
+rheinwerk.industrieservice@gmail.com
+Service Desk Mo–Fr 07:00–18:00.
+Ohne gesetzliche Feiertage in Baden-Württemberg.
+
+Diese E-Mail wurde automatisch versendet.
+Fiktives Portfolio-Projekt. RheinWerk Industrieservice GmbH ist
+kein reales Unternehmen.
+

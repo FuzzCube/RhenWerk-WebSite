@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 3,
+  "roadmapVersion": 5,
   "status": "active",
   "phases": [
     {
@@ -1178,7 +1178,7 @@
     {
       "id": "phase-10",
       "title": "Erweiterungen",
-      "description": "Nachträge nach Rücksprache: Bereinigung der Testkonten, Zahlungserinnerungen und Überarbeitung des Designs.",
+      "description": "Nachträge nach Rücksprache: Bereinigung der Testkonten, Zahlungserinnerungen, Überarbeitung des Designs, n8n-Integration und Posteingang für nicht zugeordnete E-Mails.",
       "order": 11,
       "weight": 15,
       "status": "blocked",
@@ -1248,7 +1248,7 @@
           "description": "Gestalterische Überarbeitung des Mitarbeiterbereichs nach Vorgaben des Nutzers (z. B. Entwurf aus Claude Design unter docs/design/): Layout, Navigation, Listen, Kacheln, Formulare und Diagramme im RheinWerk-Design. Funktion, Rechte und Datenflüsse bleiben unverändert; test:ui sichert jeden Schritt ab. Vorlage: Claude-Design-Canvas „RheinWerk Übersicht Redesign“ (Spezifikation und Zustände als Regelwerk); Logik (einheitlicher Status, Kennzahl-Richtung, Hinweise, Einsatzvorschläge) als getestete Funktionen.",
           "order": 3,
           "weight": 3,
-          "status": "in_progress",
+          "status": "blocked",
           "dependsOn": [
             "task-7-3",
             "task-8-1"
@@ -1305,6 +1305,64 @@
               "n8n MCP validate_node_config / validate_workflow / test_workflow / execute_workflow / get_workflow_execution"
             ],
             "checkedAt": "2026-10-12T10:03:16Z"
+          }
+        },
+        {
+          "id": "task-10-5",
+          "title": "Posteingang für nicht zugeordnete E-Mails",
+          "description": "Eingehende Gmail-Nachrichten ohne Zuordnung (decision = unmatched, request_id leer) sind bisher nur in der Datenbank gespeichert und im Dashboard unsichtbar. Posteingang für Dispatcher (eigene Nachrichten über inbox_dispatcher_id, Manager/Admin alle): Absender, Betreff, Eingang, Text und Anhänge; Zuordnung zu einer bestehenden Anfrage per link_message oder Erstellen einer neuen Anfrage aus der E-Mail; Anzahl offener Nachrichten in der Navigation.",
+          "order": 5,
+          "weight": 3,
+          "status": "ready",
+          "dependsOn": [
+            "task-10-4"
+          ],
+          "definitionOfDone": [
+            "Nicht zugeordnete eingehende E-Mails sind für die zuständige Rolle im Dashboard sichtbar, mit Zähler in der Navigation",
+            "Zuordnung zu einer bestehenden Anfrage über link_message mit Audit-Ereignis; danach erscheint die Nachricht unter Korrespondenz der Anfrage",
+            "Neue Anfrage aus einer E-Mail anlegen, ohne Duplikate bei Wiederholung",
+            "Rollen- und RLS-Tests sowie UI-Test für Liste und Zuordnung"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-10-6",
+          "title": "Automatische Eingangsbestätigung per E-Mail",
+          "description": "Nach dem Absenden des Website-Formulars erhält der Kunde automatisch eine Eingangsbestätigung mit Anfragenummer, Angaben und nächsten Schritten. Feste Vorlage, je Anfrage genau einmal, ohne manuelle Freigabe (Nutzerentscheidung 12.10.2026), Versand über den bestehenden Gmail-Workflow. Zusätzlich E-Mail-Adressen mit Subdomain in Formular und Datenbank zulassen.",
+          "order": 6,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-10-4"
+          ],
+          "definitionOfDone": [
+            "Neue Live-Anfrage erzeugt genau eine Eingangsbestätigung (queued, Systemfreigabe), auch bei wiederholter Einreichung",
+            "Systemfreigabe nur für Art receipt; andere Nachrichten ohne Mitarbeiterfreigabe werden abgewiesen",
+            "Versand-Workflow verschickt die Bestätigung; Status sent und Verlaufseintrag sichtbar",
+            "Datenbanktests und n8n-Integrationstest bestanden"
+          ],
+          "startedAt": "2026-10-12T12:15:00Z",
+          "completedAt": "2026-10-12T12:55:00Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Eingangsbestätigung entsteht je Live-Anfrage genau einmal mit Systemfreigabe (nur Art receipt) und HTML-Teil nach Claude-Design; Versand-Workflow sendet multipart/alternative. Echter Versand vom Nutzer bestätigt (RIS-2026-00359 Text, RIS-2026-00360 mit Design). Subdomain-Adressen in Formular und Datenbank zugelassen.",
+            "commands": [
+              "npx supabase test db (532/532)",
+              "psql -f n8n/test_integration.sql",
+              "npm run test:unit (58/58)",
+              "npm run lint",
+              "npx tsc --noEmit",
+              "MIME-Parser-Prüfung der erzeugten Nachricht",
+              "echter Formularversand auf localhost:3201"
+            ],
+            "checkedAt": "2026-10-12T12:55:00Z"
           }
         }
       ]

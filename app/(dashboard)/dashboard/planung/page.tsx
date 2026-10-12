@@ -32,7 +32,12 @@ const shortDay = (day: string) => formatWeekdayDate(`${day}T12:00:00Z`).replace(
 export default async function PlanningPage({ searchParams }: Props) {
   const employee = await requireRole(rolesFor("/dashboard/planung"));
   const params = await searchParams;
-  const data = await loadPlanning(employee, single(params.woche) || undefined, single(params.anfrage) || undefined);
+  const today = dayKeyOf(new Date());
+  // Calendar view: whole week (default) or a single day (?ansicht=tag&tag=YYYY-MM-DD)
+  const dayView = single(params.ansicht) === "tag";
+  const dayParam = single(params.tag);
+  const focusDay = isDayKey(dayParam) ? dayParam : today;
+  const data = await loadPlanning(employee, (dayView ? focusDay : single(params.woche)) || undefined, single(params.anfrage) || undefined);
   const durationParam = Number.parseInt(single(params.dauer), 10);
   const duration = (SLOT_DURATIONS as readonly number[]).includes(durationParam) ? durationParam : 120;
   const selected = data.selected;
@@ -52,12 +57,14 @@ export default async function PlanningPage({ searchParams }: Props) {
 
   const link = (overrides: Record<string, string | null>) => {
     const query = new URLSearchParams();
-    const base: Record<string, string | null> = { woche: data.week, anfrage: selected?.id ?? null, dauer: String(duration), techniker: pick?.technicianId ?? null, datum: pick?.day ?? null, beginn: pick?.start ?? null };
+    const base: Record<string, string | null> = { woche: dayView ? null : data.week, ansicht: dayView ? "tag" : null, tag: dayView ? focusDay : null, anfrage: selected?.id ?? null, dauer: String(duration), techniker: pick?.technicianId ?? null, datum: pick?.day ?? null, beginn: pick?.start ?? null };
     for (const [key, value] of Object.entries({ ...base, ...overrides })) if (value) query.set(key, value);
     return `/dashboard/planung?${query.toString()}`;
   };
   const choose = (technicianId: string, day: string, start: string) => `${link({ techniker: technicianId, datum: day, beginn: start })}#auswahl`;
-  const today = dayKeyOf(new Date());
+  const weekLink = (week: string) => `${link({ woche: week, ansicht: null, tag: null })}#woche`;
+  const dayLink = (day: string) => `${link({ woche: null, ansicht: "tag", tag: day })}#woche`;
+  const idle = data.queue.length === 0 && !selected && !data.selectedPlanned;
   const techName = (id: string) => data.technicians.find((tech) => tech.id === id)?.name ?? names.get(id) ?? "Unbekannt";
 
   return (
@@ -74,6 +81,12 @@ export default async function PlanningPage({ searchParams }: Props) {
         </ErrorState>
       )}
 
+      {idle ? (
+        <div className="plan2 plan2--idle">
+          <p className="plan2__idle"><Icon name="check-circle" size={18} /><strong>Alle Anfragen sind eingeplant.</strong> Sobald eine Anfrage einen Einsatz braucht, erscheint sie hier mit Terminvorschlägen.</p>
+          <Matrix data={data} availability={availability} duration={duration} pick={null} choose={null} />
+        </div>
+      ) : (
       <div className="plan2">
         <div className="plan2__queue">
           {data.queue.length === 0 ? (
@@ -152,20 +165,34 @@ export default async function PlanningPage({ searchParams }: Props) {
         </div>
       </div>
 
+      )}
+
       <section id="woche" className="rw-zone" aria-labelledby="calendar-title">
         <div className="rw-zone__header">
           <div className="rw-zone__titles">
-            <h2 id="calendar-title">Wochenkalender</h2>
-            <span className="rw-zone__note">KW {isoWeek(data.week)} · <span className="mono">{formatDate(`${data.week}T12:00:00Z`)} – {formatDate(`${addDays(data.week, 6)}T12:00:00Z`)}</span></span>
+            <h2 id="calendar-title">{dayView ? "Tageskalender" : "Wochenkalender"}</h2>
+            <span className="rw-zone__note">
+              {dayView
+                ? <>{formatWeekdayDate(`${focusDay}T12:00:00Z`)} · KW {isoWeek(data.week)}</>
+                : <>KW {isoWeek(data.week)} · <span className="mono">{formatDate(`${data.week}T12:00:00Z`)} – {formatDate(`${addDays(data.week, 6)}T12:00:00Z`)}</span></>}
+            </span>
           </div>
-          <nav className="plan-week__nav rw-zone__controls" aria-label="Woche wechseln">
-            <Link className="rw-button-secondary" href={`${link({ woche: addDays(data.week, -7) })}#woche`}>← Vorherige</Link>
-            <Link className="rw-button-secondary" href={`${link({ woche: today })}#woche`}>Heute</Link>
-            <Link className="rw-button-secondary" href={`${link({ woche: addDays(data.week, 7) })}#woche`}>Nächste →</Link>
-          </nav>
+          <div className="rw-zone__controls">
+            <nav className="rw-period" aria-label="Ansicht">
+              <ul className="rw-period__kinds">
+                <li><Link href={weekLink(dayView ? focusDay : data.week)} aria-current={dayView ? undefined : "page"} scroll={false}>Woche</Link></li>
+                <li><Link href={dayLink(dayView ? focusDay : data.days.includes(today) ? today : data.week)} aria-current={dayView ? "page" : undefined} scroll={false}>Tag</Link></li>
+              </ul>
+            </nav>
+            <nav className="plan-week__nav" aria-label={dayView ? "Tag wechseln" : "Woche wechseln"}>
+              <Link className="rw-button-secondary" href={dayView ? dayLink(addDays(focusDay, -1)) : weekLink(addDays(data.week, -7))}>← Vorherige</Link>
+              <Link className="rw-button-secondary" href={dayView ? dayLink(today) : weekLink(today)}>Heute</Link>
+              <Link className="rw-button-secondary" href={dayView ? dayLink(addDays(focusDay, 1)) : weekLink(addDays(data.week, 7))}>Nächste →</Link>
+            </nav>
+          </div>
         </div>
         <Card stripe="meta">
-          <PlanningCalendar days={data.days} technicians={data.technicians} workingHours={data.workingHours} busy={data.busy} canPick={Boolean(selected)} />
+          <PlanningCalendar days={dayView ? [focusDay] : data.days} technicians={data.technicians} workingHours={data.workingHours} busy={data.busy} canPick={Boolean(selected)} />
         </Card>
       </section>
     </div>

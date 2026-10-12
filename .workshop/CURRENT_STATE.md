@@ -2,7 +2,7 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v3 mit 11 Phasen und 35 Tasks. Fortschritt 91,74 % (Gewicht 111 von 121, 32 von 35 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 37 Tasks. Fortschritt 89,68 % (Gewicht 113 von 126, 33 von 37 Tasks).
 
 ## Aktive Phase
 
@@ -10,11 +10,13 @@ Phasen 0–8 sind abgeschlossen; in Phase 9 fehlt nur die Gesamtprüfung `task-9
 
 ## Aktive Aufgabe
 
-`task-10-3` (in Arbeit seit 08.10.2026, Umsetzung fertig, wartet auf Abnahme): Dashboard-Design nach Claude-Design-Canvas „RheinWerk Übersicht Redesign“ (https://claude.ai/artifact/G3RskvctFeRLgdwryWxjJz; Spezifikation und Zustände sind das Regelwerk). Umgesetzt und im Browser (Port 3100) je Rolle geprüft: Bausteine, Übersicht (Admin, Manager), Anfragen (Liste, Detail), Einsatzplanung mit Vorschlägen, Techniker mobil (Mein Tag, Einsatz), Rechnungen, Auswertung. Neue Migration `20261008170000_technician_experience.sql`. Verifikation: test:unit 58/58, test:db 532/532, test:auth und test:ui (170) bestanden, lint, typecheck, build erfolgreich. Ergänzt am 09.10.2026 auf Nutzerwunsch: Deaktivierte Mitarbeitende und Tarife sind in Verwaltung und Team-Tabelle der Übersicht standardmäßig ausgeblendet (Umschalter „Aktive | Alle“, `?status=alle`); test:ui 174, test:unit 58, lint, typecheck, build erfolgreich. Danach Karte „Warteschlangen“ der Admin-Übersicht nachgebessert (Engpass-Kennzeichen einheitlich unter dem Namen, ein gemeinsamer Hinweis statt drei). Auswertung hat Reiter statt Sprungmarken (`?bereich=…`, nur gewählter Bereich sichtbar; test:ui 184). Weitere Nachbesserungen nach Nutzerhinweisen: Rechnungen-Kopf als zwei gleich hohe Karten (Link „Alle“ springt zur Liste), Auswertung/Automatisierung gleich hohe Diagramme, Handlungsbedarf der Admin-Übersicht als vier aufklappbare Kacheln (test:ui 189). Nach Abnahme: Task abschließen, danach `task-9-2`. Details in `docs/architecture.md` (Abschnitt Design-Überarbeitung).
+Keine Aufgabe in Arbeit. `task-10-3` (blocked seit 12.10.2026, Umsetzung fertig, wartet auf Design-Abnahme durch den Nutzer): Dashboard-Design nach Claude-Design-Canvas „RheinWerk Übersicht Redesign“ (https://claude.ai/artifact/G3RskvctFeRLgdwryWxjJz; Spezifikation und Zustände sind das Regelwerk). Umgesetzt und im Browser (Port 3100) je Rolle geprüft: Bausteine, Übersicht (Admin, Manager), Anfragen (Liste, Detail), Einsatzplanung mit Vorschlägen, Techniker mobil (Mein Tag, Einsatz), Rechnungen, Auswertung. Neue Migration `20261008170000_technician_experience.sql`. Verifikation: test:unit 58/58, test:db 532/532, test:auth und test:ui (170) bestanden, lint, typecheck, build erfolgreich. Ergänzt am 09.10.2026 auf Nutzerwunsch: Deaktivierte Mitarbeitende und Tarife sind in Verwaltung und Team-Tabelle der Übersicht standardmäßig ausgeblendet (Umschalter „Aktive | Alle“, `?status=alle`); test:ui 174, test:unit 58, lint, typecheck, build erfolgreich. Danach Karte „Warteschlangen“ der Admin-Übersicht nachgebessert (Engpass-Kennzeichen einheitlich unter dem Namen, ein gemeinsamer Hinweis statt drei). Auswertung hat Reiter statt Sprungmarken (`?bereich=…`, nur gewählter Bereich sichtbar; test:ui 184). Weitere Nachbesserungen nach Nutzerhinweisen: Rechnungen-Kopf als zwei gleich hohe Karten (Link „Alle“ springt zur Liste), Auswertung/Automatisierung gleich hohe Diagramme, Handlungsbedarf der Admin-Übersicht als vier aufklappbare Kacheln (test:ui 189). 12.10.2026: Einsatzplanung mit Umschalter „Woche | Tag“ (`?ansicht=tag&tag=JJJJ-MM-TT`, Vor/Zurück tageweise) und kompakter Hinweiszeile statt leerer Karten, wenn nichts zu planen ist; Formulare im Block „Nächster Schritt“ der Anfrageseite einspaltig. typecheck und lint erfolgreich, im Dev-Server Desktop und mobil geprüft; test:ui nicht erneut ausgeführt. Nach Abnahme: Task abschließen, danach `task-9-2`. Details in `docs/architecture.md` (Abschnitt Design-Überarbeitung).
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-10-6` (12.10.2026): Automatische Eingangsbestätigung per E-Mail ohne manuelle Freigabe (nur Art `receipt`, Systemfreigabe), HTML-Design aus Claude Design (`emails/`, `messages.body_html`, `multipart/alternative`), Subdomain-Adressen zugelassen. test:db 532/532, Integrationstest, lint, typecheck; echter Versand vom Nutzer bestätigt (RIS-2026-00360).
 
 `task-10-4`: lokale n8n/OpenAI/Gmail-Integration. Vollständiger API-Formularpfad mit privatem PDF und PNG: RIS-2026-00356 processed, KAESER SM 13 aus Dokumenten, keine Duplikate. Versandwiederaufnahme und verpasste RIS-Eingänge geprüft. Kein Push/Website-Deployment.
 
@@ -23,11 +25,12 @@ Phasen 0–8 sind abgeschlossen; in Phase 9 fehlt nur die Gesamtprüfung `task-9
 ## Bereite nächste Aufgaben
 
 - `task-10-2`: Zahlungserinnerungen für offene Rechnungen.
+- `task-10-5`: Posteingang für nicht zugeordnete E-Mails (eingehende Mails ohne Anfragenummer/Thread werden gespeichert, sind im Dashboard aber noch unsichtbar).
 - Danach `task-9-2`: Gesamtprüfung (hängt von `task-10-3` ab).
 
 ## Blockiert
 
-Keine blockierte Roadmap-Aufgabe. task-10-3 bleibt unverändert in_progress und wartet auf Design-Abnahme. Lokale Integration task-10-4 nach den tatsächlich geprüften Definition-of-Done-Punkten abgeschlossen; die frühere Blockierung ist behoben. Dokumentierte Lifecycle-Korrektur blocked → completed für die bereits begonnene und ausdrücklich wiederaufgenommene Arbeit; keine zweite Aufgabe in_progress eingeführt.
+`task-10-3` wartet auf Design-Abnahme durch den Nutzer (auf blocked gesetzt, damit task-10-6 bearbeitet werden kann). Lokale Integration task-10-4 nach den tatsächlich geprüften Definition-of-Done-Punkten abgeschlossen; die frühere Blockierung ist behoben. Dokumentierte Lifecycle-Korrektur blocked → completed für die bereits begonnene und ausdrücklich wiederaufgenommene Arbeit; keine zweite Aufgabe in_progress eingeführt.
 
 12.10.2026: Alle sechs Workflows veröffentlicht, Nodes ohne Gruppen. Lokales N8N_WEBHOOK_URL gesetzt. Echte E-Mail-Rückfrage und Antwortgedächtnis RIS-2026-00355 geprüft. Private Uploads über tatsächlichen API-/Clientpfad und OpenAI-Dateiauswertung RIS-2026-00356 geprüft. Send-Recovery nutzt den von Gmail erhaltenen internen Header; faktische MIME-ID wird nachgelesen. Inbox-Nachlesen für RIS-Antworten letzte sieben Tage alle 15 Minuten; vollständige registrierte Eingänge zusätzlich alle fünf Minuten. Details und Grenzen in docs/n8n-contract.md.
 
@@ -85,4 +88,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-Design task-10-3 abnehmen; danach task-9-2 Gesamtprüfung. task-10-2 Zahlungserinnerungen bleibt ready. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.
+Design task-10-3 abnehmen; danach task-9-2 Gesamtprüfung. task-10-2 Zahlungserinnerungen und task-10-5 Posteingang für nicht zugeordnete E-Mails sind ready. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.

@@ -37,7 +37,7 @@ function validate(values: FormValues, step: number): FormErrors {
   if (step === 1) {
     if (text("company").length < 2) errors.company = "Bitte geben Sie das Unternehmen an.";
     if (text("contactName").length < 2) errors.contactName = "Bitte geben Sie Vor- und Nachname der Kontaktperson an.";
-    if (!/^[^@\s]+@[^@\s.]+\.[a-z]{2,}$/i.test(text("email"))) errors.email = "Bitte geben Sie eine geschäftliche E-Mail-Adresse mit @ und Domain an.";
+    if (!/^[^@\s]+@(?:[^@\s.]+\.)+[a-z]{2,}$/i.test(text("email"))) errors.email = "Bitte geben Sie eine geschäftliche E-Mail-Adresse mit @ und Domain an.";
     if (!/^[+0][\d\s()/-]{6,}$/.test(text("phone"))) errors.phone = "Bitte geben Sie eine Telefonnummer mit Vorwahl an.";
   }
   if (step === 2) {
