@@ -18,7 +18,9 @@ import {
   Pause,
   Phone,
   Play,
+  Search,
   ShieldCheck,
+  SlidersHorizontal,
   TriangleAlert,
   Upload,
   WifiOff,
@@ -38,6 +40,7 @@ export type IconName =
   | "clock"
   | "compressor"
   | "document"
+  | "filter"
   | "hazard"
   | "info"
   | "inspection"
@@ -48,6 +51,7 @@ export type IconName =
   | "phone"
   | "play"
   | "pump"
+  | "search"
   | "shield"
   | "spinner"
   | "upload"
@@ -68,6 +72,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
     "chevron-right": ChevronRight,
     clock: Clock3,
     document: FileText,
+    filter: SlidersHorizontal,
     hazard: TriangleAlert,
     info: Info,
     inspection: FileText,
@@ -77,6 +82,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
     pause: Pause,
     phone: Phone,
     play: Play,
+    search: Search,
     shield: ShieldCheck,
     spinner: LoaderCircle,
     upload: Upload,

@@ -18,6 +18,7 @@ export function DataTable<Row>({
   rows,
   rowKey,
   rowHref,
+  rowClassName,
   empty,
 }: {
   caption: string;
@@ -25,6 +26,8 @@ export function DataTable<Row>({
   rows: Row[];
   rowKey: (row: Row) => string;
   rowHref?: (row: Row) => string;
+  // Optional class per row, e.g. to mark a hazard
+  rowClassName?: (row: Row) => string | undefined;
   empty: ReactNode;
 }) {
   if (rows.length === 0) return <>{empty}</>;
@@ -43,7 +46,7 @@ export function DataTable<Row>({
           {rows.map((row) => {
             const href = rowHref?.(row);
             return (
-              <tr key={rowKey(row)}>
+              <tr key={rowKey(row)} className={rowClassName?.(row)}>
                 {columns.map((column, index) => {
                   const classes = [
                     column.align === "end" ? "data-table__end" : "",
