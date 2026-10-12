@@ -55,6 +55,8 @@ export default async function RequestPage({ params }: Props) {
   };
 
   const actions = availableActions(detail, employee);
+  // Planning happens on the planning page; the request page points there as the next step
+  const canPlan = (employee.role === "dispatcher" || employee.role === "manager") && request.intake_status === "processed" && ["not_planned", "waiting_parts"].includes(request.work_status);
   const hasActions = Object.values(actions).some(Boolean);
   const closedFor = !technician ? null
     : request.work_status === "completed" ? "completed"
@@ -78,17 +80,41 @@ export default async function RequestPage({ params }: Props) {
   const side: readonly SectionId[] = technician && heroVisit && detail.visits.length === 1 ? ["kontakt", "einsaetze"] : ["kontakt"];
   const main = sections.filter((section) => !side.includes(section.id) && !(empty[section.id] && !failed(section.id)));
   const collapsed = sections.filter((section) => empty[section.id] && !failed(section.id));
-  const section = (id: SectionId, sectionLabel: string) => (
-    <section key={id} id={id} className="rw-card rw-card--neutral request-card" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`}>{sectionLabel}</h2>
-      {failed(id)
-        ? <ErrorState title="Dieser Abschnitt konnte nicht geladen werden." action={<Link className="rw-button-secondary" href={`/dashboard/anfragen/${request.id}#${id}`}>Erneut versuchen</Link>}>Die übrigen Abschnitte sind aktuell.</ErrorState>
-        : render[id]()}
-    </section>
-  );
+  // Staff (user feedback 12.10.2026): secondary sections fold to one line with a summary; what the
+  // current step needs stays open. The technician view keeps its own order and folding.
+  const fold = technician ? null : foldState(detail);
+  const section = (id: SectionId, sectionLabel: string) => {
+    const body = failed(id)
+      ? <ErrorState title="Dieser Abschnitt konnte nicht geladen werden." action={<Link className="rw-button-secondary" href={`/dashboard/anfragen/${request.id}#${id}`}>Erneut versuchen</Link>}>Die übrigen Abschnitte sind aktuell.</ErrorState>
+      : render[id]();
+    const folding = fold?.[id];
+    if (!folding || failed(id)) {
+      return (
+        <section key={id} id={id} className="rw-card rw-card--neutral request-card" aria-labelledby={`${id}-title`}>
+          <h2 id={`${id}-title`}>{sectionLabel}</h2>
+          {body}
+        </section>
+      );
+    }
+    return (
+      <section key={id} id={id} className="rw-card rw-card--neutral request-card request-card--fold" aria-labelledby={`${id}-title`}>
+        <details open={folding.open || undefined}>
+          <summary>
+            <span className="request-card__titles">
+              <h2 id={`${id}-title`}>{sectionLabel}</h2>
+              <span className="request-card__summary">{folding.summary}</span>
+            </span>
+            <span className="request-card__toggle" aria-hidden="true"><Icon name="chevron-down" size={18} /></span>
+          </summary>
+          <div className="request-card__body">{body}</div>
+        </details>
+      </section>
+    );
+  };
 
   return (
-    <div className="dash-page dash-request">
+    // Staff view as wide as the list pages; the technician view keeps the reading width
+    <div className={`dash-page dash-request${technician ? "" : " dash-request--wide"}`}>
       <nav className="breadcrumb-dash" aria-label="Pfad">
         <Link href="/dashboard/anfragen">Anfragen</Link> <span aria-hidden="true">/</span> <span className="mono">{request.request_number}</span>
       </nav>
@@ -183,6 +209,13 @@ export default async function RequestPage({ params }: Props) {
             <section id="aktionen" className="rw-card rw-card--action request-next" aria-labelledby="aktionen-title">
               <p className="request-next__eyebrow">Nächster Schritt</p>
               <h2 id="aktionen-title" className="sr-only">Aktionen</h2>
+              {canPlan && (
+                <div className="request-next__plan">
+                  <p className="request-next__title">Einsatz planen</p>
+                  <p className="rw-card__note">Erstbearbeitung abgeschlossen. Techniker und Termin in der Einsatzplanung wählen.</p>
+                  <Link className="button button--primary" href={`/dashboard/planung?anfrage=${request.id}`}>Zur Einsatzplanung</Link>
+                </div>
+              )}
               <RequestActions detail={detail} employee={employee} />
             </section>
           )}
@@ -200,6 +233,53 @@ export default async function RequestPage({ params }: Props) {
 }
 
 type PersonFn = (id: string | null | undefined, fallback?: string) => string;
+
+// Which staff sections fold and what their closed line says. Open stays what the current step needs:
+// equipment and intake while the intake is open, correspondence with a draft or a fresh customer reply.
+function foldState(detail: RequestDetail): Partial<Record<SectionId, { open: boolean; summary: ReactNode }>> {
+  const r = detail.request;
+  const openIntake = ["new", "analyzing", "needs_review", "awaiting_customer"].includes(r.intake_status);
+  const gaps = [r.manufacturer, r.model_type, r.machine_number].filter((value) => !value).length;
+  const machine = [r.manufacturer, r.model_type].filter(Boolean).join(" ");
+  const runs = detail.automationRuns ?? [];
+  const analysis = [...runs].reverse().find((run) => run.step === "intake_analysis" && run.confidence !== null);
+  const messages = detail.messages ?? [];
+  const lastMessage = messages[messages.length - 1];
+  const lastWhen = lastMessage ? lastMessage.received_at ?? lastMessage.sent_at ?? lastMessage.created_at : null;
+  const draft = messages.some((message) => message.status === "draft");
+  const lastEvent = detail.events[0];
+  const join = (parts: Array<ReactNode | false | null | undefined>) => parts.filter(Boolean).map((part, index) => <span key={index}>{index > 0 && " · "}{part}</span>);
+  return {
+    anlage: {
+      open: openIntake,
+      summary: join([label("equipment_kind", r.equipment_kind), machine, gaps > 0 && <span className="request-card__warn">{gaps === 1 ? "1 Angabe fehlt" : `${gaps} Angaben fehlen`}</span>]),
+    },
+    erstbearbeitung: {
+      open: r.intake_status === "needs_review" || (openIntake && r.human_review_required),
+      summary: join([
+        statusInfo("intake_status", r.intake_status).label,
+        r.intake_mode && label("intake_mode", r.intake_mode),
+        analysis?.confidence != null && <>Konfidenz <span className="mono">{formatPercent(analysis.confidence * 100, 0)}</span></>,
+        runs.length > 0 && (runs.length === 1 ? "1 Automatisierungslauf" : `${runs.length} Automatisierungsläufe`),
+      ]),
+    },
+    korrespondenz: {
+      open: draft || (lastMessage?.direction === "incoming" && openIntake),
+      summary: join([
+        messages.length === 1 ? "1 Nachricht" : `${messages.length} Nachrichten`,
+        draft && <span className="request-card__warn">Entwurf offen</span>,
+        lastMessage && <>zuletzt {lastMessage.direction === "incoming" ? "eingehend" : "ausgehend"} <span className="mono">{formatDateTime(lastWhen)}</span></>,
+      ]),
+    },
+    verlauf: {
+      open: false,
+      summary: join([
+        detail.events.length === 1 ? "1 Eintrag" : `${detail.events.length} Einträge`,
+        lastEvent && <>zuletzt <span className="mono">{formatDateTime(lastEvent.occurred_at)}</span></>,
+      ]),
+    },
+  };
+}
 
 function Facts({ items }: { items: Array<[string, ReactNode]> }) {
   return (

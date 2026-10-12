@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
-import { EmptyState, ErrorState, PageHeader } from "@/components/dashboard/ui/states";
+import { SideMenu } from "@/components/dashboard/ui/side-menu";
+import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
@@ -14,6 +15,25 @@ export const metadata: Metadata = { title: "Erstbearbeitung" };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
+// Side menu groups (task-10-3, same layout as the request list): queues that need the dispatcher first
+const GROUPS: Array<{ title: string; slugs: string[] }> = [
+  { title: "Handlungsbedarf", slugs: ["pruefung", "antwort", "planung"] },
+  { title: "Wartet", slugs: ["warten"] },
+  { title: "Bestand", slugs: ["alle"] },
+];
+const ACTION_SLUGS = ["pruefung", "antwort", "planung"];
+// Short labels for the menu; the heading keeps the full queue name
+const MENU_LABEL: Record<string, string> = { pruefung: "Prüfung", antwort: "Kundenantwort", planung: "Zu planen", warten: "Wartet auf Kunde", alle: "Alle meine" };
+
+const DESCRIPTION: Record<string, string> = {
+  pruefung: "Die Erstbearbeitung braucht Ihre Prüfung: Analyse kontrollieren, korrigieren oder freigeben.",
+  antwort: "Der Kunde hat geantwortet. Antwort lesen und die Anfrage weiterführen.",
+  planung: "Erstbearbeitung abgeschlossen, aber noch kein Einsatz geplant.",
+  warten: "Rückfrage an den Kunden läuft. Hier ist nichts zu tun, bis die Antwort eingeht.",
+  alle: "Alle Ihnen zugewiesenen Anfragen, neueste zuerst.",
+};
+
+// Dispatcher work queues (task-4-x; task-10-3: side menu like the request list, queues needing action first)
 export default async function IntakeQueuesPage({ searchParams }: Props) {
   const employee = await requireRole(rolesFor("/dashboard/erstbearbeitung"));
   const params = await searchParams;
@@ -56,53 +76,79 @@ export default async function IntakeQueuesPage({ searchParams }: Props) {
     { key: "created", header: "Eingang", cell: (row) => formatDateTime(row.created_at) },
   ];
 
+  const tabHref = (slug: string) => (slug === "pruefung" ? "/dashboard/erstbearbeitung" : `/dashboard/erstbearbeitung?tab=${slug}`);
+  const countOf = (slug: string) => {
+    const item = QUEUE_TABS.find((entry) => entry.slug === slug);
+    return item?.queue ? counts[item.queue as QueueKey] : undefined;
+  };
+  const currentCount = tab.queue ? counts[tab.queue as QueueKey] : total;
+
   return (
-    <div className="dash-page">
-      <PageHeader title="Erstbearbeitung" description="Ihre Arbeitswarteschlangen. Jede Anfrage steht in höchstens einer Warteschlange." />
-
-      <nav className="queue-tabs" aria-label="Warteschlangen">
-        <ul>
-          {QUEUE_TABS.map((item) => {
-            const count = item.queue ? counts[item.queue as QueueKey] : null;
-            return (
-              <li key={item.slug}>
-                <Link href={item.slug === "pruefung" ? "/dashboard/erstbearbeitung" : `/dashboard/erstbearbeitung?tab=${item.slug}`} aria-current={item.slug === tab.slug ? "page" : undefined}>
-                  {item.label}
-                  {count !== null && <span className="queue-tabs__count" aria-label={`${count} Anfragen`}>{count}</span>}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      {error ? (
-        <ErrorState><p>Bitte die Seite neu laden.</p></ErrorState>
-      ) : (
-        <section aria-labelledby="queue-title" className="dash-section">
-          <h2 id="queue-title" className="sr-only">{tab.label}</h2>
-          <p className="result-count" role="status">
-            {formatNumber(total)} {total === 1 ? "Anfrage" : "Anfragen"}
-            {tab.queue ? " · sortiert nach Priorität, Frist und Wartezeit" : " · neueste zuerst"}
-            {!tab.queue && pages > 1 && <> · Seite {page} von {pages}</>}
+    <div className="dash-page rw-page rw-page--tight side-page">
+      <header className="side-page__head">
+        <div className="side-page__head-text">
+          <h1 id="queue-title" className="side-page__title">
+            {tab.label}
+            {!error && <span className="side-page__count mono">{formatNumber(currentCount)}</span>}
+          </h1>
+          <p className="side-page__desc">
+            {DESCRIPTION[tab.slug]}
+            {tab.slug === "planung" && <> <Link href="/dashboard/planung">Zur Einsatzplanung</Link></>}
           </p>
-          <DataTable
-            caption={tab.label}
-            columns={tab.queue ? queueColumns : allColumns}
-            rows={rows}
-            rowKey={(row) => row.id ?? ""}
-            rowHref={(row) => `/dashboard/anfragen/${row.id}`}
-            empty={<EmptyState title={tab.empty} />}
-          />
-          {!tab.queue && pages > 1 && (
-            <nav className="pagination" aria-label="Seiten">
-              {page > 1 ? <Link href={`/dashboard/erstbearbeitung?tab=alle&seite=${page - 1}`} rel="prev">← Zurück</Link> : <span aria-hidden="true" />}
-              <span>Seite {page} von {pages}</span>
-              {page < pages ? <Link href={`/dashboard/erstbearbeitung?tab=alle&seite=${page + 1}`} rel="next">Weiter →</Link> : <span aria-hidden="true" />}
-            </nav>
+        </div>
+        <Link className="rw-button-secondary" href="/dashboard/anfragen">Alle Anfragen durchsuchen</Link>
+      </header>
+
+      <div className="side-page__grid">
+        <SideMenu
+          label="Warteschlangen"
+          title="Erstbearbeitung"
+          scope={["Ihre Arbeitswarteschlangen", "Jede Anfrage steht in höchstens einer Warteschlange."]}
+          groups={GROUPS.map((group) => ({
+            title: group.title,
+            items: QUEUE_TABS.filter((item) => group.slugs.includes(item.slug)).map((item) => ({
+              key: item.slug,
+              label: MENU_LABEL[item.slug] ?? item.label,
+              href: tabHref(item.slug),
+              active: item.slug === tab.slug,
+              count: countOf(item.slug),
+              actionable: ACTION_SLUGS.includes(item.slug),
+            })),
+          }))}
+        />
+
+        <section className="side-page__main" aria-labelledby="queue-title">
+          {error ? (
+            <ErrorState><p>Bitte die Seite neu laden.</p></ErrorState>
+          ) : (
+            <div className="side-page__list">
+              <div className="side-page__list-bar">
+                <p className="result-count" role="status">
+                  <strong>{formatNumber(total)} {total === 1 ? "Anfrage" : "Anfragen"}</strong> · {tab.label}
+                  {!tab.queue && pages > 1 && <> · Seite <span className="mono">{page}</span> von <span className="mono">{pages}</span></>}
+                </p>
+                <span>{tab.queue ? "Sortiert nach Priorität, Frist und Wartezeit" : "Neueste zuerst"}</span>
+              </div>
+              <DataTable
+                caption={tab.label}
+                columns={tab.queue ? queueColumns : allColumns}
+                rows={rows}
+                rowKey={(row) => row.id ?? ""}
+                rowHref={(row) => `/dashboard/anfragen/${row.id}`}
+                rowClassName={(row) => (row.safety_check_required ? "is-hazard" : undefined)}
+                empty={<EmptyState tone={ACTION_SLUGS.includes(tab.slug) ? "good" : "neutral"} title={tab.empty} />}
+              />
+              {!tab.queue && pages > 1 && (
+                <nav className="pagination" aria-label="Seiten">
+                  {page > 1 ? <Link href={`/dashboard/erstbearbeitung?tab=alle&seite=${page - 1}`} rel="prev">← Zurück</Link> : <span aria-hidden="true" />}
+                  <span>Seite <span className="mono">{page}</span> von <span className="mono">{pages}</span></span>
+                  {page < pages ? <Link href={`/dashboard/erstbearbeitung?tab=alle&seite=${page + 1}`} rel="next">Weiter →</Link> : <span aria-hidden="true" />}
+                </nav>
+              )}
+            </div>
           )}
         </section>
-      )}
+      </div>
     </div>
   );
 }

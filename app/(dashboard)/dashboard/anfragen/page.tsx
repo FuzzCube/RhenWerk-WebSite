@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
+import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { HazardFlag, PriorityText, RequestStatusChip } from "@/components/dashboard/ui/status-chip";
 import { Icon } from "@/components/ui";
@@ -71,117 +72,95 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   ];
 
   return (
-    <div className="dash-page rw-page rw-page--tight req2-page">
-      <div className="req2">
-        <nav className="req2__menu" aria-label="Ansichten">
-          <div className="req2__menu-head">
-            <p className="req2__menu-title">Anfragen</p>
-            <p className="req2__menu-scope">{SCOPE[employee.role]}</p>
-            <p className="req2__menu-scope"><span className="mono">{formatNumber(counts.alle ?? 0)}</span> insgesamt · <span className="mono">{formatNumber(counts.offen ?? 0)}</span> offen</p>
-          </div>
-          {GROUPS.map((group) => {
-            const items = views.filter((view) => group.views.includes(view.key));
-            if (items.length === 0) return null;
-            return (
-              <div key={group.title} className="req2__group">
-                <p className="req2__group-title">{group.title}</p>
-                <ul>
-                  {items.map((view) => {
-                    const count = counts[view.key];
-                    const active = view.key === current.key;
-                    const urgent = ACTION_VIEWS.includes(view.key) && (count ?? 0) > 0;
-                    const hazard = view.key === "gefahr";
-                    return (
-                      <li key={view.key}>
-                        <Link
-                          href={href({ view: view.key })}
-                          aria-current={active ? "page" : undefined}
-                          className={`req2__item${hazard ? " req2__item--hazard" : ""}${urgent ? " is-urgent" : ""}${count === 0 ? " is-empty" : ""}`}
-                        >
-                          {hazard && <Icon name="hazard" size={16} />}
-                          <span className="req2__item-label">{view.label}</span>
-                          <span className="req2__count mono">{count === undefined ? "–" : formatNumber(count)}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+    <div className="dash-page rw-page rw-page--tight side-page">
+      <header className="side-page__head">
+        <div className="side-page__head-text">
+          <h1 id="view-title" className="side-page__title">
+            {current.key === "gefahr" && <Icon name="hazard" size={22} />}
+            {current.label}
+            <span className="side-page__count mono">{counts[current.key] === undefined ? "–" : formatNumber(counts[current.key]!)}</span>
+          </h1>
+          <p className="side-page__desc">
+            {DESCRIPTION[current.key]}
+            {current.key === "planen" && <> <Link href="/dashboard/planung">Zur Einsatzplanung</Link></>}
+          </p>
+        </div>
+        <div className="req2__toolbar">
+          <form className="req2__search" method="get" role="search" aria-label="Anfragen durchsuchen">
+            <label className="sr-only" htmlFor="filter-suche">Suche</label>
+            <Icon name="search" size={18} />
+            <input id="filter-suche" name="suche" type="search" defaultValue={filters.q} placeholder="Nummer, Firma, Kontakt oder Ort suchen" />
+            <HiddenFilters filters={filters} skip="suche" />
+            <button className="rw-button-secondary" type="submit">Suchen</button>
+          </form>
+
+          <details className="req2__filter">
+            <summary className={`req2__filter-btn${furtherCount ? " is-active" : ""}`}>
+              <Icon name="filter" size={18} />Filter{furtherCount > 0 && <span className="req2__filter-count mono">{furtherCount}</span>}
+            </summary>
+            <form className="req2__filter-panel" method="get" aria-label="Anfragen filtern">
+              <p className="req2__filter-note">Zusätzlich zur Ansicht „{current.label}“, zum Kombinieren mehrerer Merkmale.</p>
+              <label className="field" htmlFor="filter-anzeige">
+                <span>Status</span>
+                <select id="filter-anzeige" name="anzeige" defaultValue={filters.display}>
+                  <option value="">Alle</option>
+                  {REQUEST_DISPLAY_STATUSES.map((status) => <option key={status.key} value={status.key}>{status.label}</option>)}
+                </select>
+              </label>
+              <FilterSelect name="prioritaet" label="Priorität" value={filters.priority} options={STATUS.request_priority} />
+              <FilterSelect name="erstbearbeitung" label="Erstbearbeitung" value={filters.intake} options={STATUS.intake_status} />
+              <FilterSelect name="arbeit" label="Arbeit" value={filters.work} options={STATUS.work_status} />
+              <HiddenFilters filters={filters} skip="further" />
+              <div className="req2__filter-actions">
+                <button className="button button--primary" type="submit">Filter anwenden</button>
+                {further && <Link className="rw-link-btn" href={href({ intake: "", work: "", priority: "", display: "" })}>Zurücksetzen</Link>}
               </div>
-            );
-          })}
-        </nav>
-
-        <section className="req2__main" aria-labelledby="view-title">
-          <header className="req2__view-head">
-            <div className="req2__view-text">
-              <h1 id="view-title" className="req2__view-title">
-                {current.key === "gefahr" && <Icon name="hazard" size={22} />}
-                {current.label}
-                <span className="req2__view-count mono">{counts[current.key] === undefined ? "–" : formatNumber(counts[current.key]!)}</span>
-              </h1>
-              <p className="req2__view-desc">
-                {DESCRIPTION[current.key]}
-                {current.key === "planen" && <> <Link href="/dashboard/planung">Zur Einsatzplanung</Link></>}
-              </p>
-            </div>
-
-          <div className="req2__toolbar">
-            <form className="req2__search" method="get" role="search" aria-label="Anfragen durchsuchen">
-              <label className="sr-only" htmlFor="filter-suche">Suche</label>
-              <Icon name="search" size={18} />
-              <input id="filter-suche" name="suche" type="search" defaultValue={filters.q} placeholder="Nummer, Firma, Kontakt oder Ort suchen" />
-              <HiddenFilters filters={filters} skip="suche" />
-              <button className="rw-button-secondary" type="submit">Suchen</button>
             </form>
+          </details>
+        </div>
+      </header>
 
-            <details className="req2__filter">
-              <summary className={`req2__filter-btn${furtherCount ? " is-active" : ""}`}>
-                <Icon name="filter" size={18} />Filter{furtherCount > 0 && <span className="req2__filter-count mono">{furtherCount}</span>}
-              </summary>
-              <form className="req2__filter-panel" method="get" aria-label="Anfragen filtern">
-                <p className="req2__filter-note">Zusätzlich zur Ansicht „{current.label}“, zum Kombinieren mehrerer Merkmale.</p>
-                <label className="field" htmlFor="filter-anzeige">
-                  <span>Status</span>
-                  <select id="filter-anzeige" name="anzeige" defaultValue={filters.display}>
-                    <option value="">Alle</option>
-                    {REQUEST_DISPLAY_STATUSES.map((status) => <option key={status.key} value={status.key}>{status.label}</option>)}
-                  </select>
-                </label>
-                <FilterSelect name="prioritaet" label="Priorität" value={filters.priority} options={STATUS.request_priority} />
-                <FilterSelect name="erstbearbeitung" label="Erstbearbeitung" value={filters.intake} options={STATUS.intake_status} />
-                <FilterSelect name="arbeit" label="Arbeit" value={filters.work} options={STATUS.work_status} />
-                <HiddenFilters filters={filters} skip="further" />
-                <div className="req2__filter-actions">
-                  <button className="button button--primary" type="submit">Filter anwenden</button>
-                  {further && <Link className="rw-link-btn" href={href({ intake: "", work: "", priority: "", display: "" })}>Zurücksetzen</Link>}
-                </div>
-              </form>
-            </details>
-          </div>
-          </header>
+      <div className="side-page__grid">
+        <SideMenu
+          label="Ansichten"
+          title="Anfragen"
+          scope={[SCOPE[employee.role], <><span className="mono">{formatNumber(counts.alle ?? 0)}</span> insgesamt · <span className="mono">{formatNumber(counts.offen ?? 0)}</span> offen</>]}
+          groups={GROUPS.map((group) => ({
+            title: group.title,
+            items: views.filter((view) => group.views.includes(view.key)).map((view) => ({
+              key: view.key,
+              label: view.label,
+              href: href({ view: view.key }),
+              active: view.key === current.key,
+              count: counts[view.key] ?? null,
+              actionable: ACTION_VIEWS.includes(view.key),
+              hazard: view.key === "gefahr",
+            })),
+          }))}
+        />
 
-          {chips.length > 0 && (
-            <ul className="req2__chips" aria-label="Aktive Filter">
-              {chips.map((chip) => (
-                <li key={chip.label}>
-                  <Link className="req2__chip" href={chip.remove} aria-label={`${chip.label} entfernen`}>
-                    {chip.label}<Icon name="x" size={14} />
-                  </Link>
-                </li>
-              ))}
-              {chips.length > 1 && (
-                <li><Link className="rw-link-btn" href={href({ q: "", intake: "", work: "", priority: "", display: "", field: "", from: "", to: "", mode: "", open: false, hazard: false })}>Alle entfernen</Link></li>
-              )}
-            </ul>
-          )}
-
+        <section className="side-page__main" aria-labelledby="view-title">
           {error ? (
             <ErrorState title="Die Anfragen konnten nicht geladen werden." action={<Link className="rw-button-secondary" href={`/dashboard/anfragen${filterQuery(filters)}`}>Erneut versuchen</Link>}>
               Suche und Filter bleiben erhalten.
             </ErrorState>
           ) : (
-            <div className="req2__list">
-              <div className="req2__list-bar">
+            <div className="side-page__list">
+              {chips.length > 0 && (
+                <ul className="req2__chips" aria-label="Aktive Filter">
+                  {chips.map((chip) => (
+                    <li key={chip.label}>
+                      <Link className="req2__chip" href={chip.remove} aria-label={`${chip.label} entfernen`}>
+                        {chip.label}<Icon name="x" size={14} />
+                      </Link>
+                    </li>
+                  ))}
+                  {chips.length > 1 && (
+                    <li><Link className="rw-link-btn" href={href({ q: "", intake: "", work: "", priority: "", display: "", field: "", from: "", to: "", mode: "", open: false, hazard: false })}>Alle entfernen</Link></li>
+                  )}
+                </ul>
+              )}
+              <div className="side-page__list-bar">
                 <p className="result-count" role="status">
                   <strong>{formatNumber(total)} {total === 1 ? "Anfrage" : "Anfragen"}</strong> · {current.label}
                   {total > 0 && pages > 1 && <> · Seite <span className="mono">{filters.page}</span> von <span className="mono">{pages}</span></>}
