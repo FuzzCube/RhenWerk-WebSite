@@ -140,7 +140,7 @@ Die Einsatzplanung braucht eine Wochenansicht mit allen Technikern nebeneinander
 
 ### Entscheidung
 
-Eigene, schlanke Zeitstrahl-Ansicht (`components/dashboard/planning-calendar.tsx`) ohne zusätzliche Abhängigkeit: Tage untereinander, je Techniker eine Zeile 06–20 Uhr, Positionen über `lib/berlin-time.ts` in Europe/Berlin. Ein Klick in eine Zeile übernimmt Techniker, Datum und Uhrzeit in das Buchungsformular; das Formular bleibt die vollständige, tastaturbedienbare Eingabe.
+Eigene, schlanke Zeitstrahl-Ansicht ohne zusätzliche Abhängigkeit (seit 12.10.2026 als Plantafel `components/dashboard/plan-board.tsx`; der Technikerkalender ist eine Tagesagenda ohne Zeitstrahl). Ursprünglich: Tage untereinander, je Techniker eine Zeile 06–20 Uhr, Positionen über `lib/berlin-time.ts` in Europe/Berlin. Ein Klick in eine Zeile übernimmt Techniker, Datum und Uhrzeit in das Buchungsformular; das Formular bleibt die vollständige, tastaturbedienbare Eingabe.
 
 ### Begründung
 

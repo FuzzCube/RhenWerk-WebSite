@@ -91,7 +91,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
             <Icon name="search" size={18} />
             <input id="filter-suche" name="suche" type="search" defaultValue={filters.q} placeholder="Nummer, Firma, Kontakt oder Ort suchen" />
             <HiddenFilters filters={filters} skip="suche" />
-            <button className="rw-button-secondary" type="submit">Suchen</button>
+            <button className="rw-button-secondary req2__search-btn" type="submit">Suchen</button>
           </form>
 
           <details className="req2__filter">
