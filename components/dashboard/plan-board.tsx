@@ -1,0 +1,448 @@
+"use client";
+
+import { useMemo, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { scheduleVisit } from "@/app/(dashboard)/dashboard/planung/actions";
+import { HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
+import { Icon } from "@/components/ui";
+import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay, weekStart } from "@/lib/berlin-time";
+import type { BusyBlock, Technician, WorkingHours } from "@/lib/dashboard/planning";
+import { formatWeekdayDate, TIME_ZONE } from "@/lib/format";
+import { hoursOn, nextWorkingDays, SLOT_DURATIONS, slotReasonText, suggestSlots, type SlotBusy, type SlotExperience } from "@/lib/slot-suggestions";
+
+// Planning board of the Einsatzplanung (task-10-3, redesign after the user's dashboard draft
+// "Einsatzplanung Redesign"): one board for 7 working days or a single day, suggestions and the booking
+// form in one panel. Picking a slot and changing the duration happen in the browser (no server round trip);
+// the URL is kept in sync with history.replaceState. Paging the board loads the new days from the server.
+// The database stays the authority for conflicts (schedule_visit, RW410); the board only warns early.
+
+export type BoardPick = { technicianId: string; day: string; start: string; end: string };
+
+type Props = {
+  technicians: Technician[];
+  workingHours: WorkingHours[];
+  // Occupancy of the shown days, with request numbers for readable visits
+  busy: BusyBlock[];
+  // Next 7 working days for suggestions and the conflict check
+  availability: { days: string[]; now: string; busy: SlotBusy[]; experience: Record<string, SlotExperience> };
+  view: "woche" | "tag";
+  days: string[];
+  anchor: string;
+  focusDay: string;
+  request: { id: string; version: number; number: string } | null;
+  requestSummary: ReactNode;
+  // Panel content when nothing can be planned (no request selected, already planned, all done)
+  emptyPanel: ReactNode;
+  initialDuration: number;
+  initialPick: BoardPick | null;
+};
+
+const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+const toTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+const shortDay = (day: string) => formatWeekdayDate(`${day}T12:00:00Z`).replace(/\d{4}$/, "");
+const longDayFormat = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: TIME_ZONE });
+const longDay = (day: string) => longDayFormat.format(new Date(`${day}T12:00:00Z`));
+const nextWorkday = (day: string, step: 1 | -1) => {
+  let next = addDays(day, step);
+  while (isoWeekday(next) > 5) next = addDays(next, step);
+  return next;
+};
+
+type Segment = { start: number; end: number; kind: "own" | "busy" | "absence"; label: string };
+
+export function PlanBoard(props: Props) {
+  const { technicians, workingHours, busy, availability, view, days, anchor, focusDay, request } = props;
+  const router = useRouter();
+  const [navigating, startNavigation] = useTransition();
+  const [duration, setDuration] = useState(props.initialDuration);
+  const [pick, setPick] = useState<BoardPick | null>(props.initialPick);
+  // Changes when the board sets a slot, so the form shows it; typing in the form keeps the key
+  const [formKey, setFormKey] = useState(0);
+  const [notice, setNotice] = useState("");
+  const now = useMemo(() => new Date(availability.now), [availability.now]);
+  const today = dayKeyOf(now);
+
+  // Visits and absences of the shown days plus the suggestion window, each block once
+  const allBusy = useMemo(() => {
+    const seen = new Set<string>();
+    const blocks: SlotBusy[] = [];
+    for (const block of [...busy, ...availability.busy]) {
+      const key = `${block.technicianId}|${Date.parse(block.start)}|${Date.parse(block.end)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      blocks.push({ technicianId: block.technicianId, start: block.start, end: block.end, kind: block.kind });
+    }
+    return blocks;
+  }, [busy, availability.busy]);
+
+  const suggestions = useMemo(() => request
+    ? suggestSlots({ technicians, workingHours, busy: availability.busy, days: availability.days, now, durationMinutes: duration, experience: availability.experience })
+    : [], [request, technicians, workingHours, availability, now, duration]);
+
+  const techName = (id: string) => technicians.find((tech) => tech.id === id)?.name ?? "Unbekannt";
+
+  function check(candidate: BoardPick): { ok: boolean; message: string } {
+    if (!isDayKey(candidate.day) || !isTime(candidate.start) || !isTime(candidate.end)) return { ok: false, message: "Bitte Datum, Beginn und Ende angeben." };
+    const start = toMinutes(candidate.start);
+    const end = toMinutes(candidate.end);
+    if (end <= start) return { ok: false, message: "Ende muss nach dem Beginn liegen." };
+    const hours = hoursOn(workingHours, candidate.technicianId, candidate.day);
+    if (hours.length === 0) return { ok: false, message: `${techName(candidate.technicianId)} hat an diesem Tag keine Arbeitszeit.` };
+    if (!hours.some((row) => toMinutes(row.start) <= start && toMinutes(row.end) >= end)) {
+      return { ok: false, message: `Außerhalb der Arbeitszeit ${hours.map((row) => `${row.start}–${row.end}`).join(", ")}.` };
+    }
+    const from = berlinToInstant(candidate.day, candidate.start).getTime();
+    const to = berlinToInstant(candidate.day, candidate.end).getTime();
+    if (from < now.getTime()) return { ok: false, message: "Beginn liegt in der Vergangenheit." };
+    const hit = allBusy.find((block) => block.technicianId === candidate.technicianId && Date.parse(block.start) < to && Date.parse(block.end) > from);
+    if (hit) {
+      const own = busy.find((block) => block.technicianId === hit.technicianId && Date.parse(block.start) === Date.parse(hit.start) && block.requestNumber);
+      const what = hit.kind === "absence" ? "einer Abwesenheit" : own ? `Einsatz ${own.requestNumber}` : "einem anderen Einsatz";
+      const span = `${toTime(minutesOfDay(new Date(hit.start)))}–${toTime(minutesOfDay(new Date(hit.end)))}`;
+      return { ok: false, message: `Überschneidet sich mit ${what} (${span}).` };
+    }
+    return { ok: true, message: `Frei · ${techName(candidate.technicianId)}, ${longDay(candidate.day)}, ${candidate.start}–${candidate.end}` };
+  }
+
+  // Earliest free window of the duration on one day, starting at or after the given minute
+  function windowFrom(technicianId: string, day: string, fromMinute: number): BoardPick | null {
+    for (const row of hoursOn(workingHours, technicianId, day)) {
+      for (let minute = Math.max(toMinutes(row.start), fromMinute); minute + duration <= toMinutes(row.end); minute += 30) {
+        if (minute % 30 !== 0) continue;
+        const candidate = { technicianId, day, start: toTime(minute), end: toTime(minute + duration) };
+        if (check(candidate).ok) return candidate;
+      }
+    }
+    return null;
+  }
+
+  function href(overrides: { view?: "woche" | "tag"; anchor?: string; day?: string; pick?: BoardPick | null; duration?: number }) {
+    const nextView = overrides.view ?? view;
+    const nextPick = overrides.pick === undefined ? pick : overrides.pick;
+    const query = new URLSearchParams();
+    if (nextView === "tag") { query.set("ansicht", "tag"); query.set("tag", overrides.day ?? focusDay); }
+    else query.set("woche", overrides.anchor ?? anchor);
+    if (request) query.set("anfrage", request.id);
+    query.set("dauer", String(overrides.duration ?? duration));
+    if (nextPick) { query.set("techniker", nextPick.technicianId); query.set("datum", nextPick.day); query.set("beginn", nextPick.start); }
+    return `/dashboard/planung?${query.toString()}`;
+  }
+
+  function choose(next: BoardPick | null, options: { notice?: string; syncForm?: boolean; nextDuration?: number } = {}) {
+    setPick(next);
+    setNotice(options.notice ?? "");
+    if (options.syncForm !== false) setFormKey((key) => key + 1);
+    window.history.replaceState(null, "", href({ pick: next, duration: options.nextDuration }));
+  }
+
+  function navigate(target: Parameters<typeof href>[0]) {
+    startNavigation(() => router.push(href(target), { scroll: false }));
+  }
+
+  function changeDuration(minutes: number) {
+    setDuration(minutes);
+    if (pick) {
+      const moved = { ...pick, end: toTime(Math.min(toMinutes(pick.start) + minutes, 23 * 60 + 30)) };
+      choose(moved, { nextDuration: minutes });
+    } else {
+      window.history.replaceState(null, "", href({ duration: minutes }));
+    }
+  }
+
+  // Form edits update the board without remounting the form
+  function onFormChange(event: FormEvent<HTMLDivElement>) {
+    const form = event.currentTarget.closest("form");
+    if (!form) return;
+    const value = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null)?.value ?? "";
+    const next = { technicianId: value("technician_id"), day: value("date"), start: value("start"), end: value("end") };
+    if (!next.technicianId || !isDayKey(next.day) || !isTime(next.start) || !isTime(next.end)) return;
+    if ((event.target as HTMLElement).getAttribute("name") === "start") {
+      next.end = toTime(Math.min(toMinutes(next.start) + duration, 23 * 60 + 30));
+      const end = form.elements.namedItem("end") as HTMLInputElement | null;
+      if (end) end.value = next.end;
+    }
+    choose(next, { syncForm: false });
+  }
+
+  // Bounds of the lanes (week and day view): the working hours of the shown days in whole hours, widened
+  // only where a visit lies outside them, so no space is spent on hours that cannot be booked
+  const bounds = useMemo(() => {
+    const starts: number[] = [];
+    const ends: number[] = [];
+    for (const day of days) {
+      for (const tech of technicians) {
+        for (const row of hoursOn(workingHours, tech.id, day)) { starts.push(toMinutes(row.start)); ends.push(toMinutes(row.end)); }
+      }
+      for (const block of busy) {
+        if (block.kind !== "visit" || dayKeyOf(new Date(block.start)) !== day || dayKeyOf(new Date(block.end)) !== day) continue;
+        starts.push(minutesOfDay(new Date(block.start)));
+        ends.push(minutesOfDay(new Date(block.end)));
+      }
+    }
+    if (starts.length === 0) return { from: 7 * 60, to: 17 * 60 };
+    return { from: Math.floor(Math.min(...starts) / 60) * 60, to: Math.ceil(Math.max(...ends) / 60) * 60 };
+  }, [days, technicians, workingHours, busy]);
+  const pct = (minutes: number) => ((Math.min(Math.max(minutes, bounds.from), bounds.to) - bounds.from) / (bounds.to - bounds.from)) * 100;
+  const place = (start: number, end: number) => ({ left: `${pct(start)}%`, width: `calc(${pct(end) - pct(start)}% - 2px)` });
+  // A thin line at every full hour inside the lanes (as in the draft), independent of the labels
+  const hourLines: number[] = [];
+  for (let minute = Math.ceil((bounds.from + 1) / 60) * 60; minute < bounds.to; minute += 60) hourLines.push(minute);
+  // Lighter half-hour lines only in the day view; in the narrow week cells they would be a few pixels apart
+  const halfHourLines: number[] = [];
+  if (view === "tag") for (let minute = bounds.from + 30; minute < bounds.to; minute += 60) halfHourLines.push(minute);
+  // Day view: every two hours; narrow week cells: start, a full hour in the middle, end
+  const ticks: number[] = [];
+  if (view === "tag") for (let minute = bounds.from; minute <= bounds.to; minute += bounds.to - bounds.from > 12 * 60 ? 120 : 60) ticks.push(minute);
+  else ticks.push(bounds.from, Math.round((bounds.from + bounds.to) / 120) * 60, bounds.to);
+
+  function segmentsOf(technicianId: string, day: string): Segment[] {
+    return busy
+      .filter((block) => block.technicianId === technicianId && dayKeyOf(new Date(block.start)) <= day && dayKeyOf(new Date(Date.parse(block.end) - 1)) >= day)
+      .map((block) => {
+        const start = dayKeyOf(new Date(block.start)) < day ? 0 : minutesOfDay(new Date(block.start));
+        const end = dayKeyOf(new Date(block.end)) > day ? 24 * 60 : minutesOfDay(new Date(block.end));
+        const kind = block.kind === "absence" ? "absence" : block.requestNumber ? "own" : "busy";
+        const label = kind === "absence" ? "Abwesend" : block.requestNumber ?? "Belegt";
+        return { start, end, kind, label };
+      });
+  }
+
+  // Share of the working time that is booked within the shown days
+  function loadOf(technicianId: string): number | null {
+    let total = 0;
+    let used = 0;
+    for (const day of days) {
+      const segments = segmentsOf(technicianId, day);
+      for (const row of hoursOn(workingHours, technicianId, day)) {
+        const from = toMinutes(row.start);
+        const to = toMinutes(row.end);
+        total += to - from;
+        used += segments.reduce((sum, segment) => sum + Math.max(0, Math.min(segment.end, to) - Math.max(segment.start, from)), 0);
+      }
+    }
+    return total > 0 ? Math.round((used / total) * 100) : null;
+  }
+
+  const pickCheck = pick ? check(pick) : null;
+  const canPick = Boolean(request);
+  const rangeLabel = view === "tag" ? longDay(focusDay) : `KW ${isoWeek(days[0])}${isoWeek(days[days.length - 1]) !== isoWeek(days[0]) ? `/${isoWeek(days[days.length - 1])}` : ""}`;
+  const rangeDates = view === "tag" ? `KW ${isoWeek(focusDay)}` : `${shortDay(days[0])} – ${shortDay(days[days.length - 1])}`;
+  const unit = view === "tag" ? { prev: "Vorheriger Tag", next: "Nächster Tag" } : { prev: "Vorherige Woche", next: "Nächste Woche" };
+  const todayWorkday = isoWeekday(today) > 5 ? nextWorkday(today, 1) : today;
+
+  function lane(technicianId: string, day: string) {
+    const hours = hoursOn(workingHours, technicianId, day);
+    const segments = segmentsOf(technicianId, day);
+    const absentAllDay = hours.length === 0 || segments.some((segment) => segment.kind === "absence" && segment.start <= toMinutes(hours[0].start) && segment.end >= toMinutes(hours[hours.length - 1].end));
+    const firstWindow = canPick && !absentAllDay ? windowFrom(technicianId, day, 0) : null;
+    const name = techName(technicianId);
+    const busyText = segments.filter((segment) => segment.kind !== "absence").map((segment) => `${toTime(segment.start)}–${toTime(segment.end)}`).join(", ");
+    const label = `${name}, ${shortDay(day)}: ${absentAllDay ? "nicht verfügbar" : `${busyText ? `belegt ${busyText}` : "frei"}${canPick ? (firstWindow ? `, frei ab ${firstWindow.start}` : `, kein freies Fenster für ${duration / 60} h`) : ""}`}`;
+    const pickHere = pick && pick.technicianId === technicianId && pick.day === day ? pick : null;
+    const ghosts = suggestions
+      .map((suggestion, index) => ({ suggestion, rank: index + 1 }))
+      .filter(({ suggestion }) => suggestion.technicianId === technicianId && suggestion.day === day && !(pickHere && pickHere.start === suggestion.startTime && pickHere.end === suggestion.endTime));
+
+    const select = (clientX: number | null, target: HTMLElement) => {
+      if (!canPick) return;
+      let from = 0;
+      if (clientX !== null) {
+        const rect = target.getBoundingClientRect();
+        // Nearest half hour: a lane is only ~80 px wide in the week view, so one pixel is several minutes
+        from = Math.round((bounds.from + ((clientX - rect.left) / rect.width) * (bounds.to - bounds.from)) / 30) * 30;
+        const lastStart = Math.max(...hours.map((row) => toMinutes(row.end))) - duration;
+        from = Math.min(from, lastStart);
+      }
+      const exact = clientX !== null ? { technicianId, day, start: toTime(from), end: toTime(from + duration) } : null;
+      if (exact && check(exact).ok) return choose(exact);
+      const found = windowFrom(technicianId, day, from) ?? windowFrom(technicianId, day, 0);
+      if (!found) return setNotice(`${name} hat am ${shortDay(day)} kein freies Fenster für ${duration / 60} h.`);
+      choose(found, { notice: clientX !== null ? `Nächstes freies Fenster übernommen: ${found.start}–${found.end}.` : "" });
+    };
+
+    const interactive = canPick && !absentAllDay;
+    return (
+      <div
+        className={`plan3__lane${absentAllDay ? " is-off" : ""}${interactive ? " is-pickable" : ""}`}
+        data-tech={technicianId}
+        data-day={day}
+        data-from={bounds.from}
+        data-to={bounds.to}
+        role={interactive ? "button" : "img"}
+        tabIndex={interactive ? 0 : undefined}
+        aria-label={interactive ? `${label}. Auswählen` : label}
+        onClick={interactive ? (event) => select(event.clientX, event.currentTarget) : undefined}
+        onKeyDown={interactive ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(null, event.currentTarget); } } : undefined}
+      >
+        {halfHourLines.map((minute) => <i key={minute} className="plan3__grid plan3__grid--half" style={{ left: `${pct(minute)}%` }} />)}
+        {hourLines.map((minute) => <i key={minute} className="plan3__grid" style={{ left: `${pct(minute)}%` }} />)}
+        {hours.length > 0 && toMinutes(hours[0].start) > bounds.from && <i className="plan3__blk plan3__blk--outside" style={{ left: 0, width: `${pct(toMinutes(hours[0].start))}%` }} />}
+        {hours.length > 0 && toMinutes(hours[hours.length - 1].end) < bounds.to && <i className="plan3__blk plan3__blk--outside" style={{ left: `${pct(toMinutes(hours[hours.length - 1].end))}%`, right: 0 }} />}
+        {day <= today && !absentAllDay && <i className="plan3__blk plan3__blk--past" style={{ left: 0, width: day < today ? "100%" : `${pct(minutesOfDay(now))}%` }} />}
+        {absentAllDay
+          ? <span className="plan3__off-label">{hours.length === 0 ? "Keine Arbeitszeit" : "Abwesend"}</span>
+          : segments.map((segment) => (
+            <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}`} style={place(segment.start, segment.end)} title={`${segment.label} · ${toTime(segment.start)}–${toTime(Math.min(segment.end, 24 * 60 - 1))}`}>
+              {view === "tag" && <span className="plan3__blk-text">{segment.label} · {toTime(segment.start)}–{toTime(Math.min(segment.end, 24 * 60 - 1))}</span>}
+            </span>
+          ))}
+        {ghosts.map(({ suggestion, rank }) => (
+          <span key={rank} className="plan3__blk plan3__blk--sug" style={place(toMinutes(suggestion.startTime), toMinutes(suggestion.endTime))} aria-hidden="true">{rank}</span>
+        ))}
+        {pickHere && (
+          <span className={`plan3__blk plan3__blk--pick${pickCheck?.ok ? "" : " is-conflict"}`} style={place(toMinutes(pickHere.start), toMinutes(pickHere.end))} aria-hidden="true">
+            {(view === "tag" || toMinutes(pickHere.end) - toMinutes(pickHere.start) >= 120) && <span className="plan3__blk-text">{pickHere.start}–{pickHere.end}</span>}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <section id="woche" className="rw-card rw-card--neutral plan3__board" aria-labelledby="plantafel-title" aria-busy={navigating || undefined}>
+        <header className="plan3__board-head">
+          <div>
+            <h2 id="plantafel-title" className="rw-card__title">Plantafel</h2>
+            <p className="plan3__range"><strong>{rangeLabel}</strong> <span className="mono">{rangeDates}</span></p>
+          </div>
+          <div className="plan3__tools">
+            <div className="plan3__seg" role="group" aria-label="Zeitraum wechseln">
+              <button type="button" className="plan3__icon-btn" aria-label={unit.prev} title={unit.prev}
+                onClick={() => navigate(view === "tag" ? { day: nextWorkday(focusDay, -1) } : { anchor: addDays(weekStart(anchor), -7) })}>
+                <Icon name="arrow-left" size={16} />
+              </button>
+              <button type="button" onClick={() => navigate(view === "tag" ? { day: todayWorkday } : { anchor: todayWorkday })}>Heute</button>
+              <button type="button" className="plan3__icon-btn" aria-label={unit.next} title={unit.next}
+                onClick={() => navigate(view === "tag" ? { day: nextWorkday(focusDay, 1) } : { anchor: addDays(weekStart(anchor), 7) })}>
+                <Icon name="arrow-right" size={16} />
+              </button>
+            </div>
+            <div className="plan3__seg" role="group" aria-label="Ansicht">
+              <button type="button" aria-pressed={view === "woche"} onClick={() => view !== "woche" && navigate({ view: "woche", anchor: focusDay })}>7 Arbeitstage</button>
+              <button type="button" aria-pressed={view === "tag"} onClick={() => view !== "tag" && navigate({ view: "tag", day: pick && days.includes(pick.day) ? pick.day : days.includes(todayWorkday) ? todayWorkday : days[0] })}>Tag</button>
+            </div>
+            {canPick && (
+              <div className="plan3__seg" role="group" aria-label="Dauer">
+                {SLOT_DURATIONS.map((minutes) => (
+                  <button key={minutes} type="button" aria-pressed={minutes === duration} onClick={() => changeDuration(minutes)}>{minutes / 60} h</button>
+                ))}
+              </div>
+            )}
+          </div>
+        </header>
+
+        {view === "tag" && (
+          <nav className="plan3__days" aria-label="Tag wählen">
+            {nextWorkingDays(weekStart(focusDay), 5).map((day) => (
+              <button key={day} type="button" aria-pressed={day === focusDay} onClick={() => day !== focusDay && navigate({ day })}>{shortDay(day)}</button>
+            ))}
+          </nav>
+        )}
+
+        <ul className="plan3__legend" aria-label="Legende">
+          <li><i className="plan3__key plan3__key--own" />Eigene Einsätze</li>
+          <li><i className="plan3__key plan3__key--busy" />Belegt</li>
+          <li><i className="plan3__key plan3__key--absence" />Abwesend</li>
+          {canPick && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
+          {canPick && <li><i className="plan3__key plan3__key--pick" />Auswahl</li>}
+          <li><i className="plan3__key plan3__key--past" />Vorbei</li>
+          <li><i className="plan3__key plan3__key--outside" />Außerhalb der Arbeitszeit</li>
+        </ul>
+
+        <div className="plan3__scroll">
+          <div className={`plan3__table${view === "tag" ? " plan3__table--day" : ""}`} style={{ gridTemplateColumns: `9.5rem repeat(${days.length}, minmax(${view === "tag" ? "0" : "5.4rem"}, 1fr))` }}>
+            <div aria-hidden="true" />
+            {days.map((day) => (
+              <div key={day} className={`plan3__colh${day === today ? " is-today" : ""}`} aria-current={day === today ? "date" : undefined}>
+                <span className="plan3__colh-top">{day === today ? "Heute" : ""}</span>
+                <strong>{view === "tag" ? longDay(day) : shortDay(day)}</strong>
+                <span className="plan3__ticks" aria-hidden="true">
+                  {ticks.map((minute) => <span key={minute} style={{ left: `${pct(minute)}%` }}>{toTime(minute).slice(0, 2)}</span>)}
+                </span>
+              </div>
+            ))}
+            {technicians.map((tech) => {
+              const load = loadOf(tech.id);
+              return (
+                <div key={tech.id} className="plan3__row">
+                  <div className="plan3__rowh">
+                    <strong>{tech.name}</strong>
+                    {load !== null && (
+                      <span className="plan3__load"><span className="plan3__loadbar" aria-hidden="true"><i style={{ width: `${load}%` }} /></span><span className="mono">{load}</span> % belegt</span>
+                    )}
+                  </div>
+                  {days.map((day) => <div key={day} className="plan3__cell">{lane(tech.id, day)}</div>)}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <p className="plan3__hint">
+          {canPick
+            ? <>Leere Fläche anklicken – der Termin springt ins nächste freie Fenster. Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
+            : "Links eine Anfrage wählen, dann lassen sich freie Flächen anklicken."}
+        </p>
+        {notice && <p className="plan3__notice" role="status">{notice}</p>}
+      </section>
+
+      <aside id="auswahl" className="rw-card rw-card--action plan3__panel" aria-labelledby="auswahl-title">
+        <h2 id="auswahl-title" className="plan3__eyebrow">Einsatz planen</h2>
+        {request ? (
+          <>
+            <div className="plan3__panel-sec plan3__panel-sec--head">{props.requestSummary}</div>
+            <div className="plan3__panel-sec">
+              <h3 className="plan3__eyebrow">Vorschläge</h3>
+              {suggestions.length === 0 ? (
+                <p className="plan3__muted">Kein freies Fenster für {duration / 60} h in den nächsten 7 Arbeitstagen. Kürzere Dauer wählen oder eine spätere Woche öffnen.</p>
+              ) : (
+                <ul className="plan3__sugs">
+                  {suggestions.map((suggestion, index) => {
+                    const active = pick?.technicianId === suggestion.technicianId && pick.day === suggestion.day && pick.start === suggestion.startTime && pick.end === suggestion.endTime;
+                    return (
+                      <li key={suggestion.technicianId}>
+                        <button type="button" className="plan3__sug" aria-pressed={active}
+                          onClick={() => {
+                            const next = { technicianId: suggestion.technicianId, day: suggestion.day, start: suggestion.startTime, end: suggestion.endTime };
+                            if (view === "woche" && !days.includes(next.day)) { setPick(next); setFormKey((key) => key + 1); navigate({ anchor: todayWorkday, pick: next }); }
+                            else if (view === "tag" && next.day !== focusDay) { setPick(next); setFormKey((key) => key + 1); navigate({ day: next.day, pick: next }); }
+                            else choose(next);
+                          }}>
+                          <span className="plan3__rank" aria-hidden="true">{index + 1}</span>
+                          <strong>{suggestion.name}</strong>
+                          <span className="mono">{shortDay(suggestion.day)} · {suggestion.startTime}–{suggestion.endTime}</span>
+                          <span className="plan3__why">{suggestion.reasons.map((reason) => slotReasonText(reason, suggestion)).join(" · ")}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+            <div className="plan3__panel-sec">
+              <h3 className="plan3__eyebrow">Termin</h3>
+              <SaveForm key={formKey} action={scheduleVisit} submitLabel="Einsatz planen" className="plan3__form">
+                <HiddenField name="request_id" value={request.id} />
+                <HiddenField name="version" value={request.version} />
+                <div className="plan3__fields" onChange={onFormChange}>
+                  <SelectField name="technician_id" label="Techniker" required defaultValue={pick?.technicianId ?? ""} options={technicians.map((tech) => ({ value: tech.id, label: tech.name }))} />
+                  <TextField name="date" label="Datum" type="date" required defaultValue={pick?.day ?? (isoWeekday(addDays(today, 1)) > 5 ? nextWorkday(today, 1) : addDays(today, 1))} />
+                  <div className="plan3__times">
+                    <TextField name="start" label="Beginn" type="time" required defaultValue={pick?.start ?? "08:00"} />
+                    <TextField name="end" label="Ende" type="time" required defaultValue={pick?.end ?? toTime(8 * 60 + duration)} />
+                  </div>
+                </div>
+                <p className={`plan3__check plan3__check--${pickCheck ? (pickCheck.ok ? "ok" : "bad") : "none"}`} aria-live="polite">
+                  <Icon name={pickCheck ? (pickCheck.ok ? "check-circle" : "alert") : "calendar"} size={18} />
+                  <span>{pickCheck ? pickCheck.message : "Noch kein Termin gewählt: Vorschlag oder freie Fläche in der Plantafel anklicken."}</span>
+                </p>
+              </SaveForm>
+            </div>
+          </>
+        ) : (
+          <div className="plan3__panel-sec">{props.emptyPanel}</div>
+        )}
+      </aside>
+    </>
+  );
+}

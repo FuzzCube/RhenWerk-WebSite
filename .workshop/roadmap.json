@@ -1257,7 +1257,7 @@
           "description": "Gestalterische Überarbeitung des Mitarbeiterbereichs nach Vorgaben des Nutzers (z. B. Entwurf aus Claude Design unter docs/design/): Layout, Navigation, Listen, Kacheln, Formulare und Diagramme im RheinWerk-Design. Funktion, Rechte und Datenflüsse bleiben unverändert; test:ui sichert jeden Schritt ab. Vorlage: Claude-Design-Canvas „RheinWerk Übersicht Redesign“ (Spezifikation und Zustände als Regelwerk); Logik (einheitlicher Status, Kennzahl-Richtung, Hinweise, Einsatzvorschläge) als getestete Funktionen.",
           "order": 3,
           "weight": 3,
-          "status": "blocked",
+          "status": "in_progress",
           "dependsOn": [
             "task-7-3",
             "task-8-1"
@@ -1271,10 +1271,16 @@
           "startedAt": "2026-10-08T14:39:26Z",
           "completedAt": null,
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "partial",
+            "summary": "Einsatzplanung-Neugestaltung 12.10.2026: typecheck, lint, build, test:unit 61/61, test:ui 198 bestanden; Design-Abnahme durch den Nutzer steht aus.",
+            "commands": [
+              "npm run typecheck",
+              "npm run lint",
+              "npm run build",
+              "npm run test:unit",
+              "APP_URL=http://127.0.0.1:3201 npm run test:ui"
+            ],
+            "checkedAt": "2026-10-12T13:48:42Z"
           }
         },
         {

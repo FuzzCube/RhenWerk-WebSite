@@ -491,7 +491,7 @@ try {
   check("Ablehnung mit Grund über reject_request", rejected && (await dbRequest()).rejection_reason === "Außerhalb des Servicegebiets");
   await page.open(requestUrl);
   check("Nach Ablehnung keine Prüfaktionen mehr", await page.eval(`!document.getElementById("aktionen")`));
-  console.log("\nEinsatzplanung im Kalender");
+  console.log("\nEinsatzplanung in der Plantafel");
   const processed = { intake_status: "processed", priority: "normal", intake_mode: "manual", intake_completed_at: new Date().toISOString(), manual_minutes_baseline: 15, human_review_required: false };
   const planA = await newRequest("plan-a", processed);
   const planB = await newRequest("plan-b", processed);
@@ -504,14 +504,13 @@ try {
   const bookingForm = `document.querySelector("#auswahl form")`;
   await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   await page.open(`${BASE}/dashboard/planung?woche=${week}&anfrage=${planA.id}`);
-  check("Anfrage in „Zu planen“ ausgewählt", await page.eval(`document.querySelector('.plan2__item[aria-current="true"]')?.textContent.includes(${JSON.stringify(planA.request_number)})`));
-  // Click at 09:00 in Tobias' lane on Monday
+  check("Anfrage in „Zu planen“ ausgewählt", await page.eval(`document.querySelector('.plan3__item[aria-current="true"]')?.textContent.includes(${JSON.stringify(planA.request_number)})`));
+  // Click at 09:00 (plus a few minutes; the board snaps to the nearest half hour) in Tobias' lane on Monday of the planning board
   await page.eval(`(() => {
-    const day = document.querySelector(".plan-day");
-    const row = [...day.querySelectorAll(".plan-row")].find((r) => r.querySelector(".plan-name").textContent.startsWith(${JSON.stringify(tech.display_name)}));
-    const lane = row.querySelector(".plan-lane");
+    const lane = document.querySelector('.plan3__lane[data-tech="${tech.id}"][data-day="${week}"]');
     const rect = lane.getBoundingClientRect();
-    const x = rect.left + rect.width * (9 * 60 - 360) / 840;
+    const from = Number(lane.dataset.from), to = Number(lane.dataset.to);
+    const x = rect.left + rect.width * (9 * 60 + 5 - from) / (to - from);
     lane.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: x, clientY: rect.top + 5 }));
   })()`);
   let picked = await formStatus(bookingForm);
@@ -523,8 +522,8 @@ try {
   const expectedEnd = new Date(Date.parse(`${week}T11:00:00Z`) - utcOffsetHours * 3600000).toISOString();
   check(`Einsatz über schedule_visit gebucht (${week} 09:00–11:00 Berlin)`, booked && new Date(visitA.scheduled_start).toISOString() === expectedStart && new Date(visitA.scheduled_end).toISOString() === expectedEnd && visitA.status === "scheduled", JSON.stringify(visitA));
   await page.open(`${BASE}/dashboard/planung?woche=${week}`);
-  check("  im Kalender als eigene Anfrage sichtbar", await page.eval(`[...document.querySelectorAll(".plan-block--own")].some((b) => b.textContent.includes(${JSON.stringify(planA.request_number)}))`));
-  check("  Anfrage verlässt „Zu planen“", await page.eval(`![...document.querySelectorAll(".plan2__item")].some((i) => i.textContent.includes(${JSON.stringify(planA.request_number)}))`));
+  check("  in der Plantafel als eigene Anfrage sichtbar", await page.eval(`[...document.querySelectorAll(".plan3__blk--own")].some((b) => b.title.includes(${JSON.stringify(planA.request_number)}))`));
+  check("  Anfrage verlässt „Zu planen“", await page.eval(`![...document.querySelectorAll(".plan3__item")].some((i) => i.textContent.includes(${JSON.stringify(planA.request_number)}))`));
 
   // Conflict: same technician and slot for request B → RW410, inputs kept, nothing booked
   await page.open(`${BASE}/dashboard/planung?woche=${week}&anfrage=${planB.id}`);
