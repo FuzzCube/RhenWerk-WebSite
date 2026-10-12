@@ -148,6 +148,12 @@ isOneToOne: false
       foreignKeyName: "invoice_items_invoice_id_fkey"
       columns: ["invoice_id"]
 isOneToOne: false
+      referencedRelation: "invoice_reminder_states"
+      referencedColumns: ["invoice_id"]
+    },{
+      foreignKeyName: "invoice_items_invoice_id_fkey"
+      columns: ["invoice_id"]
+isOneToOne: false
       referencedRelation: "invoices"
       referencedColumns: ["id"]
     },{
@@ -172,16 +178,54 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
-                },"invoices": {
+                },"invoice_reminders": {
                   Row: {
-                    "created_at": string,"created_by": string,"currency": string,"customer_snapshot": NonNullable<Json>,"id": string,"invoice_number": string | null,"issue_date": string | null,"issued_at": string | null,"issued_by": string | null,"notes": string | null,"paid_at": string | null,"payment_due_date": string | null,"request_id": string,"seller_snapshot": NonNullable<Json>,"sent_at": string | null,"status": Database["public"]['Enums']["invoice_status"],"subtotal": number,"tax_total": number,"total": number,"updated_at": string
+                    "created_at": string,"created_by": string | null,"id": string,"invoice_id": string,"message_id": string,"stage": number,"trigger": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by": string,"currency"?: string,"customer_snapshot"?: NonNullable<Json>,"id"?: string,"invoice_number"?: string | null,"issue_date"?: string | null,"issued_at"?: string | null,"issued_by"?: string | null,"notes"?: string | null,"paid_at"?: string | null,"payment_due_date"?: string | null,"request_id": string,"seller_snapshot"?: NonNullable<Json>,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["invoice_status"],"subtotal"?: number,"tax_total"?: number,"total"?: number,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"invoice_id": string,"message_id": string,"stage": number,"trigger": string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string,"currency"?: string,"customer_snapshot"?: NonNullable<Json>,"id"?: string,"invoice_number"?: string | null,"issue_date"?: string | null,"issued_at"?: string | null,"issued_by"?: string | null,"notes"?: string | null,"paid_at"?: string | null,"payment_due_date"?: string | null,"request_id"?: string,"seller_snapshot"?: NonNullable<Json>,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["invoice_status"],"subtotal"?: number,"tax_total"?: number,"total"?: number,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"invoice_id"?: string,"message_id"?: string,"stage"?: number,"trigger"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "invoice_reminders_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoice_reminders_invoice_id_fkey"
+      columns: ["invoice_id"]
+isOneToOne: false
+      referencedRelation: "invoice_reminder_states"
+      referencedColumns: ["invoice_id"]
+    },{
+      foreignKeyName: "invoice_reminders_invoice_id_fkey"
+      columns: ["invoice_id"]
+isOneToOne: false
+      referencedRelation: "invoices"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoice_reminders_message_id_fkey"
+      columns: ["message_id"]
+isOneToOne: true
+      referencedRelation: "messages"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"invoices": {
+                  Row: {
+                    "created_at": string,"created_by": string,"currency": string,"customer_snapshot": NonNullable<Json>,"id": string,"invoice_number": string | null,"issue_date": string | null,"issued_at": string | null,"issued_by": string | null,"notes": string | null,"paid_at": string | null,"payment_due_date": string | null,"reminders_pause_reason": string | null,"reminders_paused_at": string | null,"reminders_paused_by": string | null,"request_id": string,"seller_snapshot": NonNullable<Json>,"sent_at": string | null,"status": Database["public"]['Enums']["invoice_status"],"subtotal": number,"tax_total": number,"total": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by": string,"currency"?: string,"customer_snapshot"?: NonNullable<Json>,"id"?: string,"invoice_number"?: string | null,"issue_date"?: string | null,"issued_at"?: string | null,"issued_by"?: string | null,"notes"?: string | null,"paid_at"?: string | null,"payment_due_date"?: string | null,"reminders_pause_reason"?: string | null,"reminders_paused_at"?: string | null,"reminders_paused_by"?: string | null,"request_id": string,"seller_snapshot"?: NonNullable<Json>,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["invoice_status"],"subtotal"?: number,"tax_total"?: number,"total"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string,"currency"?: string,"customer_snapshot"?: NonNullable<Json>,"id"?: string,"invoice_number"?: string | null,"issue_date"?: string | null,"issued_at"?: string | null,"issued_by"?: string | null,"notes"?: string | null,"paid_at"?: string | null,"payment_due_date"?: string | null,"reminders_pause_reason"?: string | null,"reminders_paused_at"?: string | null,"reminders_paused_by"?: string | null,"request_id"?: string,"seller_snapshot"?: NonNullable<Json>,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["invoice_status"],"subtotal"?: number,"tax_total"?: number,"total"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -193,6 +237,12 @@ isOneToOne: false
     },{
       foreignKeyName: "invoices_issued_by_fkey"
       columns: ["issued_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "invoices_reminders_paused_by_fkey"
+      columns: ["reminders_paused_by"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -368,14 +418,14 @@ isOneToOne: false
                   ]
                 },"settings": {
                   Row: {
-                    "company_details": NonNullable<Json>,"created_at": string,"currency": string,"default_tax_rate": number,"id": number,"manual_intake_minutes": number,"payment_terms_days": number,"timezone": string,"updated_at": string,"updated_by": string | null
+                    "company_details": NonNullable<Json>,"created_at": string,"currency": string,"default_tax_rate": number,"id": number,"manual_intake_minutes": number,"payment_terms_days": number,"reminder_stage1_days": number | null,"reminder_stage2_days": number | null,"reminder_stage3_days": number | null,"timezone": string,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "company_details"?: NonNullable<Json>,"created_at"?: string,"currency"?: string,"default_tax_rate"?: number,"id"?: number,"manual_intake_minutes"?: number,"payment_terms_days"?: number,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
+                    "company_details"?: NonNullable<Json>,"created_at"?: string,"currency"?: string,"default_tax_rate"?: number,"id"?: number,"manual_intake_minutes"?: number,"payment_terms_days"?: number,"reminder_stage1_days"?: number | null,"reminder_stage2_days"?: number | null,"reminder_stage3_days"?: number | null,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "company_details"?: NonNullable<Json>,"created_at"?: string,"currency"?: string,"default_tax_rate"?: number,"id"?: number,"manual_intake_minutes"?: number,"payment_terms_days"?: number,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
+                    "company_details"?: NonNullable<Json>,"created_at"?: string,"currency"?: string,"default_tax_rate"?: number,"id"?: number,"manual_intake_minutes"?: number,"payment_terms_days"?: number,"reminder_stage1_days"?: number | null,"reminder_stage2_days"?: number | null,"reminder_stage3_days"?: number | null,"timezone"?: string,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -490,6 +540,14 @@ isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
+                  ]
+                },"invoice_reminder_states": {
+                  Row: {
+                    "invoice_id": string | null,"last_reminder_at": string | null,"last_stage": number | null,"next_due_on": string | null,"next_stage": number | null,"paused": boolean | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
                   ]
                 }
           }
@@ -646,6 +704,28 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"admin_update_reminder_settings":
+{ Args: { "stage1_days": number,"stage2_days": number,"stage3_days": number }; Returns: {
+              "company_details": NonNullable<Json>,
+"created_at": string,
+"currency": string,
+"default_tax_rate": number,
+"id": number,
+"manual_intake_minutes": number,
+"payment_terms_days": number,
+"reminder_stage1_days": number | null,
+"reminder_stage2_days": number | null,
+"reminder_stage3_days": number | null,
+"timezone": string,
+"updated_at": string,
+"updated_by": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "settings"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "admin_update_settings":
 { Args: { "company_details": Json,"default_tax_rate": number,"manual_intake_minutes": number,"payment_terms_days": number }; Returns: {
               "company_details": NonNullable<Json>,
@@ -655,6 +735,9 @@ isOneToOne: false
 "id": number,
 "manual_intake_minutes": number,
 "payment_terms_days": number,
+"reminder_stage1_days": number | null,
+"reminder_stage2_days": number | null,
+"reminder_stage3_days": number | null,
 "timezone": string,
 "updated_at": string,
 "updated_by": string | null
@@ -1227,6 +1310,9 @@ isOneToOne: false
 "notes": string | null,
 "paid_at": string | null,
 "payment_due_date": string | null,
+"reminders_pause_reason": string | null,
+"reminders_paused_at": string | null,
+"reminders_paused_by": string | null,
 "request_id": string,
 "seller_snapshot": NonNullable<Json>,
 "sent_at": string | null,
@@ -1389,6 +1475,9 @@ isOneToOne: false
 "notes": string | null,
 "paid_at": string | null,
 "payment_due_date": string | null,
+"reminders_pause_reason": string | null,
+"reminders_paused_at": string | null,
+"reminders_paused_by": string | null,
 "request_id": string,
 "seller_snapshot": NonNullable<Json>,
 "sent_at": string | null,
@@ -1597,6 +1686,38 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"pause_payment_reminders":
+{ Args: { "expected_version": number,"invoice_id": string,"reason": string }; Returns: {
+              "created_at": string,
+"created_by": string,
+"currency": string,
+"customer_snapshot": NonNullable<Json>,
+"id": string,
+"invoice_number": string | null,
+"issue_date": string | null,
+"issued_at": string | null,
+"issued_by": string | null,
+"notes": string | null,
+"paid_at": string | null,
+"payment_due_date": string | null,
+"reminders_pause_reason": string | null,
+"reminders_paused_at": string | null,
+"reminders_paused_by": string | null,
+"request_id": string,
+"seller_snapshot": NonNullable<Json>,
+"sent_at": string | null,
+"status": Database["public"]['Enums']["invoice_status"],
+"subtotal": number,
+"tax_total": number,
+"total": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "invoices"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "queue_message":
 { Args: { "expected_version": number,"message_id": string }; Returns: {
               "approved_at": string | null,
@@ -1650,6 +1771,9 @@ isOneToOne: false
 "notes": string | null,
 "paid_at": string | null,
 "payment_due_date": string | null,
+"reminders_pause_reason": string | null,
+"reminders_paused_at": string | null,
+"reminders_paused_by": string | null,
 "request_id": string,
 "seller_snapshot": NonNullable<Json>,
 "sent_at": string | null,
@@ -1879,6 +2003,38 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"resume_payment_reminders":
+{ Args: { "expected_version": number,"invoice_id": string }; Returns: {
+              "created_at": string,
+"created_by": string,
+"currency": string,
+"customer_snapshot": NonNullable<Json>,
+"id": string,
+"invoice_number": string | null,
+"issue_date": string | null,
+"issued_at": string | null,
+"issued_by": string | null,
+"notes": string | null,
+"paid_at": string | null,
+"payment_due_date": string | null,
+"reminders_pause_reason": string | null,
+"reminders_paused_at": string | null,
+"reminders_paused_by": string | null,
+"request_id": string,
+"seller_snapshot": NonNullable<Json>,
+"sent_at": string | null,
+"status": Database["public"]['Enums']["invoice_status"],
+"subtotal": number,
+"tax_total": number,
+"total": number,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "invoices"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "resume_visit":
 { Args: { "expected_version": number,"visit_id": string }; Returns: {
               "actual_end": string | null,
@@ -1903,6 +2059,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"run_payment_reminders":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "schedule_visit":
 { Args: { "expected_version": number,"request_id": string,"scheduled_end": string,"scheduled_start": string,"technician_id": string }; Returns: {
               "actual_end": string | null,
@@ -1924,6 +2083,22 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "visits"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"send_payment_reminder":
+{ Args: { "expected_version": number,"invoice_id": string }; Returns: {
+              "created_at": string,
+"created_by": string | null,
+"id": string,
+"invoice_id": string,
+"message_id": string,
+"stage": number,
+"trigger": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "invoice_reminders"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -2078,7 +2253,7 @@ isOneToOne: false
       } }
           }
           Enums: {
-            "actor_type": "user"|"automation"|"system","automation_decision": "ready_for_planning"|"ask_customer"|"human_review"|"matched"|"unmatched"|"sent","automation_status": "running"|"succeeded"|"failed","automation_step": "intake_analysis"|"reply_analysis"|"email_matching"|"email_send","availability_kind": "working_hours"|"absence","billing_model": "fixed"|"hourly","customer_urgency": "planbar"|"zeitnah"|"erheblich"|"production_stop","employee_role": "admin"|"manager"|"dispatcher"|"technician","equipment_kind": "pump"|"compressor"|"ventilation"|"other","intake_mode": "automatic"|"manual"|"human_review","intake_status": "new"|"analyzing"|"needs_review"|"awaiting_customer"|"processed"|"rejected"|"cancelled","invoice_status": "draft"|"issued"|"sent"|"paid","message_direction": "incoming"|"outgoing","message_kind": "receipt"|"clarification"|"customer_reply"|"invoice"|"other","message_status": "draft"|"queued"|"sent"|"received"|"failed","request_priority": "low"|"normal"|"high"|"critical","safety_risk": "none_known"|"known"|"unclear","service_kind": "inspection"|"scheduled_maintenance"|"diagnosis_repair","visibility_level": "operational"|"dispatch"|"management","visit_status": "scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_entry_kind": "labor"|"part"|"fixed_service","work_item_status": "planned"|"ordered"|"performed"|"used"|"cancelled","work_status": "not_planned"|"scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_unit": "hour"|"piece"|"service"
+            "actor_type": "user"|"automation"|"system","automation_decision": "ready_for_planning"|"ask_customer"|"human_review"|"matched"|"unmatched"|"sent","automation_status": "running"|"succeeded"|"failed","automation_step": "intake_analysis"|"reply_analysis"|"email_matching"|"email_send","availability_kind": "working_hours"|"absence","billing_model": "fixed"|"hourly","customer_urgency": "planbar"|"zeitnah"|"erheblich"|"production_stop","employee_role": "admin"|"manager"|"dispatcher"|"technician","equipment_kind": "pump"|"compressor"|"ventilation"|"other","intake_mode": "automatic"|"manual"|"human_review","intake_status": "new"|"analyzing"|"needs_review"|"awaiting_customer"|"processed"|"rejected"|"cancelled","invoice_status": "draft"|"issued"|"sent"|"paid","message_direction": "incoming"|"outgoing","message_kind": "receipt"|"clarification"|"customer_reply"|"invoice"|"other"|"payment_reminder","message_status": "draft"|"queued"|"sent"|"received"|"failed","request_priority": "low"|"normal"|"high"|"critical","safety_risk": "none_known"|"known"|"unclear","service_kind": "inspection"|"scheduled_maintenance"|"diagnosis_repair","visibility_level": "operational"|"dispatch"|"management","visit_status": "scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_entry_kind": "labor"|"part"|"fixed_service","work_item_status": "planned"|"ordered"|"performed"|"used"|"cancelled","work_status": "not_planned"|"scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_unit": "hour"|"piece"|"service"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -2198,7 +2373,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_type": ["user", "automation", "system"],"automation_decision": ["ready_for_planning", "ask_customer", "human_review", "matched", "unmatched", "sent"],"automation_status": ["running", "succeeded", "failed"],"automation_step": ["intake_analysis", "reply_analysis", "email_matching", "email_send"],"availability_kind": ["working_hours", "absence"],"billing_model": ["fixed", "hourly"],"customer_urgency": ["planbar", "zeitnah", "erheblich", "production_stop"],"employee_role": ["admin", "manager", "dispatcher", "technician"],"equipment_kind": ["pump", "compressor", "ventilation", "other"],"intake_mode": ["automatic", "manual", "human_review"],"intake_status": ["new", "analyzing", "needs_review", "awaiting_customer", "processed", "rejected", "cancelled"],"invoice_status": ["draft", "issued", "sent", "paid"],"message_direction": ["incoming", "outgoing"],"message_kind": ["receipt", "clarification", "customer_reply", "invoice", "other"],"message_status": ["draft", "queued", "sent", "received", "failed"],"request_priority": ["low", "normal", "high", "critical"],"safety_risk": ["none_known", "known", "unclear"],"service_kind": ["inspection", "scheduled_maintenance", "diagnosis_repair"],"visibility_level": ["operational", "dispatch", "management"],"visit_status": ["scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_entry_kind": ["labor", "part", "fixed_service"],"work_item_status": ["planned", "ordered", "performed", "used", "cancelled"],"work_status": ["not_planned", "scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_unit": ["hour", "piece", "service"]
+            "actor_type": ["user", "automation", "system"],"automation_decision": ["ready_for_planning", "ask_customer", "human_review", "matched", "unmatched", "sent"],"automation_status": ["running", "succeeded", "failed"],"automation_step": ["intake_analysis", "reply_analysis", "email_matching", "email_send"],"availability_kind": ["working_hours", "absence"],"billing_model": ["fixed", "hourly"],"customer_urgency": ["planbar", "zeitnah", "erheblich", "production_stop"],"employee_role": ["admin", "manager", "dispatcher", "technician"],"equipment_kind": ["pump", "compressor", "ventilation", "other"],"intake_mode": ["automatic", "manual", "human_review"],"intake_status": ["new", "analyzing", "needs_review", "awaiting_customer", "processed", "rejected", "cancelled"],"invoice_status": ["draft", "issued", "sent", "paid"],"message_direction": ["incoming", "outgoing"],"message_kind": ["receipt", "clarification", "customer_reply", "invoice", "other", "payment_reminder"],"message_status": ["draft", "queued", "sent", "received", "failed"],"request_priority": ["low", "normal", "high", "critical"],"safety_risk": ["none_known", "known", "unclear"],"service_kind": ["inspection", "scheduled_maintenance", "diagnosis_repair"],"visibility_level": ["operational", "dispatch", "management"],"visit_status": ["scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_entry_kind": ["labor", "part", "fixed_service"],"work_item_status": ["planned", "ordered", "performed", "used", "cancelled"],"work_status": ["not_planned", "scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_unit": ["hour", "piece", "service"]
           }
         }
 } as const

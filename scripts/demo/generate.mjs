@@ -57,6 +57,7 @@ export function generateDemoData({ anchor, now, staff }) {
     invoices: [],
     invoice_items: [],
     messages: [],
+    invoice_reminders: [],
     automation_runs: [],
     request_events: [],
   };
@@ -296,7 +297,7 @@ export function generateDemoData({ anchor, now, staff }) {
       return record;
     };
     // Outgoing message: created (draft) -> queued (approved) -> sent; the state at the cutoff is kept
-    const sendMessage = ({ kind, created, queued, sent, author = null, approver = null, subject, body, invoice = null, fail = false }) => {
+    const sendMessage = ({ kind, created, queued, sent, author = null, approver = null, systemApproved = false, subject, body, invoice = null, fail = false }) => {
       if (created > cutoff) return null;
       const message = {
         id: rnd.uuid(), request_id: req.id, inbox_dispatcher_id: null, invoice_id: invoice?.id ?? null,
@@ -311,7 +312,7 @@ export function generateDemoData({ anchor, now, staff }) {
       if (queued <= cutoff) {
         message.status = "queued";
         message.updated_at = iso(queued);
-        if (approver) {
+        if (approver || systemApproved) {
           message.approved_by = approver;
           message.approved_at = iso(queued);
         }
@@ -686,9 +687,22 @@ export function generateDemoData({ anchor, now, staff }) {
       invoice.updated_at = mail.sent_at;
       event(new Date(mail.sent_at), "invoice_sent", { actorType: "automation", from: "issued", to: "sent", data: { invoice_id: invoice.id, message_id: mail.id } });
     }
-    if (spec.unpaid ?? rnd.chance(0.1)) return req;
-    const tPaid = nextBusinessTime(addHours(new Date(invoice.sent_at ?? invoice.issued_at), 24 * rnd.int(5, 40)));
-    if (invoice.status !== "sent" || !ok(tPaid)) return req;
+    const unpaid = spec.unpaid ?? rnd.chance(0.1);
+    const tPaid = unpaid ? null : nextBusinessTime(addHours(new Date(invoice.sent_at ?? invoice.issued_at), 24 * rnd.int(5, 40)));
+    // Payment reminders (task-10-2): stage 1 seven days after the due date, then every 14 days, until payment or cutoff
+    if (invoice.status === "sent") {
+      const [y, m, d] = invoice.payment_due_date.split("-").map(Number);
+      let tReminder = addHours(berlinDay(berlinTime(y, m, d), 7), 6);
+      for (const stage of [1, 2, 3]) {
+        if (tReminder > cutoff || (tPaid && tReminder >= tPaid)) break;
+        const subject = [`Zahlungserinnerung zu Rechnung`, `1. Mahnung zu Rechnung`, `2. Mahnung zu Rechnung`][stage - 1] + " (Demodaten)";
+        const reminder = sendMessage({ kind: "payment_reminder", created: tReminder, queued: tReminder, sent: addMinutes(tReminder, 1), systemApproved: true, subject, body: "Für die Rechnung ist noch kein Zahlungseingang verbucht. Bitte überweisen Sie den offenen Betrag.", invoice });
+        out.invoice_reminders.push({ id: rnd.uuid(), invoice_id: invoice.id, stage, message_id: reminder.id, trigger: "automatic", created_by: null, created_at: iso(tReminder) });
+        event(tReminder, "payment_reminder_queued", { actorType: "automation", from: stage > 1 ? String(stage - 1) : null, to: String(stage), data: { invoice_id: invoice.id, message_id: reminder.id, stage, approved_by: "system" }, visibility: "management" });
+        tReminder = addHours(berlinDay(tReminder, 14), 6);
+      }
+    }
+    if (unpaid || invoice.status !== "sent" || !ok(tPaid)) return req;
     event(tPaid, "invoice_paid", { actor: staff.manager, from: "sent", to: "paid", data: { invoice_id: invoice.id, paid_at: iso(tPaid) }, visibility: "management" });
     invoice.status = "paid";
     invoice.paid_at = iso(tPaid);

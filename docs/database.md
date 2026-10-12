@@ -602,3 +602,29 @@ Fehlercode `RW404`: Mitarbeiter, Tarif oder Abwesenheit nicht gefunden.
 **Einstellungen wirken nur auf spätere Vorgänge:** `complete_intake` und `reject_request` schreiben den Basiswert beim ersten Abschluss der Erstbearbeitung in `requests.manual_minutes_baseline` (danach unveränderlich), `issue_invoice` friert Firmenangaben und Zahlungsziel im Verkäufer-Snapshot ein. Getestet: eine abgeschlossene Anfrage behält 15 Minuten, eine danach abgeschlossene erhält den neuen Wert.
 
 **Konten:** Anmeldedaten liegen nur in Supabase Auth; `profiles` hat keine Passwortspalte. Konten legt die Server-Aktion `createEmployee` mit dem Secret Key an (`auth.admin.createUser` mit bestätigter Adresse, danach Profil; schlägt das Profil fehl, wird das Konto wieder gelöscht). Öffentliche Registrierung ist abgeschaltet (`[auth] enable_signup = false` in `supabase/config.toml`; im Cloud-Projekt unter Authentication → Sign In / Providers „Allow new users to sign up“ ausschalten). Bei Deaktivierung sperrt die Aktion zusätzlich die Anmeldung (`ban_duration`), bei Reaktivierung wird sie freigegeben.
+
+## Zahlungserinnerungen (task-10-2)
+
+Gestufte Erinnerungen für überfällige Rechnungen. Migrationen `20261012140000_payment_reminder_kind.sql`, `20261012140100_payment_reminders.sql`, `20261012140200_payment_reminder_templates.sql` (aus `emails/zahlungserinnerung.*` mit `emails/build_reminder_migration.py`), `20261012140300_demo_seed_reminders.sql`.
+
+| Stufe | Name | fällig |
+|---|---|---|
+| 1 | Zahlungserinnerung | `settings.reminder_stage1_days` (Standard 7) Tage nach `payment_due_date` |
+| 2 | 1. Mahnung | `reminder_stage2_days` (14) Tage nach Stufe 1 |
+| 3 | 2. Mahnung mit Hinweis auf Verzug | `reminder_stage3_days` (14) Tage nach Stufe 2 |
+
+- Leeres Feld = Stufe aus; eine Stufe setzt die vorherige voraus. Änderungen gelten nur für noch nicht erstellte Erinnerungen.
+- `invoice_reminders`: eine Zeile je Rechnung und Stufe (eindeutig), mit `message_id`, `trigger` (`automatic`/`manual`), `created_by`. Lesbar wie die Rechnung.
+- `invoice_reminder_states` (View, `security_invoker`): letzte Stufe, `next_stage`, `next_due_on`, `paused` je ausgestellter Rechnung; gemeinsame Quelle für den täglichen Lauf und die Oberfläche.
+- `invoices.reminders_paused_at/_by/_pause_reason`: Aussetzen je Rechnung (nicht Teil des eingefrorenen Rechnungsinhalts).
+- Nachrichtenart `payment_reminder` mit Pflicht-`invoice_id`; wie die Eingangsbestätigung vom System freigegeben (`approved_at` gesetzt, `approved_by` leer), manuelle Erinnerungen von der auslösenden Person. `claim_queued_messages` liefert sie an den Gmail-Versand; Versand ändert den Rechnungsstatus nicht.
+- Nie für bezahlte, ausgesetzte oder Demo-Rechnungen. Ereignisse `payment_reminder_queued`, `payment_reminders_paused`, `payment_reminders_resumed` (Sichtbarkeit `management`).
+
+| Funktion | Wer | Wirkung |
+|---|---|---|
+| `run_payment_reminders()` | pg_cron `payment-reminders` täglich 06:00 UTC, `service_role` | erstellt je fälliger Rechnung höchstens eine Stufe; liefert die Anzahl |
+| `send_payment_reminder(invoice_id, expected_version)` | Manager, Admin | nächste Stufe sofort; nur offen, überfällig, nicht ausgesetzt, keine Demo-Anfrage |
+| `pause_payment_reminders(invoice_id, expected_version, reason)` / `resume_payment_reminders(invoice_id, expected_version)` | Manager, Admin | Aussetzen mit Pflichtgrund / Fortsetzen; fällige Stufen folgen beim nächsten Lauf |
+| `admin_update_reminder_settings(stage1_days, stage2_days, stage3_days)` | Admin | Abstände 1–90 Tage oder `null` |
+
+`demo_seed_apply` lädt eine passende Erinnerungshistorie für Demo-Rechnungen. Die Verfügbarkeitsprüfung (`private.check_availability_change`) wartet während des Seeds und prüft am Ende alle aktiven Einsätze, damit ein Neuaufbau mit echten Einsätzen im Kalender funktioniert.

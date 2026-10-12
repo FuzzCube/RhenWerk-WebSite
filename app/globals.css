@@ -518,6 +518,13 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .totals { justify-self: end; width: min(100%, 320px); margin-left: auto; display: grid; gap: 4px; }
 .totals > div { display: flex; justify-content: space-between; gap: var(--rw-space-16); }
 .totals dt { color: var(--rw-text-secondary); }
+/* Payment reminders of an invoice (task-10-2) */
+.reminders { display: flex; flex-direction: column; gap: var(--rw-space-12); padding-top: var(--rw-space-16); border-top: 1px solid var(--rw-border-subtle); }
+.reminders__title { font-family: var(--rw-font-display); font-size: 17px; font-weight: 700; }
+.reminders__list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.reminders__list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--rw-space-12); padding: 8px 12px; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-subtle); border-radius: var(--rw-radius-sm); font-size: 14px; }
+.reminders__list .cell-sub { flex-basis: 100%; }
+.reminders__actions { display: flex; flex-direction: column; gap: var(--rw-space-8); }
 .invoice-download { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 var(--rw-space-16); }
 .totals__sum { padding-top: 6px; border-top: 2px solid var(--rw-border-strong); font-weight: 700; }
 .totals__sum dt { color: var(--rw-text-primary); }

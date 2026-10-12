@@ -13,6 +13,7 @@ import { INVOICE_DATE_FIELDS, INVOICE_PAGE_SIZE, INVOICE_STATES, INVOICE_TABS, i
 import { invoiceDisplayStatus, overdueAging } from "@/lib/display-status";
 import { berlinDayKey, formatCalendarDate, formatCurrency, formatDateTime, formatNumber } from "@/lib/format";
 import { dueSoonHint } from "@/lib/hints";
+import { nextReminderShort, shortStageLabel } from "@/lib/reminders";
 
 export const metadata: Metadata = { title: "Rechnungen" };
 
@@ -44,6 +45,16 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
     },
     { key: "issued", header: "Ausgestellt", cell: (row) => <span className="mono">{formatCalendarDate(row.issue_date)}</span> },
     { key: "due", header: "Fällig", cell: (row) => <span className="mono">{formatCalendarDate(row.payment_due_date)}</span>, mobile: "hide" },
+    {
+      key: "reminder",
+      header: "Mahnstufe",
+      cell: (row) => {
+        if (!row.reminder || (row.reminder.last_stage === 0 && !row.overdue)) return <span className="rw-muted">–</span>;
+        const next = row.overdue ? nextReminderShort(row.reminder, today) : null;
+        return <span className="rw-nowrap">{row.reminder.last_stage > 0 ? shortStageLabel(row.reminder.last_stage) : <span className="rw-muted">Keine</span>}{next && <span className="cell-sub">{next}</span>}</span>;
+      },
+      mobile: "hide",
+    },
     { key: "net", header: "Netto", cell: (row) => <span className="mono">{formatCurrency(row.subtotal, row.currency)}</span>, align: "end", mobile: "hide" },
     { key: "gross", header: "Brutto", cell: (row) => <span className="mono">{formatCurrency(row.total, row.currency)}</span>, align: "end" },
     {

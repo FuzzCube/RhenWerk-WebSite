@@ -185,3 +185,27 @@ export async function saveSettings(_previous: FormState, formData: FormData): Pr
       company_details: companyDetailsFrom(values, stored) as Json,
     }));
 }
+
+// Payment reminder stages (task-10-2): days per stage, empty = stage off. Only reminders not yet created change.
+const REMINDER_FIELDS = ["reminder_stage1_days", "reminder_stage2_days", "reminder_stage3_days"] as const;
+
+export async function saveReminderSettings(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(ADMIN);
+  const values = formValues(formData);
+  const fieldErrors: Record<string, string> = {};
+  const days = REMINDER_FIELDS.map((key) => {
+    const raw = values[key]?.trim() ?? "";
+    if (!raw) return null;
+    const value = parseDecimal(raw);
+    if (value === null || !Number.isInteger(value) || value < 1 || value > 90) fieldErrors[key] = "Ganze Tage zwischen 1 und 90 oder leer für „aus“.";
+    return value;
+  });
+  if (days[1] !== null && days[0] === null) fieldErrors.reminder_stage2_days = "Setzt die Zahlungserinnerung voraus.";
+  if (days[2] !== null && days[1] === null) fieldErrors.reminder_stage3_days = "Setzt die 1. Mahnung voraus.";
+  if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", values, fieldErrors);
+  const supabase = await createClient();
+  // The generated types mark the arguments as required numbers; null switches a stage off
+  const args = { stage1_days: days[0], stage2_days: days[1], stage3_days: days[2] } as unknown as { stage1_days: number; stage2_days: number; stage3_days: number };
+  return run(values, "Erinnerungsstufen gespeichert. Sie gelten für Erinnerungen, die noch nicht erstellt wurden.", () =>
+    supabase.rpc("admin_update_reminder_settings", args));
+}

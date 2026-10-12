@@ -1219,10 +1219,10 @@
         {
           "id": "task-10-2",
           "title": "Zahlungserinnerungen für offene Rechnungen",
-          "description": "Gestufte Erinnerungen bei überfälligen Rechnungen (Vorschlag: freundliche Zahlungserinnerung 7 Tage nach Fälligkeit, 1. Mahnung nach 14 weiteren Tagen, 2. Mahnung mit Hinweis auf Verzug nach weiteren 14 Tagen; Stufen und Abstände als Einstellung). Erinnerungen entstehen als E-Mail in der bestehenden Warteschlange (Versand durch die spätere n8n-Integration), nie bei bezahlten Rechnungen, je Stufe genau einmal (idempotent), mit Audit-Ereignis und Anzeige von Mahnstufe und nächster Erinnerung in Rechnungsliste und Anfrageseite. Manuelles Auslösen und Aussetzen je Rechnung durch Manager/Admin.",
+          "description": "Gestufte Erinnerungen bei überfälligen Rechnungen (Vorschlag: freundliche Zahlungserinnerung 7 Tage nach Fälligkeit, 1. Mahnung nach 14 weiteren Tagen, 2. Mahnung mit Hinweis auf Verzug nach weiteren 14 Tagen; Stufen und Abstände als Einstellung). Erinnerungen entstehen als E-Mail in der bestehenden Warteschlange (Versand über den bestehenden n8n-Gmail-Workflow), nie bei bezahlten Rechnungen, je Stufe genau einmal (idempotent), mit Audit-Ereignis und Anzeige von Mahnstufe und nächster Erinnerung in Rechnungsliste und Anfrageseite. Manuelles Auslösen und Aussetzen je Rechnung durch Manager/Admin.",
           "order": 2,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-6-3",
             "task-9-1"
@@ -1233,13 +1233,22 @@
             "Erinnerung als Entwurf/Warteschlange, kein Versand ohne Integration",
             "Mahnstufe und Verlauf in der Oberfläche sichtbar; Tests für Fälligkeit, Wiederholung und Zahlung zwischen den Stufen"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-12T13:10:00Z",
+          "completedAt": "2026-10-12T14:30:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Drei Stufen (7/14/14 Tage, in den Einstellungen änderbar, wirken nur auf künftige Erinnerungen), täglicher pg_cron-Lauf, Systemfreigabe, je Stufe höchstens eine Erinnerung, nie für bezahlte, ausgesetzte oder Demo-Rechnungen; manuelles Auslösen, Aussetzen und Fortsetzen durch Manager/Admin; Mahnstufe und nächste Erinnerung in Rechnungsliste und Anfrageseite, Verlauf mit Audit-Ereignissen; E-Mail im Design der Eingangsbestätigung. Echter Versand nicht ausgelöst, da keine überfällige Live-Rechnung existiert; Versandweg identisch mit der geprüften Eingangsbestätigung.",
+            "commands": [
+              "npx supabase test db (566/566, davon 34 payment_reminders)",
+              "psql -f n8n/test_integration.sql",
+              "npm run test:unit (61/61)",
+              "APP_URL=http://localhost:3201 npm run test:ui (198 Prüfungen)",
+              "npm run lint",
+              "npx tsc --noEmit",
+              "npm run build",
+              "npm run demo:seed && npm run demo:verify"
+            ],
+            "checkedAt": "2026-10-12T14:30:00Z"
           }
         },
         {

@@ -198,3 +198,37 @@ export async function recordPayment(_previous: FormState, formData: FormData): P
   return run(input.values, "Zahlung erfasst.", () =>
     supabase.rpc("record_payment", { invoice_id: input.values.invoice_id, expected_version: input.version, ...(paidAt ? { paid_at: paidAt } : {}) }));
 }
+
+// Payment reminders (task-10-2): send the next stage now, pause or resume per invoice (manager, admin).
+// The database checks role, open and overdue invoice, pause and the next stage.
+async function reminderInput(formData: FormData) {
+  await requireRole(["manager", "admin"]);
+  const input = context(formData);
+  return input && UUID.test(input.values.invoice_id ?? "") ? input : null;
+}
+
+export async function sendPaymentReminder(_previous: FormState, formData: FormData): Promise<FormState> {
+  const input = await reminderInput(formData);
+  if (!input) return invalid(formValues(formData));
+  const supabase = await createClient();
+  return run(input.values, "Erinnerung erstellt. Sie wird mit dem nächsten Versandlauf verschickt.", () =>
+    supabase.rpc("send_payment_reminder", { invoice_id: input.values.invoice_id, expected_version: input.version }));
+}
+
+export async function pausePaymentReminders(_previous: FormState, formData: FormData): Promise<FormState> {
+  const input = await reminderInput(formData);
+  if (!input) return invalid(formValues(formData));
+  const reason = input.values.reason?.trim() ?? "";
+  if (!reason) return formError("Bitte einen Grund angeben.", input.values, { reason: "Pflichtangabe, z. B. Ratenzahlung vereinbart." });
+  const supabase = await createClient();
+  return run(input.values, "Erinnerungen ausgesetzt.", () =>
+    supabase.rpc("pause_payment_reminders", { invoice_id: input.values.invoice_id, expected_version: input.version, reason }));
+}
+
+export async function resumePaymentReminders(_previous: FormState, formData: FormData): Promise<FormState> {
+  const input = await reminderInput(formData);
+  if (!input) return invalid(formValues(formData));
+  const supabase = await createClient();
+  return run(input.values, "Erinnerungen fortgesetzt.", () =>
+    supabase.rpc("resume_payment_reminders", { invoice_id: input.values.invoice_id, expected_version: input.version }));
+}

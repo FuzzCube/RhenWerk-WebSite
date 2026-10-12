@@ -2,6 +2,7 @@ import "server-only";
 import { isoInstant } from "@/lib/dashboard/requests";
 import { addDays } from "@/lib/berlin-time";
 import { berlinDayKey } from "@/lib/format";
+import type { ReminderState } from "@/lib/reminders";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -76,6 +77,7 @@ export type InvoiceListItem = Pick<Invoice, "id" | "request_id" | "invoice_numbe
   request_number: string;
   request_version: number;
   overdue: boolean;
+  reminder: ReminderState | null;
 };
 
 const COLUMNS = "id, request_id, invoice_number, status, issue_date, payment_due_date, paid_at, subtotal, total, currency, requests(request_number, company_name, version)";
@@ -105,6 +107,12 @@ export async function listInvoices(filters: InvoiceFilters): Promise<{ rows: Inv
     apply(supabase.from("invoices").select("subtotal, total")).limit(10000),
   ]);
   if ((page.error && page.error.code !== "PGRST103") || sums.error) return { rows: [], total: 0, sumGross: 0, sumNet: 0, error: true };
+  // Reminder stage per row (task-10-2), from the same view as the daily run
+  const ids = (page.data ?? []).filter((row) => row.status !== "draft").map((row) => row.id);
+  const states = ids.length
+    ? await supabase.from("invoice_reminder_states").select("invoice_id, last_stage, last_reminder_at, paused, next_stage, next_due_on").in("invoice_id", ids)
+    : { data: [], error: null };
+  const stateOf = new Map((states.data ?? []).map(({ invoice_id, ...state }) => [invoice_id, state as ReminderState]));
   const rows = (page.data ?? []).map((row) => {
     const request = Array.isArray(row.requests) ? row.requests[0] : row.requests;
     return {
@@ -113,6 +121,7 @@ export async function listInvoices(filters: InvoiceFilters): Promise<{ rows: Inv
       request_number: request?.request_number ?? "–",
       request_version: request?.version ?? 0,
       overdue: (row.status === "issued" || row.status === "sent") && !row.paid_at && !!row.payment_due_date && row.payment_due_date < today,
+      reminder: stateOf.get(row.id) ?? null,
     };
   });
   const cents = (values: number[]) => values.reduce((sum, value) => sum + Math.round(Number(value) * 100), 0) / 100;
@@ -140,7 +149,7 @@ export async function invoiceSummary(): Promise<{ counts: Partial<Record<(typeof
     open: (openRows.data ?? []).map((row) => ({ ...row, total: Number(row.total) })),
     todo: (todoRows.data ?? []).map((row) => {
       const request = Array.isArray(row.requests) ? row.requests[0] : row.requests;
-      return { ...row, company_name: request?.company_name ?? "–", request_number: request?.request_number ?? "–", request_version: request?.version ?? 0, overdue: false };
+      return { ...row, company_name: request?.company_name ?? "–", request_number: request?.request_number ?? "–", request_version: request?.version ?? 0, overdue: false, reminder: null };
     }),
     error: results.some((result) => result.error),
   };

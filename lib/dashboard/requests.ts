@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import type { EmployeeRole } from "@/lib/auth/roles";
 import { REQUEST_DISPLAY_STATUSES, requestStatusFilter } from "@/lib/display-status";
+import type { ReminderState } from "@/lib/reminders";
 
 // Reads for the request list and the request page. All queries run with the signed-in user's rights,
 // so RLS decides which requests, messages, events and documents are returned.
@@ -221,6 +222,8 @@ export type RequestDetail = {
   attachments: Tables["attachments"]["Row"][];
   invoice: Tables["invoices"]["Row"] | null;
   invoiceItems: Tables["invoice_items"]["Row"][];
+  reminderState: ReminderState | null;
+  reminders: Array<Pick<Tables["invoice_reminders"]["Row"], "id" | "stage" | "trigger" | "created_at" | "created_by"> & { message_status: string | null; sent_at: string | null }>;
   events: Tables["request_events"]["Row"][];
   failed: string[];
 };
@@ -243,9 +246,14 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     supabase.from("invoices").select("*").eq("request_id", id).maybeSingle(),
     supabase.from("request_events").select("*").eq("request_id", id).order("occurred_at", { ascending: false }).order("seq", { ascending: false }),
   ]);
-  const invoiceItems = invoice?.data
-    ? await supabase.from("invoice_items").select("*").eq("invoice_id", invoice.data.id).order("position")
-    : null;
+  const invoiceId = invoice?.data && invoice.data.status !== "draft" ? invoice.data.id : null;
+  const [invoiceItems, reminderState, reminders] = invoice?.data
+    ? await Promise.all([
+      supabase.from("invoice_items").select("*").eq("invoice_id", invoice.data.id).order("position"),
+      invoiceId ? supabase.from("invoice_reminder_states").select("last_stage, last_reminder_at, paused, next_stage, next_due_on").eq("invoice_id", invoiceId).maybeSingle() : null,
+      invoiceId ? supabase.from("invoice_reminders").select("id, stage, trigger, created_at, created_by, messages(status, sent_at)").eq("invoice_id", invoiceId).order("stage") : null,
+    ])
+    : [null, null, null];
 
   // Partial failures are shown per section instead of failing the whole page
   const failed: string[] = [];
@@ -263,6 +271,11 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     attachments: pick("dokumente", attachments, []),
     invoice: pick("rechnung", invoice, null),
     invoiceItems: pick("rechnung", invoiceItems, []),
+    reminderState: pick("rechnung", reminderState, null) as ReminderState | null,
+    reminders: pick("rechnung", reminders, []).map(({ messages: message, ...row }) => {
+      const sent = Array.isArray(message) ? message[0] : message;
+      return { ...row, message_status: sent?.status ?? null, sent_at: sent?.sent_at ?? null };
+    }),
     events: pick("verlauf", events, []),
     failed,
   };

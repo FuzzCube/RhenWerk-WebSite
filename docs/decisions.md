@@ -276,3 +276,7 @@ Lokale Integration abgeschlossen: sechs veröffentlichte ungruppierte MCP-Workfl
 ## 2026-10-12: Eingangsbestätigung ohne manuelle Freigabe
 
 Nutzerentscheidung: Kunden erhalten nach dem Absenden des Website-Formulars automatisch eine E-Mail mit der Anfragenummer. Sie entsteht aus einer festen Vorlage (keine KI-Texte) in derselben Transaktion wie die Anfrage, höchstens einmal je Anfrage, und wird vom bestehenden Gmail-Versand verschickt. Sie ist die einzige ausgehende Nachricht, die das System selbst freigibt (`approved_at` gesetzt, `approved_by` leer); Rückfragen, Rechnungen und freie Nachrichten bleiben freigabepflichtig. Gleichzeitig akzeptieren Formular und Datenbank geschäftliche Adressen mit Subdomain (`name@mail.firma.de`).
+
+## 2026-10-12: Zahlungserinnerungen automatisch, täglicher Lauf in der Datenbank
+
+Nutzerentscheidungen zu task-10-2: Erinnerungen und Mahnungen werden ohne manuelle Freigabe versendet (Systemfreigabe wie bei der Eingangsbestätigung); Manager und Admins können je Rechnung aussetzen oder die nächste Stufe sofort auslösen. Der tägliche Lauf ist ein pg_cron-Job in Supabase statt eines n8n-Workflows (testbar in SQL, kein Import in n8n nötig); der Versand nutzt den bestehenden Gmail-Workflow. Die E-Mail verwendet das Design der Eingangsbestätigung mit eigenen Texten je Stufe; die 2. Mahnung weist auf den Zahlungsverzug hin. Demo-Rechnungen erhalten eine erzeugte Historie, aber nie echte E-Mails.

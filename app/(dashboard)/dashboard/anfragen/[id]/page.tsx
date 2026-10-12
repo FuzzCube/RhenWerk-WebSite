@@ -7,6 +7,7 @@ import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
 import { PaymentForm } from "@/components/dashboard/payment-form";
+import { PaymentReminders } from "@/components/dashboard/payment-reminders";
 import { InvoiceStatusChip, PriorityText, StatusChip } from "@/components/dashboard/ui/status-chip";
 import { Icon } from "@/components/ui";
 import { invoiceDisplayStatus, requestDisplayStatus, requestProgress } from "@/lib/display-status";
@@ -15,6 +16,7 @@ import { requireRole } from "@/lib/auth/session";
 import { getEmployeeNames, getRequestDetail, sectionsFor, type RequestDetail, type SectionId } from "@/lib/dashboard/requests";
 import { describeEvent } from "@/lib/events";
 import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange } from "@/lib/format";
+import { nextReminderText, stageLabel } from "@/lib/reminders";
 import { label, statusInfo } from "@/lib/status";
 
 type Props = { params: Promise<{ id: string }> };
@@ -317,7 +319,7 @@ function Intake({ detail, person }: { detail: RequestDetail; person: PersonFn })
   );
 }
 
-const MESSAGE_KIND_LABELS: Record<string, string> = { receipt: "Eingangsbestätigung", clarification: "Rückfrage", customer_reply: "Kundenantwort", invoice: "Rechnung", other: "Sonstige" };
+const MESSAGE_KIND_LABELS: Record<string, string> = { receipt: "Eingangsbestätigung", clarification: "Rückfrage", customer_reply: "Kundenantwort", invoice: "Rechnung", payment_reminder: "Zahlungserinnerung", other: "Sonstige" };
 
 function Correspondence({ detail, person, editable }: { detail: RequestDetail; person: PersonFn; editable: boolean }) {
   const messages = detail.messages ?? [];
@@ -439,6 +441,10 @@ function Invoice({ detail, canPay }: { detail: RequestDetail; canPay: boolean })
         ["Fällig am", formatCalendarDate(invoice.payment_due_date)],
         ["Als versendet markiert", formatDateTime(invoice.sent_at)],
         ["Bezahlt am", formatDateTime(invoice.paid_at)],
+        ...(invoice.status !== "draft" ? [
+          ["Mahnstufe", stageLabel(detail.reminderState?.last_stage)] as [string, ReactNode],
+          ["Nächste Erinnerung", nextReminderText(detail.reminderState, today) ?? "Keine weitere"] as [string, ReactNode],
+        ] : []),
       ]} />
       <DataTable caption="Rechnungspositionen" columns={columns} rows={detail.invoiceItems} rowKey={(item) => item.id} empty={<EmptyState title="Keine Positionen." />} />
       <dl className="totals">
@@ -447,6 +453,7 @@ function Invoice({ detail, canPay }: { detail: RequestDetail; canPay: boolean })
         <div className="totals__sum"><dt>Gesamt</dt><dd>{formatCurrency(invoice.total, invoice.currency)}</dd></div>
       </dl>
       <p className="section-note">Musterrechnung mit Demodaten, nicht rechtsverbindlich.</p>
+      <PaymentReminders detail={detail} canManage={canPay} today={today} />
       {canPay && (invoice.status === "issued" || invoice.status === "sent") && (
         <details className="action" id="zahlung">
           <summary>Zahlung erfassen</summary>

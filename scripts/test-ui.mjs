@@ -322,6 +322,27 @@ try {
     check("Liste in Sicht, Reiter „Zu erledigen“ aktiv", moved && await page.eval(`document.querySelector('#rechnungsliste .rw-view[aria-current="page"]')?.textContent.startsWith("Zu erledigen")`));
   }
 
+  console.log("\nZahlungserinnerungen: Mahnstufe in Liste und Anfrage, Stufen in den Einstellungen (task-10-2)");
+  {
+    await page.open(`${BASE}/dashboard/rechnungen?status=ueberfaellig`);
+    const list = await page.eval(`(() => { const heads = [...document.querySelectorAll("#rechnungsliste th")].map((th) => th.textContent.trim()); const i = heads.indexOf("Mahnstufe"); return { i, cells: i < 0 ? [] : [...document.querySelectorAll("#rechnungsliste tbody tr")].map((tr) => tr.children[i]?.textContent.trim() ?? "") }; })()`);
+    check("Spalte „Mahnstufe“ mit Stufen und nächster Erinnerung", list.i >= 0 && list.cells.some((c) => /Mahnung|Erinnerung/.test(c)) && list.cells.some((c) => c.includes("→")), JSON.stringify(list.cells.slice(0, 4)));
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+    const { data: reminder } = await admin.from("invoice_reminders").select("invoices(request_id)").eq("stage", 2).limit(1).maybeSingle();
+    const requestId = reminder && (Array.isArray(reminder.invoices) ? reminder.invoices[0] : reminder.invoices)?.request_id;
+    if (!requestId) check("Demo-Rechnung mit Mahnungen vorhanden", false);
+    else {
+      await page.open(`${BASE}/dashboard/anfragen/${requestId}#rechnung`);
+      const view = await page.eval(`({ items: document.querySelectorAll(".reminders__list li").length, stage: [...document.querySelectorAll("dt")].find((dt) => dt.textContent === "Mahnstufe")?.nextElementSibling?.textContent ?? "" })`);
+      check("Anfrageseite zeigt Verlauf und Mahnstufe", view.items >= 2 && /Mahnung/.test(view.stage), JSON.stringify(view));
+    }
+    await page.open(`${BASE}/dashboard/verwaltung/einstellungen`);
+    const fields = await page.eval(`["reminder_stage1_days", "reminder_stage2_days", "reminder_stage3_days"].map((name) => document.querySelector(\`[name="\${name}"]\`)?.value ?? null)`);
+    check("Einstellungen zeigen drei Erinnerungsstufen", fields.every((v) => v !== null), JSON.stringify(fields));
+    await page.eval(`(() => { const input = document.querySelector('[name="reminder_stage1_days"]'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; set.call(input, "0"); input.dispatchEvent(new Event("input", { bubbles: true })); input.form.requestSubmit(); })()`);
+    check("  ungültiger Abstand wird abgewiesen, nichts gespeichert", await page.until(`document.querySelector('[name="reminder_stage1_days"]')?.getAttribute("aria-invalid") === "true"`, 10000));
+  }
+
   console.log("\nEingaben bleiben bei fehlgeschlagenem Speichern erhalten");
   await page.send("Network.clearBrowserCookies");
   await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });

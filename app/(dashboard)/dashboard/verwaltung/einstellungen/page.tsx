@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { saveSettings } from "@/app/(dashboard)/dashboard/verwaltung/actions";
+import { saveReminderSettings, saveSettings } from "@/app/(dashboard)/dashboard/verwaltung/actions";
 import { AdminNav } from "@/components/dashboard/admin-nav";
 import { SaveForm, TextField } from "@/components/dashboard/ui/save-form";
 import { ErrorState, PageHeader } from "@/components/dashboard/ui/states";
@@ -46,6 +46,17 @@ export default async function SettingsPage() {
                 {COMPANY_FIELDS.map((field) => (
                   <TextField key={field.key} name={`company_${field.key}`} label={field.label} required={field.key === "company_name"} defaultValue={typeof company[field.key] === "string" ? (company[field.key] as string) : ""} />
                 ))}
+              </div>
+            </section>
+          </SaveForm>
+          <SaveForm action={saveReminderSettings} submitLabel="Erinnerungsstufen speichern">
+            <section className="request-section" aria-labelledby="mahnung-title">
+              <h2 id="mahnung-title">Zahlungserinnerungen</h2>
+              <p className="section-note">Täglich um 06:00 UTC prüft das System offene Rechnungen und versendet fällige Stufen automatisch. Leeres Feld = Stufe aus. Änderungen gelten nur für Erinnerungen, die noch nicht erstellt wurden; je Rechnung lassen sich Erinnerungen auf der Anfrageseite aussetzen.</p>
+              <div className="form-grid">
+                <TextField name="reminder_stage1_days" label="Zahlungserinnerung (Tage nach Fälligkeit)" inputMode="numeric" defaultValue={settings.reminder_stage1_days === null ? "" : String(settings.reminder_stage1_days)} />
+                <TextField name="reminder_stage2_days" label="1. Mahnung (Tage nach der Erinnerung)" inputMode="numeric" defaultValue={settings.reminder_stage2_days === null ? "" : String(settings.reminder_stage2_days)} />
+                <TextField name="reminder_stage3_days" label="2. Mahnung mit Hinweis auf Verzug (Tage nach der 1. Mahnung)" inputMode="numeric" defaultValue={settings.reminder_stage3_days === null ? "" : String(settings.reminder_stage3_days)} />
               </div>
             </section>
           </SaveForm>

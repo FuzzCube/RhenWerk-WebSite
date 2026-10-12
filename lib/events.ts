@@ -1,5 +1,6 @@
 // German description of audit events (request_events) for the history section.
 import { formatDateTime, formatTimeRange } from "./format";
+import { REMINDER_STAGES } from "./reminders";
 import { label, statusInfo, type StatusKind } from "./status";
 
 export const EVENT_LABELS: Record<string, string> = {
@@ -25,6 +26,9 @@ export const EVENT_LABELS: Record<string, string> = {
   invoice_issued: "Rechnung ausgestellt",
   invoice_sent: "Rechnung als versendet markiert",
   invoice_paid: "Zahlung erfasst",
+  payment_reminder_queued: "Zahlungserinnerung erstellt",
+  payment_reminders_paused: "Zahlungserinnerungen ausgesetzt",
+  payment_reminders_resumed: "Zahlungserinnerungen fortgesetzt",
   automatic_result_corrected: "Automatisches Ergebnis korrigiert",
   analysis_corrected: "Analyse korrigiert",
   deadline_changed: "Frist geändert",
@@ -87,6 +91,7 @@ function formatValue(event: EventLike, value: string | null, names: Map<string, 
   if (event.event_type === "intake_completed") return label("intake_mode", value);
   if (event.event_type.startsWith("visit_")) return formatRange(value) ?? value;
   if (event.event_type === "deadline_changed") return formatDateTime(value);
+  if (event.event_type === "payment_reminder_queued") return REMINDER_STAGES[Number(value)] ?? value;
   if (value.startsWith("{")) return formatObject(value) ?? value;
   return value;
 }
