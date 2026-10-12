@@ -238,7 +238,7 @@
         "jsCode": "const r=$input.first().json;const meta=$('MIME mit stabiler Nachrichten-ID').item.json;const b=r.body??r;\nconst ok=r.statusCode>=200&&r.statusCode<300&&typeof b.id==='string'&&typeof b.threadId==='string';\nconst actualMime=b.payload?.headers?.find(h=>String(h.name).toLowerCase()==='message-id')?.value;\nreturn [{json:{...meta,ok,confirmation:{message_id:meta.message_id,mailbox_key:'rheinwerk.industrieservice@gmail.com',gmail_message_id:b.id??null,gmail_thread_id:b.threadId??null,mime_message_id:actualMime??meta.mime_message_id,sent_at:new Date().toISOString()},failure:{message_id:meta.message_id,permanent:r.statusCode===400,error_text:String(b.error?.message??r.error?.message??'Gmail delivery outcome unknown').slice(0,1000)}}}];"
       },
       "id": "bc1c9c3c-b612-4dc1-b4cc-9a979ba4cd86",
-      "name": "Provider-Ergebnis auswerten",
+      "name": "Gmail-Ergebnis auswerten",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -379,7 +379,7 @@
         }
       },
       "id": "f3d71faf-4982-4df0-8e97-50ede98490ef",
-      "name": "Versandfehler mit Backoff speichern",
+      "name": "Versandfehler für Wiederholung speichern",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
@@ -603,18 +603,7 @@
       "main": [
         [
           {
-            "node": "Provider-Ergebnis auswerten",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Provider-Ergebnis auswerten": {
-      "main": [
-        [
-          {
-            "node": "Versand bestätigt?",
+            "node": "Gmail-Ergebnis auswerten",
             "type": "main",
             "index": 0
           }
@@ -644,7 +633,7 @@
         ],
         [
           {
-            "node": "Versandfehler mit Backoff speichern",
+            "node": "Versandfehler für Wiederholung speichern",
             "type": "main",
             "index": 0
           }
@@ -652,17 +641,6 @@
       ]
     },
     "Bestätigten Versand speichern": {
-      "main": [
-        [
-          {
-            "node": "Nachrichten einzeln versenden",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Versandfehler mit Backoff speichern": {
       "main": [
         [
           {
@@ -757,7 +735,29 @@
         ],
         [
           {
-            "node": "Provider-Ergebnis auswerten",
+            "node": "Gmail-Ergebnis auswerten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail-Ergebnis auswerten": {
+      "main": [
+        [
+          {
+            "node": "Versand bestätigt?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Versandfehler für Wiederholung speichern": {
+      "main": [
+        [
+          {
+            "node": "Nachrichten einzeln versenden",
             "type": "main",
             "index": 0
           }
@@ -771,7 +771,7 @@
     "binaryMode": "separate"
   },
   "nodeGroups": [],
-  "versionId": "924976ff-ddf2-486e-b6d0-423961821827",
+  "versionId": "97ff0bb2-e462-4c32-aa2e-0eb7110c4bc6",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"

@@ -339,7 +339,7 @@
         "jsCode": "const r=$input.first().json;const m=$('Gmail-Dateiinhalt prüfen').item.json;const ok=(r.statusCode>=200&&r.statusCode<300)||r.statusCode===409||String(r.body?.statusCode)==='409';if(!ok)throw new Error('Gmail-Anhang konnte nicht gespeichert werden');return [{json:m}];"
       },
       "id": "8bb9488c-f3be-4a79-8bc9-47b520ca8d89",
-      "name": "Gmail-Upload bestätigen",
+      "name": "Gmail-Dateiübertragung bestätigen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -438,7 +438,7 @@
         }
       },
       "id": "7cdd3c6d-fa85-40be-9801-a049bec1b642",
-      "name": "Незавершённые ответы каждые 5 минут",
+      "name": "Unvollständige Antworten alle 5 Minuten",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
       "position": [
@@ -462,7 +462,7 @@
         }
       },
       "id": "8bf1f0c2-4576-48fb-a95a-b43b22e5917b",
-      "name": "Ящик восстановления проверить",
+      "name": "Wiederherstellungspostfach prüfen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
@@ -481,7 +481,7 @@
         "jsCode": "const r=$input.first().json;const mailbox=String(r.body?.emailAddress??r.emailAddress??'').toLowerCase();if(mailbox!=='rheinwerk.industrieservice@gmail.com')throw new Error('RheinWerk Gmail-Konto nicht bestätigt');return [{json:{mailbox_verified:true}}];"
       },
       "id": "e916b349-c0c9-4c11-9421-1305d2b137bd",
-      "name": "Ящик восстановления подтвердить",
+      "name": "Wiederherstellungspostfach bestätigen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -503,7 +503,7 @@
         }
       },
       "id": "c9944b5e-5ac4-447f-8da9-9e9d875bff23",
-      "name": "Незавершённые ответы найти",
+      "name": "Unvollständige Antworten laden",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
@@ -528,7 +528,7 @@
         }
       },
       "id": "e7079e22-f053-4e88-91b7-42299d11dfdf",
-      "name": "Ответ Gmail повторно загрузить",
+      "name": "Gmail-Antwort erneut laden",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
@@ -545,7 +545,7 @@
     },
     {
       "id": "fe88a751-9af3-4f68-bfe7-b4f8082c6d94",
-      "name": "Пропущенные ответы каждые 15 минут",
+      "name": "Verpasste Antworten alle 15 Minuten",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
       "position": [
@@ -565,7 +565,7 @@
     },
     {
       "id": "7b55920e-1043-48b7-8970-7fb7c6b362c6",
-      "name": "Ящик пропущенных ответов проверить",
+      "name": "Postfach für verpasste Antworten prüfen",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
@@ -597,7 +597,7 @@
     },
     {
       "id": "b44b17d4-087b-42c4-9657-c1f61e8d62f5",
-      "name": "Ящик пропущенных ответов подтвердить",
+      "name": "Postfach für verpasste Antworten bestätigen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -611,7 +611,7 @@
     },
     {
       "id": "f67cf6c0-bda2-4b8c-82b9-d3c04477e4ef",
-      "name": "Ответы RIS за 7 дней перечитать",
+      "name": "RIS-Antworten der letzten 7 Tage laden",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
@@ -821,18 +821,7 @@
       "main": [
         [
           {
-            "node": "Gmail-Upload bestätigen",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gmail-Upload bestätigen": {
-      "main": [
-        [
-          {
-            "node": "Gmail-Anhang registrieren",
+            "node": "Gmail-Dateiübertragung bestätigen",
             "type": "main",
             "index": 0
           }
@@ -872,51 +861,62 @@
         ]
       ]
     },
-    "Незавершённые ответы каждые 5 минут": {
+    "Gmail-Dateiübertragung bestätigen": {
       "main": [
         [
           {
-            "node": "Ящик восстановления проверить",
+            "node": "Gmail-Anhang registrieren",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ящик восстановления проверить": {
+    "Unvollständige Antworten alle 5 Minuten": {
       "main": [
         [
           {
-            "node": "Ящик восстановления подтвердить",
+            "node": "Wiederherstellungspostfach prüfen",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ящик восстановления подтвердить": {
+    "Wiederherstellungspostfach prüfen": {
       "main": [
         [
           {
-            "node": "Незавершённые ответы найти",
+            "node": "Wiederherstellungspostfach bestätigen",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Незавершённые ответы найти": {
+    "Wiederherstellungspostfach bestätigen": {
       "main": [
         [
           {
-            "node": "Ответ Gmail повторно загрузить",
+            "node": "Unvollständige Antworten laden",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ответ Gmail повторно загрузить": {
+    "Unvollständige Antworten laden": {
+      "main": [
+        [
+          {
+            "node": "Gmail-Antwort erneut laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail-Antwort erneut laden": {
       "main": [
         [
           {
@@ -927,40 +927,40 @@
         ]
       ]
     },
-    "Пропущенные ответы каждые 15 минут": {
+    "Verpasste Antworten alle 15 Minuten": {
       "main": [
         [
           {
-            "node": "Ящик пропущенных ответов проверить",
+            "node": "Postfach für verpasste Antworten prüfen",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ящик пропущенных ответов проверить": {
+    "Postfach für verpasste Antworten prüfen": {
       "main": [
         [
           {
-            "node": "Ящик пропущенных ответов подтвердить",
+            "node": "Postfach für verpasste Antworten bestätigen",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ящик пропущенных ответов подтвердить": {
+    "Postfach für verpasste Antworten bestätigen": {
       "main": [
         [
           {
-            "node": "Ответы RIS за 7 дней перечитать",
+            "node": "RIS-Antworten der letzten 7 Tage laden",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ответы RIS за 7 дней перечитать": {
+    "RIS-Antworten der letzten 7 Tage laden": {
       "main": [
         [
           {
@@ -978,7 +978,7 @@
     "binaryMode": "separate"
   },
   "nodeGroups": [],
-  "versionId": "0a1f4eed-fb64-4f8a-b362-62f86db41871",
+  "versionId": "413fd315-af14-44d7-9942-5047ee828581",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"

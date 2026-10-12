@@ -157,7 +157,7 @@ PDF und PNG/JPEG werden mit dem nativen OpenAI-Responses-Node ausgewertet (`gpt-
 
 ## Workflows und Prüfung
 
-Alle Workflows liegen im lokalen n8n unter `http://localhost:5678`. Alle Nodes bleiben auf Wunsch des Nutzers ohne visuelle Gruppen. Aktuelle importierbare Graphen liegen unter `n8n/workflows/*.workflow.json`, SDK-Quellen unter `*.n8n`; die Exporte enthalten den tatsächlichen Aktivierungsstand.
+Alle Workflows liegen im lokalen n8n unter `http://localhost:5678`. Alle 99 Nodes haben deutsche Namen und bleiben auf Wunsch des Nutzers ohne visuelle Gruppen. 23 Bezeichnungen wurden am 12.10.2026 korrigiert; referenzierte Namen in Ausdrücken und den Generatoren sind synchron. Aktuelle importierbare Graphen liegen unter `n8n/workflows/*.workflow.json`, SDK-Quellen unter `*.n8n`; die Exporte enthalten den tatsächlichen Aktivierungsstand.
 
 - Serviceanfragen: `lw1QxoJbeSU0H17E`, veröffentlicht, 23 Nodes.
 - Anfrage analysieren: `wO3EgSMM8l1wRKsc`, veröffentlicht, 18 Nodes, OpenAI und Zwei-Minuten-Worker aktiv.

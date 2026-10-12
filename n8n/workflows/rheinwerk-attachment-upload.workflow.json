@@ -104,7 +104,7 @@
     },
     {
       "id": "1473cf6d-93e6-46a3-bf74-c6cc5ed821ac",
-      "name": "Upload prüfen",
+      "name": "Dateiübertragung prüfen",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -155,7 +155,7 @@
       "main": [
         [
           {
-            "node": "Upload prüfen",
+            "node": "Dateiübertragung prüfen",
             "type": "main",
             "index": 0
           }
@@ -168,7 +168,7 @@
     "availableInMCP": true
   },
   "nodeGroups": [],
-  "versionId": "349f32ef-b170-4e04-91c9-bd121508bc0b",
+  "versionId": "f0c7b643-ba98-4329-8d6f-f488c18d3c0e",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp"

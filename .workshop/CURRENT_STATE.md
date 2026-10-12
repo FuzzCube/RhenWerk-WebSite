@@ -79,6 +79,8 @@ Keine blockierte Roadmap-Aufgabe. task-10-3 bleibt unverändert in_progress und 
 
 ## Prüfung der n8n-Integration
 
+Nutzerkorrektur 12.10.2026: Alle 99 Knotennamen in sechs lokalen n8n-Workflows geprüft; 23 russische/englische Bezeichnungen ins Deutsche übertragen. Namensreferenzen in Ausdrücken aktualisiert, Graph und Credentials gegenüber dem vorherigen Stand verglichen und unverändert bestätigt. Geänderte Workflows erneut veröffentlicht und alle sechs aktiven Graphen per MCP zurückgelesen. Generatorsourcen und Exporte synchronisiert; SDK-Validierung der geänderten Quellen bestanden. Keine erneuten E-Mail-/OpenAI-Aufrufe und keine neue Website-/Datenbankänderung.
+
 Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zuordnung; privates PDF und PNG aus dem API-Formularpfad vollständig in Supabase kopiert und ausgewertet. RIS-2026-00356 processed, Modell aus Dokumenten erkannt, zwei private Dateien; Wiederholung ohne zusätzliche Anfrage, Ereignisse oder Analyse. Tatsächliches bereits gesendetes Gmail-Mail per internem Header wiedergefunden ohne erneut zu senden; neue Provider-Metadaten-Strecke mit gepinntem Send-Ergebnis und echtem Get geprüft. Produktions-Send-/Analyse-Scheduler erfolgreich. Node-/SDK-Validierung, lint, build und typecheck bestanden. DB 532/532 und SQL-Smoke-Test ROLLBACK unmittelbar davor; keine neue SQL-Änderung. Unit-Doku-Abgleich abschließend 58/58 bestanden. DB-Reset und API/Auth/UI-Regression nicht wiederholt; keine Sichtprüfung der Formular-Oberfläche im Browser. Kein Push/Website-Deployment.
 
 ## Empfohlener nächster Schritt
