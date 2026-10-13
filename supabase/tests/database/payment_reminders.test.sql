@@ -1,6 +1,6 @@
 -- task-10-2: payment reminders (stages, daily run, manual send, pause, settings). Run with: supabase test db
 begin;
-select plan(34);
+select plan(36);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'm@x.test'),
@@ -91,6 +91,12 @@ select throws_ok($$insert into public.messages (request_id, direction, kind, sta
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 select is((select m ->> 'approved_by' from public.claim_queued_messages(20, 180) m where m ->> 'kind' = 'payment_reminder'), 'system',
   'send workflow claims the reminder');
+-- task-9-2: a failed send goes back to the queue and closes the send run (was an ambiguous column at run time)
+select is((public.mark_message_failed((select l.message_id from private.integration_send_leases l join public.messages m on m.id = l.message_id where m.kind = 'payment_reminder' and m.status = 'queued' limit 1), 'SMTP 451', false)).status,
+  'queued'::public.message_status, 'failed send is queued again');
+select ok((select bool_and(r.status = 'failed' and r.error_code = 'GMAIL_SEND_FAILED') from public.automation_runs r
+  join public.messages m on r.operation_key = 'email_send:' || m.id where m.kind = 'payment_reminder' and m.error_text = 'SMTP 451'),
+  'send run marked failed');
 select set_config('request.jwt.claims', '', true);
 
 -- Manual send of the next stage

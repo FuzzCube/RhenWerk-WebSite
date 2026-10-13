@@ -1,6 +1,6 @@
 # Tests
 
-Alle Prüfungen laufen gegen den lokalen Supabase-Stack. Voraussetzungen: Docker, `supabase start`, `.env.local` mit den Werten aus `supabase status` (siehe `.env.example`).
+Alle Prüfungen laufen gegen den lokalen Supabase-Stack. Voraussetzungen: Docker, `supabase start`, `.env.local` mit den Werten aus `supabase status` (siehe `.env.example`); vollständige Einrichtung in [setup.md](setup.md).
 
 ## Befehle
 
@@ -60,10 +60,10 @@ Voraussetzung: lokaler Supabase-Stack, Demo-Nutzer (`npm run demo:users`) und la
 - falsches Passwort und unbekannte Adresse: gleiche Meldung, keine Sitzung;
 - Konto ohne Profil, deaktiviertes Profil und Deaktivierung während einer bestehenden Sitzung: kein Zugriff, Hinweis auf `/login`.
 
-- Anfragen: Trefferzahl der Liste je Rolle stimmt mit der Datenbank überein (Manager alle, Dispatcher eigene, Techniker zugewiesene und mit eigenem Einsatz); Filter, Suche, ungültige Filterwerte und letzte Seite; Manager und Dispatcher sehen 10 Abschnitte, Techniker 8 ohne Erstbearbeitung und Korrespondenz und ohne Nachrichteninhalte im HTML; fremde und ungültige IDs ergeben 404;
-- Techniker-Seiten: für alle drei Demo-Techniker entspricht der nächste Einsatz der Datenbank (laufend vor geplant), bestellte Teile der eigenen Anfragen stehen unter „Ausstehende Teile“, der Kalender hat genau eine Zeile je Tag ohne Namen anderer Techniker und ohne Einsätze anderer Techniker; Dispatcher erreichen den Techniker-Kalender nicht;
-- Einsatzplanung: „Zu planen“ entspricht der Planungs-Warteschlange (Dispatcher eigene, Manager alle), Techniker ohne Zugriff; im Kalender des Dispatchers erscheinen fremde Einsätze der laufenden Woche nur als „Belegt“ ohne Nummer oder Firma, eigene mit Anfragenummer, Abwesenheitsgründe nirgends;
-- Prüfaktionen: Techniker sehen keinen Aktionsblock; Manager sehen ihn bei offener Prüfung, mit „Als Entwurf speichern“ und ohne Senden-Knopf;
+- Anfragen: Trefferzahl der Liste je Rolle stimmt mit der Datenbank überein (Manager alle, Dispatcher eigene, Techniker zugewiesene und mit eigenem Einsatz); Filter, Suche, ungültige Filterwerte und letzte Seite; Manager und Dispatcher sehen 10 Abschnitte, Techniker oben den eigenen Einsatz und 7 Abschnitte ohne Erstbearbeitung, Korrespondenz und Einsatzliste, ohne Nachrichteninhalte im HTML; fremde und ungültige IDs ergeben 404;
+- Techniker-Seiten: für alle drei Demo-Techniker entspricht der nächste Einsatz der Datenbank (laufend vor geplant), bestellte Teile der eigenen Anfragen stehen unter „Ausstehende Teile“, der Kalender (Wochenagenda) zeigt Tage, keine Namen und keine Einsätze anderer Techniker; Dispatcher erreichen den Techniker-Kalender nicht;
+- Einsatzplanung: „Zu planen“ entspricht der Planungs-Warteschlange (Dispatcher eigene, Manager alle), Techniker ohne Zugriff; auf der Plantafel des Dispatchers ab Montag der laufenden Woche (`?woche=`) erscheinen fremde Einsätze nur als „Belegt“ ohne Nummer oder Firma, eigene mit Anfragenummer, Abwesenheitsgründe nirgends;
+- Prüfaktionen: Techniker sehen keine Prüfaktionen (ihr Aktionsfeld zeigt nur Stand oder den inaktiven Rechnungsschritt); Manager sehen ihn bei offener Prüfung, mit „Als Entwurf speichern“ und ohne Senden-Knopf;
 - Warteschlangen: für alle drei Demo-Dispatcher entsprechen Anzahl und Reihenfolge jedes Tabs der View `dispatcher_queue`; Manager wird umgeleitet; automatisch bearbeitete, ungeplante Anfragen stehen in der Planung;
 - Dokumente: Manager lädt die interne Notiz (`management`), der Dispatcher der Anfrage sieht und lädt sie nicht, anonym 401; der Techniker der Anfrage lädt ein operatives Dokument, ein anderer Techniker nicht.
 
@@ -115,4 +115,63 @@ Mit `UI_SCREENSHOTS=<Ordner>` wird je Seite und Breite ein Screenshot gespeicher
 | 5 Automatisierungskennzahlen, 100 × 15 Minuten | `savings_fixture.test.sql` (Formel), `analytics.test.sql` (Zeitersparnis nur für korrekte automatische Erstbearbeitung, Detail mit Anzahl und Basiswert) |
 | 6 Periodenvergleiche, Nullbasis | `analytics.test.sql` (unvollständige Monate, kürzerer Februar, Woche, Quartal, Nullbasis ohne Prozentwert) |
 | 7 Historie aus Ereignissen, Fristen, Wiedereröffnung, Stornierung | `intake_operations.test.sql`, `scenarios.test.sql` |
-| 8 Responsive-Prüfung | folgt mit den Oberflächen (Phasen 4–6, task-9-2) |
+| 8 Responsive-Prüfung | `test:ui` (alle Bereiche je Rolle bei 390/768/1440 px), Sichtprüfung je Rolle in der Gesamtprüfung (unten) |
+
+## Gesamtprüfung 13.10.2026 (task-9-2)
+
+Stand: Commit `e8a6133` plus Migration `20261013120000_fix_mark_message_failed.sql`. Lokaler Supabase-Stack, Demodaten frisch geseedet, Dev-Server auf Port 3201, Produktionsserver (`next start`) auf Port 3202.
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| `npm run lint`, `npm run typecheck` | ohne Befund |
+| `npm run build` | erfolgreich |
+| `npm run test:unit` | 61/61 |
+| `npm run test:db` | 568/568 in 17 Dateien |
+| `supabase db lint` | keine Fehler; Warnungen zu den `lock_*`-Hilfsfunktionen (zusammengesetzte OUT-Variablen) und unbenutzten Variablen in `claim_queued_messages` und `record_incoming_message` |
+| `npm run test:api` | alle Prüfungen bestanden (Rechte, gefälschte Schreibzugriffe, 10 gleichzeitige Buchungen, Buchung gegen Abwesenheit) |
+| `npm run test:auth` gegen `next start` | 130 Prüfungen bestanden |
+| `npm run test:ui` | 199 Prüfungen bestanden |
+| `npm run demo:seed` + `npm run demo:verify` | 18/18 „ok“ |
+| `npm run supabase:check` | Auth HTTP 200, Admin-API OK |
+
+Gefunden und behoben:
+
+- `supabase db lint` meldete in `mark_message_failed` eine mehrdeutige Spaltenreferenz (`message_id` als Parameter und als Spalte von `automation_runs`). Der Fehler trat erst zur Laufzeit auf, also bei jedem von n8n gemeldeten fehlgeschlagenen Gmail-Versand. Behoben mit Migration `20261013120000_fix_mark_message_failed.sql`; neuer pgTAP-Test in `payment_reminders.test.sql` führt den Zweig aus (Nachricht wieder `queued`, Versandlauf `failed` mit `GMAIL_SEND_FAILED`).
+- `test:auth` prüfte noch Markup aus der Zeit vor der Design-Überarbeitung (Zählzeile, Plantafel, Technikerkalender, Abschnitte der Technikeransicht); auf die neuen Anker umgestellt, Prüfinhalt unverändert.
+
+Hinweis zur Reihenfolge: `demo:verify` direkt nach `test:api` oder `test:ui` meldet deren Testanfragen (Basiswert 5 Minuten) als Abweichung vom Demo-Basiswert. Erst `demo:seed`, dann `demo:verify`.
+
+### Szenarien der Spezifikation
+
+| Szenario | Ergebnis 13.10.2026 |
+| --- | --- |
+| 1 Berechtigungen | bestanden: `rls.test.sql`, `scenarios.test.sql`, `test:api`, dazu Rollen- und Datensichtbarkeit über HTTP in `test:auth` |
+| 2 Planung, Konflikte, Nebenläufigkeit | bestanden: `visit_operations.test.sql`, `scenarios.test.sql`, `test:api` (genau 1 von 10 gleichzeitigen Buchungen, nie Buchung und Abwesenheit zugleich), Planung über die Oberfläche in `test:ui` |
+| 3 Warten auf Teile, Folgeeinsatz, Abschluss | bestanden: `scenarios.test.sql`, `work_operations.test.sql`, Einsatzaktionen und Abschluss in `test:ui` |
+| 4 Abrechnung, Wartung, Tarifänderung, Warteschlange, Versand nach Zahlung | bestanden: `invoice_message_operations.test.sql`, `scenarios.test.sql`, `payment_reminders.test.sql`, Rechnung und PDF in `test:ui` |
+| 5 Automatisierungskennzahlen, 100 × 15 Minuten | bestanden: `savings_fixture.test.sql`, `analytics.test.sql`, Tooltip „N Anfragen × Basiswert 15 min“ in `test:ui` |
+| 6 Periodenvergleiche, Nullbasis | bestanden: `analytics.test.sql`, `test:unit` (`analytics.test.mjs`), Zeitraumwechsel der Übersicht in `test:ui` |
+| 7 Historie aus Ereignissen, Fristen, Wiedereröffnung, Stornierung | bestanden: `intake_operations.test.sql`, `scenarios.test.sql` |
+| 8 Responsive-Prüfung | bestanden: `test:ui` und Sichtprüfung je Rolle (unten) |
+
+### Sichtprüfung je Rolle (Szenario 8)
+
+Im Browser mit den Demo-Konten angemeldet, je Seite bei 390×844, 768×1024 und 1440×900 geprüft: Seitenbreite nicht größer als das Fenster und kein sichtbares Element außerhalb des Fensters (außer in eigenen Scrollbereichen wie der Navigationsleiste oder Tabellen). Zusätzlich Screenshots der Hauptseiten bei 390 px.
+
+| Rolle | Seiten | Ergebnis |
+| --- | --- | --- |
+| Anmeldung | `/login` | in Ordnung |
+| Techniker | Mein Tag, Kalender, Anfragen, Anfrageseite, Einsatzseite | 15/15 ohne Befund |
+| Dispatcher | Erstbearbeitung (Prüfung, Planung), Anfragen (Offen, Sicherheitsgefahr), Einsatzplanung (Woche, Tag), Anfrageseite | 21/21 ohne Befund |
+| Manager | Übersicht (Monat, Jahr), Auswertung (4 Bereiche), Rechnungen (Zu erledigen, Überfällig), Einsatzplanung, Anfragen (Alle), Anfrageseite | 33/33 ohne Befund |
+| Admin | Verwaltung (Mitarbeitende aktiv/alle, Arbeitszeiten, Tarife, Einstellungen, Personenseite), Übersicht, Anfragen, UI-Bausteine | 27/27 ohne Befund |
+
+Bekannte Grenze: Auf 768 px scrollt die Rechnungstabelle innerhalb ihrer Karte seitlich; die Seite selbst nicht.
+
+### Nicht geprüft
+
+- Echte Geräte: geprüft wurde in Chrome mit emulierten Fenstergrößen, nicht auf physischen Tablets oder Smartphones; andere Browser (Safari, Firefox) nicht geprüft.
+- Barrierefreiheit über die Tastatur- und Fokusprüfung der Formulare in `test:ui` hinaus (Screenreader, automatischer Kontrast-Audit) nicht geprüft.
+- n8n, Gmail und OpenAI in diesem Lauf nicht erneut ausgeführt; letzter echter Nachweis 12.10.2026 (siehe [n8n-contract.md](n8n-contract.md)). Die Korrektur von `mark_message_failed` ist in der Datenbank getestet, nicht mit einem echten fehlgeschlagenen Gmail-Versand.
+- Website-Formular mit Vercel Blob und Turnstile in einer öffentlichen Umgebung; Supabase-Cloudprojekt und Deployment (alles lokal).
+

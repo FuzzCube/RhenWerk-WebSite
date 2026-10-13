@@ -2,19 +2,21 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 37 Tasks. Fortschritt 94,44 % (Gewicht 119 von 126, 35 von 37 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 37 Tasks. Fortschritt 97,62 % (Gewicht 123 von 126, 36 von 37 Tasks).
 
 ## Aktive Phase
 
-Phasen 0–8 sind abgeschlossen; in Phase 9 fehlt nur die Gesamtprüfung `task-9-2` (jetzt `ready`). In Phase 10 (Erweiterungen) ist nur `task-10-5` offen.
+Phasen 0–9 sind abgeschlossen. In Phase 10 (Erweiterungen) ist nur `task-10-5` offen.
 
 ## Aktive Aufgabe
 
-Keine. `task-10-3` wurde am 13.10.2026 abgeschlossen; der nächste Task wird mit dem Nutzer gewählt.
+Keine. `task-9-2` wurde am 13.10.2026 abgeschlossen; der nächste Task wird mit dem Nutzer gewählt.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-9-2` (13.10.2026): Gesamtprüfung und Responsive-Check. Alle Testsuiten bestanden (lint, typecheck, build, test:unit 61, test:db 568, test:api, test:auth 130 gegen `next start`, test:ui 199, demo:verify 18/18); Sichtprüfung je Rolle bei 390/768/1440 px ohne Befund. Behoben: mehrdeutige Spalte in `mark_message_failed` (Migration `20261013120000_fix_mark_message_failed.sql`, neuer pgTAP-Test). Ergebnisse, Szenarien 1–8 und nicht Geprüftes in `docs/testing.md` (Abschnitt Gesamtprüfung); Setup- und Startanleitung `docs/setup.md`.
 
 `task-10-3` (13.10.2026): Überarbeitung des Dashboard-Designs, vom Nutzer abgenommen. RheinWerk-Design, nur hell. Listen- und Bereichsseiten (Anfragen, Erstbearbeitung, Auswertung, Rechnungen, Verwaltung) mit hellem Seitenmenü (`components/dashboard/ui/side-menu.tsx`, auf schmalen Breiten ein Umschaltknopf) und Kopf mit Ansicht, Anzahl und Beschreibung; Manager-Übersicht auf einem 4-Spalten-Raster; Einsatzplanung als Plantafel mit Warteschlange im Stil des Seitenmenüs; Anfrageseite mit aufklappbaren Nebenabschnitten; Technikerseiten mobil zuerst (Mein Tag und Einsatz einspaltig, höchstens 960 px; Kalender als Wochenagenda). Breite Seiten bis 1680 px mit bündigen Kopf-, Navigations- und Inhaltskanten. Geprüft: typecheck, lint, test:unit 61/61, build, test:auth (gegen `next start`; Prüfanker auf die neue Markup umgestellt) und test:ui 198; im Browser bei 390/768/1440 px kein horizontales Scrollen. Details in `docs/architecture.md` (Abschnitt Design-Überarbeitung).
 
@@ -28,7 +30,6 @@ Keine. `task-10-3` wurde am 13.10.2026 abgeschlossen; der nächste Task wird mit
 
 ## Bereite nächste Aufgaben
 
-- `task-9-2`: Gesamtprüfung und Responsive-Check (alle Abhängigkeiten abgeschlossen).
 - `task-10-5`: Posteingang für nicht zugeordnete E-Mails (eingehende Mails ohne Anfragenummer/Thread werden gespeichert, sind im Dashboard aber noch unsichtbar).
 
 ## Blockiert

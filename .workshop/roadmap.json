@@ -1145,7 +1145,7 @@
           "description": "Prüfung der Szenarien 1-8 und der Hauptansichten bei 390x844, 768x1024 und 1440x900. Erfolgt nach der Überarbeitung des Designs (task-10-3), damit die Sichtprüfung den endgültigen Stand abdeckt.",
           "order": 2,
           "weight": 4,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-2-5",
             "task-3-3",
@@ -1164,13 +1164,26 @@
             "Blockierte Prüfungen ehrlich benannt",
             "Setup- und Startanleitung vollständig"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-13T11:33:54Z",
+          "completedAt": "2026-10-13T11:46:41Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Szenarien 1–8 mit Ergebnis in docs/testing.md (Abschnitt Gesamtprüfung 13.10.2026). lint, typecheck, build, test:unit 61/61, test:db 568/568, supabase db lint ohne Fehler, test:api, test:auth 130 (gegen next start), test:ui 199, demo:seed + demo:verify 18/18. Sichtprüfung je Rolle bei 390/768/1440 px: 96 Seitenprüfungen ohne Befund. Gefunden und behoben: mehrdeutige Spalte in mark_message_failed (Migration 20261013120000, neuer pgTAP-Test). Nicht geprüft und benannt: echte Geräte und andere Browser, Screenreader, n8n/Gmail/OpenAI in diesem Lauf, öffentliche Umgebung. Setup- und Startanleitung docs/setup.md.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:unit",
+              "npm run test:db",
+              "supabase db lint",
+              "npm run test:api",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
+              "APP_URL=http://127.0.0.1:3201 npm run test:ui",
+              "npm run demo:seed",
+              "npm run demo:verify",
+              "npm run supabase:check"
+            ],
+            "checkedAt": "2026-10-13T11:46:41Z"
           }
         }
       ]
