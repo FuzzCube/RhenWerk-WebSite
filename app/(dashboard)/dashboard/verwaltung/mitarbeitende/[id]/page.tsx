@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { addAbsence, deactivateEmployee, deleteAbsence, reactivateEmployee, saveWorkingHours, updateEmployee } from "@/app/(dashboard)/dashboard/verwaltung/actions";
-import { AdminNav } from "@/components/dashboard/admin-nav";
+import { AdminShell } from "@/components/dashboard/admin-nav";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { CheckboxField, HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
-import { EmptyState, PageHeader } from "@/components/dashboard/ui/states";
+import { EmptyState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
 import { ASSIGNMENT_LABELS, WEEKDAYS } from "@/lib/admin";
 import { EMPLOYEE_ROLES, ROLE_LABELS, rolesFor } from "@/lib/auth/roles";
@@ -41,13 +41,12 @@ export default async function EmployeePage({ params, searchParams }: Props) {
   ];
 
   return (
-    <div className="dash-page">
-      <PageHeader
-        title={profile.display_name}
-        description={<>{ROLE_LABELS[profile.role]} · {login?.email ?? "Keine Anmeldedaten"} · Letzte Anmeldung: {login?.lastSignInAt ? formatDateTime(login.lastSignInAt) : "noch nie"}</>}
-        actions={<StatusBadge kind="profile_active" value={profile.is_active} />}
-      />
-      <AdminNav current="mitarbeitende" />
+    <AdminShell
+      current="mitarbeitende"
+      title={profile.display_name}
+      description={<>{ROLE_LABELS[profile.role]} · {login?.email ?? "Keine Anmeldedaten"} · Letzte Anmeldung: {login?.lastSignInAt ? formatDateTime(login.lastSignInAt) : "noch nie"}</>}
+      actions={<StatusBadge kind="profile_active" value={profile.is_active} />}
+    >
       <p><Link href="/dashboard/verwaltung">← Alle Mitarbeitenden</Link></p>
 
       {one(query.angelegt) === "1" && <p className="notice" role="status">Konto angelegt. {profile.role === "technician" ? "Bitte jetzt die Arbeitszeiten festlegen, sonst kann der Techniker nicht eingeplant werden." : ""}</p>}
@@ -178,6 +177,6 @@ export default async function EmployeePage({ params, searchParams }: Props) {
           </SaveForm>
         </section>
       )}
-    </div>
+    </AdminShell>
   );
 }

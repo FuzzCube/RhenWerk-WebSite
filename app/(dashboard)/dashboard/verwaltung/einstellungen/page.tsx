@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { saveReminderSettings, saveSettings } from "@/app/(dashboard)/dashboard/verwaltung/actions";
-import { AdminNav } from "@/components/dashboard/admin-nav";
+import { AdminShell } from "@/components/dashboard/admin-nav";
 import { SaveForm, TextField } from "@/components/dashboard/ui/save-form";
-import { ErrorState, PageHeader } from "@/components/dashboard/ui/states";
+import { ErrorState } from "@/components/dashboard/ui/states";
 import { COMPANY_FIELDS } from "@/lib/admin";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
@@ -21,9 +21,7 @@ export default async function SettingsPage() {
   const company = (settings?.company_details ?? {}) as Record<string, unknown>;
 
   return (
-    <div className="dash-page">
-      <PageHeader title="Einstellungen" description="Gelten nur für spätere Vorgänge: abgeschlossene Erstbearbeitungen behalten ihren Basiswert, ausgestellte Rechnungen ihre Angaben." />
-      <AdminNav current="einstellungen" />
+    <AdminShell current="einstellungen" title="Einstellungen" description="Gelten nur für spätere Vorgänge: abgeschlossene Erstbearbeitungen behalten ihren Basiswert, ausgestellte Rechnungen ihre Angaben.">
       {!settings ? (
         <ErrorState><p>Bitte die Seite neu laden.</p></ErrorState>
       ) : (
@@ -62,6 +60,6 @@ export default async function SettingsPage() {
           </SaveForm>
         </>
       )}
-    </div>
+    </AdminShell>
   );
 }

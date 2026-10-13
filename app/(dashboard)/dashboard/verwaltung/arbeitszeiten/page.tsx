@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AdminNav } from "@/components/dashboard/admin-nav";
+import { AdminShell } from "@/components/dashboard/admin-nav";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
-import { EmptyState, ErrorState, PageHeader } from "@/components/dashboard/ui/states";
+import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { summarizeWorkingHours } from "@/lib/admin";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
@@ -37,21 +37,25 @@ export default async function WorkingHoursPage() {
   ];
 
   return (
-    <div className="dash-page">
-      <PageHeader title="Arbeitszeiten" description="Grundlage der Einsatzplanung: Einsätze passen nur in die Arbeitszeit und nicht in eine Abwesenheit. Bearbeiten über die Person." />
-      <AdminNav current="arbeitszeiten" />
+    <AdminShell current="arbeitszeiten" title="Arbeitszeiten" count={rows.length} description="Grundlage der Einsatzplanung: Einsätze passen nur in die Arbeitszeit und nicht in eine Abwesenheit.">
       {!data ? (
         <ErrorState><p>Bitte die Seite neu laden.</p></ErrorState>
       ) : (
-        <DataTable
-          caption="Arbeitszeiten der Techniker"
-          columns={columns}
-          rows={rows}
-          rowKey={(row) => row.id}
-          rowHref={(row) => `/dashboard/verwaltung/mitarbeitende/${row.id}#arbeitszeiten-title`}
-          empty={<EmptyState title="Keine aktiven Techniker."><p><Link href="/dashboard/verwaltung">Mitarbeitende anlegen</Link></p></EmptyState>}
-        />
+        <div className="side-page__list">
+          <div className="side-page__list-bar">
+            <p className="result-count"><strong>{rows.length === 1 ? "1 aktiver Techniker" : `${rows.length} aktive Techniker`}</strong></p>
+            <span>Bearbeiten über die Person</span>
+          </div>
+          <DataTable
+            caption="Arbeitszeiten der Techniker"
+            columns={columns}
+            rows={rows}
+            rowKey={(row) => row.id}
+            rowHref={(row) => `/dashboard/verwaltung/mitarbeitende/${row.id}#arbeitszeiten-title`}
+            empty={<EmptyState title="Keine aktiven Techniker."><p><Link href="/dashboard/verwaltung">Mitarbeitende anlegen</Link></p></EmptyState>}
+          />
+        </div>
       )}
-    </div>
+    </AdminShell>
   );
 }

@@ -1055,7 +1055,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 /* Visit planning (task-10-3) */
 /* Einsatzplanung (task-10-3, after the user's dashboard draft): queue · planning board · booking panel */
 /* Wide pages: header, navigation and content share one width, so all left edges line up */
-.dash-shell:has(.plan3-page, .side-page, .dash-request--wide, .overview) :is(.dash-header__inner, .dash-nav ul, .dash-main) { max-width: 1680px; }
+.dash-shell:has(.plan3-page, .side-page, .dash-request--wide, .overview, .tech-page, .cal-page) :is(.dash-header__inner, .dash-nav ul, .dash-main) { max-width: 1680px; }
 .plan3-page { container-type: inline-size; }
 .plan3__eyebrow { margin: 0; font-family: var(--rw-font-mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--rw-text-secondary); }
 .plan3__muted { font-size: 14px; line-height: 1.43; color: var(--rw-text-secondary); }
@@ -1203,7 +1203,10 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .plan3__check--bad { color: var(--rw-color-danger-800); background: var(--rw-color-danger-surface); border-color: var(--rw-color-danger-border); border-left-color: var(--rw-color-danger-700); }
 
 /* Technician (task-10-3): reference width 390 px, targets >= 44 px, main action 52 px */
-.tech-page { max-width: 760px; }
+.tech-page { container-type: inline-size; }
+/* Mein Tag (user feedback 13.10.2026): page edges like the other pages, sections stacked in the phone order on
+   every width (side-by-side columns were rejected); on desktop the column stays tablet-like, used mainly on tablet/phone */
+.tech-page > * { max-width: 960px; }
 .tech-h2 { font-size: 22px; line-height: 1.28; }
 .tech-progress { margin-top: 6px; font-size: 14px; }
 .tech-now { gap: 10px; }
@@ -1593,3 +1596,24 @@ details.tech-step[open] { padding-bottom: 20px; }
 .plan3__item { border-color: var(--rw-color-steel-200); border-left: 1px solid var(--rw-color-steel-200); }
 .plan3__item:hover { border-color: var(--rw-color-steel-300); border-left-color: var(--rw-color-steel-300); box-shadow: var(--rw-shadow-sm); }
 .plan3__item[aria-current="true"], .plan3__item[aria-current="true"]:hover { background: var(--rw-color-white); border-color: var(--rw-color-steel-300); box-shadow: inset 4px 0 0 var(--rw-color-lime-500), 0 1px 2px rgba(11, 31, 51, 0.08); }
+
+/* Administration as a side page (task-10-3, user feedback 13.10.2026): lists in list cards, forms as cards.
+   Aktive/Alle sits in the list bar as a segmented control like the period control (selection in lime). */
+.side-page__list-bar:has(.rw-views) { align-items: center; padding: 8px 16px; }
+.side-page__list-bar .rw-views { display: inline-flex; flex-wrap: nowrap; gap: 0; border: 1px solid var(--rw-border-default); border-radius: var(--rw-radius-sm); overflow: hidden; background: var(--rw-surface-raised); }
+.side-page__list-bar .rw-view { min-height: 36px; padding: 0 12px; border: 0; border-radius: 0; font-size: 13px; }
+.side-page__list-bar .rw-view + .rw-view { border-left: 1px solid var(--rw-border-subtle); }
+.side-page__list-bar .rw-view[aria-current="page"] { color: var(--rw-text-on-lime); background: var(--rw-action-primary-bg); }
+.side-page__list-bar .rw-view[aria-current="page"] .rw-view__count { color: var(--rw-text-on-lime); background: rgba(255, 255, 255, 0.55); }
+.side-page__list > .rate-list { padding: 12px 16px 16px; }
+.admin-page .side-page__main > .action { border-radius: var(--rw-radius-md); overflow: hidden; }
+.admin-page .side-page__main > .save-form,
+.admin-page .side-page__main > .request-section { padding: 20px 24px; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-subtle); border-top: 2px solid var(--rw-color-steel-700); border-radius: var(--rw-radius-md); }
+.admin-page .side-page__main > .request-section { scroll-margin-top: 120px; }
+.admin-page .side-page__main > .save-form > .request-section { padding-top: 0; border-top: 0; }
+.admin-page .side-page__main > .save-form > .request-section + .request-section { padding-top: var(--rw-space-20, 20px); border-top: 1px solid var(--rw-border-subtle); }
+.admin-page .side-page__main > .section-note { margin: 0; }
+.admin-page .side-page__main .request-section > h2 { font-family: var(--rw-font-body); font-size: 17px; font-weight: 600; line-height: 1.35; }
+.admin-page .side-page__main > .request-section .save-form:not(.save-form--inline) { padding: 0; background: transparent; border: 0; }
+.admin-page .side-page__main > .request-section .action .save-form { padding: 14px; }
+.admin-page .side-page__main > p:first-child { margin: 0; font-size: 14px; }

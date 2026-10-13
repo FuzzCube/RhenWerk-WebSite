@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { createEmployee } from "@/app/(dashboard)/dashboard/verwaltung/actions";
 import { ActiveFilter, showsInactive } from "@/components/dashboard/active-filter";
-import { AdminNav } from "@/components/dashboard/admin-nav";
+import { AdminShell } from "@/components/dashboard/admin-nav";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
-import { EmptyState, ErrorState, PageHeader } from "@/components/dashboard/ui/states";
+import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
 import { MIN_PASSWORD_LENGTH, summarizeWorkingHours } from "@/lib/admin";
 import { EMPLOYEE_ROLES, ROLE_LABELS, rolesFor } from "@/lib/auth/roles";
@@ -31,9 +31,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   ];
 
   return (
-    <div className="dash-page">
-      <PageHeader title="Verwaltung" description="Mitarbeitende, Rollen, Arbeitszeiten, Tarife und Einstellungen. Mitarbeitende werden deaktiviert, nicht gelöscht; ihre Historie bleibt erhalten." />
-      <AdminNav current="mitarbeitende" />
+    <AdminShell current="mitarbeitende" title="Mitarbeitende" count={activeCount} description="Konten, Rollen und Anmeldung. Mitarbeitende werden deaktiviert, nicht gelöscht; ihre Historie bleibt erhalten.">
 
       <details className="action">
         <summary>Mitarbeitende anlegen</summary>
@@ -56,17 +54,22 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       ) : (
         <>
           {error && <p className="request-alert request-alert--info">Anmeldedaten (E-Mail, letzte Anmeldung) konnten nicht geladen werden.</p>}
-          {rows.length > 0 && <ActiveFilter basePath="/dashboard/verwaltung" all={all} active={activeCount} total={rows.length} label="Mitarbeitende anzeigen" />}
-          <DataTable
-            caption="Mitarbeitende"
-            columns={columns}
-            rows={all ? rows : rows.filter((row) => row.is_active)}
-            rowKey={(row) => row.id}
-            rowHref={(row) => `/dashboard/verwaltung/mitarbeitende/${row.id}`}
-            empty={<EmptyState title={rows.length === 0 ? "Noch keine Mitarbeitenden." : "Keine aktiven Mitarbeitenden."} />}
-          />
+          <div className="side-page__list">
+            <div className="side-page__list-bar">
+              {rows.length > 0 && <ActiveFilter basePath="/dashboard/verwaltung" all={all} active={activeCount} total={rows.length} label="Mitarbeitende anzeigen" />}
+              <span>Zeile öffnen für Stammdaten, Arbeitszeiten und Deaktivierung</span>
+            </div>
+            <DataTable
+              caption="Mitarbeitende"
+              columns={columns}
+              rows={all ? rows : rows.filter((row) => row.is_active)}
+              rowKey={(row) => row.id}
+              rowHref={(row) => `/dashboard/verwaltung/mitarbeitende/${row.id}`}
+              empty={<EmptyState title={rows.length === 0 ? "Noch keine Mitarbeitenden." : "Keine aktiven Mitarbeitenden."} />}
+            />
+          </div>
         </>
       )}
-    </div>
+    </AdminShell>
   );
 }

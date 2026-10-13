@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { saveRate } from "@/app/(dashboard)/dashboard/verwaltung/actions";
 import { ActiveFilter, showsInactive } from "@/components/dashboard/active-filter";
-import { AdminNav } from "@/components/dashboard/admin-nav";
+import { AdminShell } from "@/components/dashboard/admin-nav";
 import { CheckboxField, HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
-import { EmptyState, ErrorState, PageHeader } from "@/components/dashboard/ui/states";
+import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
 import { BILLING_MODEL_LABELS } from "@/lib/admin";
 import { rolesFor } from "@/lib/auth/roles";
@@ -42,10 +42,7 @@ export default async function RatesPage({ searchParams }: { searchParams: Promis
   const [rates, all] = await Promise.all([listRates(), searchParams.then(showsInactive)]);
 
   return (
-    <div className="dash-page">
-      <PageHeader title="Tarife" description="Preisvorlagen für Arbeitspositionen. Änderungen gelten für später erfasste Positionen; bestehende Positionen und ausgestellte Rechnungen bleiben unverändert." />
-      <AdminNav current="tarife" />
-
+    <AdminShell current="tarife" title="Tarife" count={rates?.filter((rate) => rate.is_active).length} description="Preisvorlagen für Arbeitspositionen. Änderungen gelten für später erfasste Positionen; bestehende Positionen und ausgestellte Rechnungen bleiben unverändert.">
       <details className="action">
         <summary>Tarif anlegen</summary>
         <SaveForm action={saveRate} submitLabel="Tarif anlegen" resetOnSuccess>
@@ -58,12 +55,15 @@ export default async function RatesPage({ searchParams }: { searchParams: Promis
       ) : rates.length === 0 ? (
         <EmptyState title="Noch keine Tarife." />
       ) : (
-        <>
-          <ActiveFilter basePath="/dashboard/verwaltung/tarife" all={all} active={rates.filter((rate) => rate.is_active).length} total={rates.length} label="Tarife anzeigen" />
+        <div className="side-page__list">
+          <div className="side-page__list-bar">
+            <ActiveFilter basePath="/dashboard/verwaltung/tarife" all={all} active={rates.filter((rate) => rate.is_active).length} total={rates.length} label="Tarife anzeigen" />
+            <span>Tarif öffnen zum Bearbeiten</span>
+          </div>
           <RateList rates={all ? rates : rates.filter((rate) => rate.is_active)} />
-        </>
+        </div>
       )}
-    </div>
+    </AdminShell>
   );
 }
 
