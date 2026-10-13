@@ -2,11 +2,11 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 38 Tasks. Fortschritt 100,00 % (Gewicht 128 von 128, 38 von 38 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 39 Tasks. Fortschritt 100,00 % (Gewicht 130 von 130, 39 von 39 Tasks).
 
 ## Aktive Phase
 
-Alle Phasen 0–10 sind abgeschlossen (Phase 10 am 13.10.2026 um `task-10-7` erweitert).
+Alle Phasen 0–10 sind abgeschlossen (Phase 10 am 13.10.2026 um `task-10-7` und `task-10-8` erweitert).
 
 ## Aktive Aufgabe
 
@@ -16,7 +16,9 @@ Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue
 
 ## Zuletzt abgeschlossen
 
-`task-10-7` (13.10.2026): Auswahl auf der Plantafel ziehen – fließend mit Maus, Stift oder Finger, 15-Minuten-Raster, Wechsel von Techniker und Tag, Zeitanzeige mit Konfliktgrund am Zeiger, Ablegen ins Formular oder ins nächste freie Fenster, Tastatur ←/→/↑/↓. Bestehende Einsätze verschieben bewusst nicht enthalten (möglicher Folgetask). test:ui 219, lint, typecheck, build. Details in `docs/architecture.md` (Einsatzplanung).
+`task-10-8` (13.10.2026): Geplante Einsätze auf der Plantafel verschieben – Ziehen mit Maus, Finger oder Pfeiltasten auf andere Zeit, anderen Techniker oder Tag; Bestätigung „Bisher → Neu“ mit Grund (Standard „Verschoben auf der Plantafel“, änderbar) und Abbrechen; Speichern über `rescheduleVisit` → `reschedule_visit` mit Versionsprüfung, Verlaufseintrag `visit_rescheduled`. Keine Migration. test:ui 226, test:db 597, test:auth 130, lint, typecheck, build, demo:verify 18/18. Details in `docs/architecture.md` (Einsatzplanung).
+
+`task-10-7` (13.10.2026): Auswahl auf der Plantafel ziehen – fließend mit Maus, Stift oder Finger, 15-Minuten-Raster, Wechsel von Techniker und Tag, Zeitanzeige mit Konfliktgrund am Zeiger, Ablegen ins Formular oder ins nächste freie Fenster, Tastatur ←/→/↑/↓. Bestehende Einsätze verschieben folgt in `task-10-8`. test:ui 219, lint, typecheck, build. Details in `docs/architecture.md` (Einsatzplanung).
 
 `task-10-5` (13.10.2026): Posteingang für nicht zugeordnete E-Mails unter `/dashboard/posteingang` (Dispatcher eigener Posteingang, Manager/Admin alle, Zähler in der Navigation). Zuordnung per `link_message` (Vorschläge nach Absenderadresse, Suche), neue Anfrage aus E-Mail per `create_request_from_message` (Migration `20261013130000_inbox_create_request.sql`, Quelle `email`, idempotent über `email:<message_id>`, keine Eingangsbestätigung). Tests: `inbox.test.sql` (24), test:db 592, test:auth 130, test:ui 216, lint, typecheck, build. Details in `docs/architecture.md` (Posteingang) und `docs/database.md`.
 

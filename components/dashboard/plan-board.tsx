@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { scheduleVisit } from "@/app/(dashboard)/dashboard/planung/actions";
+import { rescheduleVisit, scheduleVisit } from "@/app/(dashboard)/dashboard/planung/actions";
 import { HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
 import { Icon } from "@/components/ui";
 import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay, weekStart } from "@/lib/berlin-time";
 import type { BusyBlock, Technician, WorkingHours } from "@/lib/dashboard/planning";
+import { initialFormState, type FormState } from "@/lib/forms";
 import { formatWeekdayDate, TIME_ZONE } from "@/lib/format";
 import { hoursOn, nextWorkingDays, SLOT_DURATIONS, slotReasonText, suggestSlots, type SlotBusy, type SlotExperience } from "@/lib/slot-suggestions";
 
@@ -39,6 +40,13 @@ type Props = {
 
 const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
 const toTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+// Board position of a visit within one day
+const pickOf = (block: BusyBlock): BoardPick => ({
+  technicianId: block.technicianId,
+  day: dayKeyOf(new Date(block.start)),
+  start: toTime(minutesOfDay(new Date(block.start))),
+  end: toTime(minutesOfDay(new Date(block.end))),
+});
 const shortDay = (day: string) => formatWeekdayDate(`${day}T12:00:00Z`).replace(/\d{4}$/, "");
 const longDayFormat = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: TIME_ZONE });
 const longDay = (day: string) => longDayFormat.format(new Date(`${day}T12:00:00Z`));
@@ -48,11 +56,18 @@ const nextWorkday = (day: string, step: 1 | -1) => {
   return next;
 };
 
-type Segment = { start: number; end: number; kind: "own" | "busy" | "absence"; label: string };
-// Dragging the selection (task-10-7): the block follows the pointer exactly (minute as float), the time it will get
-// is the 15-minute grid position (snapped); x/y place the time tip next to the pointer
-type Drag = { technicianId: string; day: string; exact: number; snapped: BoardPick; x: number; y: number };
+type Segment = { start: number; end: number; kind: "own" | "busy" | "absence"; label: string; block: BusyBlock };
+// Dragging the selection (task-10-7) or a planned visit (task-10-8): the block follows the pointer exactly
+// (minute as float), the time it will get is the 15-minute grid position (snapped); x/y place the time tip next to
+// the pointer. A moved visit is left out of the conflict check (ignore), it does not collide with itself.
+type Drag = { technicianId: string; day: string; exact: number; snapped: BoardPick; x: number; y: number; ignore: Ignore | null };
+type Ignore = { technicianId: string; start: number; end: number };
+// Visit dropped somewhere else, waiting for confirmation (old → new, reason)
+// error: message of a failed save, belongs to this move only (a new drag starts without it)
+type Move = { block: BusyBlock; visitId: string; version: number; from: BoardPick; to: BoardPick; error?: string };
 const DRAG_STEP = 15;
+const DEFAULT_REASON = "Verschoben auf der Plantafel";
+const ignoreOf = (block: BusyBlock): Ignore => ({ technicianId: block.technicianId, start: Date.parse(block.start), end: Date.parse(block.end) });
 
 export function PlanBoard(props: Props) {
   const { technicians, workingHours, busy, availability, view, days, anchor, focusDay, request } = props;
@@ -64,6 +79,18 @@ export function PlanBoard(props: Props) {
   const [formKey, setFormKey] = useState(0);
   const [notice, setNotice] = useState("");
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [move, setMove] = useState<Move | null>(null);
+  // Saving a move: on success the server refreshes the board data, the pending move is cleared here
+  const [, moveAction, moving] = useActionState(async (previous: FormState, formData: FormData) => {
+    const result = await rescheduleVisit(previous, formData);
+    if (result.status === "success") {
+      setMove(null);
+      setNotice(result.message ?? "");
+    } else {
+      setMove((current) => current && { ...current, error: result.message ?? "Speichern fehlgeschlagen." });
+    }
+    return result;
+  }, initialFormState);
   // A drag ends with a click on the lane below; that click must not pick a new slot
   const suppressClick = useRef(false);
   // Keyboard moves re-render the selection in another lane; focus follows it
@@ -95,7 +122,7 @@ export function PlanBoard(props: Props) {
 
   const techName = (id: string) => technicians.find((tech) => tech.id === id)?.name ?? "Unbekannt";
 
-  function check(candidate: BoardPick): { ok: boolean; message: string } {
+  function check(candidate: BoardPick, ignore: Ignore | null = null): { ok: boolean; message: string } {
     if (!isDayKey(candidate.day) || !isTime(candidate.start) || !isTime(candidate.end)) return { ok: false, message: "Bitte Datum, Beginn und Ende angeben." };
     const start = toMinutes(candidate.start);
     const end = toMinutes(candidate.end);
@@ -108,7 +135,8 @@ export function PlanBoard(props: Props) {
     const from = berlinToInstant(candidate.day, candidate.start).getTime();
     const to = berlinToInstant(candidate.day, candidate.end).getTime();
     if (from < now.getTime()) return { ok: false, message: "Beginn liegt in der Vergangenheit." };
-    const hit = allBusy.find((block) => block.technicianId === candidate.technicianId && Date.parse(block.start) < to && Date.parse(block.end) > from);
+    const hit = allBusy.find((block) => block.technicianId === candidate.technicianId && Date.parse(block.start) < to && Date.parse(block.end) > from
+      && !(ignore && block.technicianId === ignore.technicianId && Date.parse(block.start) === ignore.start && Date.parse(block.end) === ignore.end));
     if (hit) {
       const own = busy.find((block) => block.technicianId === hit.technicianId && Date.parse(block.start) === Date.parse(hit.start) && block.requestNumber);
       const what = hit.kind === "absence" ? "einer Abwesenheit" : own ? `Einsatz ${own.requestNumber}` : "einem anderen Einsatz";
@@ -121,12 +149,12 @@ export function PlanBoard(props: Props) {
   }
 
   // Earliest free window of the duration on one day, starting at or after the given minute
-  function windowFrom(technicianId: string, day: string, fromMinute: number): BoardPick | null {
+  function windowFrom(technicianId: string, day: string, fromMinute: number, span = duration, ignore: Ignore | null = null): BoardPick | null {
     for (const row of hoursOn(workingHours, technicianId, day)) {
-      for (let minute = Math.max(toMinutes(row.start), fromMinute); minute + duration <= toMinutes(row.end); minute += 30) {
+      for (let minute = Math.max(toMinutes(row.start), fromMinute); minute + span <= toMinutes(row.end); minute += 30) {
         if (minute % 30 !== 0) continue;
-        const candidate = { technicianId, day, start: toTime(minute), end: toTime(minute + duration) };
-        if (check(candidate).ok) return candidate;
+        const candidate = { technicianId, day, start: toTime(minute), end: toTime(minute + span) };
+        if (check(candidate, ignore).ok) return candidate;
       }
     }
     return null;
@@ -219,7 +247,7 @@ export function PlanBoard(props: Props) {
         const end = dayKeyOf(new Date(block.end)) > day ? 24 * 60 : minutesOfDay(new Date(block.end));
         const kind = block.kind === "absence" ? "absence" : block.requestNumber ? "own" : "busy";
         const label = kind === "absence" ? "Abwesend" : block.requestNumber ?? "Belegt";
-        return { start, end, kind, label };
+        return { start, end, kind, label, block };
       });
   }
 
@@ -239,17 +267,20 @@ export function PlanBoard(props: Props) {
     return total > 0 ? Math.round((used / total) * 100) : null;
   }
 
-  const live = drag ? drag.snapped : pick;
+  const live = drag && !drag.ignore ? drag.snapped : pick;
   const pickCheck = live ? check(live) : null;
+  const moveCheck = drag?.ignore ? check(drag.snapped, drag.ignore) : move ? check(move.to, ignoreOf(move.block)) : null;
+  const dragCheck = drag?.ignore ? moveCheck : pickCheck;
 
-  // Drag the selection with mouse, pen or finger; listeners on window so the pointer may leave the lane
-  function startDrag(event: ReactPointerEvent<HTMLElement>) {
-    if (!pick || (event.pointerType === "mouse" && event.button !== 0)) return;
+  // Drag with mouse, pen or finger; listeners on window so the pointer may leave the lane. Without a visit it moves
+  // the selection (task-10-7), with a visit that visit (task-10-8, saved only after confirmation)
+  function startDrag(event: ReactPointerEvent<HTMLElement>, origin: BoardPick | null, visit: BusyBlock | null = null) {
+    if (!origin || (event.pointerType === "mouse" && event.button !== 0)) return;
     const laneElement = event.currentTarget.closest<HTMLElement>(".plan3__lane");
     if (!laneElement) return;
     event.preventDefault();
     event.stopPropagation();
-    const origin = pick;
+    const ignore = visit ? ignoreOf(visit) : null;
     const span = toMinutes(origin.end) - toMinutes(origin.start);
     const minuteIn = (element: HTMLElement, clientX: number) => {
       const rect = element.getBoundingClientRect();
@@ -269,7 +300,7 @@ export function PlanBoard(props: Props) {
       if (!target) return;
       const exact = Math.min(Math.max(minuteIn(target, moveEvent.clientX) - offset, bounds.from), bounds.to - span);
       const start = Math.min(Math.max(Math.round(exact / DRAG_STEP) * DRAG_STEP, bounds.from), bounds.to - span);
-      current = { technicianId, day, exact, x: moveEvent.clientX, y: moveEvent.clientY, snapped: { technicianId, day, start: toTime(start), end: toTime(start + span) } };
+      current = { technicianId, day, exact, x: moveEvent.clientX, y: moveEvent.clientY, ignore, snapped: { technicianId, day, start: toTime(start), end: toTime(start + span) } };
       setDrag(current);
     };
     const stop = (dropIt: boolean) => {
@@ -281,7 +312,10 @@ export function PlanBoard(props: Props) {
       if (!current) return;
       suppressClick.current = true;
       window.setTimeout(() => { suppressClick.current = false; }, 0);
-      if (dropIt) drop(current.snapped, origin);
+      if (dropIt) {
+        if (visit) dropVisit(visit, current.snapped);
+        else drop(current.snapped, origin);
+      }
     };
     const onUp = () => stop(true);
     const onCancel = () => stop(false);
@@ -298,6 +332,52 @@ export function PlanBoard(props: Props) {
     const found = windowFrom(candidate.technicianId, candidate.day, toMinutes(candidate.start)) ?? windowFrom(candidate.technicianId, candidate.day, 0);
     if (found) return choose(found, { notice: `${result.message} Nächstes freies Fenster übernommen: ${found.start}–${found.end}.` });
     choose(origin, { notice: `${result.message} Kein freies Fenster für ${duration / 60} h an diesem Tag – Auswahl unverändert.` });
+  }
+
+  // Planned visit dropped: free target → confirmation; conflict → next free window of the same length that day
+  function dropVisit(visit: BusyBlock, candidate: BoardPick) {
+    if (!visit.move) return;
+    const from = pickOf(visit);
+    const ignore = ignoreOf(visit);
+    const pending = (to: BoardPick, text = "") => {
+      setNotice(text);
+      if (to.technicianId === from.technicianId && to.day === from.day && to.start === from.start) return setMove(null);
+      setMove({ block: visit, visitId: visit.move!.visitId, version: visit.move!.version, from, to });
+    };
+    const result = check(candidate, ignore);
+    if (result.ok) return pending(candidate);
+    const span = toMinutes(from.end) - toMinutes(from.start);
+    const found = windowFrom(candidate.technicianId, candidate.day, toMinutes(candidate.start), span, ignore) ?? windowFrom(candidate.technicianId, candidate.day, 0, span, ignore);
+    if (found) return pending(found, `${result.message} Nächstes freies Fenster vorgeschlagen: ${found.start}–${found.end}.`);
+    setNotice(`${result.message} Kein freies Fenster für diesen Einsatz an diesem Tag – Einsatz unverändert.`);
+  }
+
+  // Keyboard on a planned visit: ←/→ 15 minutes, ↑/↓ technician (pending move), Enter opens the request, Esc cancels
+  function visitKey(event: ReactKeyboardEvent<HTMLElement>, visit: BusyBlock) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.stopPropagation();
+      if (visit.requestId) router.push(`/dashboard/anfragen/${visit.requestId}`);
+      return;
+    }
+    if (event.key === "Escape") { setMove(null); return; }
+    const base = move && move.visitId === visit.move?.visitId ? move.to : pickOf(visit);
+    const span = toMinutes(base.end) - toMinutes(base.start);
+    let next: BoardPick | null = null;
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      const start = Math.min(Math.max(toMinutes(base.start) + (event.key === "ArrowLeft" ? -DRAG_STEP : DRAG_STEP), bounds.from), bounds.to - span);
+      next = { ...base, start: toTime(start), end: toTime(start + span) };
+    } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      const index = technicians.findIndex((tech) => tech.id === base.technicianId) + (event.key === "ArrowUp" ? -1 : 1);
+      if (index >= 0 && index < technicians.length) next = { ...base, technicianId: technicians[index].id };
+    }
+    if (!next || !visit.move) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const from = pickOf(visit);
+    setNotice("");
+    if (next.technicianId === from.technicianId && next.start === from.start) return setMove(null);
+    setMove({ block: visit, visitId: visit.move.visitId, version: visit.move.version, from, to: next });
   }
 
   // Keyboard alternative: ←/→ move by 15 minutes, ↑/↓ switch the technician (same day and time)
@@ -320,6 +400,7 @@ export function PlanBoard(props: Props) {
     choose(next);
   }
   const canPick = Boolean(request);
+  const hasMovable = busy.some((block) => block.move !== null);
   const rangeLabel = view === "tag" ? longDay(focusDay) : `KW ${isoWeek(days[0])}${isoWeek(days[days.length - 1]) !== isoWeek(days[0]) ? `/${isoWeek(days[days.length - 1])}` : ""}`;
   const rangeDates = view === "tag" ? `KW ${isoWeek(focusDay)}` : `${shortDay(days[0])} – ${shortDay(days[days.length - 1])}`;
   const unit = view === "tag" ? { prev: "Vorheriger Tag", next: "Nächster Tag" } : { prev: "Vorherige Woche", next: "Nächste Woche" };
@@ -335,6 +416,7 @@ export function PlanBoard(props: Props) {
     const label = `${name}, ${shortDay(day)}: ${absentAllDay ? "nicht verfügbar" : `${busyText ? `belegt ${busyText}` : "frei"}${canPick ? (firstWindow ? `, frei ab ${firstWindow.start}` : `, kein freies Fenster für ${duration / 60} h`) : ""}`}`;
     const pickHere = !drag && pick && pick.technicianId === technicianId && pick.day === day ? pick : null;
     const dragHere = drag && drag.technicianId === technicianId && drag.day === day ? drag : null;
+    const moveHere = !drag && move && move.to.technicianId === technicianId && move.to.day === day ? move : null;
     const ghosts = suggestions
       .map((suggestion, index) => ({ suggestion, rank: index + 1 }))
       .filter(({ suggestion }) => suggestion.technicianId === technicianId && suggestion.day === day && !(pickHere && pickHere.start === suggestion.startTime && pickHere.end === suggestion.endTime));
@@ -377,11 +459,48 @@ export function PlanBoard(props: Props) {
         {day <= today && !absentAllDay && <i className="plan3__blk plan3__blk--past" style={{ left: 0, width: day < today ? "100%" : `${pct(minutesOfDay(now))}%` }} />}
         {absentAllDay
           ? <span className="plan3__off-label">{hours.length === 0 ? "Keine Arbeitszeit" : "Abwesend"}</span>
-          : segments.map((segment) => (
-            <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}`} style={place(segment.start, segment.end)} title={`${segment.label} · ${toTime(segment.start)}–${toTime(Math.min(segment.end, 24 * 60 - 1))}`}>
-              {view === "tag" && <span className="plan3__blk-text">{segment.label} · {toTime(segment.start)}–{toTime(Math.min(segment.end, 24 * 60 - 1))}</span>}
-            </span>
-          ))}
+          : segments.map((segment) => {
+            const span = `${toTime(segment.start)}–${toTime(Math.min(segment.end, 24 * 60 - 1))}`;
+            const text = view === "tag" && <span className="plan3__blk-text">{segment.label} · {span}</span>;
+            const visit = segment.block;
+            // Planned visits within one day may be dragged (task-10-8); the original stays faded while it is moved
+            const movable = visit.move !== null && dayKeyOf(new Date(visit.start)) === day && dayKeyOf(new Date(Date.parse(visit.end) - 1)) === day;
+            if (!movable) {
+              return <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}`} style={place(segment.start, segment.end)} title={`${segment.label} · ${span}`}>{text}</span>;
+            }
+            const isMoving = move?.visitId === visit.move?.visitId || (drag?.ignore?.start === Date.parse(visit.start) && drag.ignore.technicianId === visit.technicianId);
+            return (
+              <span
+                key={`${segment.start}-${segment.end}`}
+                className={`plan3__blk plan3__blk--own is-movable${isMoving ? " is-moving" : ""}`}
+                style={place(segment.start, segment.end)}
+                title={`${segment.label} · ${span} · ziehen zum Verschieben`}
+                role="button"
+                tabIndex={0}
+                data-visit={visit.move?.visitId}
+                aria-label={`Einsatz ${segment.label}, ${name}, ${shortDay(day)} ${span}. Ziehen oder mit Pfeiltasten verschieben, Enter öffnet die Anfrage.`}
+                onPointerDown={(event) => startDrag(event, pickOf(visit), visit)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!suppressClick.current && visit.requestId) router.push(`/dashboard/anfragen/${visit.requestId}`);
+                }}
+                onKeyDown={(event) => visitKey(event, visit)}
+              >
+                {text}
+              </span>
+            );
+          })}
+        {moveHere && (
+          <span
+            className={`plan3__blk plan3__blk--own plan3__blk--moveto${moveCheck?.ok ? "" : " is-conflict"}`}
+            style={place(toMinutes(moveHere.to.start), toMinutes(moveHere.to.end))}
+            title={`Neu: ${moveHere.to.start}–${moveHere.to.end}`}
+            onPointerDown={(event) => startDrag(event, moveHere.to, moveHere.block)}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {view === "tag" && <span className="plan3__blk-text">{moveHere.block.requestNumber} · {moveHere.to.start}–{moveHere.to.end}</span>}
+          </span>
+        )}
         {ghosts.map(({ suggestion, rank }) => (
           <span key={rank} className="plan3__blk plan3__blk--sug" style={place(toMinutes(suggestion.startTime), toMinutes(suggestion.endTime))} aria-hidden="true">{rank}</span>
         ))}
@@ -392,7 +511,7 @@ export function PlanBoard(props: Props) {
             role="button"
             tabIndex={0}
             aria-label={`Auswahl ${name}, ${shortDay(day)} ${pickHere.start}–${pickHere.end}. Ziehen oder mit Pfeiltasten verschieben.`}
-            onPointerDown={startDrag}
+            onPointerDown={(event) => startDrag(event, pick)}
             onClick={(event) => event.stopPropagation()}
             onKeyDown={keyMove}
           >
@@ -400,7 +519,7 @@ export function PlanBoard(props: Props) {
           </span>
         )}
         {dragHere && (
-          <span className={`plan3__blk plan3__blk--pick is-dragging${pickCheck?.ok ? "" : " is-conflict"}`} style={place(dragHere.exact, dragHere.exact + toMinutes(dragHere.snapped.end) - toMinutes(dragHere.snapped.start))} aria-hidden="true" />
+          <span className={`plan3__blk ${dragHere.ignore ? "plan3__blk--own plan3__blk--moveto" : "plan3__blk--pick"} is-dragging${dragCheck?.ok ? "" : " is-conflict"}`} style={place(dragHere.exact, dragHere.exact + toMinutes(dragHere.snapped.end) - toMinutes(dragHere.snapped.start))} aria-hidden="true" />
         )}
       </div>
     );
@@ -490,12 +609,39 @@ export function PlanBoard(props: Props) {
           {canPick
             ? <>Leere Fläche anklicken oder die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
             : "Links eine Anfrage wählen, dann lassen sich freie Flächen anklicken."}
+          {hasMovable && " Geplante Einsätze lassen sich zum Verschieben ziehen (Pfeiltasten auf dem Einsatz, Enter öffnet die Anfrage)."}
         </p>
         {notice && <p className="plan3__notice" role="status">{notice}</p>}
+        {move && (
+          <form className="plan3__move" action={moveAction} aria-labelledby="verschieben-title">
+            <input type="hidden" name="visit_id" value={move.visitId} />
+            <input type="hidden" name="version" value={busy.find((block) => block.move?.visitId === move.visitId)?.move?.version ?? move.version} />
+            <input type="hidden" name="technician_id" value={move.to.technicianId} />
+            <input type="hidden" name="date" value={move.to.day} />
+            <input type="hidden" name="start" value={move.to.start} />
+            <input type="hidden" name="end" value={move.to.end} />
+            <h3 id="verschieben-title" className="plan3__eyebrow">Einsatz {move.block.requestNumber} verschieben</h3>
+            <p className="plan3__move-change">
+              <span><span className="plan3__muted">Bisher</span> {techName(move.from.technicianId)} · {shortDay(move.from.day)} <span className="mono">{move.from.start}–{move.from.end}</span></span>
+              <Icon name="arrow-right" size={16} />
+              <span><span className="plan3__muted">Neu</span> <strong>{techName(move.to.technicianId)} · {shortDay(move.to.day)} <span className="mono">{move.to.start}–{move.to.end}</span></strong></span>
+            </p>
+            {moveCheck && !moveCheck.ok && <p className="plan3__check plan3__check--bad"><Icon name="alert" size={18} /><span>{moveCheck.message}</span></p>}
+            <label className="plan3__move-reason">
+              <span>Grund</span>
+              <input name="reason" type="text" maxLength={500} defaultValue={DEFAULT_REASON} key={move.visitId} />
+            </label>
+            <div className="plan3__move-actions">
+              <button type="submit" className="button button--primary" disabled={moving || !moveCheck?.ok}>{moving ? "Wird verschoben …" : "Verschieben"}</button>
+              <button type="button" className="button button--secondary" disabled={moving} onClick={() => { setMove(null); setNotice(""); }}>Abbrechen</button>
+              {move.error && <p className="save-status save-status--error" role="alert">{move.error}</p>}
+            </div>
+          </form>
+        )}
         {drag && (
-          <div className={`plan3__drag-tip${pickCheck?.ok ? "" : " is-conflict"}`} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+          <div className={`plan3__drag-tip${dragCheck?.ok ? "" : " is-conflict"}`} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
             <strong className="mono">{drag.snapped.start}–{drag.snapped.end}</strong>
-            <span>{techName(drag.technicianId)} · {shortDay(drag.day)}{pickCheck && !pickCheck.ok ? ` · ${pickCheck.message}` : ""}</span>
+            <span>{techName(drag.technicianId)} · {shortDay(drag.day)}{dragCheck && !dragCheck.ok ? ` · ${dragCheck.message}` : ""}</span>
           </div>
         )}
       </section>

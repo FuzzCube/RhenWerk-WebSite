@@ -1658,3 +1658,18 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .plan3__drag-tip span { color: var(--rw-text-on-dark-secondary); }
 .plan3__drag-tip.is-conflict { background: var(--rw-color-danger-700); }
 .plan3__drag-tip.is-conflict span { color: var(--rw-color-white); }
+/* task-10-8: move planned visits by drag; the original stays faded until the move is saved or cancelled */
+.plan3__blk--own.is-movable { cursor: grab; touch-action: none; }
+.plan3__blk--own.is-movable:hover { box-shadow: 0 0 0 2px var(--rw-color-lime-500) inset; }
+.plan3__blk--own.is-movable:focus-visible { outline: 3px solid var(--rw-color-blue-700); outline-offset: 1px; }
+.plan3__blk--own.is-moving { opacity: 0.35; }
+.plan3__blk--moveto { z-index: 3; cursor: grab; touch-action: none; outline: 2px solid var(--rw-color-lime-500); outline-offset: -2px; }
+.plan3__blk--moveto.is-dragging { z-index: 4; cursor: grabbing; box-shadow: 0 2px 8px rgba(11, 31, 51, 0.25); }
+.plan3__blk--moveto.is-conflict { background: var(--rw-color-danger-surface); color: var(--rw-color-danger-700); outline-color: var(--rw-color-danger-700); }
+.plan3__move { display: grid; gap: 10px; margin-top: 12px; padding: 14px 16px; background: var(--rw-surface-page); border: 1px solid var(--rw-border-subtle); border-left: 3px solid var(--rw-color-lime-500); border-radius: var(--rw-radius-sm); }
+.plan3__move .plan3__eyebrow { margin: 0; }
+.plan3__move-change { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 0; font-size: 14px; line-height: 1.43; }
+.plan3__move-reason { display: grid; gap: 4px; max-width: 32rem; font-size: 13px; font-weight: 600; color: var(--rw-text-secondary); }
+.plan3__move-reason input { min-height: 40px; padding: 8px 10px; font: inherit; font-size: 15px; font-weight: 400; color: var(--rw-text-primary); background: var(--rw-color-white); border: 1px solid var(--rw-border-default, var(--rw-color-steel-300)); border-radius: var(--rw-radius-sm); }
+.plan3__move-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.plan3__move-actions .save-status { margin: 0; }

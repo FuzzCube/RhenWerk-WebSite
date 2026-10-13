@@ -1436,6 +1436,40 @@
             ],
             "checkedAt": "2026-10-13T12:34:05Z"
           }
+        },
+        {
+          "id": "task-10-8",
+          "title": "Bestehende Einsätze auf der Plantafel verschieben",
+          "description": "Geplante Einsätze lassen sich auf der Plantafel mit Maus, Finger oder Tastatur auf eine andere Zeit, einen anderen Tag oder einen anderen Techniker ziehen. Nach dem Ablegen zeigt eine Bestätigung alt → neu mit vorbelegtem, änderbarem Grund; gespeichert wird über reschedule_visit mit Versionsprüfung.",
+          "order": 8,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-10-7"
+          ],
+          "definitionOfDone": [
+            "Nur geplante, noch nicht begonnene Einsätze lesbarer Anfragen sind ziehbar (Disponent eigene, Manager/Admin alle); Techniker nicht",
+            "Ziehen im 15-Minuten-Raster mit Konfliktanzeige; Klick öffnet weiterhin die Anfrage",
+            "Bestätigung alt → neu mit Grund (Standardtext änderbar), Abbrechen setzt zurück; Speichern über reschedule_visit mit expected_version, verständliche Fehler bei RW409/RW410/RW422/42501",
+            "test:ui (Ziehen, Abbrechen, Verschieben, Ereignis in der Historie), lint, typecheck, build"
+          ],
+          "startedAt": "2026-10-13T13:13:50Z",
+          "completedAt": "2026-10-13T13:25:22Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Geplante Einsätze auf der Plantafel mit Maus/Finger/Tastatur verschiebbar (Zeit, Techniker, Tag; 15-Minuten-Raster, Konflikt ohne den Einsatz selbst, nächstes freies Fenster gleicher Länge). Bestätigung Bisher → Neu mit Grund (Standard „Verschoben auf der Plantafel“, änderbar), Abbrechen; Speichern über rescheduleVisit → reschedule_visit mit expected_version, RW409 lädt neu. Klick/Enter öffnet die Anfrage. Im Browser geprüft. test:ui 226 (7 neu), visit_operations +5 pgTAP (test:db 597), test:auth 130 (Prüfung Nachrichteninhalte an E-Mail-Anfragen angepasst), lint, typecheck, build, test:unit 61, demo:verify 18/18.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:unit",
+              "supabase test db",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
+              "APP_URL=http://127.0.0.1:3201 npm run test:ui",
+              "npm run demo:seed",
+              "npm run demo:verify"
+            ]
+          }
         }
       ]
     }

@@ -615,6 +615,74 @@ try {
   check("Außerhalb der Arbeitszeit abgelehnt", Boolean(state) && (await visitsOf(planB.id)).length === 0, state?.status);
   await fillIn(bookingForm, { technician_id: tech.id, date: week, start: "11:00", end: "12:00" });
   check("Direkt anschließender Termin (11:00) möglich", await waitFor(async () => (await visitsOf(planB.id)).length === 1));
+
+  // Moving a planned visit on the board (task-10-8): visit B Monday 11:00–12:00 (Tobias), visit A 09:00–11:00 next to it
+  {
+    console.log("\nGeplanten Einsatz auf der Plantafel verschieben");
+    const { data: other } = await admin.from("profiles").select("id").eq("display_name", "Anna Lehmann").single();
+    const berlin = (time) => new Date(Date.parse(`${week}T${time}:00Z`) - utcOffsetHours * 3600000).toISOString();
+    const visitB = async () => (await visitsOf(planB.id))[0];
+    const blockSel = `[...document.querySelectorAll(".plan3__blk--own.is-movable")].find((b) => b.title.includes(${JSON.stringify(planB.request_number)}))`;
+    const laneSel = (techId) => `.plan3__lane[data-tech="${techId}"][data-day="${week}"]`;
+    const mouse = (type, x, y) => page.send("Input.dispatchMouseEvent", { type, x, y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: type === "mouseMoved" ? 0 : 1 });
+    const key = async (name, code) => {
+      await page.send("Input.dispatchKeyEvent", { type: "keyDown", key: name, code: name, windowsVirtualKeyCode: code });
+      await page.send("Input.dispatchKeyEvent", { type: "keyUp", key: name, code: name, windowsVirtualKeyCode: code });
+    };
+    // Grab the visit 4 px inside its left edge and drop it so that it starts at the given minute in another lane
+    const dragVisit = async (techId, minute) => {
+      await page.eval(`document.querySelector(".plan3__board").scrollIntoView({ block: "start", behavior: "instant" })`);
+      const g = await page.eval(`(() => { const b = ${blockSel}.getBoundingClientRect(); const lane = document.querySelector('${laneSel(techId)}'); const r = lane.getBoundingClientRect(); return { bx: b.left + 4, by: b.top + b.height / 2, left: r.left, width: r.width, y: r.top + r.height / 2, from: Number(lane.dataset.from), to: Number(lane.dataset.to) }; })()`);
+      const x = g.left + (g.width * (minute - g.from)) / (g.to - g.from) + 4;
+      await mouse("mousePressed", g.bx, g.by);
+      for (let i = 1; i <= 12; i += 1) { await mouse("mouseMoved", g.bx + ((x - g.bx) * i) / 12, g.by + ((g.y - g.by) * i) / 12); await sleep(15); }
+      const tip = await page.eval(`document.querySelector(".plan3__drag-tip")?.textContent ?? ""`);
+      await mouse("mouseReleased", x, g.y);
+      await sleep(300);
+      return tip;
+    };
+    const panel = () => page.eval(`document.querySelector(".plan3__move")?.textContent ?? ""`);
+    await page.open(`${BASE}/dashboard/planung?ansicht=tag&tag=${week}`);
+    check("Geplanter Einsatz ist ziehbar, Klick-Ziel bleibt die Anfrage", await page.eval(`Boolean(${blockSel}) && ${blockSel}.getAttribute("role") === "button"`));
+
+    // Drag to Anna 14:00, then cancel: nothing saved
+    let tip = await dragVisit(other.id, 14 * 60);
+    let shown = await panel();
+    check("  Ziehen zeigt Zeit am Zeiger, danach Bestätigung alt → neu mit vorbelegtem Grund", tip.includes("14:00–15:00") && shown.includes("11:00–12:00") && shown.includes("14:00–15:00") && shown.includes("Anna Lehmann")
+      && await page.eval(`document.querySelector('.plan3__move [name="reason"]').value === "Verschoben auf der Plantafel"`), `${tip} | ${shown}`);
+    await page.eval(`[...document.querySelectorAll(".plan3__move button")].find((b) => b.textContent === "Abbrechen").click()`);
+    await sleep(200);
+    const kept = await visitB();
+    check("  Abbrechen: Bestätigung weg, Einsatz unverändert", !(await panel()) && kept.technician_id === tech.id && new Date(kept.scheduled_start).toISOString() === berlin("11:00"), JSON.stringify(kept));
+
+    // Keyboard: → four times = 12:00–13:00, own reason, saved via reschedule_visit with event
+    await page.eval(`${blockSel}.focus()`);
+    for (let i = 0; i < 4; i += 1) await key("ArrowRight", 39);
+    await sleep(200);
+    shown = await panel();
+    await page.eval(`(() => { const input = document.querySelector('.plan3__move [name="reason"]'); input.value = "Kunde bittet um späteren Termin"; document.querySelector(".plan3__move").requestSubmit(); })()`);
+    const movedLater = await waitFor(async () => new Date((await visitB()).scheduled_start).toISOString() === berlin("12:00"));
+    const { data: events } = await admin.from("request_events").select("note, data").eq("request_id", planB.id).eq("event_type", "visit_rescheduled");
+    check("  Pfeiltasten verschieben, Speichern über reschedule_visit mit Grund im Verlauf", shown.includes("12:00–13:00") && movedLater && events?.length === 1 && events[0].note === "Kunde bittet um späteren Termin", `${shown} | ${JSON.stringify(events)}`);
+    check("  Plantafel zeigt den neuen Zeitraum", await waitFor(() => page.eval(`(${blockSel})?.title.includes("12:00–13:00") ?? false`)));
+
+    // Version conflict: the request changed meanwhile → understandable message, nothing moved
+    await dragVisit(other.id, 14 * 60);
+    await admin.from("requests").update({ site_label: "Parallel geändert" }).eq("id", planB.id);
+    await page.eval(`document.querySelector(".plan3__move").requestSubmit()`);
+    await waitFor(() => page.eval(`Boolean(document.querySelector(".plan3__move .save-status--error"))`));
+    const conflict = await page.eval(`document.querySelector(".plan3__move .save-status--error")?.textContent ?? ""`);
+    check("  Versionskonflikt verständlich gemeldet, nichts verschoben", /inzwischen geändert/.test(conflict) && (await visitB()).technician_id === tech.id, conflict);
+
+    // The board reloaded with the new version: saving the same move again (default reason) succeeds, technician changes too
+    await sleep(500);
+    await page.eval(`document.querySelector(".plan3__move").requestSubmit()`);
+    const movedOver = await waitFor(async () => (await visitB()).technician_id === other.id);
+    const after = await visitB();
+    const { data: request } = await admin.from("requests").select("technician_id").eq("id", planB.id).single();
+    const { data: lastEvent } = await admin.from("request_events").select("note").eq("request_id", planB.id).eq("event_type", "visit_rescheduled").order("created_at", { ascending: false }).limit(1).single();
+    check("  Ziehen zu anderem Techniker: Einsatz und Anfrage umgehängt, Standardgrund protokolliert", movedOver && new Date(after.scheduled_start).toISOString() === berlin("14:00") && request.technician_id === other.id && lastEvent.note === "Verschoben auf der Plantafel", JSON.stringify({ after, request, lastEvent }));
+  }
   console.log("\nEinsatzaktionen und Arbeitserfassung");
   const techEmail = `ui-tech-${runId}@example.com`;
   const { data: techUser } = await admin.auth.admin.createUser({ email: techEmail, password, email_confirm: true });

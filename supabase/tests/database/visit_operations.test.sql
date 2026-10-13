@@ -1,7 +1,7 @@
 -- task-2-2: visit planning and visit status operations. Run with: supabase test db
 -- Dates in March 2027 (2027-03-01 is a Monday, Europe/Berlin = UTC+1).
 begin;
-select plan(39);
+select plan(44);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'd1@x.test'),
@@ -139,6 +139,38 @@ select throws_ok(
   $$select public.reschedule_visit((select id from public.visits where request_id = '00000000-0000-0000-0000-000000000003'),
       (select version from public.requests where id = '00000000-0000-0000-0000-000000000003'), '2027-03-02 08:00+01', '2027-03-02 10:00+01', 'Tausch', '00000000-0000-0000-0000-0000000000b2')$$,
   'RW422', null, 'rescheduling to an absent technician rejected'
+);
+-- task-10-8 (drag on the planning board): stale version, overlap and past are rejected by the database
+select throws_ok(
+  $$select public.reschedule_visit((select id from public.visits where request_id = '00000000-0000-0000-0000-000000000003'),
+      (select version - 1 from public.requests where id = '00000000-0000-0000-0000-000000000003'), '2027-03-04 08:00+01', '2027-03-04 10:00+01', 'Verschoben auf der Plantafel')$$,
+  'RW409', null, 'rescheduling with a stale version rejected'
+);
+select throws_ok(
+  $$select public.reschedule_visit((select id from public.visits where request_id = '00000000-0000-0000-0000-000000000003'),
+      (select version from public.requests where id = '00000000-0000-0000-0000-000000000003'), '2027-03-01 09:00+01', '2027-03-01 11:00+01', 'Verschoben auf der Plantafel')$$,
+  'RW410', null, 'rescheduling onto another visit rejected'
+);
+select throws_ok(
+  $$select public.reschedule_visit((select id from public.visits where request_id = '00000000-0000-0000-0000-000000000003'),
+      (select version from public.requests where id = '00000000-0000-0000-0000-000000000003'), '2020-01-06 08:00+01', '2020-01-06 10:00+01', 'Verschoben auf der Plantafel')$$,
+  'RW422', null, 'rescheduling into the past rejected'
+);
+reset role;
+-- Id read without RLS: the callers below must fail on their rights, not on not seeing the visit
+select set_config('test.visit3', (select id::text from public.visits where request_id = '00000000-0000-0000-0000-000000000003'), true);
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000d2');
+set local role authenticated;
+select throws_ok(
+  $$select public.reschedule_visit(current_setting('test.visit3')::uuid, 1, '2027-03-04 08:00+01', '2027-03-04 10:00+01', 'Fremd')$$,
+  '42501', null, 'other dispatcher cannot reschedule'
+);
+reset role;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
+set local role authenticated;
+select throws_ok(
+  $$select public.reschedule_visit(current_setting('test.visit3')::uuid, 1, '2027-03-04 08:00+01', '2027-03-04 10:00+01', 'Technik')$$,
+  '42501', null, 'technician cannot reschedule'
 );
 reset role;
 

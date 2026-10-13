@@ -18,6 +18,9 @@ export type BusyBlock = {
   // Only for readable visits
   requestId: string | null;
   requestNumber: string | null;
+  // Planned visit that may still be moved on the board (task-10-8): status scheduled, not started yet;
+  // version is the request version reschedule_visit checks
+  move: { visitId: string; version: number } | null;
 };
 export type PlanningRequest = Pick<QueueRow, "id" | "request_number" | "company_name" | "city" | "service_kind" | "priority" | "customer_urgency" | "safety_check_required" | "work_status" | "due_at" | "waiting_since" | "version">;
 
@@ -57,7 +60,7 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
     supabase.from("profiles").select("id, display_name").eq("role", "technician").eq("is_active", true).order("display_name"),
     supabase.from("employee_availability").select("employee_id, weekday, local_start, local_end, valid_from, valid_to").eq("kind", "working_hours"),
     supabase.rpc("technician_busy_intervals", { range_start: rangeStart, range_end: rangeEnd }),
-    supabase.from("visits").select("id, request_id, technician_id, scheduled_start, scheduled_end").in("status", ["scheduled", "in_progress"]).lt("scheduled_start", rangeEnd).gt("scheduled_end", rangeStart),
+    supabase.from("visits").select("id, request_id, technician_id, scheduled_start, scheduled_end, status").in("status", ["scheduled", "in_progress"]).lt("scheduled_start", rangeEnd).gt("scheduled_end", rangeStart),
     queueQuery,
   ]);
 
@@ -65,9 +68,11 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
   const readable = visits.data ?? [];
   const requestIds = [...new Set(readable.map((visit) => visit.request_id))];
   const numbers = requestIds.length
-    ? (await supabase.from("requests").select("id, request_number").in("id", requestIds)).data ?? []
+    ? (await supabase.from("requests").select("id, request_number, version").in("id", requestIds)).data ?? []
     : [];
   const numberOf = new Map(numbers.map((request) => [request.id, request.request_number]));
+  const versionOf = new Map(numbers.map((request) => [request.id, request.version]));
+  const loadedAt = Date.now();
   const readableBySlot = new Map(readable.map((visit) => [`${visit.technician_id}|${new Date(visit.scheduled_start).getTime()}|${new Date(visit.scheduled_end).getTime()}`, visit]));
 
   const queueRows = (queue.data ?? []) as PlanningRequest[];
@@ -101,6 +106,9 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
         kind: interval.busy_kind === "absence" ? "absence" : "visit",
         requestId: visit?.request_id ?? null,
         requestNumber: visit ? numberOf.get(visit.request_id) ?? null : null,
+        move: visit && visit.status === "scheduled" && Date.parse(visit.scheduled_start) > loadedAt && versionOf.has(visit.request_id)
+          ? { visitId: visit.id, version: versionOf.get(visit.request_id) as number }
+          : null,
       };
     }),
     queue: queueRows,

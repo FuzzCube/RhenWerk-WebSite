@@ -169,7 +169,7 @@ const { data: foreign } = await admin.from("requests").select("id").neq("dispatc
 check("Dispatcher: fremde Anfrage → 404", (await get(dispoJar, `/dashboard/anfragen/${foreign.id}`)).status === 404);
 check("Ungültige ID → 404", (await get(managerJar, "/dashboard/anfragen/keine-uuid")).status === 404);
 
-const { data: techRequest } = await admin.from("requests").select("id").eq("technician_id", tech1).limit(1).single();
+const { data: techRequest } = await admin.from("requests").select("id, description").eq("technician_id", tech1).limit(1).single();
 const techDetail = await get(techJar, `/dashboard/anfragen/${techRequest.id}`);
 const techSections = sectionTitles(techDetail.html);
 check("Techniker: eigener Einsatz oben, 7 Abschnitte ohne Erstbearbeitung und Korrespondenz", techDetail.html.includes('id="visit-title"') && sameSet(techSections, ALL_SECTIONS.filter((title) => !["Erstbearbeitung", "Korrespondenz", "Einsätze"].includes(title))), techSections.join(","));
@@ -180,7 +180,12 @@ const { data: reviewRequest } = await admin.from("requests").select("id").eq("in
 const managerReview = await get(managerJar, `/dashboard/anfragen/${reviewRequest.id}`);
 check("Manager: Prüfaktionen bei offener Prüfung", managerReview.html.includes('id="aktionen"') && managerReview.html.includes("Prüfen und freigeben"));
 check("  kein Versandknopf, nur Entwurf", !/>\s*(Senden|E-Mail senden|Jetzt senden)\s*</.test(managerReview.html) && managerReview.html.includes("Als Entwurf speichern"));
-check("  keine Nachrichteninhalte im HTML", techMessages.every((message) => !techDetail.html.includes(message.subject)));
+{
+  // A request created from an e-mail (task-10-5) may carry the subject in its description, which the technician sees
+  const leaked = techMessages.find((message) => techDetail.html.includes(message.subject) && !techRequest.description.includes(message.subject));
+  const at = leaked ? techDetail.html.indexOf(leaked.subject) : -1;
+  check("  keine Nachrichteninhalte im HTML", !leaked, leaked ? techDetail.html.slice(Math.max(0, at - 160), at + 80) : "");
+}
 const notTech = allRequests.find((request) => !techVisible(request));
 check("Techniker: fremde Anfrage → 404", (await get(techJar, `/dashboard/anfragen/${notTech.id}`)).status === 404);
 
