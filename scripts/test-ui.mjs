@@ -222,7 +222,7 @@ try {
     for (const [area, expected] of Object.entries(tabs)) {
       await page.open(`${BASE}/dashboard/auswertung?bereich=${area}`);
       await page.until(`document.querySelectorAll(".figure .recharts-surface").length >= ${expected}`, 10000);
-      const shown = await page.eval(`({ current: document.querySelector('.rw-views [aria-current="page"]')?.textContent, figures: [...document.querySelectorAll("figure.figure")].map((f) => ({ id: f.dataset.chart, svg: !!f.querySelector(".recharts-surface"), marks: f.querySelectorAll(".recharts-line-curve, .recharts-bar-rectangle").length, table: f.querySelectorAll(".figure__table tbody tr").length })) })`);
+      const shown = await page.eval(`({ current: document.querySelector('.side-menu--wide [aria-current="page"]')?.textContent, figures: [...document.querySelectorAll("figure.figure")].map((f) => ({ id: f.dataset.chart, svg: !!f.querySelector(".recharts-surface"), marks: f.querySelectorAll(".recharts-line-curve, .recharts-bar-rectangle").length, table: f.querySelectorAll(".figure__table tbody tr").length })) })`);
       check(`  Reiter ${area}: nur ${expected} Diagramm(e) dieses Bereichs`, shown.figures.length === expected && shown.current?.toLowerCase() === area, JSON.stringify(shown));
       figures.push(...shown.figures);
     }
@@ -312,14 +312,14 @@ try {
     check("  zweiter Klick schließt", (await state()).open.length === 0);
   }
 
-  console.log("\nRechnungen: „Alle“ in „Zu erledigen“ führt zur Liste");
+  console.log("\nRechnungen: Seitenmenü mit „Zu erledigen“ als Standardansicht");
   {
     await page.open(`${BASE}/dashboard/rechnungen`);
-    const link = `[...document.querySelectorAll(".rw-link-btn")].find((a) => a.textContent.trim().startsWith("Alle"))`;
-    const ready = await page.eval(`!!${link}`);
-    if (ready) await page.eval(`${link}.click()`);
-    const moved = ready && await page.until(`(() => { const r = document.getElementById("rechnungsliste").getBoundingClientRect(); return r.top >= 0 && r.top < 300; })()`, 5000);
-    check("Liste in Sicht, Reiter „Zu erledigen“ aktiv", moved && await page.eval(`document.querySelector('#rechnungsliste .rw-view[aria-current="page"]')?.textContent.startsWith("Zu erledigen")`));
+    const view = await page.eval(`({ active: document.querySelector('.side-menu--wide [aria-current="page"]')?.textContent ?? "", list: !!document.querySelector("#rechnungsliste .data-table, #rechnungsliste .dash-state") })`);
+    check("Seitenmenü: „Zu erledigen“ aktiv, Liste vorhanden", view.active.startsWith("Zu erledigen") && view.list, JSON.stringify(view));
+    await page.eval(`[...document.querySelectorAll('.side-menu--wide a')].find((a) => a.textContent.startsWith("Überfällig")).click()`);
+    const switched = await page.until(`location.search.includes("status=ueberfaellig") && document.querySelector('.side-menu--wide [aria-current="page"]')?.textContent.startsWith("Überfällig")`, 5000);
+    check("  Menüpunkt „Überfällig“ wechselt die Liste", switched);
   }
 
   console.log("\nZahlungserinnerungen: Mahnstufe in Liste und Anfrage, Stufen in den Einstellungen (task-10-2)");

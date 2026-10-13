@@ -1055,7 +1055,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 /* Visit planning (task-10-3) */
 /* Einsatzplanung (task-10-3, after the user's dashboard draft): queue · planning board · booking panel */
 /* Wide pages: header, navigation and content share one width, so all left edges line up */
-.dash-shell:has(.plan3-page, .side-page, .dash-request--wide) :is(.dash-header__inner, .dash-nav ul, .dash-main) { max-width: 1680px; }
+.dash-shell:has(.plan3-page, .side-page, .dash-request--wide, .overview) :is(.dash-header__inner, .dash-nav ul, .dash-main) { max-width: 1680px; }
 .plan3-page { container-type: inline-size; }
 .plan3__eyebrow { margin: 0; font-family: var(--rw-font-mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--rw-text-secondary); }
 .plan3__muted { font-size: 14px; line-height: 1.43; color: var(--rw-text-secondary); }
@@ -1079,8 +1079,10 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
   .plan3__panel { position: sticky; top: 96px; }
 }
 @container (min-width: 1320px) {
-  .plan3 { grid-template-columns: 16rem minmax(0, 1fr) 20rem; }
-  .plan3__queue { grid-column: auto; position: sticky; top: 96px; }
+  /* Queue as wide as the side menu of the list pages (16.5rem) with their 32px gap, so the board starts where
+     their lists start; the extra 16px are a margin so the gap to the planning panel stays 16px */
+  .plan3 { grid-template-columns: calc(16.5rem + var(--rw-space-16)) minmax(0, 1fr) 20rem; }
+  .plan3__queue { grid-column: auto; position: sticky; top: 96px; margin-right: var(--rw-space-16); }
 }
 
 /* Queue */
@@ -1477,3 +1479,117 @@ details.tech-step[open] { padding-bottom: 20px; }
 @container (max-width: 599px) {
   .req2__search-btn { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 }
+
+/* Manager overview (user feedback 13.10.2026): one 4-column grid for queues, team rows and KPIs, so
+   every card edge lines up; cards in a row share their height */
+.overview-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--rw-space-24); }
+.overview-grid > div { display: flex; min-width: 0; }
+.overview-grid > div > * { flex: 1; min-width: 0; }
+@media (min-width: 1100px) {
+  .overview-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; }
+  .overview-grid__wide { grid-column: span 3; }
+  .overview .rw-stages, .overview .rw-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.rw-deadlines { display: flex; flex-direction: column; }
+.rw-deadlines li + li { border-top: 1px solid var(--rw-border-subtle); }
+.rw-deadline { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; color: var(--rw-text-primary); text-decoration: none; transition: background var(--rw-duration-fast) var(--rw-ease-standard); }
+.rw-deadline:hover { background: var(--rw-color-blue-050); }
+.rw-deadline__top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.rw-deadline__top strong { font-weight: 600; }
+.rw-deadline__age { flex: none; font-size: 14px; font-weight: 600; color: var(--rw-color-warning-900); }
+.rw-deadline__sub { font-size: 13px; color: var(--rw-text-secondary); overflow-wrap: anywhere; }
+.rw-deadline__sub .mono { font-weight: 500; color: var(--rw-text-link); }
+.rw-deadline__since { font-size: 12px; color: var(--rw-text-secondary); }
+
+/* Table cards on the overview look like the list cards (Anfragen, Erstbearbeitung): compact header bar,
+   the same table header line and request numbers (user feedback 13.10.2026) */
+.rw-card--list > .rw-card__header { align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--rw-border-subtle); }
+.rw-card--list .rw-card__heading > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.rw-card--list .rw-card__title { font-family: var(--rw-font-body); font-size: 15px; font-weight: 600; line-height: 1.4; }
+.rw-card--list .rw-card__description { margin: 0; font-size: 13px; }
+.rw-card--list .rw-card__action .button { min-height: 36px; padding: 0 14px; font-size: 14px; }
+.rw-card--list .rw-card__footnote { padding: 10px 16px; }
+.rw-card--list__pad { display: flex; flex-direction: column; gap: var(--rw-space-12); padding: 14px 16px 16px; }
+.rw-table th { border-bottom-color: var(--rw-border-default); }
+.rw-table td > a.mono { font-size: 14px; font-weight: 500; }
+
+/* Analysis as a side page (task-10-3, user feedback 13.10.2026): areas in the side menu, glance cards and
+   charts on one grid (4 columns wide, 2 on medium widths, 1 on phones) so all card edges line up */
+.insights__period { display: flex; flex-wrap: wrap; align-items: center; gap: var(--rw-space-8) var(--rw-space-12); font-size: 13px; color: var(--rw-text-secondary); }
+.insights-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--rw-space-24); align-items: stretch; }
+.insights-grid > * { min-width: 0; }
+@container (min-width: 640px) {
+  .insights-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .insights-grid__full, .insights-grid__half { grid-column: 1 / -1; }
+}
+@container (min-width: 1200px) {
+  .insights-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .insights-grid__half { grid-column: span 2; }
+}
+.insights .figure { padding: 0; gap: 0; background: var(--rw-surface-raised); }
+.insights .figure > .rw-card__header { display: flex; flex-wrap: nowrap; }
+.insights .figure .rw-card__title { font-size: 15px; }
+.figure__body { flex: 1; }
+.figure__body > .figure__table { margin-top: auto; }
+.rw-glance[aria-current="page"] { border-color: var(--rw-color-lime-600); box-shadow: inset 0 0 0 1px var(--rw-color-lime-600); }
+/* Phones: glance cards two by two and the period control in one row */
+@container (max-width: 639px) {
+  .insights-grid--glance { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--rw-space-12); }
+  .insights-grid--glance .rw-glance { padding: 12px 14px; gap: 4px; }
+  .insights-grid--glance .rw-glance__value { font-size: 20px; }
+  .insights-grid--glance .rw-card__note { font-size: 13px; }
+  .insights__period { width: 100%; }
+  .insights__period .rw-period { width: 100%; }
+  .insights__period .rw-period__kinds { flex: 1 1 0; min-width: 0; }
+  .insights__period .rw-period__kinds li { flex: 1; }
+  .insights__period .rw-period__kinds a { justify-content: center; padding: 0 6px; }
+  .insights__period .rw-link-btn { flex-basis: 100%; }
+}
+
+/* Invoices as a side page (task-10-3, user feedback 13.10.2026): open receivables in one row above the list */
+.inv-receivables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.inv-receivables > li { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 14px 16px; border-top: 1px solid var(--rw-border-subtle); }
+.inv-receivables > li:nth-child(odd) { border-right: 1px solid var(--rw-border-subtle); }
+.inv-receivables > li:nth-child(-n + 2) { border-top: 0; }
+.inv-receivables__label { font-size: 13px; color: var(--rw-text-secondary); }
+.inv-receivables__value { font-size: 22px; line-height: 1.2; color: var(--rw-text-primary); }
+.inv-receivables__value--small { font-size: 16px; }
+.inv-receivables .rw-bars__track { margin-top: auto; }
+.inv-receivables__total { background: var(--rw-surface-raised); }
+@container (min-width: 1100px) {
+  .inv-receivables { grid-template-columns: repeat(2, minmax(0, 1.2fr)) repeat(4, minmax(0, 1fr)); }
+  .inv-receivables > li { border-top: 0; border-right: 1px solid var(--rw-border-subtle); }
+  .inv-receivables > li:last-child { border-right: 0; }
+}
+
+/* Light side menu (variant A, chosen by the user 13.10.2026; overrides the navy panel above): the menu is
+   secondary to the list, so it differs from the content by surface, not by weight. Active item: white with
+   a lime stripe (selection); lime counters only where work waits. */
+.side-menu { color: var(--rw-text-primary); background: var(--rw-color-steel-100); border: 1px solid var(--rw-color-steel-200); }
+.side-menu__head { border-bottom-color: var(--rw-color-steel-200); }
+.side-menu__scope { color: var(--rw-text-secondary); }
+.side-menu__group + .side-menu__group { border-top-color: var(--rw-color-steel-200); }
+.side-menu__group-title { color: var(--rw-text-secondary); }
+.side-menu__group ul { gap: 4px; }
+.side-menu__item { min-height: 44px; color: var(--rw-text-primary); background: transparent; border-color: transparent; }
+.side-menu__item:hover { background: var(--rw-color-white); border-color: var(--rw-color-steel-300); }
+.side-menu__item[aria-current="page"], .side-menu__item[aria-current="page"]:hover { color: var(--rw-text-primary); background: var(--rw-color-white); border-color: var(--rw-color-steel-300); box-shadow: inset 4px 0 0 var(--rw-color-lime-500), 0 1px 2px rgba(11, 31, 51, 0.08); }
+.side-menu__item.is-empty:not([aria-current]) { color: var(--rw-text-secondary); background: transparent; border-color: transparent; }
+.side-menu__item.is-empty:not([aria-current]):hover { color: var(--rw-text-primary); background: var(--rw-color-white); border-color: var(--rw-color-steel-300); }
+.side-menu__item--hazard svg, .side-menu__item--hazard[aria-current="page"] svg { color: var(--rw-color-danger-700); }
+.side-menu__count { color: var(--rw-text-secondary); background: var(--rw-color-steel-200); }
+.side-menu__item[aria-current="page"] .side-menu__count { color: var(--rw-text-secondary); background: var(--rw-color-steel-100); }
+.side-menu__item.is-urgent .side-menu__count, .side-menu__item.is-urgent[aria-current="page"] .side-menu__count { color: var(--rw-text-on-lime); background: var(--rw-color-lime-500); }
+.side-menu__item--hazard.is-urgent .side-menu__count, .side-menu__item--hazard.is-urgent[aria-current="page"] .side-menu__count { color: var(--rw-color-white); background: var(--rw-color-danger-700); }
+@container (max-width: 899px) { .side-menu--narrow > nav { border-top-color: var(--rw-color-steel-200); } }
+.side-menu__switch-label { color: var(--rw-text-secondary); }
+.side-menu__switch strong { color: var(--rw-text-primary); }
+.side-menu__switch-count { color: var(--rw-text-secondary); background: var(--rw-color-steel-200); }
+.side-menu__switch-icon { color: var(--rw-text-primary); background: var(--rw-color-white); border-color: var(--rw-color-steel-300); }
+
+/* Planning queue in the light side-menu style (user feedback 13.10.2026): steel panel, requests as white
+   cards on it, the selected one with the same lime stripe as the active menu item */
+.plan3__queue { background: var(--rw-color-steel-100); border: 1px solid var(--rw-color-steel-200); border-radius: var(--rw-radius-lg); }
+.plan3__item { border-color: var(--rw-color-steel-200); border-left: 1px solid var(--rw-color-steel-200); }
+.plan3__item:hover { border-color: var(--rw-color-steel-300); border-left-color: var(--rw-color-steel-300); box-shadow: var(--rw-shadow-sm); }
+.plan3__item[aria-current="true"], .plan3__item[aria-current="true"]:hover { background: var(--rw-color-white); border-color: var(--rw-color-steel-300); box-shadow: inset 4px 0 0 var(--rw-color-lime-500), 0 1px 2px rgba(11, 31, 51, 0.08); }

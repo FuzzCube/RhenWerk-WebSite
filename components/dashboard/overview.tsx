@@ -132,20 +132,22 @@ export function DeadlinesCard({ items, checkedAt }: { items: AttentionItem[]; ch
   }
   const now = new Date(checkedAt).getTime();
   return (
-    <Card stripe="attention" flush id="deadlines" title="Fristen und Wartezeiten" count={due.length >= 50 ? "50+" : due.length} description="Überschrittene Fristen und lange Wartezeiten, dringendste zuerst.">
-      <table className="rw-table rw-table--stack rw-table--lead">
-        <caption className="sr-only">Überschrittene Fristen und lange Wartezeiten</caption>
-        <thead><tr><th scope="col">Grund</th><th scope="col">Anfrage</th><th scope="col">Seit</th></tr></thead>
-        <tbody>
-          {due.slice(0, 6).map((item) => (
-            <tr key={`${item.reason}-${item.requestId}`}>
-              <td>{ATTENTION_LABELS[item.reason]}</td>
-              <td><Link className="mono" href={`/dashboard/anfragen/${item.requestId}`}>{item.requestNumber}</Link><span className="rw-sub">{item.company}</span></td>
-              <td><span className="mono">{formatElapsed((now - new Date(item.since).getTime()) / 60000)}</span><span className="rw-sub mono">{formatDateTime(item.since)}</span></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <Card stripe="attention" flush className="rw-card--list" id="deadlines" title="Fristen und Wartezeiten" count={due.length >= 50 ? "50+" : due.length} description="Dringendste zuerst">
+      {/* A list instead of a table: fits the narrow column next to the planning queue */}
+      <ul className="rw-deadlines" aria-label="Überschrittene Fristen und lange Wartezeiten">
+        {due.slice(0, 6).map((item) => (
+          <li key={`${item.reason}-${item.requestId}`}>
+            <Link className="rw-deadline" href={`/dashboard/anfragen/${item.requestId}`}>
+              <span className="rw-deadline__top">
+                <strong>{ATTENTION_LABELS[item.reason]}</strong>
+                <span className="rw-deadline__age mono">{formatElapsed((now - new Date(item.since).getTime()) / 60000)}</span>
+              </span>
+              <span className="rw-deadline__sub"><span className="mono">{item.requestNumber}</span> · {item.company}</span>
+              <span className="rw-deadline__since">seit <span className="mono">{formatDateTime(item.since)}</span></span>
+            </Link>
+          </li>
+        ))}
+      </ul>
       {due.length > 6 && <p className="rw-card__footnote">Die 6 dringendsten von {due.length} Einträgen.</p>}
     </Card>
   );
@@ -462,9 +464,9 @@ export function ServiceDeskCard({ team }: { team: TeamNow }) {
   const month = MONTHS[Number(team.monthStart.slice(5, 7)) - 1];
   const max = Math.max(1, ...desk.map((row) => row.open_requests));
   return (
-    <Card stripe="meta" title="Service Desk" description="Offen zugewiesene Anfragen je Person">
-      {desk.length === 0 ? <EmptyState title="Keine aktiven Dispatcher" /> : (
-        <>
+    <Card stripe="meta" flush className="rw-card--list" title="Service Desk" description="Offen zugewiesen je Person">
+      {desk.length === 0 ? <div className="rw-card--list__pad"><EmptyState title="Keine aktiven Dispatcher" /></div> : (
+        <div className="rw-card--list__pad">
           <ul className="rw-bars">
             {desk.map((row) => (
               <li key={row.employee_id}>
@@ -482,7 +484,7 @@ export function ServiceDeskCard({ team }: { team: TeamNow }) {
               <span key={row.employee_id}>{row.display_name} <span className="mono">{row.intake_completed}</span>{index < all.length - 1 ? ", " : "."}</span>
             ))}
           </p>
-        </>
+        </div>
       )}
     </Card>
   );
@@ -511,6 +513,7 @@ export function TechniciansCard({ team, today }: { team: TeamNow; today: string 
     <Card
       stripe="meta"
       flush
+      className="rw-card--list"
       title="Techniker"
       description="Belegung heute und morgen"
       action={<Link className="rw-link-btn" href="/dashboard/planung">Wochenplan öffnen<Icon name="chevron-right" size={16} /></Link>}
@@ -544,7 +547,7 @@ export function TechniciansCard({ team, today }: { team: TeamNow; today: string 
 
 const PLAN_NOTES: Record<NonNullable<PlanningItem["note"]>, string> = { follow_up: "Folgeeinsatz", waiting_parts: "Wartet auf Teile" };
 
-export function ToPlanCard({ items }: { items: PlanningItem[] }) {
+export function ToPlanCard({ items, limit = 8 }: { items: PlanningItem[]; limit?: number }) {
   if (items.length === 0) {
     return (
       <Card stripe="success" headingLevel={2} id="to-plan" title="Zu planen" count={0}>
@@ -556,6 +559,7 @@ export function ToPlanCard({ items }: { items: PlanningItem[] }) {
     <Card
       stripe="action"
       flush
+      className="rw-card--list"
       headingLevel={2}
       id="to-plan"
       title="Zu planen"
@@ -567,7 +571,7 @@ export function ToPlanCard({ items }: { items: PlanningItem[] }) {
         <caption className="sr-only">Anfragen ohne geplanten Einsatz</caption>
         <thead><tr><th scope="col">Anfrage</th><th scope="col">Kunde</th><th scope="col">Leistung</th><th scope="col">Priorität</th><th scope="col">Hinweis</th></tr></thead>
         <tbody>
-          {items.slice(0, 8).map((item) => (
+          {items.slice(0, limit).map((item) => (
             <tr key={item.id}>
               <td><Link className="mono" href={`/dashboard/planung?anfrage=${item.id}`}>{item.requestNumber}</Link></td>
               <td><strong>{item.company}</strong>{item.city && <span className="rw-sub">{item.city}</span>}</td>
@@ -578,7 +582,7 @@ export function ToPlanCard({ items }: { items: PlanningItem[] }) {
           ))}
         </tbody>
       </table>
-      {items.length > 8 && <p className="rw-card__footnote">Die 8 dringendsten von {items.length} Anfragen.</p>}
+      {items.length > limit && <p className="rw-card__footnote">Die {limit} dringendsten von {items.length} Anfragen · <Link href="/dashboard/planung">Alle {items.length} in der Einsatzplanung</Link></p>}
     </Card>
   );
 }

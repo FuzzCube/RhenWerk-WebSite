@@ -117,23 +117,25 @@ function ManagerOverview({ period }: { period: PeriodParams }) {
         </Guard>
       </Suspense>
 
-      <Suspense fallback={<Zone id="z-team" title="Team"><div className="rw-split">{loadingCard("Service Desk", "rows")}{loadingCard("Techniker")}</div></Zone>}>
+      <Suspense fallback={<Zone id="z-team" title="Team und Aufgaben"><div className="overview-grid"><div className="overview-grid__wide">{loadingCard("Techniker")}</div><div className="overview-grid__narrow">{loadingCard("Service Desk", "rows")}</div></div></Zone>}>
         <Guard title="Team" load={getTeamNow}>
           {(team: Awaited<ReturnType<typeof getTeamNow>>) => (
-            <>
-              <Zone id="z-team" title="Team" note="Stand jetzt">
-                <div className="rw-split rw-split--team">
-                  <div className="rw-split__side"><ServiceDeskCard team={team} /></div>
-                  <div className="rw-split__main"><TechniciansCard team={team} today={today} /></div>
+            // Same 4-column grid as the queue and KPI cards (user feedback 13.10.2026): each row has a wide
+            // card (3 columns) and a narrow one (1 column) of equal height, so all edges line up
+            <Zone id="z-team" title="Team und Aufgaben" note="Stand jetzt">
+              <div className="overview-grid">
+                <div className="overview-grid__wide"><TechniciansCard team={team} today={today} /></div>
+                <div className="overview-grid__narrow"><ServiceDeskCard team={team} /></div>
+                <div className="overview-grid__wide"><ToPlanCard items={team.toPlan} limit={5} /></div>
+                <div className="overview-grid__narrow">
+                  <Suspense fallback={loadingCard("Fristen und Wartezeiten", "rows")}>
+                    <Guard title="Fristen" load={getAttentionNow}>
+                      {(attention: Awaited<ReturnType<typeof getAttentionNow>>) => <DeadlinesCard items={attention.items} checkedAt={attention.checkedAt} />}
+                    </Guard>
+                  </Suspense>
                 </div>
-              </Zone>
-              <Suspense fallback={null}>
-                <Guard title="Fristen" load={getAttentionNow}>
-                  {(attention: Awaited<ReturnType<typeof getAttentionNow>>) => <DeadlinesCard items={attention.items} checkedAt={attention.checkedAt} />}
-                </Guard>
-              </Suspense>
-              <ToPlanCard items={team.toPlan} />
-            </>
+              </div>
+            </Zone>
           )}
         </Guard>
       </Suspense>
