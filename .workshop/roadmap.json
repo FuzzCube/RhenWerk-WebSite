@@ -1470,6 +1470,40 @@
               "npm run demo:verify"
             ]
           }
+        },
+        {
+          "id": "task-10-9",
+          "title": "Sicherheitsupdates der Abhängigkeiten",
+          "description": "Offene Dependabot-Meldungen beheben: next und eslint-config-next auf 16.3.8, transitive Pakete (sharp, undici, source-map-js, brace-expansion) im erlaubten Versionsbereich aktualisieren; Rest dokumentieren.",
+          "order": 9,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-10-8"
+          ],
+          "definitionOfDone": [
+            "next/eslint-config-next 16.3.8, npm audit ohne behebbare Meldungen",
+            "Verbleibende Meldungen (ohne Fix) begründet dokumentiert",
+            "lint, typecheck, build, test:unit, test:db, test:auth, test:ui, demo:verify bestanden"
+          ],
+          "startedAt": "2026-10-13T13:39:22Z",
+          "completedAt": "2026-10-13T13:44:30Z",
+          "verification": {
+            "status": "passed",
+            "summary": "next und eslint-config-next 16.3.8, transitiv sharp 0.35.5, undici 6.29.0, source-map-js 1.2.2, brace-expansion 1.1.21/5.0.12. npm audit: nur noch braces 3.0.3 (kein Fix, nur Entwicklung, in docs/setup.md begründet). lint, typecheck, build, test:unit 61, test:db 597, test:auth 130, test:ui 226, demo:verify 18/18.",
+            "commands": [
+              "npm audit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:unit",
+              "supabase test db",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
+              "APP_URL=http://127.0.0.1:3201 npm run test:ui",
+              "npm run demo:seed",
+              "npm run demo:verify"
+            ]
+          }
         }
       ]
     }

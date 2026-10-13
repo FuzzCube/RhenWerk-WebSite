@@ -83,6 +83,10 @@ npm run demo:seed && npm run demo:verify          # Testdaten von test:api/test:
 
 `demo:verify` direkt nach `test:api` oder `test:ui` meldet deren Testanfragen (Basiswert 5 Minuten) als Abweichung; das ist erwartet und verschwindet mit dem nächsten `demo:seed`.
 
+## Abhängigkeiten und Sicherheitsmeldungen
+
+Dependabot meldet Schwachstellen aus `package-lock.json`. Stand 13.10.2026 (task-10-9): `next` und `eslint-config-next` auf 16.3.8 (u. a. RCE in `next/og`, SSRF in der Bildoptimierung, Cache-Poisoning), transitiv `sharp` 0.35.5, `undici` 6.29.0 (über `@vercel/blob`), `source-map-js` 1.2.2, `brace-expansion` 1.1.21/5.0.12. Offen bleibt nur `braces` 3.0.3 (DoS bei tief verschachtelten Mustern): ohne behobene Version, nur Entwicklungsabhängigkeit (`eslint-config-next` → `fast-glob` → `micromatch`), verarbeitet keine Eingaben von außen und ist nicht Teil der ausgelieferten App. `npm audit fix --force` würde `eslint-config-next` auf 14.x zurückstufen und ist deshalb nicht anzuwenden. Prüfen mit `npm audit` (erwartet: nur `braces` und die davon abhängigen Pakete).
+
 ## Datenbank zurücksetzen und Schemaänderungen
 
 ```bash

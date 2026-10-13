@@ -2,11 +2,11 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 39 Tasks. Fortschritt 100,00 % (Gewicht 130 von 130, 39 von 39 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 40 Tasks. Fortschritt 100,00 % (Gewicht 131 von 131, 40 von 40 Tasks).
 
 ## Aktive Phase
 
-Alle Phasen 0–10 sind abgeschlossen (Phase 10 am 13.10.2026 um `task-10-7` und `task-10-8` erweitert).
+Alle Phasen 0–10 sind abgeschlossen (Phase 10 am 13.10.2026 um `task-10-7` bis `task-10-9` erweitert).
 
 ## Aktive Aufgabe
 
@@ -15,6 +15,8 @@ Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-10-9` (13.10.2026): Sicherheitsupdates nach Dependabot – `next`/`eslint-config-next` 16.3.8, transitiv `sharp`, `undici`, `source-map-js`, `brace-expansion`. Offen nur `braces` (ohne Fix, nur Entwicklung; Begründung in `docs/setup.md`). Alle Testsuiten bestanden (test:ui 226, test:db 597, test:auth 130, demo:verify 18/18).
 
 `task-10-8` (13.10.2026): Geplante Einsätze auf der Plantafel verschieben – Ziehen mit Maus, Finger oder Pfeiltasten auf andere Zeit, anderen Techniker oder Tag; Bestätigung „Bisher → Neu“ mit Grund (Standard „Verschoben auf der Plantafel“, änderbar) und Abbrechen; Speichern über `rescheduleVisit` → `reschedule_visit` mit Versionsprüfung, Verlaufseintrag `visit_rescheduled`. Keine Migration. test:ui 226, test:db 597, test:auth 130, lint, typecheck, build, demo:verify 18/18. Details in `docs/architecture.md` (Einsatzplanung).
 
