@@ -2,19 +2,21 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 37 Tasks. Fortschritt 97,62 % (Gewicht 123 von 126, 36 von 37 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 37 Tasks. Fortschritt 100,00 % (Gewicht 126 von 126, 37 von 37 Tasks).
 
 ## Aktive Phase
 
-Phasen 0–9 sind abgeschlossen. In Phase 10 (Erweiterungen) ist nur `task-10-5` offen.
+Alle Phasen 0–10 sind abgeschlossen.
 
 ## Aktive Aufgabe
 
-Keine. `task-9-2` wurde am 13.10.2026 abgeschlossen; der nächste Task wird mit dem Nutzer gewählt.
+Keine. Alle Tasks der Roadmap v5 sind abgeschlossen; weitere Arbeit nur nach Absprache (Roadmap-Erweiterung).
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-10-5` (13.10.2026): Posteingang für nicht zugeordnete E-Mails unter `/dashboard/posteingang` (Dispatcher eigener Posteingang, Manager/Admin alle, Zähler in der Navigation). Zuordnung per `link_message` (Vorschläge nach Absenderadresse, Suche), neue Anfrage aus E-Mail per `create_request_from_message` (Migration `20261013130000_inbox_create_request.sql`, Quelle `email`, idempotent über `email:<message_id>`, keine Eingangsbestätigung). Tests: `inbox.test.sql` (24), test:db 592, test:auth 130, test:ui 216, lint, typecheck, build. Details in `docs/architecture.md` (Posteingang) und `docs/database.md`.
 
 `task-9-2` (13.10.2026): Gesamtprüfung und Responsive-Check. Alle Testsuiten bestanden (lint, typecheck, build, test:unit 61, test:db 568, test:api, test:auth 130 gegen `next start`, test:ui 199, demo:verify 18/18); Sichtprüfung je Rolle bei 390/768/1440 px ohne Befund. Behoben: mehrdeutige Spalte in `mark_message_failed` (Migration `20261013120000_fix_mark_message_failed.sql`, neuer pgTAP-Test). Ergebnisse, Szenarien 1–8 und nicht Geprüftes in `docs/testing.md` (Abschnitt Gesamtprüfung); Setup- und Startanleitung `docs/setup.md`.
 
@@ -30,7 +32,7 @@ Keine. `task-9-2` wurde am 13.10.2026 abgeschlossen; der nächste Task wird mit 
 
 ## Bereite nächste Aufgaben
 
-- `task-10-5`: Posteingang für nicht zugeordnete E-Mails (eingehende Mails ohne Anfragenummer/Thread werden gespeichert, sind im Dashboard aber noch unsichtbar).
+Keine. Mögliche Erweiterungen (z. B. Ziehen von Terminen auf der Plantafel, Eingangsbestätigung für Anfragen aus E-Mails, dunkles Design) nur nach Rücksprache als neue Roadmap-Tasks.
 
 ## Blockiert
 

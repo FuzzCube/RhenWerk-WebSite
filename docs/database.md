@@ -120,7 +120,7 @@ Alle Felder laut Spezifikation 5.2. Nullability:
 
 | Pflicht (`NOT NULL`) | Optional (`NULL` erlaubt) |
 | --- | --- |
-| `id`, `request_number`, `source_event_key`, `source` (`website_form`/`demo_seed`), `is_demo` | `customer_number`, `site_label` |
+| `id`, `request_number`, `source_event_key`, `source` (`website_form`/`demo_seed`/`email`), `is_demo` | `customer_number`, `site_label` |
 | `company_name`, `contact_name`, `business_email`, `phone_number` | `manufacturer`, `model_type`, `machine_number` |
 | `street_house_number`, `postal_code` (Text), `city` | `priority` (bis zur Bestimmung) |
 | `equipment_kind`, `service_kind`, `requested_visit_date`, `description` | `sla_contract_number`, `emergency_sla_claimed` (NULL = keine Angabe) |
@@ -483,6 +483,7 @@ Der Status `sent` entsteht erst durch bestätigten E-Mail-Versand (künftige Int
 | `update_message_draft(message_id, expected_version, to_address?, subject?, body_text?)` | dto. | nur Entwürfe | – |
 | `queue_message(message_id, expected_version)` | dto. | `draft` → `queued`, setzt `approved_by`/`approved_at` | `message_queued` (dispatch) |
 | `link_message(message_id, request_id, expected_version)` | Inhaber des Posteingangs, Manager, Admin | verknüpft eine unzugeordnete eingehende Nachricht mit einer zugänglichen Anfrage; Anhänge erhalten dieselbe `request_id` | `message_linked` mit bisherigem Posteingang (dispatch) |
+| `create_request_from_message(message_id, fields)` | Inhaber des Posteingangs, Manager, Admin | legt aus einer unzugeordneten eingehenden Nachricht eine Anfrage an (`source = 'email'`, Schlüssel `email:<message_id>`, Dispatcher = Inhaber des Posteingangs, Status `new`) und verknüpft Nachricht und Anhänge; Pflichtfelder wie im Formular (PLZ fünfstellig, Beschreibung ab 10 Zeichen); Wiederholung liefert dieselbe Anfrage, ohne Zugriff 42501; keine Eingangsbestätigung (task-10-5) | `request_created_from_message` und `message_linked` (dispatch) |
 
 Die Warteschlange setzt **weder** `messages.sent_at` noch einen Rechnungsstatus `sent`/`paid` noch `requests.first_substantive_response_at`. Diese Werte setzt erst der bestätigte Versand durch die spätere n8n/Gmail-Integration. Techniker schreiben keine Kunden-E-Mails.
 

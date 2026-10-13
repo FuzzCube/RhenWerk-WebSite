@@ -148,9 +148,9 @@ try {
     { name: "1440", width: 1440, height: 900, mobile: false },
   ];
   const roles = [
-    { email: "admin.demo@example.com", pages: ["/dashboard/bausteine", "/dashboard/verwaltung", "detail:/dashboard/verwaltung", "detail:/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/tarife", "/dashboard/verwaltung/einstellungen", "/dashboard/uebersicht", "/dashboard/anfragen"] },
-    { email: "manager.demo@example.com", pages: ["/dashboard/uebersicht", "/dashboard/uebersicht?zeitraum=jahr", "/dashboard/rechnungen", "/dashboard/auswertung", "/dashboard/auswertung?bereich=warteschlangen", "/dashboard/auswertung?bereich=automatisierung", "/dashboard/planung", "/dashboard/anfragen", "detail:/dashboard/anfragen?arbeit=completed", "detail:/dashboard/anfragen?erstbearbeitung=needs_review"] },
-    { email: "dispo3.demo@example.com", pages: ["/dashboard/erstbearbeitung", "/dashboard/erstbearbeitung?tab=planung", "/dashboard/erstbearbeitung?tab=alle"] },
+    { email: "admin.demo@example.com", pages: ["/dashboard/bausteine", "/dashboard/verwaltung", "detail:/dashboard/verwaltung", "detail:/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/tarife", "/dashboard/verwaltung/einstellungen", "/dashboard/uebersicht", "/dashboard/anfragen", "/dashboard/posteingang"] },
+    { email: "manager.demo@example.com", pages: ["/dashboard/uebersicht", "/dashboard/uebersicht?zeitraum=jahr", "/dashboard/rechnungen", "/dashboard/auswertung", "/dashboard/auswertung?bereich=warteschlangen", "/dashboard/auswertung?bereich=automatisierung", "/dashboard/planung", "/dashboard/anfragen", "detail:/dashboard/anfragen?arbeit=completed", "detail:/dashboard/anfragen?erstbearbeitung=needs_review", "/dashboard/posteingang", "/dashboard/posteingang?ansicht=zugeordnet"] },
+    { email: "dispo3.demo@example.com", pages: ["/dashboard/erstbearbeitung", "/dashboard/erstbearbeitung?tab=planung", "/dashboard/erstbearbeitung?tab=alle", "/dashboard/posteingang"] },
     { email: "technik1.demo@example.com", pages: ["/dashboard/heute", "/dashboard/kalender", "/dashboard/anfragen", "detail:/dashboard/anfragen", "einsatz:/dashboard/heute"] },
   ];
 
@@ -491,6 +491,38 @@ try {
   check("Ablehnung mit Grund über reject_request", rejected && (await dbRequest()).rejection_reason === "Außerhalb des Servicegebiets");
   await page.open(requestUrl);
   check("Nach Ablehnung keine Prüfaktionen mehr", await page.eval(`!document.getElementById("aktionen")`));
+  // Inbox (task-10-5) as the temporary dispatcher: list, badge, prefilled new-request form, assignment via link_message
+  console.log("\nPosteingang: nicht zugeordnete E-Mail anzeigen und zuordnen");
+  {
+    const target = await newRequest("inbox-link", { intake_status: "awaiting_customer", human_review_required: false });
+    const subject = `UI-Test Posteingang ${runId}`;
+    const { data: mail, error: mailError } = await admin.from("messages").insert({
+      inbox_dispatcher_id: dispoId, direction: "incoming", kind: "other", status: "received", from_address: target.business_email,
+      subject, body_text: "Guten Tag, wann kommt Ihr Techniker? Eine Anfragenummer liegt mir nicht vor.", received_at: new Date().toISOString(),
+    }).select().single();
+    if (mailError) throw new Error(`Posteingang: ${mailError.message}`);
+    try {
+      await page.open(`${BASE}/dashboard/posteingang`);
+      const listed = await page.eval(`({ badge: document.querySelector('.dash-nav a[href="/dashboard/posteingang"] .dash-nav__count')?.textContent ?? null, subjects: [...document.querySelectorAll(".inbox-item__subject")].map((e) => e.textContent) })`);
+      check("Liste zeigt die E-Mail, Zähler in der Navigation", listed.subjects.includes(subject) && Number(listed.badge) >= 1, JSON.stringify(listed));
+      await page.open(`${BASE}/dashboard/posteingang?nachricht=${mail.id}`);
+      const shown = await page.eval(`({ body: document.querySelector(".inbox-mail__body")?.textContent ?? "", email: document.querySelector('[name="business_email"]')?.value ?? "", target: document.querySelector('[name="target"]')?.value ?? "" })`);
+      check("  Text sichtbar, neue Anfrage mit Absender vorbelegt, Anfrage des Absenders vorgeschlagen", shown.body.includes("Anfragenummer liegt mir nicht vor") && shown.email === target.business_email && shown.target.startsWith(target.id), JSON.stringify(shown));
+      await fillIn(`[...document.querySelectorAll("form.save-form")].find((f) => f.querySelector('[name="target"]'))`, {});
+      const linkedOk = await waitFor(async () => (await admin.from("messages").select("request_id").eq("id", mail.id).single()).data?.request_id === target.id);
+      const { data: linkEvents } = await admin.from("request_events").select("actor_id").eq("request_id", target.id).eq("event_type", "message_linked");
+      check("  Zuordnung über link_message mit Ereignis des Dispatchers", linkedOk && linkEvents?.some((event) => event.actor_id === dispoId), JSON.stringify(linkEvents));
+      await page.open(`${BASE}/dashboard/anfragen/${target.id}`);
+      check("  E-Mail steht unter Korrespondenz der Anfrage", await page.eval(`(document.getElementById("korrespondenz-title")?.closest("section, details")?.textContent ?? "").includes(${JSON.stringify(subject)})`));
+      await page.open(`${BASE}/dashboard/posteingang?ansicht=zugeordnet`);
+      check("  danach nicht mehr offen, unter „Zuletzt zugeordnet“", await page.eval(`[...document.querySelectorAll(".inbox-item")].some((a) => a.textContent.includes(${JSON.stringify(subject)}))`)
+        && !(await (await fetch(`${BASE}/dashboard/posteingang`, { headers: { cookie: (await loginCookies(dispoEmail)).map((c) => `${c.name}=${c.value}`).join("; ") } })).text()).includes(subject));
+    } finally {
+      // A failed run must not leave the test e-mail in the inboxes of manager and admin
+      await admin.from("messages").update({ request_id: target.id, handled_at: new Date().toISOString() }).eq("id", mail.id).is("request_id", null);
+    }
+  }
+
   console.log("\nEinsatzplanung in der Plantafel");
   const processed = { intake_status: "processed", priority: "normal", intake_mode: "manual", intake_completed_at: new Date().toISOString(), manual_minutes_baseline: 15, human_review_required: false };
   const planA = await newRequest("plan-a", processed);

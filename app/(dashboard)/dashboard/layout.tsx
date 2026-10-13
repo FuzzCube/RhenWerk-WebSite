@@ -5,6 +5,7 @@ import { Logo } from "@/components/ui";
 import { logout } from "@/lib/auth/actions";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { requireEmployee } from "@/lib/auth/session";
+import { inboxCount } from "@/lib/dashboard/inbox";
 
 export const metadata: Metadata = {
   title: { default: "Dashboard", template: "%s | RheinWerk Dashboard" },
@@ -15,6 +16,8 @@ export const metadata: Metadata = {
 // are not re-rendered on client navigation.
 export default async function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const employee = await requireEmployee();
+  // Open inbox e-mails for the navigation badge (RLS: own inbox for dispatchers, all for manager and admin)
+  const inbox = employee.role === "technician" ? null : await inboxCount();
   return (
     <div className="dash-shell">
       <a className="skip-link" href="#dash-main">Zum Inhalt springen</a>
@@ -29,7 +32,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
             <button className="dash-logout" type="submit">Abmelden</button>
           </form>
         </div>
-        <DashboardNav role={employee.role} />
+        <DashboardNav role={employee.role} counts={inbox ? { "/dashboard/posteingang": inbox } : {}} />
       </header>
       <main id="dash-main" className="dash-main">{children}</main>
     </div>

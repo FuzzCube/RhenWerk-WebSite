@@ -117,7 +117,7 @@ Wiederholte Läufe, Rückfragen und Einsätze erhöhen nicht die Zahl der Erstbe
    3. Anfragenummer `RIS-JJJJ-NNNNN` im Betreff.
    Absenderadresse allein reicht nie für eine Zuordnung.
 3. **Gefunden** (`decision = matched`): Nachricht mit `request_id`, `direction = incoming`, `kind = customer_reply`, Anhänge registriert; Ereignis `message_received`. Steht die Anfrage auf `awaiting_customer`, startet eine `reply_analysis` (Abschnitt 2).
-4. **Nicht gefunden oder mehrdeutig** (`decision = unmatched`): Nachricht ohne `request_id` im Posteingang eines Dispatchers (`inbox_dispatcher_id`, z. B. reihum unter aktiven Dispatchern). Der Dispatcher ordnet sie mit `link_message` zu.
+4. **Nicht gefunden oder mehrdeutig** (`decision = unmatched`): Nachricht ohne `request_id` im Posteingang eines Dispatchers (`inbox_dispatcher_id`, z. B. reihum unter aktiven Dispatchern). Der Dispatcher sieht sie im Dashboard unter „Posteingang“ (task-10-5, Zähler in der Navigation) und ordnet sie mit `link_message` zu oder legt mit `create_request_from_message` eine neue Anfrage an (keine Eingangsbestätigung; die neue Anfrage geht mit Status `new` in die normale Analyse).
 5. Nachrichten an Demo-Anfragen werden nicht verarbeitet.
 
 ## 4. Ausgehende Gmail-Nachrichten

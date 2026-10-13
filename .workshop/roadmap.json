@@ -1342,7 +1342,7 @@
           "description": "Eingehende Gmail-Nachrichten ohne Zuordnung (decision = unmatched, request_id leer) sind bisher nur in der Datenbank gespeichert und im Dashboard unsichtbar. Posteingang für Dispatcher (eigene Nachrichten über inbox_dispatcher_id, Manager/Admin alle): Absender, Betreff, Eingang, Text und Anhänge; Zuordnung zu einer bestehenden Anfrage per link_message oder Erstellen einer neuen Anfrage aus der E-Mail; Anzahl offener Nachrichten in der Navigation.",
           "order": 5,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-10-4"
           ],
@@ -1352,13 +1352,23 @@
             "Neue Anfrage aus einer E-Mail anlegen, ohne Duplikate bei Wiederholung",
             "Rollen- und RLS-Tests sowie UI-Test für Liste und Zuordnung"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-13T12:05:39Z",
+          "completedAt": "2026-10-13T12:17:14Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Posteingang /dashboard/posteingang für Dispatcher (eigener Posteingang), Manager und Admin (alle) mit Zähler in der Navigation; Zuordnung per link_message mit Ereignis, danach unter Korrespondenz; neue Anfrage aus E-Mail per create_request_from_message (Quelle email, Schlüssel email:<message_id>, keine Duplikate, keine Eingangsbestätigung). pgTAP inbox.test.sql 24 Prüfungen (Rollen/RLS, Rechte, Pflichtfelder, Idempotenz); test:db 592/592, test:unit 61/61, lint, typecheck, build, test:auth 130 (Navigation inkl. Posteingang), test:ui 216 (Liste, Zähler, Zuordnung, Korrespondenz, Responsive), demo:verify 18/18.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:unit",
+              "npm run test:db",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
+              "APP_URL=http://127.0.0.1:3201 npm run test:ui",
+              "npm run demo:seed",
+              "npm run demo:verify"
+            ],
+            "checkedAt": "2026-10-13T12:17:14Z"
           }
         },
         {

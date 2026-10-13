@@ -211,6 +211,13 @@ Nur Admin (`/dashboard/verwaltung`, Startseite der Rolle). Rahmen `AdminShell` i
 
 Daten: `lib/dashboard/admin.ts` (Profile, Tarife, Verfügbarkeiten, Einstellungen mit Nutzerrechten; E-Mail und letzte Anmeldung aus Supabase Auth mit dem Admin-Client). Aktionen: `app/(dashboard)/dashboard/verwaltung/actions.ts` rufen die `admin_*`-Operationen mit den Rechten des Admins auf; nur Anlegen, Sperren und Freigeben des Logins nutzen den Secret Key. Das Passwort wird nie an den Browser zurückgegeben. Deaktivierung und Reaktivierung leiten mit dem Ergebnis in der URL auf die Personenseite (`?ergebnis=deaktiviert&anfragen=…&einsaetze=…`), weil der Formularabschnitt danach verschwindet. Reine Hilfen (Wochenformular, Zusammenfassung „Mo–Fr 07:00–16:00“, Abwesenheit als ganze Tage in Europe/Berlin, Firmenangaben zusammenführen) in `lib/admin.ts`.
 
+## Posteingang (task-10-5)
+
+`/dashboard/posteingang` (Dispatcher, Manager, Admin; Navigationspunkt mit Zähler offener E-Mails, gezählt im Dashboard-Layout mit Nutzerrechten). Eingehende E-Mails ohne Anfragenummer und ohne bekannten Verlauf (`decision = unmatched`, `request_id` leer, `inbox_dispatcher_id` gesetzt) erscheinen hier; Dispatcher sehen ihren Posteingang, Manager und Admin alle (RLS über `can_read_message`), Techniker nichts. Seitenmenü „Offen“ und „Zuletzt zugeordnet“ (Ereignis `message_linked` der letzten 14 Tage); Liste und geöffnete E-Mail nebeneinander ab 1200 px Inhaltsbreite, darunter auf schmalen Breiten. Daten `lib/dashboard/inbox.ts`, Aktionen `app/(dashboard)/dashboard/posteingang/actions.ts`, Anhänge über `/dashboard/posteingang/dateien/[attachmentId]` (gestreamt mit Nutzerrechten).
+
+- **Zuordnen:** Vorschläge sind Anfragen mit derselben Absenderadresse, dazu Suche nach Nummer, Firma oder E-Mail; Auswahl mit der gesehenen Version, dann `link_message`. Danach steht die E-Mail unter Korrespondenz der Anfrage.
+- **Neue Anfrage:** Formular mit den Pflichtfeldern des Website-Formulars, vorbelegt mit Absender, Betreff und Text; `create_request_from_message` legt die Anfrage idempotent an (Schlüssel `email:<message_id>`) und leitet auf die Anfrageseite. Keine Eingangsbestätigung, weil der Kunde bereits per E-Mail geschrieben hat und ein Versand einen eigenen Schritt braucht.
+
 ## Design-Überarbeitung (task-10-3)
 
 Vorlage ist der Claude-Design-Canvas „RheinWerk Übersicht Redesign“ (Spezifikation und Zustände als Regelwerk). Farben, Schrift und Abstände kommen ausschließlich aus den RheinWerk-Tokens (`_ds/…/tokens`).

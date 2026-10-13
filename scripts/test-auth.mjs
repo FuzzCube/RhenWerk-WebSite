@@ -36,12 +36,12 @@ async function login(email, password) { const jar = new Jar(); const page = awai
 const path = (loc) => (loc ? new URL(loc, BASE).pathname : null);
 
 const roles = [
-  ["admin.demo@example.com", "Clara Becker", "/dashboard/verwaltung", ["Übersicht", "Auswertung", "Anfragen", "Rechnungen", "Verwaltung"], "/dashboard/heute"],
-  ["manager.demo@example.com", "Jonas Hoffmann", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Einsatzplanung", "Anfragen", "Rechnungen"], "/dashboard/verwaltung"],
-  ["dispo1.demo@example.com", "Lea Schneider", "/dashboard/erstbearbeitung", ["Erstbearbeitung", "Einsatzplanung", "Anfragen"], "/dashboard/uebersicht"],
+  ["admin.demo@example.com", "Clara Becker", "/dashboard/verwaltung", ["Übersicht", "Auswertung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung"], "/dashboard/heute"],
+  ["manager.demo@example.com", "Jonas Hoffmann", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen"], "/dashboard/verwaltung"],
+  ["dispo1.demo@example.com", "Lea Schneider", "/dashboard/erstbearbeitung", ["Erstbearbeitung", "Einsatzplanung", "Anfragen", "Posteingang"], "/dashboard/uebersicht"],
   ["technik1.demo@example.com", "Tobias Krüger", "/dashboard/heute", ["Mein Tag", "Kalender", "Anfragen"], "/dashboard/planung"],
 ];
-const ALL = ["Übersicht", "Auswertung", "Erstbearbeitung", "Mein Tag", "Kalender", "Einsatzplanung", "Anfragen", "Rechnungen", "Verwaltung"];
+const ALL = ["Übersicht", "Auswertung", "Erstbearbeitung", "Mein Tag", "Kalender", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung"];
 for (const [email, name, start, nav, forbidden] of roles) {
   const { jar, res } = await login(email, pw);
   check(`${email}: Login leitet zu /dashboard`, res.status === 303 && path(res.loc) === "/dashboard", `${res.status} ${res.loc}`);
