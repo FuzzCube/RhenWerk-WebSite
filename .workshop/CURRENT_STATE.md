@@ -2,19 +2,21 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 37 Tasks. Fortschritt 100,00 % (Gewicht 126 von 126, 37 von 37 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 38 Tasks. Fortschritt 100,00 % (Gewicht 128 von 128, 38 von 38 Tasks).
 
 ## Aktive Phase
 
-Alle Phasen 0–10 sind abgeschlossen.
+Alle Phasen 0–10 sind abgeschlossen (Phase 10 am 13.10.2026 um `task-10-7` erweitert).
 
 ## Aktive Aufgabe
 
-Keine. Alle Tasks der Roadmap v5 sind abgeschlossen; weitere Arbeit nur nach Absprache (Roadmap-Erweiterung).
+Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue Roadmap-Tasks.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-10-7` (13.10.2026): Auswahl auf der Plantafel ziehen – fließend mit Maus, Stift oder Finger, 15-Minuten-Raster, Wechsel von Techniker und Tag, Zeitanzeige mit Konfliktgrund am Zeiger, Ablegen ins Formular oder ins nächste freie Fenster, Tastatur ←/→/↑/↓. Bestehende Einsätze verschieben bewusst nicht enthalten (möglicher Folgetask). test:ui 219, lint, typecheck, build. Details in `docs/architecture.md` (Einsatzplanung).
 
 `task-10-5` (13.10.2026): Posteingang für nicht zugeordnete E-Mails unter `/dashboard/posteingang` (Dispatcher eigener Posteingang, Manager/Admin alle, Zähler in der Navigation). Zuordnung per `link_message` (Vorschläge nach Absenderadresse, Suche), neue Anfrage aus E-Mail per `create_request_from_message` (Migration `20261013130000_inbox_create_request.sql`, Quelle `email`, idempotent über `email:<message_id>`, keine Eingangsbestätigung). Tests: `inbox.test.sql` (24), test:db 592, test:auth 130, test:ui 216, lint, typecheck, build. Details in `docs/architecture.md` (Posteingang) und `docs/database.md`.
 
@@ -32,7 +34,7 @@ Keine. Alle Tasks der Roadmap v5 sind abgeschlossen; weitere Arbeit nur nach Abs
 
 ## Bereite nächste Aufgaben
 
-Keine. Mögliche Erweiterungen (z. B. Ziehen von Terminen auf der Plantafel, Eingangsbestätigung für Anfragen aus E-Mails, dunkles Design) nur nach Rücksprache als neue Roadmap-Tasks.
+Keine. Mögliche Erweiterungen (z. B. bestehende Einsätze auf der Plantafel verschieben, Eingangsbestätigung für Anfragen aus E-Mails, dunkles Design) nur nach Rücksprache als neue Roadmap-Tasks.
 
 ## Blockiert
 

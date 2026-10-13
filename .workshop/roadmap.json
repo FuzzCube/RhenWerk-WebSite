@@ -1403,6 +1403,39 @@
             ],
             "checkedAt": "2026-10-12T12:55:00Z"
           }
+        },
+        {
+          "id": "task-10-7",
+          "title": "Termin auf der Plantafel ziehen",
+          "description": "Die Auswahl „Einsatz planen“ auf der Plantafel lässt sich mit Maus oder Finger fließend ziehen (15-Minuten-Raster, auch zu anderem Techniker und Tag), mit Live-Prüfung auf Konflikte und Übernahme ins Formular; Klick, Tastatur (Pfeiltasten) und Seitenscrollen auf dem Telefon bleiben erhalten. Bestehende Einsätze verschieben ist nicht Teil dieser Aufgabe (Nutzerentscheidung 13.10.2026).",
+          "order": 7,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-10-3"
+          ],
+          "definitionOfDone": [
+            "Auswahl folgt dem Zeiger ohne Sprünge, Zeitanzeige im 15-Minuten-Raster, Wechsel von Techniker und Tag",
+            "Konflikte während des Ziehens sichtbar; Ablegen übernimmt Techniker, Datum und Zeit ins Formular bzw. nächstes freies Fenster",
+            "Klick, Tastatur und Scrollen auf dem Telefon funktionieren weiter",
+            "test:ui mit Ziehen, Konfliktfall und Tastatur; lint, typecheck, build"
+          ],
+          "startedAt": "2026-10-13T12:26:04Z",
+          "completedAt": "2026-10-13T12:34:05Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Auswahl auf der Plantafel mit Maus/Stift/Finger fließend ziehbar (15-Minuten-Raster, Techniker- und Tageswechsel, Zeitanzeige mit Konfliktgrund am Zeiger), Ablegen ins Formular bzw. nächstes freies Fenster; Klick unverändert, Tastatur ←/→ 15 min, ↑/↓ Techniker; nur die Auswahl mit touch-action none. Im Browser geprüft (Tages- und Wochenansicht, Konflikt, Tastatur). test:ui 219 inkl. Ziehen mit echten Mausereignissen, Konfliktfall und Tastatur; lint, typecheck, build, test:unit 61, demo:verify 18/18.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:unit",
+              "APP_URL=http://127.0.0.1:3201 npm run test:ui",
+              "npm run demo:seed",
+              "npm run demo:verify"
+            ],
+            "checkedAt": "2026-10-13T12:34:05Z"
+          }
         }
       ]
     }

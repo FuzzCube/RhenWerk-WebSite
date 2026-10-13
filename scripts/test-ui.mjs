@@ -557,6 +557,53 @@ try {
   check("  in der Plantafel als eigene Anfrage sichtbar", await page.eval(`[...document.querySelectorAll(".plan3__blk--own")].some((b) => b.title.includes(${JSON.stringify(planA.request_number)}))`));
   check("  Anfrage verlässt „Zu planen“", await page.eval(`![...document.querySelectorAll(".plan3__item")].some((i) => i.textContent.includes(${JSON.stringify(planA.request_number)}))`));
 
+  // Dragging the selection (task-10-7) with real mouse events in the day view: Monday, Tobias has visit A 09:00–11:00
+  {
+    const { data: other } = await admin.from("profiles").select("id").eq("display_name", "Anna Lehmann").single();
+    await page.open(`${BASE}/dashboard/planung?ansicht=tag&tag=${week}&anfrage=${planB.id}`);
+    const laneSel = (techId) => `.plan3__lane[data-tech="${techId}"][data-day="${week}"]`;
+    // Viewport x of a minute in a lane, and the pick block's left edge
+    const geometry = (techId) => page.eval(`(() => { const lane = document.querySelector('${laneSel(techId)}'); const r = lane.getBoundingClientRect(); const p = document.querySelector(".plan3__blk--pick")?.getBoundingClientRect(); return { left: r.left, width: r.width, y: r.top + r.height / 2, from: Number(lane.dataset.from), to: Number(lane.dataset.to), pick: p ? { x: p.left + 4, y: p.top + p.height / 2 } : null }; })()`);
+    const xOf = (g, minute) => g.left + (g.width * (minute - g.from)) / (g.to - g.from);
+    const mouse = (type, x, y) => page.send("Input.dispatchMouseEvent", { type, x, y, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: type === "mouseMoved" ? 0 : 1 });
+    const dragTo = async (from, to, steps = 12) => {
+      await mouse("mousePressed", from.x, from.y);
+      for (let i = 1; i <= steps; i += 1) { await mouse("mouseMoved", from.x + ((to.x - from.x) * i) / steps, from.y + ((to.y - from.y) * i) / steps); await sleep(15); }
+    };
+    await page.eval(`document.querySelector(".plan3__board").scrollIntoView({ block: "start", behavior: "instant" })`);
+    let g = await geometry(tech.id);
+    await page.eval(`document.querySelector('${laneSel(tech.id)}').dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: ${xOf(g, 13 * 60 + 5)}, clientY: ${g.y} }))`);
+    g = await geometry(tech.id);
+    const gOther = await geometry(other.id);
+    g = await geometry(tech.id);
+    // Grab 4 px inside the block, so the drop target minute is the block start + 4 px
+    await dragTo(g.pick, { x: xOf(gOther, 10 * 60 + 15) + 4, y: gOther.y });
+    const tip = await page.eval(`document.querySelector(".plan3__drag-tip")?.textContent ?? ""`);
+    await mouse("mouseReleased", xOf(gOther, 10 * 60 + 15) + 4, gOther.y);
+    await sleep(300);
+    picked = await formStatus(bookingForm);
+    check("Ziehen der Auswahl zu anderem Techniker: Zeitanzeige während des Ziehens, 15-Minuten-Raster im Formular", tip.includes("10:15–12:15") && picked.values.technician_id === other.id && picked.values.date === week && picked.values.start === "10:15" && picked.values.end === "12:15", `${tip} ${JSON.stringify(picked.values)}`);
+    // Onto visit A (09:30): red while dragging, dropped into the next free window 11:00–13:00
+    g = await geometry(other.id);
+    const gTech = await geometry(tech.id);
+    g = await geometry(other.id);
+    await dragTo(g.pick, { x: xOf(gTech, 9 * 60 + 30) + 4, y: gTech.y });
+    const conflictShown = await page.eval(`!!document.querySelector(".plan3__drag-tip.is-conflict") && !!document.querySelector(".plan3__blk--pick.is-dragging.is-conflict")`);
+    await mouse("mouseReleased", xOf(gTech, 9 * 60 + 30) + 4, gTech.y);
+    await sleep(300);
+    picked = await formStatus(bookingForm);
+    const notice = await page.eval(`document.querySelector(".plan3__notice")?.textContent ?? ""`);
+    check("  Konflikt beim Ziehen sichtbar, Ablegen nimmt das nächste freie Fenster", conflictShown && picked.values.technician_id === tech.id && picked.values.start === "11:00" && picked.values.end === "13:00" && notice.includes("Nächstes freies Fenster"), `${conflictShown} ${notice} ${JSON.stringify(picked.values)}`);
+    // Keyboard: → moves by 15 minutes, ↑ switches the technician, focus stays on the selection
+    await page.eval(`document.querySelector(".plan3__blk--pick").focus()`);
+    await page.send("Input.dispatchKeyEvent", { type: "keyDown", key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 });
+    await page.send("Input.dispatchKeyEvent", { type: "keyUp", key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 });
+    await sleep(200);
+    picked = await formStatus(bookingForm);
+    const focused = await page.eval(`document.activeElement?.classList.contains("plan3__blk--pick")`);
+    check("  Pfeiltaste verschiebt um 15 Minuten, Fokus bleibt auf der Auswahl", picked.values.start === "11:15" && picked.values.end === "13:15" && focused, JSON.stringify(picked.values));
+  }
+
   // Conflict: same technician and slot for request B → RW410, inputs kept, nothing booked
   await page.open(`${BASE}/dashboard/planung?woche=${week}&anfrage=${planB.id}`);
   await fillIn(bookingForm, { technician_id: tech.id, date: week, start: "10:00", end: "12:00" });

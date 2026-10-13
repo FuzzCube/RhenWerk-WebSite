@@ -1645,3 +1645,16 @@ details.tech-step[open] { padding-bottom: 20px; }
 .inbox-search { display: flex; gap: var(--rw-space-8); }
 .inbox-search .rw-input { flex: 1; min-width: 0; }
 @media (min-width: 768px) { .inbox-mail__action-body .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Dragging the selection on the planning board (task-10-7). Only the selection takes the pointer
+   (touch-action: none), so on phones the board and the page still scroll everywhere else. */
+.plan3__blk--pick { pointer-events: auto; cursor: grab; touch-action: none; }
+.plan3__blk--pick:focus-visible { outline: 3px solid var(--rw-color-blue-700); outline-offset: 1px; }
+.plan3__blk--pick.is-dragging { z-index: 4; cursor: grabbing; box-shadow: 0 2px 8px rgba(11, 31, 51, 0.25); }
+.plan3__lane.is-drop { border-color: var(--rw-color-navy-950); box-shadow: inset 0 0 0 1px var(--rw-color-navy-950); }
+body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; user-select: none; }
+.plan3__drag-tip { position: fixed; z-index: 60; display: flex; flex-direction: column; gap: 1px; max-width: 18rem; padding: 6px 10px; transform: translate(-50%, calc(-100% - 14px)); color: var(--rw-color-white); background: var(--rw-color-navy-950); border-radius: var(--rw-radius-sm); box-shadow: 0 2px 8px rgba(11, 31, 51, 0.2); pointer-events: none; font-size: 12px; line-height: 1.35; }
+.plan3__drag-tip strong { font-size: 14px; font-weight: 600; }
+.plan3__drag-tip span { color: var(--rw-text-on-dark-secondary); }
+.plan3__drag-tip.is-conflict { background: var(--rw-color-danger-700); }
+.plan3__drag-tip.is-conflict span { color: var(--rw-color-white); }

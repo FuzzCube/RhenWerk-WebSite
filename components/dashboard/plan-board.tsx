@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { scheduleVisit } from "@/app/(dashboard)/dashboard/planung/actions";
 import { HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
@@ -49,6 +49,10 @@ const nextWorkday = (day: string, step: 1 | -1) => {
 };
 
 type Segment = { start: number; end: number; kind: "own" | "busy" | "absence"; label: string };
+// Dragging the selection (task-10-7): the block follows the pointer exactly (minute as float), the time it will get
+// is the 15-minute grid position (snapped); x/y place the time tip next to the pointer
+type Drag = { technicianId: string; day: string; exact: number; snapped: BoardPick; x: number; y: number };
+const DRAG_STEP = 15;
 
 export function PlanBoard(props: Props) {
   const { technicians, workingHours, busy, availability, view, days, anchor, focusDay, request } = props;
@@ -59,6 +63,16 @@ export function PlanBoard(props: Props) {
   // Changes when the board sets a slot, so the form shows it; typing in the form keeps the key
   const [formKey, setFormKey] = useState(0);
   const [notice, setNotice] = useState("");
+  const [drag, setDrag] = useState<Drag | null>(null);
+  // A drag ends with a click on the lane below; that click must not pick a new slot
+  const suppressClick = useRef(false);
+  // Keyboard moves re-render the selection in another lane; focus follows it
+  const focusPick = useRef(false);
+  useEffect(() => {
+    if (!focusPick.current) return;
+    focusPick.current = false;
+    document.querySelector<HTMLElement>(".plan3__blk--pick")?.focus();
+  }, [pick]);
   const now = useMemo(() => new Date(availability.now), [availability.now]);
   const today = dayKeyOf(now);
 
@@ -98,7 +112,9 @@ export function PlanBoard(props: Props) {
     if (hit) {
       const own = busy.find((block) => block.technicianId === hit.technicianId && Date.parse(block.start) === Date.parse(hit.start) && block.requestNumber);
       const what = hit.kind === "absence" ? "einer Abwesenheit" : own ? `Einsatz ${own.requestNumber}` : "einem anderen Einsatz";
-      const span = `${toTime(minutesOfDay(new Date(hit.start)))}–${toTime(minutesOfDay(new Date(hit.end)))}`;
+      // Absences usually span whole days; their clock times (00:00–00:00) say nothing
+      const withinDay = dayKeyOf(new Date(hit.start)) === candidate.day && dayKeyOf(new Date(Date.parse(hit.end) - 1)) === candidate.day;
+      const span = withinDay ? `${toTime(minutesOfDay(new Date(hit.start)))}–${toTime(minutesOfDay(new Date(hit.end)))}` : "ganztägig";
       return { ok: false, message: `Überschneidet sich mit ${what} (${span}).` };
     }
     return { ok: true, message: `Frei · ${techName(candidate.technicianId)}, ${longDay(candidate.day)}, ${candidate.start}–${candidate.end}` };
@@ -223,7 +239,86 @@ export function PlanBoard(props: Props) {
     return total > 0 ? Math.round((used / total) * 100) : null;
   }
 
-  const pickCheck = pick ? check(pick) : null;
+  const live = drag ? drag.snapped : pick;
+  const pickCheck = live ? check(live) : null;
+
+  // Drag the selection with mouse, pen or finger; listeners on window so the pointer may leave the lane
+  function startDrag(event: ReactPointerEvent<HTMLElement>) {
+    if (!pick || (event.pointerType === "mouse" && event.button !== 0)) return;
+    const laneElement = event.currentTarget.closest<HTMLElement>(".plan3__lane");
+    if (!laneElement) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const origin = pick;
+    const span = toMinutes(origin.end) - toMinutes(origin.start);
+    const minuteIn = (element: HTMLElement, clientX: number) => {
+      const rect = element.getBoundingClientRect();
+      return bounds.from + ((clientX - rect.left) / rect.width) * (bounds.to - bounds.from);
+    };
+    const offset = minuteIn(laneElement, event.clientX) - toMinutes(origin.start);
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let current: Drag | null = null;
+
+    const move = (moveEvent: PointerEvent) => {
+      if (!current && Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) < 4) return;
+      const under = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest<HTMLElement>(".plan3__lane[data-tech][data-day]");
+      const technicianId = under?.dataset.tech ?? current?.technicianId ?? origin.technicianId;
+      const day = under?.dataset.day ?? current?.day ?? origin.day;
+      const target = under ?? document.querySelector<HTMLElement>(`.plan3__lane[data-tech="${technicianId}"][data-day="${day}"]`);
+      if (!target) return;
+      const exact = Math.min(Math.max(minuteIn(target, moveEvent.clientX) - offset, bounds.from), bounds.to - span);
+      const start = Math.min(Math.max(Math.round(exact / DRAG_STEP) * DRAG_STEP, bounds.from), bounds.to - span);
+      current = { technicianId, day, exact, x: moveEvent.clientX, y: moveEvent.clientY, snapped: { technicianId, day, start: toTime(start), end: toTime(start + span) } };
+      setDrag(current);
+    };
+    const stop = (dropIt: boolean) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      document.body.classList.remove("is-plan-dragging");
+      setDrag(null);
+      if (!current) return;
+      suppressClick.current = true;
+      window.setTimeout(() => { suppressClick.current = false; }, 0);
+      if (dropIt) drop(current.snapped, origin);
+    };
+    const onUp = () => stop(true);
+    const onCancel = () => stop(false);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+    document.body.classList.add("is-plan-dragging");
+  }
+
+  // Dropped on a free slot: take it; on a conflict: the next free window of that day, else keep the old selection
+  function drop(candidate: BoardPick, origin: BoardPick) {
+    const result = check(candidate);
+    if (result.ok) return choose(candidate);
+    const found = windowFrom(candidate.technicianId, candidate.day, toMinutes(candidate.start)) ?? windowFrom(candidate.technicianId, candidate.day, 0);
+    if (found) return choose(found, { notice: `${result.message} Nächstes freies Fenster übernommen: ${found.start}–${found.end}.` });
+    choose(origin, { notice: `${result.message} Kein freies Fenster für ${duration / 60} h an diesem Tag – Auswahl unverändert.` });
+  }
+
+  // Keyboard alternative: ←/→ move by 15 minutes, ↑/↓ switch the technician (same day and time)
+  function keyMove(event: ReactKeyboardEvent<HTMLElement>) {
+    if (!pick) return;
+    if (event.key === "Enter" || event.key === " ") { event.stopPropagation(); event.preventDefault(); return; }
+    const span = toMinutes(pick.end) - toMinutes(pick.start);
+    let next: BoardPick | null = null;
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      const start = Math.min(Math.max(toMinutes(pick.start) + (event.key === "ArrowLeft" ? -DRAG_STEP : DRAG_STEP), bounds.from), bounds.to - span);
+      next = { ...pick, start: toTime(start), end: toTime(start + span) };
+    } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      const index = technicians.findIndex((tech) => tech.id === pick.technicianId) + (event.key === "ArrowUp" ? -1 : 1);
+      if (index >= 0 && index < technicians.length) next = { ...pick, technicianId: technicians[index].id };
+    }
+    if (!next) return;
+    event.preventDefault();
+    event.stopPropagation();
+    focusPick.current = true;
+    choose(next);
+  }
   const canPick = Boolean(request);
   const rangeLabel = view === "tag" ? longDay(focusDay) : `KW ${isoWeek(days[0])}${isoWeek(days[days.length - 1]) !== isoWeek(days[0]) ? `/${isoWeek(days[days.length - 1])}` : ""}`;
   const rangeDates = view === "tag" ? `KW ${isoWeek(focusDay)}` : `${shortDay(days[0])} – ${shortDay(days[days.length - 1])}`;
@@ -238,7 +333,8 @@ export function PlanBoard(props: Props) {
     const name = techName(technicianId);
     const busyText = segments.filter((segment) => segment.kind !== "absence").map((segment) => `${toTime(segment.start)}–${toTime(segment.end)}`).join(", ");
     const label = `${name}, ${shortDay(day)}: ${absentAllDay ? "nicht verfügbar" : `${busyText ? `belegt ${busyText}` : "frei"}${canPick ? (firstWindow ? `, frei ab ${firstWindow.start}` : `, kein freies Fenster für ${duration / 60} h`) : ""}`}`;
-    const pickHere = pick && pick.technicianId === technicianId && pick.day === day ? pick : null;
+    const pickHere = !drag && pick && pick.technicianId === technicianId && pick.day === day ? pick : null;
+    const dragHere = drag && drag.technicianId === technicianId && drag.day === day ? drag : null;
     const ghosts = suggestions
       .map((suggestion, index) => ({ suggestion, rank: index + 1 }))
       .filter(({ suggestion }) => suggestion.technicianId === technicianId && suggestion.day === day && !(pickHere && pickHere.start === suggestion.startTime && pickHere.end === suggestion.endTime));
@@ -263,7 +359,7 @@ export function PlanBoard(props: Props) {
     const interactive = canPick && !absentAllDay;
     return (
       <div
-        className={`plan3__lane${absentAllDay ? " is-off" : ""}${interactive ? " is-pickable" : ""}`}
+        className={`plan3__lane${absentAllDay ? " is-off" : ""}${interactive ? " is-pickable" : ""}${dragHere ? " is-drop" : ""}`}
         data-tech={technicianId}
         data-day={day}
         data-from={bounds.from}
@@ -271,7 +367,7 @@ export function PlanBoard(props: Props) {
         role={interactive ? "button" : "img"}
         tabIndex={interactive ? 0 : undefined}
         aria-label={interactive ? `${label}. Auswählen` : label}
-        onClick={interactive ? (event) => select(event.clientX, event.currentTarget) : undefined}
+        onClick={interactive ? (event) => { if (!suppressClick.current) select(event.clientX, event.currentTarget); } : undefined}
         onKeyDown={interactive ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(null, event.currentTarget); } } : undefined}
       >
         {halfHourLines.map((minute) => <i key={minute} className="plan3__grid plan3__grid--half" style={{ left: `${pct(minute)}%` }} />)}
@@ -290,9 +386,21 @@ export function PlanBoard(props: Props) {
           <span key={rank} className="plan3__blk plan3__blk--sug" style={place(toMinutes(suggestion.startTime), toMinutes(suggestion.endTime))} aria-hidden="true">{rank}</span>
         ))}
         {pickHere && (
-          <span className={`plan3__blk plan3__blk--pick${pickCheck?.ok ? "" : " is-conflict"}`} style={place(toMinutes(pickHere.start), toMinutes(pickHere.end))} aria-hidden="true">
+          <span
+            className={`plan3__blk plan3__blk--pick${pickCheck?.ok ? "" : " is-conflict"}`}
+            style={place(toMinutes(pickHere.start), toMinutes(pickHere.end))}
+            role="button"
+            tabIndex={0}
+            aria-label={`Auswahl ${name}, ${shortDay(day)} ${pickHere.start}–${pickHere.end}. Ziehen oder mit Pfeiltasten verschieben.`}
+            onPointerDown={startDrag}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={keyMove}
+          >
             {(view === "tag" || toMinutes(pickHere.end) - toMinutes(pickHere.start) >= 120) && <span className="plan3__blk-text">{pickHere.start}–{pickHere.end}</span>}
           </span>
+        )}
+        {dragHere && (
+          <span className={`plan3__blk plan3__blk--pick is-dragging${pickCheck?.ok ? "" : " is-conflict"}`} style={place(dragHere.exact, dragHere.exact + toMinutes(dragHere.snapped.end) - toMinutes(dragHere.snapped.start))} aria-hidden="true" />
         )}
       </div>
     );
@@ -380,10 +488,16 @@ export function PlanBoard(props: Props) {
         </div>
         <p className="plan3__hint">
           {canPick
-            ? <>Leere Fläche anklicken – der Termin springt ins nächste freie Fenster. Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
+            ? <>Leere Fläche anklicken oder die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
             : "Links eine Anfrage wählen, dann lassen sich freie Flächen anklicken."}
         </p>
         {notice && <p className="plan3__notice" role="status">{notice}</p>}
+        {drag && (
+          <div className={`plan3__drag-tip${pickCheck?.ok ? "" : " is-conflict"}`} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+            <strong className="mono">{drag.snapped.start}–{drag.snapped.end}</strong>
+            <span>{techName(drag.technicianId)} · {shortDay(drag.day)}{pickCheck && !pickCheck.ok ? ` · ${pickCheck.message}` : ""}</span>
+          </div>
+        )}
       </section>
 
       <aside id="auswahl" className="rw-card rw-card--action plan3__panel" aria-labelledby="auswahl-title">
