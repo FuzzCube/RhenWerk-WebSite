@@ -122,9 +122,11 @@ console.log("\nAnfragen");
 const { data: userList } = await admin.auth.admin.listUsers({ perPage: 200 });
 const userId = (email) => userList.users.find((user) => user.email === email)?.id;
 const countOf = async (build) => { const { count } = await build(admin.from("requests").select("id", { count: "exact", head: true })); return count; };
-const shownTotal = (html) => Number((/<p class="result-count"[^>]*>([\d.]+) Anfrage/.exec(html.replaceAll("<!-- -->", ""))?.[1] ?? "-1").replaceAll(".", ""));
-// Content sections only; the "Aktionen" block depends on the request state (task-5-2)
-const sectionTitles = (html) => [...html.matchAll(/<h2 id="[a-z]+-title">([^<]+)<\/h2>/g)].map((match) => match[1]).filter((title) => title !== "Aktionen");
+// Count line of the list card (task-10-3: "<strong>684 Anfragen</strong> · Alle"); tags are stripped before matching
+const shownTotal = (html) => { const line = /<p class="result-count"[^>]*>([\s\S]*?)<\/p>/.exec(html)?.[1] ?? ""; return Number((/([\d.]+) Anfrage/.exec(line.replace(/<[^>]+>/g, ""))?.[1] ?? "-1").replaceAll(".", "")); };
+// Content sections only; the "Aktionen" block depends on the request state (task-5-2) and the technician's own
+// visit card (id "visit", task-10-3) replaces the "Einsätze" section in the technician view
+const sectionTitles = (html) => [...html.matchAll(/<h2 id="([a-z]+)-title">([^<]+)<\/h2>/g)].filter((match) => match[1] !== "visit").map((match) => match[2]).filter((title) => title !== "Aktionen");
 const ALL_SECTIONS = ["Anliegen", "Kontakt", "Anlage", "Erstbearbeitung", "Korrespondenz", "Einsätze", "Arbeit", "Dokumente", "Rechnung", "Verlauf"];
 
 const managerJar = (await login("manager.demo@example.com", pw)).jar;
@@ -170,9 +172,10 @@ check("Ungültige ID → 404", (await get(managerJar, "/dashboard/anfragen/keine
 const { data: techRequest } = await admin.from("requests").select("id").eq("technician_id", tech1).limit(1).single();
 const techDetail = await get(techJar, `/dashboard/anfragen/${techRequest.id}`);
 const techSections = sectionTitles(techDetail.html);
-check("Techniker: 8 Abschnitte ohne Erstbearbeitung und Korrespondenz", sameSet(techSections, ALL_SECTIONS.filter((title) => title !== "Erstbearbeitung" && title !== "Korrespondenz")), techSections.join(","));
+check("Techniker: eigener Einsatz oben, 7 Abschnitte ohne Erstbearbeitung und Korrespondenz", techDetail.html.includes('id="visit-title"') && sameSet(techSections, ALL_SECTIONS.filter((title) => !["Erstbearbeitung", "Korrespondenz", "Einsätze"].includes(title))), techSections.join(","));
 const { data: techMessages } = await admin.from("messages").select("subject").eq("request_id", techRequest.id);
-check("  keine Prüfaktionen für Techniker", !techDetail.html.includes('id="aktionen"'));
+// The technician's action slot only shows the state or the inactive invoice step (task-10-3), never review actions
+check("  keine Prüfaktionen für Techniker", !techDetail.html.includes("Prüfen und freigeben") && !techDetail.html.includes("Als Entwurf speichern"));
 const { data: reviewRequest } = await admin.from("requests").select("id").eq("intake_status", "needs_review").eq("is_demo", true).limit(1).single();
 const managerReview = await get(managerJar, `/dashboard/anfragen/${reviewRequest.id}`);
 check("Manager: Prüfaktionen bei offener Prüfung", managerReview.html.includes('id="aktionen"') && managerReview.html.includes("Prüfen und freigeben"));
@@ -232,7 +235,7 @@ const planningOf = async (dispatcher) => {
   if (dispatcher) query = query.eq("dispatcher_id", dispatcher);
   return (await query).data.map((row) => row.request_number).sort();
 };
-const queueNumbers = (html) => [...html.matchAll(/class="plan2__item"[^>]*><span class="plan2__item-head"><span class="mono">(RIS-\d{4}-\d{5})<\/span>/g)].map((match) => match[1]).sort();
+const queueNumbers = (html) => [...html.matchAll(/class="plan3__item"[^>]*><span class="plan3__item-head"><span class="mono">(RIS-\d{4}-\d{5})<\/span>/g)].map((match) => match[1]).sort();
 const dispoPlan = await get(dispoJar, "/dashboard/planung");
 check("Dispatcher: Liste „Zu planen“ = eigene Planungs-Warteschlange", JSON.stringify(queueNumbers(dispoPlan.html)) === JSON.stringify(await planningOf(dispo1)), queueNumbers(dispoPlan.html).join(","));
 const managerPlan = await get(managerJar, "/dashboard/planung");
@@ -249,12 +252,14 @@ const to = new Date(monday.getTime() + 7 * 86400000 + 2 * 3600000).toISOString()
 const { data: weekVisits } = await admin.from("visits").select("request_id, requests!inner(request_number, company_name, dispatcher_id)").in("status", ["scheduled", "in_progress"]).lt("scheduled_start", to).gt("scheduled_end", from);
 const foreignWeekVisits = weekVisits.filter((visit) => visit.requests.dispatcher_id !== dispo1);
 const dispoWeekVisits = weekVisits.filter((visit) => visit.requests.dispatcher_id === dispo1);
-const calendarHtml = dispoPlan.html.slice(dispoPlan.html.indexOf('class="plan-calendar"'));
-check(`Kalender zeigt belegte Zeiten fremder Anfragen (${foreignWeekVisits.length}) als „Belegt“`, foreignWeekVisits.length === 0 || calendarHtml.includes(">Belegt<"));
-check("  ohne Nummer oder Firma fremder Anfragen", foreignWeekVisits.every((visit) => !calendarHtml.includes(visit.requests.request_number) && !dispoPlan.html.includes(visit.requests.company_name)), foreignWeekVisits.map((visit) => visit.requests.request_number).join(","));
+// Plantafel from Monday (task-10-3: 7 working days from ?woche=); blocks carry their label in the title
+const weekPlan = await get(dispoJar, `/dashboard/planung?woche=${monday.toISOString().slice(0, 10)}`);
+const calendarHtml = weekPlan.html.slice(weekPlan.html.indexOf('class="plan3__board'));
+check(`Kalender zeigt belegte Zeiten fremder Anfragen (${foreignWeekVisits.length}) als „Belegt“`, foreignWeekVisits.length === 0 || calendarHtml.includes('title="Belegt · '));
+check("  ohne Nummer oder Firma fremder Anfragen", foreignWeekVisits.every((visit) => !calendarHtml.includes(visit.requests.request_number) && !weekPlan.html.includes(visit.requests.company_name)), foreignWeekVisits.map((visit) => visit.requests.request_number).join(","));
 check(`  eigene Einsätze (${dispoWeekVisits.length}) mit Anfragenummer`, dispoWeekVisits.every((visit) => calendarHtml.includes(visit.requests.request_number)));
 const { data: absences } = await admin.from("employee_availability").select("label").eq("kind", "absence").not("label", "is", null);
-check(`  Abwesenheiten ohne Grund (${absences.length} Bezeichnungen geprüft)`, absences.every((absence) => !dispoPlan.html.includes(`>${absence.label}<`) && !dispoPlan.html.includes(`${absence.label}:`)));
+check(`  Abwesenheiten ohne Grund (${absences.length} Bezeichnungen geprüft)`, absences.every((absence) => ![dispoPlan.html, weekPlan.html].some((html) => html.includes(`>${absence.label}<`) || html.includes(`${absence.label}:`) || html.includes(`${absence.label} · `))));
 
 // Technician pages (task-6-1): own data only
 console.log("\nTechniker-Startseite und Kalender");
@@ -276,10 +281,10 @@ for (const email of ["technik1.demo@example.com", "technik2.demo@example.com", "
   check(`${short}: ausstehende Teile (${ordered.length}) aufgeführt`, ordered.every((entry) => today.html.includes(entry.requests.request_number) && today.html.includes(entry.description)));
 
   const calendar = await get(jar, "/dashboard/kalender");
-  const rows = (calendar.html.match(/class="plan-row"/g) ?? []).length;
-  const days = (calendar.html.match(/class="plan-day"/g) ?? []).length;
+  // Own week agenda (task-10-3): day columns, no names of other technicians
+  const days = (calendar.html.match(/class="cal-day[ "]/g) ?? []).length;
   const others = technicianNames.filter((tech) => tech.id !== me);
-  check(`${short}: Kalender nur mit eigener Zeile`, calendar.status === 200 && days > 0 && rows === days && others.every((tech) => !calendar.html.includes(tech.display_name)), `${rows}/${days}`);
+  check(`${short}: Kalender nur mit eigenen Tagen, keine anderen Techniker`, calendar.status === 200 && days > 0 && others.every((tech) => !calendar.html.includes(tech.display_name)), String(days));
   // Visits of other technicians in this week, also on requests the technician can read
   const { data: foreign } = await admin.from("visits").select("id, request_id, requests!inner(request_number)").neq("technician_id", me).in("status", ["scheduled", "in_progress"]).lt("scheduled_start", to).gt("scheduled_end", from);
   const { data: own } = await admin.from("visits").select("request_id").eq("technician_id", me);

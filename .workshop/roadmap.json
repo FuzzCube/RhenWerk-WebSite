@@ -1145,7 +1145,7 @@
           "description": "Prüfung der Szenarien 1-8 und der Hauptansichten bei 390x844, 768x1024 und 1440x900. Erfolgt nach der Überarbeitung des Designs (task-10-3), damit die Sichtprüfung den endgültigen Stand abdeckt.",
           "order": 2,
           "weight": 4,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-2-5",
             "task-3-3",
@@ -1257,7 +1257,7 @@
           "description": "Gestalterische Überarbeitung des Mitarbeiterbereichs nach Vorgaben des Nutzers (z. B. Entwurf aus Claude Design unter docs/design/): Layout, Navigation, Listen, Kacheln, Formulare und Diagramme im RheinWerk-Design. Funktion, Rechte und Datenflüsse bleiben unverändert; test:ui sichert jeden Schritt ab. Vorlage: Claude-Design-Canvas „RheinWerk Übersicht Redesign“ (Spezifikation und Zustände als Regelwerk); Logik (einheitlicher Status, Kennzahl-Richtung, Hinweise, Einsatzvorschläge) als getestete Funktionen.",
           "order": 3,
           "weight": 3,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-7-3",
             "task-8-1"
@@ -1269,18 +1269,19 @@
             "test:ui, test:auth, lint, typecheck und build erfolgreich"
           ],
           "startedAt": "2026-10-08T14:39:26Z",
-          "completedAt": null,
+          "completedAt": "2026-10-13T10:07:23Z",
           "verification": {
-            "status": "partial",
-            "summary": "Einsatzplanung-Neugestaltung 12.10.2026: typecheck, lint, build, test:unit 61/61, test:ui 198 bestanden; Design-Abnahme durch den Nutzer steht aus.",
+            "status": "passed",
+            "summary": "Design vom Nutzer abgenommen (13.10.2026). Alle Hauptansichten im RheinWerk-Design: Seitenmenü-Seiten (Anfragen, Erstbearbeitung, Auswertung, Rechnungen, Verwaltung), Übersicht auf 4-Spalten-Raster, Einsatzplanung als Plantafel, Anfrageseite mit aufklappbaren Abschnitten, Techniker mobil zuerst; kein horizontales Scrollen bei 390/768/1440 px im Browser geprüft. typecheck, lint, test:unit 61/61, build, test:auth (gegen next start, Prüfungen auf neue Markup-Anker umgestellt) und test:ui (198) bestanden.",
             "commands": [
               "npm run typecheck",
               "npm run lint",
-              "npm run build",
               "npm run test:unit",
+              "npm run build",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
               "APP_URL=http://127.0.0.1:3201 npm run test:ui"
             ],
-            "checkedAt": "2026-10-12T13:48:42Z"
+            "checkedAt": "2026-10-13T10:07:23Z"
           }
         },
         {
