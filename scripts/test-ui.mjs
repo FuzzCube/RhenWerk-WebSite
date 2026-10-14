@@ -501,6 +501,7 @@ try {
       subject, body_text: "Guten Tag, wann kommt Ihr Techniker? Eine Anfragenummer liegt mir nicht vor.", received_at: new Date().toISOString(),
     }).select().single();
     if (mailError) throw new Error(`Posteingang: ${mailError.message}`);
+    const extraMails = [];
     try {
       await page.open(`${BASE}/dashboard/posteingang`);
       const listed = await page.eval(`({ badge: document.querySelector('.dash-nav a[href="/dashboard/posteingang"] .dash-nav__count')?.textContent ?? null, subjects: [...document.querySelectorAll(".inbox-item__subject")].map((e) => e.textContent) })`);
@@ -517,9 +518,42 @@ try {
       await page.open(`${BASE}/dashboard/posteingang?ansicht=zugeordnet`);
       check("  danach nicht mehr offen, unter „Zuletzt zugeordnet“", await page.eval(`[...document.querySelectorAll(".inbox-item")].some((a) => a.textContent.includes(${JSON.stringify(subject)}))`)
         && !(await (await fetch(`${BASE}/dashboard/posteingang`, { headers: { cookie: (await loginCookies(dispoEmail)).map((c) => `${c.name}=${c.value}`).join("; ") } })).text()).includes(subject));
+      // Prefill and archive (task-10-10): search prefilled with the sender, new-request fields from the signature
+      const signed = `UI-Test Signatur ${runId}`;
+      const { data: second, error: secondError } = await admin.from("messages").insert({
+        inbox_dispatcher_id: dispoId, direction: "incoming", kind: "other", status: "received", from_address: `m.mustermann@muster-${runId}.de`,
+        subject: signed, received_at: new Date().toISOString(),
+        body_text: "Sehr geehrte Damen und Herren,\n\nunser Kompressor KAESER SM 13 schaltet ständig ab. Die Produktion steht.\n\nMit freundlichen Grüßen\n\nMax Mustermann\nMuster Metallbau GmbH\nHafenstraße 12\n40213 Düsseldorf\nTel. +49 211 123456-0",
+      }).select().single();
+      if (secondError) throw new Error(`Posteingang: ${secondError.message}`);
+      extraMails.push(second.id);
+      await page.open(`${BASE}/dashboard/posteingang?nachricht=${second.id}`);
+      const prefilled = await page.eval(`({ search: document.getElementById("inbox-suche")?.value, values: Object.fromEntries([...document.querySelectorAll(".form-grid [name]")].map((e) => [e.name, e.value])), hints: [...document.querySelectorAll(".form-grid .field em")].filter((e) => e.textContent.includes("erkannt")).length })`);
+      const v = prefilled.values;
+      check("  Suche mit Absenderadresse vorbelegt", prefilled.search === second.from_address, prefilled.search);
+      check("  Neue Anfrage aus Signatur und Text vorbelegt, erkannte Felder markiert",
+        v.company_name === "Muster Metallbau GmbH" && v.contact_name === "Max Mustermann" && v.street_house_number === "Hafenstraße 12" && v.postal_code === "40213" && v.city === "Düsseldorf"
+        && v.phone_number === "+49 211 123456-0" && v.equipment_kind === "compressor" && v.service_kind === "diagnosis_repair" && v.customer_urgency === "production_stop"
+        && v.manufacturer === "KAESER" && v.model_type === "SM 13" && prefilled.hints >= 10, JSON.stringify(prefilled));
+
+      const archiveForm = `[...document.querySelectorAll("details.action")].find((d) => d.querySelector("summary").textContent.startsWith("Archivieren"))`;
+      await fillIn(archiveForm, { reason: "advertising" });
+      const archivedOk = await waitFor(async () => (await admin.from("messages").select("archived_at").eq("id", second.id).single()).data?.archived_at);
+      const { data: archivedRow } = await admin.from("messages").select("archived_by, archive_reason, handled_at").eq("id", second.id).single();
+      await waitFor(() => page.eval(`location.search.includes("archiviert=")`));
+      const afterArchive = await page.eval(`({ undo: document.querySelector(".inbox-undo")?.textContent ?? "", open: [...document.querySelectorAll(".inbox-item__subject")].map((e) => e.textContent) })`);
+      check("  Archivieren über archive_message: Grund, Person, Zeit; aus „Offen“ verschwunden, Rückgängig angeboten",
+        archivedOk && archivedRow.archived_by === dispoId && archivedRow.archive_reason === "advertising" && archivedRow.handled_at && afterArchive.undo.includes(signed) && !afterArchive.open.includes(signed), JSON.stringify({ archivedRow, afterArchive }));
+      await page.open(`${BASE}/dashboard/posteingang?ansicht=archiv&nachricht=${second.id}`);
+      check("  im Archiv mit Grund sichtbar", await page.eval(`[...document.querySelectorAll(".inbox-item")].some((a) => a.textContent.includes(${JSON.stringify(signed)}) && a.textContent.includes("Werbung"))`));
+      await page.eval(`document.querySelector(".inbox-mail .inbox-undo__form").requestSubmit()`);
+      const restored = await waitFor(async () => (await admin.from("messages").select("archived_at").eq("id", second.id).single()).data?.archived_at === null);
+      await waitFor(() => page.eval(`!location.search.includes("ansicht=archiv") && document.getElementById("mail-title")?.textContent === ${JSON.stringify(signed)}`));
+      check("  Wiederherstellen: wieder unter „Offen“ geöffnet", restored && await page.eval(`document.getElementById("mail-title")?.textContent === ${JSON.stringify(signed)} && !!document.getElementById("inbox-suche")`));
     } finally {
-      // A failed run must not leave the test e-mail in the inboxes of manager and admin
-      await admin.from("messages").update({ request_id: target.id, handled_at: new Date().toISOString() }).eq("id", mail.id).is("request_id", null);
+      // A failed run must not leave test e-mails in the inboxes of manager and admin
+      await admin.from("messages").update({ archived_at: null, archived_by: null, archive_reason: null }).in("id", extraMails);
+      await admin.from("messages").update({ request_id: target.id, handled_at: new Date().toISOString() }).in("id", [mail.id, ...extraMails]).is("request_id", null);
     }
   }
 

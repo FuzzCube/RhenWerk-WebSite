@@ -1504,6 +1504,40 @@
               "npm run demo:verify"
             ]
           }
+        },
+        {
+          "id": "task-10-10",
+          "title": "Posteingang: Autofill und Archiv",
+          "description": "Im Posteingang ist die Suche mit der Absenderadresse vorbelegt (plus Treffer gleicher Domain), die Felder einer neuen Anfrage werden regelbasiert aus der E-Mail vorbelegt (Firma, Kontakt, Telefon, Adresse, Anlage, Leistung, Dringlichkeit) und als erkannt markiert; nicht auftragsbezogene E-Mails lassen sich mit Grund archivieren und wiederherstellen.",
+          "order": 10,
+          "weight": 3,
+          "status": "completed",
+          "dependsOn": [
+            "task-10-5"
+          ],
+          "definitionOfDone": [
+            "Suche mit Absender vorbelegt, Kandidaten auch nach Domain",
+            "Regelbasierte Vorbelegung mit Kennzeichnung, Unit-Tests auf mehreren E-Mail-Formaten",
+            "archive_message/restore_message mit Rechten und Ereignis, Ansicht Archiv, Zähler ohne Archivierte; pgTAP",
+            "test:ui für Vorbelegung, Archivieren, Wiederherstellen; lint, typecheck, build"
+          ],
+          "startedAt": "2026-10-13T14:20:13Z",
+          "completedAt": "2026-10-13T14:41:45Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Posteingang: Suche mit Absender vorbelegt, Vorschläge nach Absender, Firmendomain (ohne Mail-Anbieter) und Suche; regelbasierte Vorbelegung der neuen Anfrage (lib/inbox-extract.ts: beschriftete Zeilen, Signatur, Schlüsselwörter, Hersteller/Typ) mit Hinweis je erkanntem Feld; Archiv mit Grund (archive_message/restore_message, Migration 20261013140000_inbox_archive.sql, Trigger gegen Zuordnen archivierter E-Mails), Ansicht Archiv, Rückgängig, Zähler ohne Archivierte. Im Browser geprüft. test:unit 68, test:db 613 (inbox_archive 16), test:auth 130, test:ui 231, lint, typecheck, build, demo:verify 18/18.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:unit",
+              "supabase test db",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
+              "APP_URL=http://127.0.0.1:1201 npm run test:ui",
+              "npm run demo:seed",
+              "npm run demo:verify"
+            ]
+          }
         }
       ]
     }

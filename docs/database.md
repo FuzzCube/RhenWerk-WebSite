@@ -176,6 +176,8 @@ Pflicht: `id`, `direction`, `kind`, `status`, `subject`, `body_text`, `created_a
 
 Indizes: `request_id`, `inbox_dispatcher_id` (nur unzugeordnete), `(mailbox_key, gmail_thread_id)`, `mime_message_id`, `invoice_id`.
 
+Archiv (task-10-10, Migration `20261013140000_inbox_archive.sql`): `archived_at`, `archived_by`, `archive_reason` (alle drei gesetzt oder alle leer; nur unzugeordnete eingehende Nachrichten), Teilindex für den offenen Posteingang. Ein Trigger verhindert das Zuordnen einer archivierten Nachricht (RW422).
+
 ### `automation_runs`
 
 Pflicht: `id`, `operation_key` (UNIQUE), `step`, `status` (Default `running`), `started_at`, `created_at`, `updated_at`.
@@ -484,6 +486,8 @@ Der Status `sent` entsteht erst durch bestätigten E-Mail-Versand (künftige Int
 | `queue_message(message_id, expected_version)` | dto. | `draft` → `queued`, setzt `approved_by`/`approved_at` | `message_queued` (dispatch) |
 | `link_message(message_id, request_id, expected_version)` | Inhaber des Posteingangs, Manager, Admin | verknüpft eine unzugeordnete eingehende Nachricht mit einer zugänglichen Anfrage; Anhänge erhalten dieselbe `request_id` | `message_linked` mit bisherigem Posteingang (dispatch) |
 | `create_request_from_message(message_id, fields)` | Inhaber des Posteingangs, Manager, Admin | legt aus einer unzugeordneten eingehenden Nachricht eine Anfrage an (`source = 'email'`, Schlüssel `email:<message_id>`, Dispatcher = Inhaber des Posteingangs, Status `new`) und verknüpft Nachricht und Anhänge; Pflichtfelder wie im Formular (PLZ fünfstellig, Beschreibung ab 10 Zeichen); Wiederholung liefert dieselbe Anfrage, ohne Zugriff 42501; keine Eingangsbestätigung (task-10-5) | `request_created_from_message` und `message_linked` (dispatch) |
+| `archive_message(message_id, reason)` | Inhaber des Posteingangs, Manager, Admin | archiviert eine unzugeordnete eingehende Nachricht ohne Auftragsbezug (`reason`: advertising, supplier, application, other); setzt `archived_at`, `archived_by`, `archive_reason`, `handled_at`; Wiederholung ändert nichts; zugeordnete Nachrichten RW422 (task-10-10) | Felder am Datensatz |
+| `restore_message(message_id)` | Inhaber des Posteingangs, Manager, Admin | holt eine archivierte Nachricht zurück in den offenen Posteingang (Archivfelder und `handled_at` geleert) | Felder am Datensatz |
 
 Die Warteschlange setzt **weder** `messages.sent_at` noch einen Rechnungsstatus `sent`/`paid` noch `requests.first_substantive_response_at`. Diese Werte setzt erst der bestätigte Versand durch die spätere n8n/Gmail-Integration. Techniker schreiben keine Kunden-E-Mails.
 

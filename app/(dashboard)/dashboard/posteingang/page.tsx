@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createRequestFromMessage, linkMessage } from "@/app/(dashboard)/dashboard/posteingang/actions";
+import { archiveMessage, createRequestFromMessage, linkMessage, restoreMessage } from "@/app/(dashboard)/dashboard/posteingang/actions";
 import { SaveForm, SelectField, TextAreaField, TextField, HiddenField } from "@/components/dashboard/ui/save-form";
 import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
@@ -8,19 +8,31 @@ import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { addDays } from "@/lib/berlin-time";
-import { getInboxMessage, linkCandidates, listInbox, listLinked, type InboxMessage } from "@/lib/dashboard/inbox";
+import { getInboxMessage, linkCandidates, listArchived, listInbox, listLinked, type ArchivedItem, type ArchiveReason, type InboxMessage } from "@/lib/dashboard/inbox";
+import { extractRequestFields, type ExtractedField } from "@/lib/inbox-extract";
 import { berlinDayKey, formatDateTime, formatNumber } from "@/lib/format";
 import { LABELS, label } from "@/lib/status";
 
 export const metadata: Metadata = { title: "Posteingang" };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
-type View = "offen" | "zugeordnet";
+type View = "offen" | "zugeordnet" | "archiv";
 
 const BASE = "/dashboard/posteingang";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const options = (kind: keyof typeof LABELS) => Object.entries(LABELS[kind]).map(([value, text]) => ({ value, label: text }));
 const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
+const ARCHIVE_REASONS: Record<ArchiveReason, string> = {
+  advertising: "Werbung oder Newsletter",
+  supplier: "Lieferant oder Dienstleister",
+  application: "Bewerbung",
+  other: "Sonstiges, kein Auftrag",
+};
+const DESCRIPTIONS: Record<View, string> = {
+  offen: "E-Mails ohne Anfragenummer und ohne bekannten Verlauf. Einer bestehenden Anfrage zuordnen, daraus eine neue Anfrage anlegen oder archivieren, wenn sie keinen Auftrag betrifft.",
+  zugeordnet: "Aus dem Posteingang zugeordnete E-Mails der letzten 14 Tage.",
+  archiv: "E-Mails ohne Auftragsbezug (Werbung, Lieferanten, Bewerbungen). Nichts wird gelöscht; wiederhergestellte E-Mails stehen wieder unter „Offen“.",
+};
 
 // Inbox of unmatched incoming e-mails (task-10-5): e-mails without request number or thread land in a dispatcher's
 // inbox. Dispatchers see their own inbox, manager and admin all. Each e-mail is assigned to an existing request
@@ -28,15 +40,19 @@ const one = (value: string | string[] | undefined) => (Array.isArray(value) ? va
 export default async function InboxPage({ searchParams }: Props) {
   const employee = await requireRole(rolesFor(BASE));
   const params = await searchParams;
-  const view: View = one(params.ansicht) === "zugeordnet" ? "zugeordnet" : "offen";
-  const [inbox, linked] = await Promise.all([listInbox(), listLinked()]);
+  const view: View = one(params.ansicht) === "zugeordnet" ? "zugeordnet" : one(params.ansicht) === "archiv" ? "archiv" : "offen";
+  const [inbox, linked, archived] = await Promise.all([listInbox(), listLinked(), listArchived()]);
   const allInboxes = employee.role !== "dispatcher";
 
   const requested = one(params.nachricht);
-  const selectedId = view === "offen" ? (UUID.test(requested) ? requested : inbox.rows[0]?.id) : undefined;
+  const list = view === "archiv" ? archived : inbox;
+  const selectedId = view === "zugeordnet" ? undefined : UUID.test(requested) ? requested : list.rows[0]?.id;
   const selected = selectedId ? await getInboxMessage(selectedId) : null;
   const term = one(params.suche);
-  const candidates = selected && !selected.request ? await linkCandidates(selected.from_address, term) : [];
+  const candidates = selected && !selected.request && !selected.archived ? await linkCandidates(selected.from_address, term) : [];
+  // Just archived (undo offered once on the next page)
+  const justArchived = view === "offen" && UUID.test(one(params.archiviert)) ? archived.rows.find((row) => row.id === one(params.archiviert)) ?? null : null;
+  const names = new Map([...inbox.names, ...archived.names]);
   const href = (next: Record<string, string>) => `${BASE}?${new URLSearchParams(next).toString()}`;
 
   return (
@@ -44,14 +60,10 @@ export default async function InboxPage({ searchParams }: Props) {
       <header className="side-page__head">
         <div className="side-page__head-text">
           <h1 id="inbox-title" className="side-page__title">
-            {view === "offen" ? "Offene E-Mails" : "Zuletzt zugeordnet"}
-            <span className="side-page__count mono">{formatNumber(view === "offen" ? inbox.rows.length : linked.rows.length)}</span>
+            {view === "offen" ? "Offene E-Mails" : view === "archiv" ? "Archiv" : "Zuletzt zugeordnet"}
+            <span className="side-page__count mono">{formatNumber(view === "offen" ? inbox.rows.length : view === "archiv" ? archived.rows.length : linked.rows.length)}</span>
           </h1>
-          <p className="side-page__desc">
-            {view === "offen"
-              ? "E-Mails ohne Anfragenummer und ohne bekannten Verlauf. Einer bestehenden Anfrage zuordnen oder daraus eine neue Anfrage anlegen."
-              : "Aus dem Posteingang zugeordnete E-Mails der letzten 14 Tage."}
-          </p>
+          <p className="side-page__desc">{DESCRIPTIONS[view]}</p>
         </div>
       </header>
 
@@ -65,6 +77,7 @@ export default async function InboxPage({ searchParams }: Props) {
             items: [
               { key: "offen", label: "Offen", href: BASE, active: view === "offen", count: inbox.error ? null : inbox.rows.length, actionable: true },
               { key: "zugeordnet", label: "Zuletzt zugeordnet", href: href({ ansicht: "zugeordnet" }), active: view === "zugeordnet", count: linked.error ? null : linked.rows.length },
+              { key: "archiv", label: "Archiv", href: href({ ansicht: "archiv" }), active: view === "archiv", count: archived.error ? null : archived.rows.length },
             ],
           }]}
         />
@@ -88,34 +101,51 @@ export default async function InboxPage({ searchParams }: Props) {
                 )}
               </div>
             )
-          ) : inbox.error ? (
+          ) : list.error ? (
             <ErrorState><p>Bitte die Seite neu laden.</p></ErrorState>
-          ) : inbox.rows.length === 0 && !selected ? (
-            <div className="side-page__list"><EmptyState tone="good" title="Keine offenen E-Mails">Neue E-Mails ohne Anfragenummer erscheinen hier.</EmptyState></div>
           ) : (
-            <div className="inbox">
-              <div className="side-page__list inbox__list">
-                <div className="side-page__list-bar"><p className="result-count" role="status"><strong>{formatNumber(inbox.rows.length)} {inbox.rows.length === 1 ? "E-Mail" : "E-Mails"}</strong> · neueste zuerst</p></div>
-                <ul className="inbox-list">
-                  {inbox.rows.map((row) => (
-                    <li key={row.id}>
-                      <Link className="inbox-item" href={`${href({ nachricht: row.id })}#nachricht`} aria-current={row.id === selected?.id ? "true" : undefined} scroll={false}>
-                        <span className="inbox-item__top"><strong className="inbox-item__from">{row.from_address}</strong><span className="mono">{row.received_at ? formatDateTime(row.received_at) : "–"}</span></span>
-                        <span className="inbox-item__subject">{row.subject || "(ohne Betreff)"}</span>
-                        <span className="inbox-item__meta">
-                          {row.attachments > 0 && <><Icon name="document" size={14} />{formatNumber(row.attachments)} · </>}
-                          {allInboxes && row.inbox_dispatcher_id ? <>Posteingang {inbox.names.get(row.inbox_dispatcher_id) ?? "–"} · </> : null}
-                          {row.excerpt}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {selected ? <MessageView message={selected} candidates={candidates} term={term} owner={allInboxes && selected.inbox_dispatcher_id ? inbox.names.get(selected.inbox_dispatcher_id) ?? null : null} /> : (
-                <div className="side-page__list"><EmptyState title="E-Mail nicht gefunden oder bereits zugeordnet." action={<Link className="rw-button-secondary" href={BASE}>Zum Posteingang</Link>} /></div>
+            <>
+              {justArchived && (
+                <div className="notice inbox-undo" role="status">
+                  <span>Archiviert: <strong>{justArchived.subject || "(ohne Betreff)"}</strong> · {ARCHIVE_REASONS[justArchived.archive_reason]}</span>
+                  <SaveForm action={restoreMessage} submitLabel="Rückgängig" submitVariant="secondary" className="inbox-undo__form">
+                    <HiddenField name="message_id" value={justArchived.id} />
+                  </SaveForm>
+                </div>
               )}
-            </div>
+              {list.rows.length === 0 && !selected ? (
+                <div className="side-page__list">
+                  {view === "archiv"
+                    ? <EmptyState title="Keine archivierten E-Mails" />
+                    : <EmptyState tone="good" title="Keine offenen E-Mails">Neue E-Mails ohne Anfragenummer erscheinen hier.</EmptyState>}
+                </div>
+              ) : (
+                <div className="inbox">
+                  <div className="side-page__list inbox__list">
+                    <div className="side-page__list-bar"><p className="result-count" role="status"><strong>{formatNumber(list.rows.length)} {list.rows.length === 1 ? "E-Mail" : "E-Mails"}</strong> · {view === "archiv" ? "zuletzt archiviert zuerst" : "neueste zuerst"}</p></div>
+                    <ul className="inbox-list">
+                      {list.rows.map((row) => (
+                        <li key={row.id}>
+                          <Link className="inbox-item" href={`${href(view === "archiv" ? { ansicht: "archiv", nachricht: row.id } : { nachricht: row.id })}#nachricht`} aria-current={row.id === selected?.id ? "true" : undefined} scroll={false}>
+                            <span className="inbox-item__top"><strong className="inbox-item__from">{row.from_address}</strong><span className="mono">{row.received_at ? formatDateTime(row.received_at) : "–"}</span></span>
+                            <span className="inbox-item__subject">{row.subject || "(ohne Betreff)"}</span>
+                            <span className="inbox-item__meta">
+                              {view === "archiv" && <span className="rw-flag rw-flag--neutral">{ARCHIVE_REASONS[(row as ArchivedItem).archive_reason]}</span>}
+                              {row.attachments > 0 && <><Icon name="document" size={14} />{formatNumber(row.attachments)} · </>}
+                              {allInboxes && row.inbox_dispatcher_id ? <>Posteingang {names.get(row.inbox_dispatcher_id) ?? "–"} · </> : null}
+                              {row.excerpt}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {selected ? <MessageView message={selected} candidates={candidates} term={term} names={names} owner={allInboxes && selected.inbox_dispatcher_id ? names.get(selected.inbox_dispatcher_id) ?? null : null} /> : (
+                    <div className="side-page__list"><EmptyState title="E-Mail nicht gefunden oder bereits zugeordnet." action={<Link className="rw-button-secondary" href={BASE}>Zum Posteingang</Link>} /></div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
@@ -123,8 +153,18 @@ export default async function InboxPage({ searchParams }: Props) {
   );
 }
 
-function MessageView({ message, candidates, term, owner }: { message: InboxMessage; candidates: Awaited<ReturnType<typeof linkCandidates>>; term: string; owner: string | null }) {
+const MATCH_LABEL = { sender: "gleiche Absenderadresse", domain: "gleiche Firmendomain", search: "Suche" } as const;
+
+function MessageView({ message, candidates, term, owner, names }: { message: InboxMessage; candidates: Awaited<ReturnType<typeof linkCandidates>>; term: string; owner: string | null; names: Map<string, string> }) {
   const today = berlinDayKey(new Date());
+  // Rule-based prefill (task-10-10); recognised fields carry a hint so they are checked before saving
+  const found = message.request || message.archived ? {} : extractRequestFields({ subject: message.subject, body: message.body_text, fromAddress: message.from_address, today });
+  const recognised = Object.keys(found).length;
+  const hint = (field: ExtractedField) => (found[field] ? "Aus der E-Mail erkannt – bitte prüfen." : undefined);
+  const search = term || message.from_address || "";
+  // Preselect the request of the same sender when it is the only one (domain matches may add more)
+  const senderMatches = candidates.filter((row) => row.match === "sender");
+  const preselected = senderMatches.length === 1 ? senderMatches[0] : candidates.length === 1 ? candidates[0] : null;
   return (
     <article className="rw-card rw-card--list rw-card--flush rw-card--neutral inbox-mail" id="nachricht" aria-labelledby="mail-title">
       <header className="rw-card__header inbox-mail__head">
@@ -147,7 +187,14 @@ function MessageView({ message, candidates, term, owner }: { message: InboxMessa
           </ul>
         )}
 
-        {message.request ? (
+        {message.archived ? (
+          <div className="notice inbox-undo" role="status">
+            <span>Archiviert am <span className="mono">{formatDateTime(message.archived.at)}</span>{message.archived.by && <> von {names.get(message.archived.by) ?? "–"}</>} · {ARCHIVE_REASONS[message.archived.reason]}</span>
+            <SaveForm action={restoreMessage} submitLabel="Wiederherstellen" submitVariant="secondary" className="inbox-undo__form">
+              <HiddenField name="message_id" value={message.id} />
+            </SaveForm>
+          </div>
+        ) : message.request ? (
           <p className="notice" role="status">
             Zugeordnet zu <Link href={`/dashboard/anfragen/${message.request.id}#korrespondenz-title`}><span className="mono">{message.request.request_number}</span> · {message.request.company_name}</Link>.
           </p>
@@ -159,11 +206,11 @@ function MessageView({ message, candidates, term, owner }: { message: InboxMessa
                 <form className="inbox-search" method="get" action="/dashboard/posteingang" role="search" aria-label="Anfrage suchen">
                   <input type="hidden" name="nachricht" value={message.id} />
                   <label className="sr-only" htmlFor="inbox-suche">Anfrage suchen</label>
-                  <input id="inbox-suche" className="rw-input" name="suche" type="search" defaultValue={term} placeholder="Anfragenummer, Firma oder E-Mail" />
+                  <input id="inbox-suche" className="rw-input" name="suche" type="search" defaultValue={search} placeholder="Anfragenummer, Firma oder E-Mail" />
                   <button className="rw-button-secondary" type="submit">Suchen</button>
                 </form>
                 {candidates.length === 0 ? (
-                  <p className="rw-card__note">{term ? "Keine passende Anfrage gefunden." : "Keine Anfrage mit dieser Absenderadresse. Nach Nummer, Firma oder E-Mail suchen."}</p>
+                  <p className="rw-card__note">{term ? "Keine passende Anfrage gefunden." : "Keine Anfrage mit dieser Absenderadresse oder Firmendomain. Suche anpassen (Nummer, Firma oder E-Mail) und „Suchen“ drücken."}</p>
                 ) : (
                   <SaveForm action={linkMessage} submitLabel="Zuordnen">
                     <HiddenField name="message_id" value={message.id} />
@@ -171,8 +218,8 @@ function MessageView({ message, candidates, term, owner }: { message: InboxMessa
                       name="target"
                       label="Anfrage"
                       required
-                      defaultValue={candidates.length === 1 ? `${candidates[0].id}:${candidates[0].version}` : undefined}
-                      options={candidates.map((row) => ({ value: `${row.id}:${row.version}`, label: `${row.request_number ?? "ohne Nummer"} · ${row.company_name} · ${row.city} · ${formatDateTime(row.created_at).slice(0, 10)}` }))}
+                      defaultValue={preselected ? `${preselected.id}:${preselected.version}` : undefined}
+                      options={candidates.map((row) => ({ value: `${row.id}:${row.version}`, label: `${row.request_number ?? "ohne Nummer"} · ${row.company_name} · ${row.city} · ${formatDateTime(row.created_at).slice(0, 10)} · ${MATCH_LABEL[row.match]}` }))}
                     />
                   </SaveForm>
                 )}
@@ -181,27 +228,40 @@ function MessageView({ message, candidates, term, owner }: { message: InboxMessa
             <details className="action">
               <summary>Neue Anfrage anlegen</summary>
               <div className="inbox-mail__action-body">
-                <p className="rw-card__note">Vorbelegt aus der E-Mail. Es wird keine Eingangsbestätigung versendet; die Anfrage geht wie jede neue Anfrage in die Erstbearbeitung.</p>
+                <p className="rw-card__note">
+                  {recognised > 0 ? <><strong>{recognised} {recognised === 1 ? "Angabe" : "Angaben"} aus der E-Mail erkannt</strong> (markiert) – bitte prüfen und Fehlendes ergänzen. </> : "Aus der E-Mail ließ sich nichts sicher erkennen; bitte die Angaben eintragen. "}
+                  Es wird keine Eingangsbestätigung versendet; die Anfrage geht wie jede neue Anfrage in die Erstbearbeitung.
+                </p>
                 <SaveForm action={createRequestFromMessage} submitLabel="Anfrage anlegen">
                   <HiddenField name="message_id" value={message.id} />
                   <div className="form-grid">
-                    <TextField name="company_name" label="Firma" required />
-                    <TextField name="contact_name" label="Ansprechperson" required />
+                    <TextField name="company_name" label="Firma" required defaultValue={found.company_name} hint={hint("company_name")} />
+                    <TextField name="contact_name" label="Ansprechperson" required defaultValue={found.contact_name} hint={hint("contact_name")} />
                     <TextField name="business_email" label="E-Mail-Adresse" type="email" required defaultValue={message.from_address ?? ""} />
-                    <TextField name="phone_number" label="Telefon" type="tel" required />
-                    <TextField name="street_house_number" label="Straße und Hausnummer" required />
-                    <TextField name="postal_code" label="PLZ" inputMode="numeric" required />
-                    <TextField name="city" label="Ort" required />
-                    <TextField name="customer_number" label="Kundennummer" />
-                    <SelectField name="equipment_kind" label="Anlagenart" required options={options("equipment_kind")} />
-                    <TextField name="manufacturer" label="Hersteller" />
-                    <TextField name="model_type" label="Modell / Typ" />
-                    <SelectField name="service_kind" label="Leistungsart" required options={options("service_kind")} />
-                    <TextField name="requested_visit_date" label="Wunschtermin" type="date" required defaultValue={addDays(today, 7)} />
-                    <SelectField name="customer_urgency" label="Dringlichkeit" required defaultValue="planbar" options={options("customer_urgency")} />
-                    <SelectField name="safety_risk" label="Sicherheitsgefahr" required options={options("safety_risk")} hint={`Bei „${label("safety_risk", "known")}“ oder „${label("safety_risk", "unclear")}“ ist eine Prüfung erforderlich.`} />
+                    <TextField name="phone_number" label="Telefon" type="tel" required defaultValue={found.phone_number} hint={hint("phone_number")} />
+                    <TextField name="street_house_number" label="Straße und Hausnummer" required defaultValue={found.street_house_number} hint={hint("street_house_number")} />
+                    <TextField name="postal_code" label="PLZ" inputMode="numeric" required defaultValue={found.postal_code} hint={hint("postal_code")} />
+                    <TextField name="city" label="Ort" required defaultValue={found.city} hint={hint("city")} />
+                    <TextField name="customer_number" label="Kundennummer" defaultValue={found.customer_number} hint={hint("customer_number")} />
+                    <SelectField name="equipment_kind" label="Anlagenart" required defaultValue={found.equipment_kind} hint={hint("equipment_kind")} options={options("equipment_kind")} />
+                    <TextField name="manufacturer" label="Hersteller" defaultValue={found.manufacturer} hint={hint("manufacturer")} />
+                    <TextField name="model_type" label="Modell / Typ" defaultValue={found.model_type} hint={hint("model_type")} />
+                    <SelectField name="service_kind" label="Leistungsart" required defaultValue={found.service_kind} hint={hint("service_kind")} options={options("service_kind")} />
+                    <TextField name="requested_visit_date" label="Wunschtermin" type="date" required defaultValue={found.requested_visit_date ?? addDays(today, 7)} hint={hint("requested_visit_date")} />
+                    <SelectField name="customer_urgency" label="Dringlichkeit" required defaultValue={found.customer_urgency ?? "planbar"} hint={hint("customer_urgency")} options={options("customer_urgency")} />
+                    <SelectField name="safety_risk" label="Sicherheitsgefahr" required defaultValue={found.safety_risk} options={options("safety_risk")} hint={found.safety_risk ? "Hinweis auf eine Gefahr in der E-Mail erkannt – bitte prüfen." : `Bei „${label("safety_risk", "known")}“ oder „${label("safety_risk", "unclear")}“ ist eine Prüfung erforderlich.`} />
                   </div>
                   <TextAreaField name="description" label="Beschreibung" required rows={6} defaultValue={`${message.subject}\n\n${message.body_text}`.trim().slice(0, 2000)} />
+                </SaveForm>
+              </div>
+            </details>
+            <details className="action">
+              <summary>Archivieren (kein Auftrag)</summary>
+              <div className="inbox-mail__action-body">
+                <p className="rw-card__note">Für Werbung, Lieferanten, Bewerbungen und alles ohne Auftragsbezug. Die E-Mail verschwindet aus „Offen“ und dem Zähler, bleibt aber im Archiv und lässt sich wiederherstellen.</p>
+                <SaveForm action={archiveMessage} submitLabel="Archivieren" submitVariant="secondary">
+                  <HiddenField name="message_id" value={message.id} />
+                  <SelectField name="reason" label="Grund" required options={Object.entries(ARCHIVE_REASONS).map(([value, text]) => ({ value, label: text }))} />
                 </SaveForm>
               </div>
             </details>

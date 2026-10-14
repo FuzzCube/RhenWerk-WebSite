@@ -59,5 +59,36 @@ export async function createRequestFromMessage(_previous: FormState, formData: F
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_request_from_message", { message_id: values.message_id, fields });
   if (error || !data) return formError(databaseErrorMessage(error), values);
+  // Also re-render the layout, so the inbox counter in the navigation is current
+  refresh();
   redirect(`/dashboard/anfragen/${data.id}`);
+}
+
+const ARCHIVE_REASONS = ["advertising", "supplier", "application", "other"];
+
+// Archive an e-mail that does not concern an order (task-10-10); back to the open inbox with an undo link
+export async function archiveMessage(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const values = formValues(formData);
+  if (!UUID.test(values.message_id ?? "")) return formError("Ungültige Nachricht. Bitte die Seite neu laden.", values);
+  if (!ARCHIVE_REASONS.includes(values.reason ?? "")) return formError("Bitte einen Grund wählen.", values, { reason: "Pflichtangabe." });
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("archive_message", { message_id: values.message_id, reason: values.reason });
+  if (error) return formError(databaseErrorMessage(error), values);
+  // Also re-render the layout, so the inbox counter in the navigation is current
+  refresh();
+  redirect(`/dashboard/posteingang?archiviert=${values.message_id}`);
+}
+
+// Bring an archived e-mail back into the open inbox and show it
+export async function restoreMessage(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const values = formValues(formData);
+  if (!UUID.test(values.message_id ?? "")) return formError("Ungültige Nachricht. Bitte die Seite neu laden.", values);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("restore_message", { message_id: values.message_id });
+  if (error) return formError(databaseErrorMessage(error), values);
+  // Also re-render the layout, so the inbox counter in the navigation is current
+  refresh();
+  redirect(`/dashboard/posteingang?nachricht=${values.message_id}#nachricht`);
 }

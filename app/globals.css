@@ -1633,6 +1633,13 @@ details.tech-step[open] { padding-bottom: 20px; }
 .inbox-item__subject { font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
 .inbox-item__meta { display: block; overflow: hidden; font-size: 13px; color: var(--rw-text-secondary); text-overflow: ellipsis; white-space: nowrap; }
 .inbox-item__meta svg { vertical-align: -2px; margin-right: 2px; }
+/* task-10-10: archive reason in the list, archive/undo notice, recognised fields in the new-request form */
+.rw-flag--neutral { margin: 0 6px 0 0; color: var(--rw-text-secondary); background: var(--rw-color-steel-100); border-color: var(--rw-border-subtle); }
+.inbox-undo { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin: 0 0 12px; color: var(--rw-text-primary); background: var(--rw-color-steel-050, var(--rw-surface-page)); border-color: var(--rw-border-subtle); }
+.inbox-mail .inbox-undo { margin: 16px 0 0; }
+.inbox-undo__form, .inbox-undo__form .save-form__footer { display: flex; gap: 8px; align-items: center; margin: 0; padding: 0; border: 0; }
+.inbox-undo__form .save-status:empty { display: none; }
+.inbox-mail .field em { color: var(--rw-color-info-800); }
 .inbox-mail { scroll-margin-top: 120px; }
 .inbox-mail__head .rw-card__title { font-size: 17px; overflow-wrap: anywhere; }
 .inbox-mail__head strong { font-weight: 600; color: var(--rw-text-primary); overflow-wrap: anywhere; }

@@ -262,19 +262,25 @@ isOneToOne: true
                   ]
                 },"messages": {
                   Row: {
-                    "approved_at": string | null,"approved_by": string | null,"author_id": string | null,"body_html": string | null,"body_text": string,"created_at": string,"direction": Database["public"]['Enums']["message_direction"],"error_text": string | null,"from_address": string | null,"gmail_message_id": string | null,"gmail_thread_id": string | null,"handled_at": string | null,"id": string,"in_reply_to": string | null,"inbox_dispatcher_id": string | null,"invoice_id": string | null,"kind": Database["public"]['Enums']["message_kind"],"mailbox_key": string | null,"mime_message_id": string | null,"received_at": string | null,"references_header": (string)[] | null,"request_id": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["message_status"],"subject": string,"to_address": string | null,"updated_at": string
+                    "approved_at": string | null,"approved_by": string | null,"archive_reason": string | null,"archived_at": string | null,"archived_by": string | null,"author_id": string | null,"body_html": string | null,"body_text": string,"created_at": string,"direction": Database["public"]['Enums']["message_direction"],"error_text": string | null,"from_address": string | null,"gmail_message_id": string | null,"gmail_thread_id": string | null,"handled_at": string | null,"id": string,"in_reply_to": string | null,"inbox_dispatcher_id": string | null,"invoice_id": string | null,"kind": Database["public"]['Enums']["message_kind"],"mailbox_key": string | null,"mime_message_id": string | null,"received_at": string | null,"references_header": (string)[] | null,"request_id": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["message_status"],"subject": string,"to_address": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "approved_at"?: string | null,"approved_by"?: string | null,"author_id"?: string | null,"body_html"?: string | null,"body_text": string,"created_at"?: string,"direction": Database["public"]['Enums']["message_direction"],"error_text"?: string | null,"from_address"?: string | null,"gmail_message_id"?: string | null,"gmail_thread_id"?: string | null,"handled_at"?: string | null,"id"?: string,"in_reply_to"?: string | null,"inbox_dispatcher_id"?: string | null,"invoice_id"?: string | null,"kind": Database["public"]['Enums']["message_kind"],"mailbox_key"?: string | null,"mime_message_id"?: string | null,"received_at"?: string | null,"references_header"?: (string)[] | null,"request_id"?: string | null,"sent_at"?: string | null,"status": Database["public"]['Enums']["message_status"],"subject": string,"to_address"?: string | null,"updated_at"?: string
+                    "approved_at"?: string | null,"approved_by"?: string | null,"archive_reason"?: string | null,"archived_at"?: string | null,"archived_by"?: string | null,"author_id"?: string | null,"body_html"?: string | null,"body_text": string,"created_at"?: string,"direction": Database["public"]['Enums']["message_direction"],"error_text"?: string | null,"from_address"?: string | null,"gmail_message_id"?: string | null,"gmail_thread_id"?: string | null,"handled_at"?: string | null,"id"?: string,"in_reply_to"?: string | null,"inbox_dispatcher_id"?: string | null,"invoice_id"?: string | null,"kind": Database["public"]['Enums']["message_kind"],"mailbox_key"?: string | null,"mime_message_id"?: string | null,"received_at"?: string | null,"references_header"?: (string)[] | null,"request_id"?: string | null,"sent_at"?: string | null,"status": Database["public"]['Enums']["message_status"],"subject": string,"to_address"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "approved_at"?: string | null,"approved_by"?: string | null,"author_id"?: string | null,"body_html"?: string | null,"body_text"?: string,"created_at"?: string,"direction"?: Database["public"]['Enums']["message_direction"],"error_text"?: string | null,"from_address"?: string | null,"gmail_message_id"?: string | null,"gmail_thread_id"?: string | null,"handled_at"?: string | null,"id"?: string,"in_reply_to"?: string | null,"inbox_dispatcher_id"?: string | null,"invoice_id"?: string | null,"kind"?: Database["public"]['Enums']["message_kind"],"mailbox_key"?: string | null,"mime_message_id"?: string | null,"received_at"?: string | null,"references_header"?: (string)[] | null,"request_id"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"subject"?: string,"to_address"?: string | null,"updated_at"?: string
+                    "approved_at"?: string | null,"approved_by"?: string | null,"archive_reason"?: string | null,"archived_at"?: string | null,"archived_by"?: string | null,"author_id"?: string | null,"body_html"?: string | null,"body_text"?: string,"created_at"?: string,"direction"?: Database["public"]['Enums']["message_direction"],"error_text"?: string | null,"from_address"?: string | null,"gmail_message_id"?: string | null,"gmail_thread_id"?: string | null,"handled_at"?: string | null,"id"?: string,"in_reply_to"?: string | null,"inbox_dispatcher_id"?: string | null,"invoice_id"?: string | null,"kind"?: Database["public"]['Enums']["message_kind"],"mailbox_key"?: string | null,"mime_message_id"?: string | null,"received_at"?: string | null,"references_header"?: (string)[] | null,"request_id"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"subject"?: string,"to_address"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "messages_approved_by_fkey"
       columns: ["approved_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "messages_archived_by_fkey"
+      columns: ["archived_by"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -834,6 +840,45 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"archive_message":
+{ Args: { "message_id": string,"reason": string }; Returns: {
+              "approved_at": string | null,
+"approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
+"author_id": string | null,
+"body_html": string | null,
+"body_text": string,
+"created_at": string,
+"direction": Database["public"]['Enums']["message_direction"],
+"error_text": string | null,
+"from_address": string | null,
+"gmail_message_id": string | null,
+"gmail_thread_id": string | null,
+"handled_at": string | null,
+"id": string,
+"in_reply_to": string | null,
+"inbox_dispatcher_id": string | null,
+"invoice_id": string | null,
+"kind": Database["public"]['Enums']["message_kind"],
+"mailbox_key": string | null,
+"mime_message_id": string | null,
+"received_at": string | null,
+"references_header": (string)[] | null,
+"request_id": string | null,
+"sent_at": string | null,
+"status": Database["public"]['Enums']["message_status"],
+"subject": string,
+"to_address": string | null,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "messages"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "assign_dispatcher":
 { Args: { "dispatcher_id": string,"expected_version": number,"request_id": string }; Returns: {
               "business_email": string,
@@ -1172,6 +1217,9 @@ isOneToOne: false
 { Args: { "gmail_message_id"?: string,"gmail_thread_id"?: string,"mailbox_key"?: string,"message_id": string,"mime_message_id"?: string,"sent_at"?: string }; Returns: {
               "approved_at": string | null,
 "approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
 "author_id": string | null,
 "body_html": string | null,
 "body_text": string,
@@ -1208,6 +1256,9 @@ isOneToOne: false
 { Args: { "gmail_message_id"?: string,"gmail_thread_id"?: string,"mailbox_key"?: string,"message_id": string,"mime_message_id"?: string,"sent_at"?: string }; Returns: {
               "approved_at": string | null,
 "approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
 "author_id": string | null,
 "body_html": string | null,
 "body_text": string,
@@ -1332,6 +1383,9 @@ isOneToOne: false
 { Args: { "body_text": string,"expected_version": number,"invoice_id"?: string,"kind": Database["public"]['Enums']["message_kind"],"request_id": string,"subject": string,"to_address": string }; Returns: {
               "approved_at": string | null,
 "approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
 "author_id": string | null,
 "body_html": string | null,
 "body_text": string,
@@ -1553,6 +1607,9 @@ isOneToOne: false
 { Args: { "expected_version": number,"message_id": string,"request_id": string }; Returns: {
               "approved_at": string | null,
 "approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
 "author_id": string | null,
 "body_html": string | null,
 "body_text": string,
@@ -1654,6 +1711,9 @@ isOneToOne: false
 { Args: { "error_text": string,"message_id": string,"permanent"?: boolean }; Returns: {
               "approved_at": string | null,
 "approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
 "author_id": string | null,
 "body_html": string | null,
 "body_text": string,
@@ -1778,6 +1838,9 @@ isOneToOne: false
 { Args: { "expected_version": number,"message_id": string }; Returns: {
               "approved_at": string | null,
 "approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
 "author_id": string | null,
 "body_html": string | null,
 "body_text": string,
@@ -2003,6 +2066,45 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"restore_message":
+{ Args: { "message_id": string }; Returns: {
+              "approved_at": string | null,
+"approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
+"author_id": string | null,
+"body_html": string | null,
+"body_text": string,
+"created_at": string,
+"direction": Database["public"]['Enums']["message_direction"],
+"error_text": string | null,
+"from_address": string | null,
+"gmail_message_id": string | null,
+"gmail_thread_id": string | null,
+"handled_at": string | null,
+"id": string,
+"in_reply_to": string | null,
+"inbox_dispatcher_id": string | null,
+"invoice_id": string | null,
+"kind": Database["public"]['Enums']["message_kind"],
+"mailbox_key": string | null,
+"mime_message_id": string | null,
+"received_at": string | null,
+"references_header": (string)[] | null,
+"request_id": string | null,
+"sent_at": string | null,
+"status": Database["public"]['Enums']["message_status"],
+"subject": string,
+"to_address": string | null,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "messages"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "resume_analysis":
 { Args: { "expected_version": number,"note"?: string,"request_id": string }; Returns: {
               "business_email": string,
@@ -2225,6 +2327,9 @@ isOneToOne: false
 { Args: { "body_text"?: string,"expected_version": number,"message_id": string,"subject"?: string,"to_address"?: string }; Returns: {
               "approved_at": string | null,
 "approved_by": string | null,
+"archive_reason": string | null,
+"archived_at": string | null,
+"archived_by": string | null,
 "author_id": string | null,
 "body_html": string | null,
 "body_text": string,

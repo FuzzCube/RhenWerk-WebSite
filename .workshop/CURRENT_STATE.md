@@ -2,11 +2,11 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 40 Tasks. Fortschritt 100,00 % (Gewicht 131 von 131, 40 von 40 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 41 Tasks. Fortschritt 100,00 % (Gewicht 134 von 134, 41 von 41 Tasks).
 
 ## Aktive Phase
 
-Alle Phasen 0–10 sind abgeschlossen (Phase 10 am 13.10.2026 um `task-10-7` bis `task-10-9` erweitert).
+Alle Phasen 0–10 sind abgeschlossen (Phase 10 am 13.10.2026 um `task-10-7` bis `task-10-10` erweitert).
 
 ## Aktive Aufgabe
 
@@ -15,6 +15,8 @@ Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-10-10` (13.10.2026): Posteingang mit vorbelegter Suche (Absender, Vorschläge auch nach Firmendomain), regelbasierter Vorbelegung der neuen Anfrage aus der E-Mail (`lib/inbox-extract.ts`, ohne KI; erkannte Felder markiert) und Archiv für E-Mails ohne Auftragsbezug (`archive_message`/`restore_message`, Migration `20261013140000_inbox_archive.sql`, Ansicht Archiv, Rückgängig). KI-Vorbelegung über n8n als mögliche Ergänzung. test:ui 231, test:db 613, test:unit 68, test:auth 130. Details in `docs/architecture.md` (Posteingang).
 
 `task-10-9` (13.10.2026): Sicherheitsupdates nach Dependabot – `next`/`eslint-config-next` 16.3.8, transitiv `sharp`, `undici`, `source-map-js`, `brace-expansion`. Offen nur `braces` (ohne Fix, nur Entwicklung; Begründung in `docs/setup.md`). Alle Testsuiten bestanden (test:ui 226, test:db 597, test:auth 130, demo:verify 18/18).
 
