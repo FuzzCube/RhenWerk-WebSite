@@ -2,19 +2,27 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v5 mit 11 Phasen und 41 Tasks. Fortschritt 100,00 % (Gewicht 134 von 134, 41 von 41 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v6 mit 12 Phasen und 48 Tasks. Fortschritt 95,89 % (Gewicht 140 von 146, 45 von 48 Tasks).
 
 ## Aktive Phase
 
-Alle Phasen 0–10 sind abgeschlossen (Phase 10 am 13.10.2026 um `task-10-7` bis `task-10-10` erweitert).
+Phase 11 „Nachbesserungen“ (am 15.10.2026 nach Rücksprache angelegt). Phasen 0–10 sind abgeschlossen.
 
 ## Aktive Aufgabe
 
-Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue Roadmap-Tasks.
+Keine.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-11-4` (15.10.2026): Telefonische Anfrage unter `/dashboard/anfragen/neu` (Dispatcher, Manager, Admin), `create_phone_request` mit Quelle `phone`, idempotent, Dispatcher-Zuweisung, optionale Eingangsbestätigung; Feldbaustein und -prüfung gemeinsam mit dem Posteingang. test:db phone_request 18/18, test:ui 243, test:unit 71, lint, typecheck, build. Details in `docs/architecture.md` und `docs/database.md`.
+
+`task-11-3` (15.10.2026): „Route“ öffnet Google Maps mit Navigation zur Einsatzadresse (Universal-Link ohne API-Schlüssel, `lib/contact-links.ts`). test:unit 71, test:ui 238, lint, typecheck.
+
+`task-11-2` (15.10.2026): Aktionsleiste der Einsatzseite („Auf Teile warten | Einsatz beenden“) sticky statt fixed, dieselben Kanten wie die Karten auf jeder Breite, Schaltflächen gleich hoch ohne Umbruch. test:ui 236, lint, typecheck. Details in `docs/architecture.md` (Einsatzaktionen).
+
+`task-11-1` (15.10.2026): „Weitere Kennzahlen“ der Übersicht ausgerichtet – Werte und Chips je Zeile bündig (subgrid), „Vorperiode“ ohne hängenden Trennpunkt, 4 / 2 / 1 Spalten nach Breite. test:ui 233, lint, typecheck. Details in `docs/architecture.md` (Übersicht).
 
 `task-10-10` (13.10.2026): Posteingang mit vorbelegter Suche (Absender, Vorschläge auch nach Firmendomain), regelbasierter Vorbelegung der neuen Anfrage aus der E-Mail (`lib/inbox-extract.ts`, ohne KI; erkannte Felder markiert) und Archiv für E-Mails ohne Auftragsbezug (`archive_message`/`restore_message`, Migration `20261013140000_inbox_archive.sql`, Ansicht Archiv, Rückgängig). KI-Vorbelegung über n8n als mögliche Ergänzung. test:ui 231, test:db 613, test:unit 68, test:auth 130. Details in `docs/architecture.md` (Posteingang).
 
@@ -40,7 +48,11 @@ Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue
 
 ## Bereite nächste Aufgaben
 
-Keine. Mögliche Erweiterungen (z. B. bestehende Einsätze auf der Plantafel verschieben, Eingangsbestätigung für Anfragen aus E-Mails, dunkles Design) nur nach Rücksprache als neue Roadmap-Tasks.
+Alle ohne Abhängigkeiten `ready`:
+
+- `task-11-5` Passwort vergessen, ändern und zurücksetzen (bisher nicht vorhanden)
+- `task-11-6` Schutz bei falschen Passwörtern (bisher nur IP-Limit von Supabase: 30 Anmeldungen je 5 min)
+- `task-11-7` Posteingang nach Auslastung verteilen (bisher immer erster aktiver Dispatcher nach ID)
 
 ## Blockiert
 
@@ -102,4 +114,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-Design task-10-3 abnehmen; danach task-9-2 Gesamtprüfung. task-10-5 Posteingang für nicht zugeordnete E-Mails ist ready. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.
+Weiter mit `task-11-5` bis `task-11-7`. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.

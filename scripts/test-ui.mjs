@@ -191,6 +191,22 @@ try {
     const tiles = await page.eval(`Object.fromEntries([...document.querySelectorAll("[data-kpi]")].map((tile) => [tile.dataset.kpi, { value: tile.dataset.value, href: tile.querySelector(".rw-kpi__link")?.getAttribute("href") ?? null }]))`);
     check("16 Kennzahlen, jede mit Listen-Link", Object.keys(tiles).length === 16 && Object.values(tiles).every((tile) => tile.href), Object.keys(tiles).join(","));
     check("Höchstens 4 Kacheln sichtbar, weitere hinter „Weitere Kennzahlen anzeigen“", await page.eval(`document.querySelectorAll("[data-kpis=main] [data-kpi]").length === 4 && !!document.querySelector(".rw-kpi-more")`));
+    // task-11-1: in every row of the further metrics, values and chips share one line, whatever the label height
+    for (const width of [1440, 768]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: false });
+      const rows = await page.eval(`(() => {
+        const more = document.querySelector(".rw-kpi-more"); more.open = true;
+        const rows = new Map();
+        for (const tile of more.querySelectorAll(".rw-kpi-compact")) {
+          const top = Math.round(tile.getBoundingClientRect().top);
+          const at = (selector) => Math.round(tile.querySelector(selector).getBoundingClientRect().top);
+          rows.set(top, [...(rows.get(top) ?? []), [at(".rw-kpi-compact__value"), at(".rw-delta")]]);
+        }
+        return [...rows.values()].map((row) => row.every(([value, chip]) => value === row[0][0] && chip === row[0][1]));
+      })()`);
+      check(`Weitere Kennzahlen bündig bei ${width} px (${rows.length} Zeilen)`, rows.length > 1 && rows.every(Boolean));
+    }
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     const listCount = async (href) => {
       await page.open(`${BASE}${href}`);
       return page.eval(`(() => { const sum = document.querySelector("[data-sum=gross]"); if (sum) return sum.textContent.replace(/[^0-9,]/g, "").replace(",", "."); const text = document.querySelector(".result-count")?.textContent ?? ""; return (text.match(/^[\\d.]+/) ?? ["0"])[0].replace(/\\./g, ""); })()`);
@@ -557,6 +573,45 @@ try {
     }
   }
 
+  console.log("\nTelefonische Anfrage (task-11-4)");
+  {
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+    await page.open(`${BASE}/dashboard/erstbearbeitung`);
+    check("Erstbearbeitung verlinkt die telefonische Anfrage", await page.eval(`!!document.querySelector('a[href="/dashboard/anfragen/neu"]')`));
+    await page.open(`${BASE}/dashboard/anfragen/neu`);
+    const phoneForm = `document.querySelector("form.save-form")`;
+    const company = `UI-Test Telefon ${runId}`;
+    const phoneValues = {
+      company_name: company, contact_name: "Paula Anruf", business_email: `ui-telefon-${runId}@example.com`, phone_number: "+49 211 5550",
+      street_house_number: "Hafenstraße 3", postal_code: "4021", city: "Düsseldorf", site_label: "Halle 2", equipment_kind: "pump",
+      service_kind: "diagnosis_repair", requested_visit_date: "2030-03-04", customer_urgency: "zeitnah", safety_risk: "none_known",
+      description: "Pumpe verliert Druck, Anzeige 2 bar statt 4 bar.",
+    };
+    check("  Formular ohne Dispatcher-Auswahl für Dispatcher, Eingangsbestätigung vorausgewählt",
+      await page.eval(`!document.querySelector('[name="dispatcher_id"]') && document.querySelector('[name="send_receipt"]').checked`));
+    // Wrong postal code: error, all inputs kept; the receipt stays off so the test never queues an e-mail
+    await page.eval(`document.querySelector('[name="send_receipt"]').checked = false`);
+    await fillIn(phoneForm, phoneValues);
+    let phoneState = await settled(phoneForm, "save-status--error");
+    check("  Ungültige PLZ: Fehlermeldung am Feld, Eingaben bleiben erhalten",
+      Boolean(phoneState) && phoneState.values.company_name === company && phoneState.values.description === phoneValues.description && phoneState.values.send_receipt === "on"
+        && await page.eval(`!!document.getElementById("postal_code-error") && !document.querySelector('[name="send_receipt"]').checked`), JSON.stringify(phoneState));
+    await fillIn(phoneForm, { ...phoneValues, postal_code: "40210" });
+    const createdPhone = await waitFor(async () => (await admin.from("requests").select("id").eq("company_name", company).maybeSingle()).data);
+    const { data: phoneRow } = await admin.from("requests").select("*").eq("company_name", company).single();
+    // Take the live request out of the automatic analysis at once (n8n checks open requests every two minutes)
+    const dispoClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } });
+    await dispoClient.auth.signInWithPassword({ email: dispoEmail, password });
+    if (phoneRow) await dispoClient.rpc("cancel_request", { request_id: phoneRow.id, expected_version: phoneRow.version, reason: "UI-Test der telefonischen Anfrage" });
+    const receipts = phoneRow ? (await admin.from("messages").select("id").eq("request_id", phoneRow.id)).data : null;
+    check("  Anfrage angelegt: Quelle Telefon, dem Dispatcher zugewiesen, RIS-Nummer, ohne Eingangsbestätigung",
+      Boolean(createdPhone) && phoneRow.source === "phone" && phoneRow.dispatcher_id === dispoId && phoneRow.request_number.startsWith("RIS-") && phoneRow.site_label === "Halle 2" && receipts?.length === 0,
+      JSON.stringify({ source: phoneRow?.source, number: phoneRow?.request_number, receipts }));
+    check("  Weiterleitung auf die neue Anfrage", await waitFor(() => page.eval(`location.pathname === ${JSON.stringify(`/dashboard/anfragen/${phoneRow?.id}`)}`)));
+  }
+
   console.log("\nEinsatzplanung in der Plantafel");
   const processed = { intake_status: "processed", priority: "normal", intake_mode: "manual", intake_completed_at: new Date().toISOString(), manual_minutes_baseline: 15, human_review_required: false };
   const planA = await newRequest("plan-a", processed);
@@ -743,6 +798,36 @@ try {
   await page.open(visitUrl);
   await page.eval(`${formWithButton("Arbeit starten")}.requestSubmit()`);
   check("Arbeit starten → Einsatz und Anfrage in Arbeit", await waitFor(async () => (await visitRow()).status === "in_progress" && (await dbRequest(job.id)).work_status === "in_progress"));
+  // task-11-2: the action bar stays in the card column and at the bottom of the screen, buttons equally high
+  for (const width of [390, 768, 1440]) {
+    await page.send("Emulation.setDeviceMetricsOverride", { width, height: 844, deviceScaleFactor: 1, mobile: width < 800 });
+    await page.open(visitUrl);
+    const bar = await page.eval(`(() => {
+      const bar = document.querySelector(".tech-bar").getBoundingClientRect();
+      const card = document.querySelector(".tech-page .rw-card").getBoundingClientRect();
+      const buttons = [...document.querySelectorAll(".tech-bar a")].map((a) => ({ height: Math.round(a.getBoundingClientRect().height), clipped: a.scrollWidth > a.clientWidth }));
+      return { edges: Math.abs(bar.left - card.left) < 1 && Math.abs(bar.right - card.right) < 1, onScreen: bar.bottom <= innerHeight && bar.bottom > innerHeight - 20, buttons };
+    })()`);
+    check(`Aktionsleiste bündig mit den Karten und unten sichtbar bei ${width} px`, bar.edges && bar.onScreen && bar.buttons.length === 2 && bar.buttons.every((b) => b.height === bar.buttons[0].height && b.height >= 52 && !b.clipped), JSON.stringify(bar));
+  }
+  await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  // task-11-3: Route opens Google Maps directions to the request address in a new tab (visit page and Mein Tag)
+  {
+    const row = await dbRequest(job.id);
+    const address = `${row.street_house_number}, ${row.postal_code} ${row.city}`;
+    const routeLink = (scope) => `(() => { const link = [...document.querySelectorAll("${scope} a")].find((a) => a.textContent.trim() === "Route"); return link && { href: link.href, target: link.target }; })()`;
+    const isRoute = (link) => {
+      if (!link || link.target !== "_blank") return false;
+      const url = new URL(link.href);
+      return url.origin + url.pathname === "https://www.google.com/maps/dir/" && url.searchParams.get("api") === "1" && url.searchParams.get("destination") === address;
+    };
+    await page.open(visitUrl);
+    const onVisit = await page.eval(routeLink(".tech-buttons"));
+    check("Route auf der Einsatzseite öffnet Google Maps zur Adresse", isRoute(onVisit), JSON.stringify(onVisit));
+    await page.open(`${BASE}/dashboard/heute`);
+    const onToday = await page.eval(routeLink(".tech-now .tech-buttons"));
+    check("Route auf „Mein Tag“ öffnet Google Maps zur Adresse", isRoute(onToday), JSON.stringify(onToday));
+  }
 
   await page.open(visitUrl);
   await fillIn(formIn("Arbeitszeit erfassen"), { quantity: "1,5" });

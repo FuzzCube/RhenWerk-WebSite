@@ -4,6 +4,7 @@ import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
+import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { loadQueue, QUEUE_TABS, tabFor, type QueueKey, type QueueRow } from "@/lib/dashboard/queues";
@@ -96,7 +97,10 @@ export default async function IntakeQueuesPage({ searchParams }: Props) {
             {tab.slug === "planung" && <> <Link href="/dashboard/planung">Zur Einsatzplanung</Link></>}
           </p>
         </div>
-        <Link className="rw-button-secondary" href="/dashboard/anfragen">Alle Anfragen durchsuchen</Link>
+        <div className="dash-page-header__actions">
+          <Link className="rw-button-secondary" href="/dashboard/anfragen/neu"><Icon name="phone" size={18} />Telefonische Anfrage</Link>
+          <Link className="rw-button-secondary" href="/dashboard/anfragen">Alle Anfragen durchsuchen</Link>
+        </div>
       </header>
 
       <div className="side-page__grid">

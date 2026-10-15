@@ -58,7 +58,8 @@ export function KpiTile({ label, value, change, previous, definition, href, hint
   );
 }
 
-// Compact row of further metrics behind "Weitere Kennzahlen anzeigen" (at most 4 tiles are visible)
+// Compact row of further metrics behind "Weitere Kennzahlen anzeigen" (at most 4 tiles are visible).
+// The tiles share the grid rows (subgrid), so values and chips line up across one- and two-line labels.
 export function KpiMore({ count, children }: { count: number; children: ReactNode }) {
   return (
     <details className="rw-kpi-more">
@@ -80,7 +81,8 @@ export function KpiCompact({ label, value, change, previous, definition, href, k
         {definition && <InfoToggle label={label}>{definition}</InfoToggle>}
       </span>
       <span className="rw-kpi-compact__value mono">{value}</span>
-      <span className="rw-kpi-compact__change"><DeltaChip change={change} /> · Vorperiode <span className="mono">{previous}</span></span>
+      <span className="rw-kpi-compact__change"><DeltaChip change={change} /></span>
+      <span className="rw-kpi-compact__previous">Vorperiode <span className="mono">{previous}</span></span>
     </div>
   );
 }

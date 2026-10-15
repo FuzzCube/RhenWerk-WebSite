@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { archiveMessage, createRequestFromMessage, linkMessage, restoreMessage } from "@/app/(dashboard)/dashboard/posteingang/actions";
-import { SaveForm, SelectField, TextAreaField, TextField, HiddenField } from "@/components/dashboard/ui/save-form";
+import { RequestFields } from "@/components/dashboard/request-fields";
+import { SaveForm, SelectField, HiddenField } from "@/components/dashboard/ui/save-form";
 import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { Icon } from "@/components/ui";
@@ -11,7 +12,6 @@ import { addDays } from "@/lib/berlin-time";
 import { getInboxMessage, linkCandidates, listArchived, listInbox, listLinked, type ArchivedItem, type ArchiveReason, type InboxMessage } from "@/lib/dashboard/inbox";
 import { extractRequestFields, type ExtractedField } from "@/lib/inbox-extract";
 import { berlinDayKey, formatDateTime, formatNumber } from "@/lib/format";
-import { LABELS, label } from "@/lib/status";
 
 export const metadata: Metadata = { title: "Posteingang" };
 
@@ -20,7 +20,6 @@ type View = "offen" | "zugeordnet" | "archiv";
 
 const BASE = "/dashboard/posteingang";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const options = (kind: keyof typeof LABELS) => Object.entries(LABELS[kind]).map(([value, text]) => ({ value, label: text }));
 const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
 const ARCHIVE_REASONS: Record<ArchiveReason, string> = {
   advertising: "Werbung oder Newsletter",
@@ -234,24 +233,18 @@ function MessageView({ message, candidates, term, owner, names }: { message: Inb
                 </p>
                 <SaveForm action={createRequestFromMessage} submitLabel="Anfrage anlegen">
                   <HiddenField name="message_id" value={message.id} />
-                  <div className="form-grid">
-                    <TextField name="company_name" label="Firma" required defaultValue={found.company_name} hint={hint("company_name")} />
-                    <TextField name="contact_name" label="Ansprechperson" required defaultValue={found.contact_name} hint={hint("contact_name")} />
-                    <TextField name="business_email" label="E-Mail-Adresse" type="email" required defaultValue={message.from_address ?? ""} />
-                    <TextField name="phone_number" label="Telefon" type="tel" required defaultValue={found.phone_number} hint={hint("phone_number")} />
-                    <TextField name="street_house_number" label="Straße und Hausnummer" required defaultValue={found.street_house_number} hint={hint("street_house_number")} />
-                    <TextField name="postal_code" label="PLZ" inputMode="numeric" required defaultValue={found.postal_code} hint={hint("postal_code")} />
-                    <TextField name="city" label="Ort" required defaultValue={found.city} hint={hint("city")} />
-                    <TextField name="customer_number" label="Kundennummer" defaultValue={found.customer_number} hint={hint("customer_number")} />
-                    <SelectField name="equipment_kind" label="Anlagenart" required defaultValue={found.equipment_kind} hint={hint("equipment_kind")} options={options("equipment_kind")} />
-                    <TextField name="manufacturer" label="Hersteller" defaultValue={found.manufacturer} hint={hint("manufacturer")} />
-                    <TextField name="model_type" label="Modell / Typ" defaultValue={found.model_type} hint={hint("model_type")} />
-                    <SelectField name="service_kind" label="Leistungsart" required defaultValue={found.service_kind} hint={hint("service_kind")} options={options("service_kind")} />
-                    <TextField name="requested_visit_date" label="Wunschtermin" type="date" required defaultValue={found.requested_visit_date ?? addDays(today, 7)} hint={hint("requested_visit_date")} />
-                    <SelectField name="customer_urgency" label="Dringlichkeit" required defaultValue={found.customer_urgency ?? "planbar"} hint={hint("customer_urgency")} options={options("customer_urgency")} />
-                    <SelectField name="safety_risk" label="Sicherheitsgefahr" required defaultValue={found.safety_risk} options={options("safety_risk")} hint={found.safety_risk ? "Hinweis auf eine Gefahr in der E-Mail erkannt – bitte prüfen." : `Bei „${label("safety_risk", "known")}“ oder „${label("safety_risk", "unclear")}“ ist eine Prüfung erforderlich.`} />
-                  </div>
-                  <TextAreaField name="description" label="Beschreibung" required rows={6} defaultValue={`${message.subject}\n\n${message.body_text}`.trim().slice(0, 2000)} />
+                  <RequestFields
+                    values={{
+                      ...found,
+                      business_email: message.from_address ?? "",
+                      requested_visit_date: found.requested_visit_date ?? addDays(today, 7),
+                      description: `${message.subject}\n\n${message.body_text}`.trim().slice(0, 2000),
+                    }}
+                    hints={{
+                      ...Object.fromEntries(Object.keys(found).map((field) => [field, hint(field as ExtractedField)])),
+                      safety_risk: found.safety_risk ? "Hinweis auf eine Gefahr in der E-Mail erkannt – bitte prüfen." : undefined,
+                    }}
+                  />
                 </SaveForm>
               </div>
             </details>

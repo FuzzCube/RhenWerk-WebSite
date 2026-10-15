@@ -20,6 +20,7 @@ export const EVENT_LABELS: Record<string, string> = {
   message_received: "Nachricht empfangen",
   message_linked: "Nachricht zugeordnet",
   request_created_from_message: "Anfrage aus E-Mail angelegt",
+  request_created_by_phone: "Telefonische Anfrage angelegt",
   message_drafted: "E-Mail-Entwurf erstellt",
   message_queued: "E-Mail in Warteschlange gestellt",
   message_sent: "E-Mail-Versand bestätigt",

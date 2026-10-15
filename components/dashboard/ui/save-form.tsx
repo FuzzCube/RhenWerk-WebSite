@@ -115,12 +115,12 @@ export function TextAreaField(props: FieldProps & { rows?: number }) {
   );
 }
 
-export function SelectField({ options, ...props }: FieldProps & { options: Array<{ value: string; label: string }> }) {
+export function SelectField({ options, emptyLabel = "Keine Auswahl", ...props }: FieldProps & { options: Array<{ value: string; label: string }>; emptyLabel?: string }) {
   const { error, describedBy } = useField(props.name);
   return (
     <FieldFrame {...props} error={error}>
       <select id={`field-${props.name}`} name={props.name} defaultValue={props.defaultValue ?? ""} required={props.required} aria-invalid={!!error} aria-describedby={describedBy}>
-        {!props.required && <option value="">Keine Auswahl</option>}
+        {!props.required && <option value="">{emptyLabel}</option>}
         {props.required && !props.defaultValue && <option value="" disabled>Bitte wählen</option>}
         {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>

@@ -122,7 +122,7 @@ Block „Aktionen“ auf der Anfrageseite (`components/dashboard/request-actions
 
 ## Techniker-Startseite und Wochenkalender (task-6-1)
 
-Nur Techniker; Daten `lib/dashboard/technician.ts`, Karten `components/dashboard/visit-card.tsx` (Zeit, Status, Kunde, Adresse mit Kartenlink, Kontakt mit Telefonlink, Anlage, Sicherheitsgefahr, Beschreibung).
+Nur Techniker; Daten `lib/dashboard/technician.ts`, Karten `components/dashboard/visit-card.tsx` (Zeit, Status, Kunde, Adresse mit Kartenlink, Kontakt mit Telefonlink, Anlage, Sicherheitsgefahr, Beschreibung). **Route** (task-11-3, 15.10.2026): Google-Maps-Universal-Link `https://www.google.com/maps/dir/?api=1&destination=<Straße, PLZ Ort>&travelmode=driving` in neuem Tab, ohne API-Schlüssel; auf dem Telefon öffnet die Maps-App mit Navigation vom aktuellen Standort (vorher nur OpenStreetMap-Adresssuche). Links in `lib/contact-links.ts` (`routeHref`, `telHref`), Unit-Tests `tests/unit/contact-links.test.mjs`.
 
 - **`/dashboard/heute` – Mein Tag:** laufender Einsatz, sonst der nächste geplante; alle Einsätze des Tages (Europe/Berlin); „Ausstehende Teile“: bestellte Teile der eigenen aktuellen Anfragen und wegen Teilen pausierte Einsätze.
 - **`/dashboard/kalender` – Kalender:** eigene Woche in der Zeitstrahl-Ansicht der Planung (nur eine Zeile, eigene Arbeitszeiten und Abwesenheiten), erledigte und pausierte Einsätze gedämpft mit Status; darunter dieselben Einsätze als Karten (mobil die Hauptansicht).
@@ -131,6 +131,8 @@ Nur Techniker; Daten `lib/dashboard/technician.ts`, Karten `components/dashboard
 ## Einsatzaktionen und Arbeitserfassung (task-6-2)
 
 `/dashboard/einsatz/[visitId]` – Arbeitsbereich eines Einsatzes für den eingeplanten Techniker (andere Techniker: 404), Manager und Admins; erreichbar über „Einsatz öffnen“ auf den Techniker-Seiten und „Öffnen“ in der Einsatz-Tabelle der Anfrageseite. Daten `lib/dashboard/visit.ts`, Server Actions im Routenordner.
+
+**Aktionsleiste (task-11-2, 15.10.2026):** Die Leiste mit der Hauptaktion des Status (Arbeit starten / Einsatz beenden mit „Auf Teile warten“ / Einsatz fortsetzen mit „Beenden“) ist `position: sticky` am unteren Rand (8 px Abstand plus Safe Area) statt `fixed`: `.tech-page` ist ein Größen-Container und wäre sonst der Bezugsrahmen der festen Leiste (sie stand am Seitenende und auf breiten Schirmen mittig neben der Inhaltsspalte). So hat sie auf jeder Breite dieselben Kanten wie die Karten (höchstens 960 px). Nebenaktion so breit wie ihr Text ohne Umbruch, Hauptaktion füllt den Rest, beide 52 px hoch; ohne Nebenaktion volle Breite. Geprüft in `test:ui` bei 390, 768 und 1440 px.
 
 | Bereich | Aktion | Operation |
 | --- | --- | --- |
@@ -174,6 +176,7 @@ Vorlage: `docs/design/RheinWerk Rechnungsvorlage.html` (Claude Design, gebündel
 `/dashboard/uebersicht` (Manager, Admin): Daten aus `lib/dashboard/overview.ts` über die Analytik-Funktionen (`analytics_window`, `analytics_kpis`, `analytics_team`) mit Nutzerrechten; Darstellung, Definitionen und Links in `lib/analytics.ts` (rein, Unit-Tests).
 
 - **Aufbau Manager (13.10.2026):** Sicherheitsgefahr-Hinweis, „Warteschlangen jetzt“, dann ein Block „Team und Aufgaben · Stand jetzt“ auf demselben 4-Spalten-Raster wie Warteschlangen und Kennzahlen (Zeile 1: Techniker heute/morgen 3 Spalten | Service Desk 1 Spalte; Zeile 2: „Zu planen“ mit den 5 dringendsten und Link zur Einsatzplanung | „Fristen und Wartezeiten“ als Liste; Karten einer Zeile gleich hoch), zuletzt „Durchsatz im Zeitraum“. Seite so breit wie die Listen (1680 px).
+- **Weitere Kennzahlen (task-11-1, 15.10.2026):** Die kompakten Kennzahlen hinter „Weitere Kennzahlen anzeigen“ (`KpiCompact`/`KpiMore`) teilen sich die Zeilen des Rasters per `subgrid` (Bezeichnung, Wert, Vergleichschip, Vorperiode), sodass Werte und Chips einer Zeile bündig stehen, auch bei zweizeiligen Bezeichnungen. „Vorperiode“ steht in einer eigenen Zeile ohne Trennpunkt. Spalten nach Containerbreite: 4 ab 900 px (wie die Kacheln darüber, 7 → 4 + 3), 2 darunter (eine einzelne letzte Kennzahl über beide Spalten), 1 unter 480 px. Sieben in einer Zeile passen nicht, weil Chips wie „+150,0 % · schlechter“ nicht umbrechen. Geprüft in `test:ui` bei 1440 und 768 px.
 - **Zeitraum:** `?zeitraum=woche|monat|quartal|jahr&datum=JJJJ-MM-TT`; Pfeile zum vorherigen und (bei abgeschlossenen Zeiträumen) nächsten Zeitraum, Anzeige des Vergleichszeitraums. Laufender Zeitraum mit „(laufend)“.
 - **Kennzahlen** in drei Abschnitten: „Ereignisse im Zeitraum“, „Stand am Ende des Zeitraums“ (Momentaufnahmen) und „Finanzen“ (Hinweis „Ausgestellt ist nicht eingenommen“). Jede Kachel zeigt Wert, Änderung (Prozent; bei Prozent-Kennzahlen Punkte; bei Vorperiode 0 nur die absolute Änderung mit Hinweis), Vorperiodenwert, Definition und einen Link auf die passende Liste. Farbe der Änderung nach fachlicher Richtung (z. B. kürzere Durchlaufzeit gut).
 - **Listen-Links:** Anfrageliste mit `feld=eingang|erstbearbeitung|abschluss|antwortfrist`, `von`, `bis` (ISO-Zeitpunkte des Zeitraums), `modus=automatic`, `status=offen`; Rechnungsliste mit `feld=ausgestellt|bezahlt`, `status=offen|ueberfaellig|bezahlt|entwurf`. Momentaufnahmen verlinken den aktuellen Stand („Aktuelle Liste“). Die Listen zeigen die Auswahl als Hinweis mit „Auswahl entfernen“ und behalten sie beim weiteren Filtern.
@@ -221,6 +224,10 @@ Daten: `lib/dashboard/admin.ts` (Profile, Tarife, Verfügbarkeiten, Einstellunge
 
 - **Zuordnen:** Vorschläge sind Anfragen mit derselben Absenderadresse, dazu Suche nach Nummer, Firma oder E-Mail; Auswahl mit der gesehenen Version, dann `link_message`. Danach steht die E-Mail unter Korrespondenz der Anfrage.
 - **Neue Anfrage:** Formular mit den Pflichtfeldern des Website-Formulars, vorbelegt mit Absender, Betreff und Text; `create_request_from_message` legt die Anfrage idempotent an (Schlüssel `email:<message_id>`) und leitet auf die Anfrageseite. Keine Eingangsbestätigung, weil der Kunde bereits per E-Mail geschrieben hat und ein Versand einen eigenen Schritt braucht.
+
+## Telefonische Anfrage (task-11-4)
+
+`/dashboard/anfragen/neu` (Dispatcher, Manager, Admin), verlinkt als „Telefonische Anfrage“ im Kopf von Anfragen (auf dem Telefon nur das Symbol) und Erstbearbeitung. Dieselben Felder wie im Posteingang plus Standort (gemeinsamer Baustein `components/dashboard/request-fields.tsx`, Prüfung `lib/request-fields.ts`, beides auch im Posteingang genutzt). Manager und Admin wählen optional den Dispatcher („Automatisch (geringste Auslastung)“ als Standard), Dispatcher erhalten die Anfrage selbst. „Eingangsbestätigung … senden“ ist vorausgewählt. Die Seite erzeugt beim Laden eine `submission_id`; `create_phone_request` legt die Anfrage damit idempotent an (Doppelklick, Wiederholung), danach Weiterleitung auf die Anfrageseite. Die E-Mail-Adresse bleibt Pflicht (Bestätigung, Rückfragen, Rechnungen); eine optionale Adresse wäre eine eigene Änderung an Versand und Rechnungen.
 
 ## Design-Überarbeitung (task-10-3)
 

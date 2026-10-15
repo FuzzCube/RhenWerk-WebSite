@@ -86,6 +86,9 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           </p>
         </div>
         <div className="req2__toolbar">
+          {employee.role !== "technician" && (
+            <Link className="rw-button-secondary req2__new" href="/dashboard/anfragen/neu" title="Telefonische Anfrage anlegen"><Icon name="phone" size={18} /><span className="req2__new-label">Telefonische Anfrage</span></Link>
+          )}
           <form className="req2__search" method="get" role="search" aria-label="Anfragen durchsuchen">
             <label className="sr-only" htmlFor="filter-suche">Suche</label>
             <Icon name="search" size={18} />

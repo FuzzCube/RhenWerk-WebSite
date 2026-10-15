@@ -1418,6 +1418,62 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"create_phone_request":
+{ Args: { "assigned_dispatcher_id"?: string,"fields": Json,"send_receipt"?: boolean,"submission_id": string }; Returns: {
+              "business_email": string,
+"cancellation_reason": string | null,
+"cancelled_at": string | null,
+"city": string,
+"company_name": string,
+"completed_at": string | null,
+"completion_summary": string | null,
+"contact_name": string,
+"created_at": string,
+"customer_number": string | null,
+"customer_urgency": Database["public"]['Enums']["customer_urgency"],
+"description": string,
+"dispatcher_id": string | null,
+"emergency_sla_claimed": boolean | null,
+"equipment_kind": Database["public"]['Enums']["equipment_kind"],
+"first_substantive_response_at": string | null,
+"human_review_required": boolean,
+"id": string,
+"intake_completed_at": string | null,
+"intake_mode": Database["public"]['Enums']["intake_mode"] | null,
+"intake_status": Database["public"]['Enums']["intake_status"],
+"is_demo": boolean,
+"machine_number": string | null,
+"manual_minutes_baseline": number | null,
+"manufacturer": string | null,
+"model_type": string | null,
+"phone_number": string,
+"postal_code": string,
+"priority": Database["public"]['Enums']["request_priority"] | null,
+"raw_payload": NonNullable<Json>,
+"rejection_reason": string | null,
+"request_number": string,
+"requested_visit_date": string,
+"response_due_at": string | null,
+"safety_risk": Database["public"]['Enums']["safety_risk"],
+"service_due_at": string | null,
+"service_kind": Database["public"]['Enums']["service_kind"],
+"site_label": string | null,
+"sla_contract_number": string | null,
+"sla_verified": boolean,
+"source": string,
+"source_event_key": string,
+"street_house_number": string,
+"technician_id": string | null,
+"updated_at": string,
+"version": number,
+"work_status": Database["public"]['Enums']["work_status"]
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "create_request_from_message":
 { Args: { "fields": Json,"message_id": string }; Returns: {
               "business_email": string,

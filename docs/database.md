@@ -120,7 +120,7 @@ Alle Felder laut Spezifikation 5.2. Nullability:
 
 | Pflicht (`NOT NULL`) | Optional (`NULL` erlaubt) |
 | --- | --- |
-| `id`, `request_number`, `source_event_key`, `source` (`website_form`/`demo_seed`/`email`), `is_demo` | `customer_number`, `site_label` |
+| `id`, `request_number`, `source_event_key`, `source` (`website_form`/`demo_seed`/`email`/`phone`), `is_demo` | `customer_number`, `site_label` |
 | `company_name`, `contact_name`, `business_email`, `phone_number` | `manufacturer`, `model_type`, `machine_number` |
 | `street_house_number`, `postal_code` (Text), `city` | `priority` (bis zur Bestimmung) |
 | `equipment_kind`, `service_kind`, `requested_visit_date`, `description` | `sla_contract_number`, `emergency_sla_claimed` (NULL = keine Angabe) |
@@ -157,7 +157,7 @@ Indizes: `dispatcher_id`, `technician_id`, `intake_status`, `work_status`, `crea
 
 Append-only: Trigger blockieren `UPDATE`, `DELETE` und `TRUNCATE` für alle Rollen; zusätzlich sind diese Rechte für `anon` und `authenticated` entzogen. Normale Clients schreiben Ereignisse nur über kontrollierte Operationen (Phase 2), die `actor_id` und `occurred_at` selbst setzen.
 
-Ereigniscodes: `submission_received`, `intake_status_changed`, `intake_completed`, `dispatcher_assigned`, `technician_assigned`, `visit_scheduled`, `visit_status_changed`, `work_status_changed`, `work_completed`, `message_received`, `message_linked`, `message_queued`, `message_sent`, `invoice_issued`, `invoice_sent`, `invoice_paid`, `automatic_result_corrected`, `note_added`, `deadline_changed`, `analysis_corrected` (task-2-1), `visit_rescheduled` (task-2-2), `work_entry_added`, `work_entry_changed` (task-2-3), `invoice_created`, `message_drafted` (task-2-4). Neue Codes werden hier ergänzt.
+Ereigniscodes: `submission_received`, `intake_status_changed`, `intake_completed`, `dispatcher_assigned`, `technician_assigned`, `visit_scheduled`, `visit_status_changed`, `work_status_changed`, `work_completed`, `message_received`, `message_linked`, `message_queued`, `message_sent`, `invoice_issued`, `invoice_sent`, `invoice_paid`, `automatic_result_corrected`, `note_added`, `deadline_changed`, `analysis_corrected` (task-2-1), `visit_rescheduled` (task-2-2), `work_entry_added`, `work_entry_changed` (task-2-3), `invoice_created`, `message_drafted` (task-2-4), `request_created_from_message` (task-10-5), `request_created_by_phone` (task-11-4). Neue Codes werden hier ergänzt.
 
 ## Nachrichten, Automatisierungsläufe, Anhänge (task-1-3)
 
@@ -486,6 +486,7 @@ Der Status `sent` entsteht erst durch bestätigten E-Mail-Versand (künftige Int
 | `queue_message(message_id, expected_version)` | dto. | `draft` → `queued`, setzt `approved_by`/`approved_at` | `message_queued` (dispatch) |
 | `link_message(message_id, request_id, expected_version)` | Inhaber des Posteingangs, Manager, Admin | verknüpft eine unzugeordnete eingehende Nachricht mit einer zugänglichen Anfrage; Anhänge erhalten dieselbe `request_id` | `message_linked` mit bisherigem Posteingang (dispatch) |
 | `create_request_from_message(message_id, fields)` | Inhaber des Posteingangs, Manager, Admin | legt aus einer unzugeordneten eingehenden Nachricht eine Anfrage an (`source = 'email'`, Schlüssel `email:<message_id>`, Dispatcher = Inhaber des Posteingangs, Status `new`) und verknüpft Nachricht und Anhänge; Pflichtfelder wie im Formular (PLZ fünfstellig, Beschreibung ab 10 Zeichen); Wiederholung liefert dieselbe Anfrage, ohne Zugriff 42501; keine Eingangsbestätigung (task-10-5) | `request_created_from_message` und `message_linked` (dispatch) |
+| `create_phone_request(submission_id, fields, send_receipt = true, assigned_dispatcher_id = null)` | Dispatcher, Manager, Admin | telefonisch aufgenommene Anfrage (task-11-4, Migration `20261015100000_phone_request.sql`): `source = 'phone'`, Schlüssel `phone:<submission_id>` (vom Formular), Status `new` und damit normale n8n-Analyse; Dispatcher = Aufrufer, bei Manager/Admin der gewählte aktive Dispatcher oder `private.least_loaded_dispatcher()` (wenigste offene Erstbearbeitungen, wie beim Website-Eingang); `human_review_required` bei Produktionsstillstand oder bekannter/unklarer Gefahr; optional Eingangsbestätigung über `private.queue_receipt`. Feldprüfung gemeinsam mit `create_request_from_message` in `private.validate_request_fields`. Wiederholung liefert dieselbe Anfrage, ohne Zugriff 42501; inaktiver oder falscher Dispatcher RW422 | `request_created_by_phone` (dispatch), ggf. `message_queued` |
 | `archive_message(message_id, reason)` | Inhaber des Posteingangs, Manager, Admin | archiviert eine unzugeordnete eingehende Nachricht ohne Auftragsbezug (`reason`: advertising, supplier, application, other); setzt `archived_at`, `archived_by`, `archive_reason`, `handled_at`; Wiederholung ändert nichts; zugeordnete Nachrichten RW422 (task-10-10) | Felder am Datensatz |
 | `restore_message(message_id)` | Inhaber des Posteingangs, Manager, Admin | holt eine archivierte Nachricht zurück in den offenen Posteingang (Archivfelder und `handled_at` geleert) | Felder am Datensatz |
 

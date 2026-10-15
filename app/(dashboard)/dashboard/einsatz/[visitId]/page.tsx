@@ -48,7 +48,7 @@ export default async function VisitPage({ params }: Props) {
     : null;
 
   return (
-    <div className={`dash-page rw-page rw-page--tight visit-page tech-page${bar ? " tech-page--bar" : ""}`}>
+    <div className={`dash-page rw-page rw-page--tight visit-page tech-page`}>
       <nav className="breadcrumb-dash" aria-label="Pfad">
         <Link href={back.href}>← {back.label}</Link>
       </nav>
@@ -205,8 +205,8 @@ export default async function VisitPage({ params }: Props) {
       </section>
 
       {bar && (
-        <nav className="tech-bar" aria-label="Aktionen zum Einsatz">
-          {bar.side ? <a className="rw-button-secondary" href={bar.side.href}>{bar.side.label}</a> : <span />}
+        <nav className={`tech-bar${bar.side ? "" : " tech-bar--single"}`} aria-label="Aktionen zum Einsatz">
+          {bar.side && <a className="rw-button-secondary" href={bar.side.href}>{bar.side.label}</a>}
           <a className="button button--primary tech-main" href={bar.main.href}>{bar.main.label}</a>
         </nav>
       )}

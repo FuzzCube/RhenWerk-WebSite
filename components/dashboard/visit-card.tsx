@@ -3,6 +3,7 @@ import { StatusChip } from "@/components/dashboard/ui/status-chip";
 import { Icon } from "@/components/ui";
 import type { TechnicianVisit } from "@/lib/dashboard/technician";
 import type { DisplayStatus } from "@/lib/display-status";
+import { routeHref, telHref } from "@/lib/contact-links";
 import { formatElapsed, formatTime, formatWeekdayDate } from "@/lib/format";
 import { label } from "@/lib/status";
 
@@ -24,9 +25,6 @@ export function visitStatus(status: string): DisplayStatus {
 export function addressOf(request: TechnicianVisit["request"]) {
   return `${request.street_house_number}, ${request.postal_code} ${request.city}`;
 }
-
-export const routeHref = (address: string) => `https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`;
-export const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
 
 // Order, address and contact with call and route buttons (also on the visit page)
 export function OrderFacts({ request }: { request: TechnicianVisit["request"] }) {
