@@ -83,12 +83,43 @@ for (const [email, name, start, nav, forbidden] of roles) {
   }
 }
 
-// Wrong password and unknown address: same message, no session
+// Wrong password and unknown address: same message, no session. Earlier runs may have left failures for these
+// addresses (task-11-6), so the counters start empty.
+const throttleAdmin = createClient(supabaseUrl, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+const loginKey = async (email) => Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email.trim().toLowerCase()))).toString("hex");
+for (const email of ["dispo1.demo@example.com", "niemand@example.com"]) await throttleAdmin.rpc("login_reset", { email_hash: await loginKey(email) });
 for (const [email, password] of [["dispo1.demo@example.com", "falsch-123"], ["niemand@example.com", "falsch-123"]]) {
   const { jar, res } = await login(email, password);
   check(`Fehlanmeldung ${email}: Fehlermeldung, keine Weiterleitung`, res.status === 200 && res.html.includes("Anmeldung fehlgeschlagen"), String(res.status));
   const d = await get(jar, "/dashboard");
   check(`  danach kein Zugriff`, d.status === 307 && path(d.loc) === "/login");
+}
+
+// Growing pause after wrong passwords (task-11-6): own temporary account, plus an unknown address
+{
+  const email = `e2e-pause-${Date.now().toString(36)}@example.com`;
+  const { data } = await throttleAdmin.auth.admin.createUser({ email, password: pw, email_confirm: true });
+  await throttleAdmin.from("profiles").insert({ id: data.user.id, display_name: "E2E Pause", role: "dispatcher" });
+  const messages = [];
+  // Alternating upper and lower case: the attempts count for the same address
+  for (let attempt = 1; attempt <= 5; attempt += 1) messages.push((await login(attempt % 2 ? email : email.toUpperCase(), `falsch-${attempt}-123`)).res.html);
+  check("Pause: vier Fehlversuche mit normaler Meldung (Groß-/Kleinschreibung egal)", messages.slice(0, 4).every((html) => html.includes("Anmeldung fehlgeschlagen") && !html.includes("Zu viele Fehlversuche")));
+  check("  fünfter Fehlversuch startet 30 Sekunden Pause", messages[4].includes("Zu viele Fehlversuche. Bitte in 30 Sekunden erneut versuchen."));
+  const blocked = await login(email, pw);
+  check("  während der Pause auch richtiges Passwort abgewiesen, keine Sitzung", blocked.res.status === 200 && blocked.res.html.includes("Zu viele Fehlversuche") && (await get(blocked.jar, "/dashboard")).status === 307);
+  const unknown = `e2e-niemand-${Date.now().toString(36)}@example.com`;
+  const unknownMessages = [];
+  for (let attempt = 1; attempt <= 5; attempt += 1) unknownMessages.push((await login(unknown, `falsch-${attempt}-123`)).res.html);
+  check("  unbekannte Adresse verhält sich gleich (keine Kontoauskunft)", unknownMessages[3].includes("Anmeldung fehlgeschlagen") && unknownMessages[4].includes("in 30 Sekunden erneut versuchen"));
+  // A new password from the admin ends the pause (same reset as the app's admin action)
+  await throttleAdmin.rpc("login_reset", { email_hash: await loginKey(email) });
+  const after = await login(email, pw);
+  check("  nach dem Zurücksetzen Anmeldung möglich, Zähler leer", after.res.status === 303 && path(after.res.loc) === "/dashboard");
+  const { data: rest } = await throttleAdmin.rpc("login_pause_remaining", { email_hash: await loginKey(email) });
+  check("  erfolgreiche Anmeldung hinterlässt keine Pause", rest === 0, String(rest));
+  await throttleAdmin.rpc("login_reset", { email_hash: await loginKey(unknown) });
+  await throttleAdmin.from("profiles").delete().eq("id", data.user.id);
+  await throttleAdmin.auth.admin.deleteUser(data.user.id);
 }
 
 // Deactivated profile and user without profile

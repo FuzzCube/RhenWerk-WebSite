@@ -8,6 +8,7 @@ import { formError, formSuccess, formValues, type FormState } from "@/lib/forms"
 import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { isFreshRecovery, newPasswordErrors } from "./password";
+import { resetFailures } from "./throttle-server";
 
 // Password reset and change (task-11-5). Passwords are only passed to Supabase Auth: they are never stored,
 // logged or sent back to the browser (error states return no values for password fields).
@@ -52,6 +53,8 @@ export async function setRecoveredPassword(_previous: FormState, formData: FormD
   }
   // Replace the link session with a normal password session, so the reset form cannot be used again with it
   await supabase.auth.signOut({ scope: "local" });
+  // A new password ends a running pause from wrong attempts (task-11-6)
+  await resetFailures(updated.user.email ?? "");
   const { error: signInError } = await supabase.auth.signInWithPassword({ email: updated.user.email ?? "", password });
   redirect(signInError ? "/login" : "/dashboard?passwort=neu");
 }

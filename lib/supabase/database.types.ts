@@ -1707,6 +1707,15 @@ isOneToOne: false
 "list_pending_analyses":
 { Args: { "batch_limit"?: number }; Returns: Json[]
                            },
+"login_failed":
+{ Args: { "email_hash": string }; Returns: number
+                           },
+"login_pause_remaining":
+{ Args: { "email_hash": string }; Returns: number
+                           },
+"login_reset":
+{ Args: { "email_hash": string }; Returns: undefined
+                           },
 "mark_awaiting_customer":
 { Args: { "expected_version": number,"note"?: string,"request_id": string }; Returns: {
               "business_email": string,

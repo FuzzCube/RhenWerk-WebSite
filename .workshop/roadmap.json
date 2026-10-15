@@ -1547,7 +1547,7 @@
       "description": "Nach Rücksprache am 15.10.2026: Layoutkorrekturen, Route mit Google Maps, telefonische Anfragen, Passwortfunktionen und gleichmäßige Verteilung des Posteingangs.",
       "order": 12,
       "weight": 12,
-      "status": "ready",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-11-1",
@@ -1697,14 +1697,31 @@
           "description": "Nach wiederholten Fehlversuchen für eine Adresse wird die Anmeldung zunehmend verzögert (keine harte Kontosperre, um Aussperren durch Dritte zu vermeiden); einheitliche Fehlermeldung.",
           "order": 6,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Fehlversuche je Adresse serverseitig gezählt, Verzögerung steigt, Rücksetzen nach Erfolg",
             "Einheitliche Meldung ohne Hinweis auf existierende Konten",
             "Tests für Zählung und Verzögerung",
             "test:auth, lint, typecheck; Dokumentation"
-          ]
+          ],
+          "startedAt": "2026-10-15T11:17:09Z",
+          "completedAt": "2026-10-15T11:22:56Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Pause nach Fehlversuchen je Adresse: Migration 20261015120000_login_throttle.sql (private.login_attempts mit SHA-256 der Adresse, login_failed/login_pause_remaining/login_reset nur service_role, 1–4 ohne Folgen, dann 30 s, 1, 2, 5, höchstens 15 min, Zähler verfällt nach 15 min), login prüft während der Pause das Passwort nicht, gleiche Behandlung unbekannter Adressen, Zurücksetzen bei Erfolg, neuem Passwort per Link und Admin-Passwort. Zeitplan in der Datenbank statt in lib/auth/throttle.ts (dort Schlüssel und Meldung). Geprüft: test:db 644 (login_throttle 13), test:auth 136 gegen next start (neu: vier normale Fehlversuche, fünfter startet 30 s Pause, richtiges Passwort in der Pause abgewiesen, unbekannte Adresse gleich, Groß-/Kleinschreibung egal, nach Zurücksetzen Anmeldung, keine Restpause; Zähler der Fehlanmelde-Prüfung werden vorher geleert), test:unit 75, test:ui 260, lint, typecheck, build.",
+            "commands": [
+              "supabase migration up",
+              "npm run db:types",
+              "supabase test db",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
+              "APP_URL=http://localhost:3201 npm run test:ui"
+            ]
+          }
         },
         {
           "id": "task-11-7",
@@ -1712,13 +1729,30 @@
           "description": "Eingehende E-Mails ohne Zuordnung gehen nicht mehr immer an den ersten aktiven Dispatcher, sondern an den am wenigsten ausgelasteten (gleiche Regel wie Website-Anfragen).",
           "order": 7,
           "weight": 1,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Migration für die Wahl von inbox_dispatcher_id nach Auslastung",
             "pgTAP für die Verteilung",
             "test:db, demo:verify; docs/database.md"
-          ]
+          ],
+          "startedAt": "2026-10-15T11:32:06Z",
+          "completedAt": "2026-10-15T11:37:46Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Posteingang nach Auslastung: Migration 20261015140000_inbox_load_balancing.sql, private.least_loaded_dispatcher(excluded) zählt offene Erstbearbeitungen plus offene, nicht archivierte Posteingangs-E-Mails (Gleichstand: kleinere ID), genutzt von record_incoming_message (unter der Zuweisungssperre) und create_phone_request; Website-Eingang unverändert. admin_deactivate_employee gibt offene Posteingangs-E-Mails an die Vertretung bzw. den am wenigsten ausgelasteten anderen Dispatcher (Rückgabe reassigned_inbox, Hinweis in der Verwaltung). Bestehende E-Mails nicht umverteilt. Geprüft: test:db 654 (inbox_load_balancing 10, admin_operations an neue Rückgabe angepasst), n8n/test_integration.sql PASS, demo:verify bestanden, test:ui 260, test:unit 75, lint, typecheck, build.",
+            "commands": [
+              "supabase migration up",
+              "supabase test db",
+              "psql < n8n/test_integration.sql",
+              "npm run demo:verify",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3201 npm run test:ui"
+            ]
+          }
         }
       ]
     }

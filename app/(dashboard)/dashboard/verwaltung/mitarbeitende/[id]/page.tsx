@@ -53,7 +53,7 @@ export default async function EmployeePage({ params, searchParams }: Props) {
       {one(query.angelegt) === "1" && <p className="notice" role="status">Konto angelegt. {profile.role === "technician" ? "Bitte jetzt die Arbeitszeiten festlegen, sonst kann der Techniker nicht eingeplant werden." : ""}</p>}
       {result === "deaktiviert" && (
         <p className="notice" role="status">
-          Deaktiviert. Neu zugewiesen: {one(query.anfragen) || "0"} Anfragen, {one(query.einsaetze) || "0"} Einsätze.
+          Deaktiviert. Neu zugewiesen: {one(query.anfragen) || "0"} Anfragen, {one(query.einsaetze) || "0"} Einsätze{Number(one(query.posteingang)) > 0 ? `, ${one(query.posteingang)} E-Mails im Posteingang` : ""}.
           {one(query.sperre) === "fehlgeschlagen" ? " Die Anmeldung konnte nicht gesperrt werden; ohne aktives Profil sind aber keine Daten zugänglich." : " Die Anmeldung ist gesperrt."}
         </p>
       )}

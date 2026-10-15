@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { absenceInterval, companyDetailsFrom, parseDecimal, parseWorkingHours, validateNewEmployee } from "@/lib/admin";
 import { newPasswordErrors } from "@/lib/auth/password";
+import { resetFailures } from "@/lib/auth/throttle-server";
 import { EMPLOYEE_ROLES, isEmployeeRole } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { databaseErrorMessage, formError, formSuccess, formValues, type FormState } from "@/lib/forms";
@@ -86,9 +87,9 @@ export async function deactivateEmployee(_previous: FormState, formData: FormDat
   if (error) return formError(databaseErrorMessage(error), values);
 
   // The deactivation section disappears after the change, so the result is shown via the URL
-  const moved = data as { reassigned_requests?: number; reassigned_visits?: number } | null;
+  const moved = data as { reassigned_requests?: number; reassigned_visits?: number; reassigned_inbox?: number } | null;
   const { error: banError } = await createAdminClient().auth.admin.updateUserById(values.employee_id, { ban_duration: BLOCKED });
-  const query = new URLSearchParams({ ergebnis: "deaktiviert", anfragen: String(moved?.reassigned_requests ?? 0), einsaetze: String(moved?.reassigned_visits ?? 0) });
+  const query = new URLSearchParams({ ergebnis: "deaktiviert", anfragen: String(moved?.reassigned_requests ?? 0), einsaetze: String(moved?.reassigned_visits ?? 0), posteingang: String(moved?.reassigned_inbox ?? 0) });
   if (banError) query.set("sperre", "fehlgeschlagen");
   redirect(`/dashboard/verwaltung/mitarbeitende/${values.employee_id}?${query}`);
 }
@@ -102,8 +103,10 @@ export async function setEmployeePassword(_previous: FormState, formData: FormDa
   if (employee_id === admin.id) return formError("Das eigene Passwort bitte unter „Mein Konto“ ändern.", {});
   const fieldErrors = newPasswordErrors(password, password_repeat);
   if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", {}, fieldErrors);
-  const { error } = await createAdminClient().auth.admin.updateUserById(employee_id, { password });
+  const { data: updated, error } = await createAdminClient().auth.admin.updateUserById(employee_id, { password });
   if (error) return formError("Das Passwort konnte nicht gesetzt werden. Bitte erneut versuchen.", {});
+  // The person can sign in at once, even during a pause from wrong attempts (task-11-6)
+  await resetFailures(updated.user.email ?? "");
   return formSuccess("Neues Passwort gesetzt. Bitte der Person persönlich mitteilen.");
 }
 

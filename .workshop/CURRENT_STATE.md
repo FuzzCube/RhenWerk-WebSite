@@ -2,19 +2,23 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v6 mit 12 Phasen und 48 Tasks. Fortschritt 97,95 % (Gewicht 143 von 146, 46 von 48 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v6 mit 12 Phasen und 48 Tasks. Fortschritt 100,00 % (Gewicht 146 von 146, 48 von 48 Tasks).
 
 ## Aktive Phase
 
-Phase 11 „Nachbesserungen“ (am 15.10.2026 nach Rücksprache angelegt). Phasen 0–10 sind abgeschlossen.
+Alle Phasen 0–11 sind abgeschlossen (Phase 11 „Nachbesserungen“ am 15.10.2026 angelegt und abgeschlossen).
 
 ## Aktive Aufgabe
 
-Keine.
+Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue Roadmap-Tasks.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-11-7` (15.10.2026): Posteingang nach Auslastung (offene Erstbearbeitungen + offene Posteingangs-E-Mails) statt immer an den ersten Dispatcher; bei Deaktivierung gehen offene E-Mails an die Vertretung. test:db 654, n8n-SQL-Test, demo:verify, test:ui 260, test:unit 75, lint, typecheck, build.
+
+`task-11-6` (15.10.2026): Pause nach Fehlversuchen je Adresse (ab dem 5. Fehlversuch 30 s bis höchstens 15 min, keine harte Sperre, keine Kontoauskunft), Zurücksetzen bei Erfolg und neuem Passwort. test:db 644, test:auth 136, test:unit 75, test:ui 260, lint, typecheck, build. Details in `docs/architecture.md` und `docs/database.md`.
 
 `task-11-5` (15.10.2026): Passwort vergessen per E-Mail-Link (`/auth/passwort-vergessen` → `/auth/bestaetigen` → `/auth/passwort-neu`), ändern unter `/dashboard/konto`, vorläufiges Passwort durch Admin. Mindestens 12 Zeichen. Lokal kommen die Mails in Mailpit an (54324); echte Zustellung braucht SMTP (`docs/setup.md`). test:ui 260, test:auth 130, test:unit 73, test:db 631, lint, typecheck, build.
 
@@ -50,10 +54,7 @@ Keine.
 
 ## Bereite nächste Aufgaben
 
-Alle ohne Abhängigkeiten `ready`:
-
-- `task-11-6` Schutz bei falschen Passwörtern (bisher nur IP-Limit von Supabase: 30 Anmeldungen je 5 min)
-- `task-11-7` Posteingang nach Auslastung verteilen (bisher immer erster aktiver Dispatcher nach ID)
+Keine. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
 
 ## Blockiert
 
@@ -115,4 +116,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-Weiter mit `task-11-6` und `task-11-7`. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`). Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.
+Phase 11 ist abgeschlossen. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); weitere Arbeit als neue Roadmap-Tasks. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.

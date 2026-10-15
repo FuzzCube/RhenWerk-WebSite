@@ -596,7 +596,7 @@ Migration `20261008120000_admin_operations.sql`. Tests: `supabase/tests/database
 | --- | --- |
 | `admin_employee_assignments(employee_id)` | aktive Zuweisungen: offene Anfragen als Dispatcher oder Techniker (nicht abgelehnt, storniert oder abgeschlossen) und Einsätze mit Status `scheduled`/`in_progress` |
 | `admin_update_employee(employee_id, display_name, role)` | Name und Rolle; Rollenwechsel nur ohne aktive Zuweisungen, nie für das eigene Konto (es bleibt immer ein Admin) |
-| `admin_deactivate_employee(employee_id, replacement_id?)` | setzt `is_active = false`, löscht nichts. Bei aktiven Zuweisungen ist eine aktive Vertretung derselben Rolle Pflicht; Anfragen (`dispatcher_id`/`technician_id`) und geplante Einsätze gehen in derselben Transaktion an sie. Einsätze müssen in Arbeitszeit und Abwesenheiten der Vertretung passen (`RW422`) und dürfen sich nicht überschneiden (`RW410`). Ein laufender Einsatz blockiert. Eigenes Konto nicht. Rückgabe `{reassigned_requests, reassigned_visits}`; Ereignisse `dispatcher_assigned`, `technician_assigned`, `visit_reassigned` mit Notiz „Neuzuweisung wegen Deaktivierung von …“ |
+| `admin_deactivate_employee(employee_id, replacement_id?)` | setzt `is_active = false`, löscht nichts. Bei aktiven Zuweisungen ist eine aktive Vertretung derselben Rolle Pflicht; Anfragen (`dispatcher_id`/`technician_id`) und geplante Einsätze gehen in derselben Transaktion an sie. Einsätze müssen in Arbeitszeit und Abwesenheiten der Vertretung passen (`RW422`) und dürfen sich nicht überschneiden (`RW410`). Ein laufender Einsatz blockiert. Eigenes Konto nicht. Offene Posteingangs-E-Mails gehen an die Vertretung bzw. den am wenigsten ausgelasteten anderen Dispatcher (task-11-7). Rückgabe `{reassigned_requests, reassigned_visits, reassigned_inbox}`; Ereignisse `dispatcher_assigned`, `technician_assigned`, `visit_reassigned` mit Notiz „Neuzuweisung wegen Deaktivierung von …“ |
 | `admin_reactivate_employee(employee_id)` | wieder aktiv; Zuweisungen werden nicht zurückübertragen |
 | `admin_save_service_rate(rate_id?, code, service_kind, display_name, billing_model, unit_price, tax_rate, is_active)` | Tarif anlegen (`rate_id` leer) oder ändern; Kürzel eindeutig. Arbeitspositionen übernehmen Preis und Steuersatz beim Erfassen, ausgestellte Rechnungen ihre Positionen, daher wirken Änderungen nur auf spätere Positionen. Deaktivieren statt löschen |
 | `admin_set_working_hours(employee_id, hours)` | ersetzt die Wochenarbeitszeit (`[{weekday, local_start, local_end}]`, je Wochentag ein Fenster). Neue Zeilen werden vor dem Löschen der alten eingefügt, damit der Trigger `employee_availability_check_bookings` den Endzustand prüft |
@@ -634,3 +634,23 @@ Gestufte Erinnerungen für überfällige Rechnungen. Migrationen `20261012140000
 | `admin_update_reminder_settings(stage1_days, stage2_days, stage3_days)` | Admin | Abstände 1–90 Tage oder `null` |
 
 `demo_seed_apply` lädt eine passende Erinnerungshistorie für Demo-Rechnungen. Die Verfügbarkeitsprüfung (`private.check_availability_change`) wartet während des Seeds und prüft am Ende alle aktiven Einsätze, damit ein Neuaufbau mit echten Einsätzen im Kalender funktioniert.
+
+## Pause nach Fehlversuchen beim Anmelden (task-11-6)
+
+Migration `20261015120000_login_throttle.sql`. Tabelle `private.login_attempts` (`email_hash` = SHA-256 der kleingeschriebenen Adresse, `failures`, `last_failed_at`, `blocked_until`); kein Zugriff für `anon`/`authenticated`.
+
+| Funktion | Rechte | Zweck |
+| --- | --- | --- |
+| `login_pause_remaining(email_hash)` | nur `service_role` | verbleibende Pause in Sekunden (0 = Anmeldung erlaubt) |
+| `login_failed(email_hash)` | nur `service_role` | Fehlversuch zählen (nach 15 Minuten ohne Fehlversuch neu ab 1) und Pause setzen: 1–4 → 0, 5 → 30 s, 6 → 60 s, 7 → 120 s, 8 → 300 s, ab 9 → 900 s (`private.login_pause_seconds`) |
+| `login_reset(email_hash)` | nur `service_role` | Zähler löschen (erfolgreiche Anmeldung, neues Passwort) |
+
+Tests: `supabase/tests/database/login_throttle.test.sql` (13).
+
+## Verteilung des Posteingangs nach Auslastung (task-11-7)
+
+Migration `20261015140000_inbox_load_balancing.sql`. `private.least_loaded_dispatcher(excluded uuid default null)` wählt den aktiven Dispatcher mit der kleinsten Summe aus offenen Erstbearbeitungen (Live-Anfragen ohne `intake_completed_at`) und offenen Posteingangs-E-Mails (`request_id` leer, nicht archiviert), bei Gleichstand die kleinere ID; `excluded` lässt eine Person aus. Genutzt von `record_incoming_message` für nicht zugeordnete E-Mails (unter derselben Advisory-Sperre wie die Anfragenzuweisung) und von `create_phone_request`. Der Website-Eingang (`ingest_submission`) zählt weiterhin nur offene Erstbearbeitungen.
+
+`admin_deactivate_employee` gibt offene Posteingangs-E-Mails der deaktivierten Person an die Vertretung, ohne Vertretung an den am wenigsten ausgelasteten anderen Dispatcher; archivierte bleiben. Rückgabe zusätzlich `reassigned_inbox`.
+
+Tests: `supabase/tests/database/inbox_load_balancing.test.sql` (10).

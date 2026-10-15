@@ -92,7 +92,7 @@ select throws_ok($$select public.admin_deactivate_employee('00000000-0000-0000-0
 select throws_ok($$select public.admin_deactivate_employee('00000000-0000-0000-0000-0000000000d1')$$, 'RW422', 'Aktive Zuweisungen vorhanden: bitte eine Vertretung für die Neuzuweisung wählen', 'replacement required');
 select throws_ok($$select public.admin_deactivate_employee('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000b3')$$, 'RW422', null, 'replacement must have the same role');
 select is(public.admin_deactivate_employee('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000d2'),
-  '{"reassigned_requests": 2, "reassigned_visits": 0}'::jsonb, 'd1 deactivated, two requests moved');
+  '{"reassigned_requests": 2, "reassigned_visits": 0, "reassigned_inbox": 0}'::jsonb, 'd1 deactivated, two requests moved');
 select is((select count(*)::int from public.requests where dispatcher_id = '00000000-0000-0000-0000-0000000000d2'), 3, 'r1, r2 now with d2 (r4 already)');
 select is((select dispatcher_id from public.requests where id = '00000000-0000-0000-0000-000000000003'), '00000000-0000-0000-0000-0000000000d1'::uuid, 'cancelled request keeps its history');
 select is((select count(*)::int from public.request_events where event_type = 'dispatcher_assigned' and to_value = '00000000-0000-0000-0000-0000000000d2' and note like 'Neuzuweisung wegen Deaktivierung%'), 2, 'reassignment logged');
@@ -104,7 +104,7 @@ select throws_ok($$select public.admin_deactivate_employee('00000000-0000-0000-0
 select throws_ok($$select public.admin_deactivate_employee('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b2')$$, 'RW422', null, 'replacement absent at the visit');
 select is((select is_active from public.profiles where id = '00000000-0000-0000-0000-0000000000b1'), true, 'failed deactivation changes nothing');
 select is(public.admin_deactivate_employee('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b3'),
-  '{"reassigned_requests": 1, "reassigned_visits": 1}'::jsonb, 't1 deactivated, request and visit moved');
+  '{"reassigned_requests": 1, "reassigned_visits": 1, "reassigned_inbox": 0}'::jsonb, 't1 deactivated, request and visit moved');
 select is((select technician_id from public.visits where id = '00000000-0000-0000-0000-0000000000f1'), '00000000-0000-0000-0000-0000000000b3'::uuid, 'visit with t3');
 select is((select technician_id from public.requests where id = '00000000-0000-0000-0000-000000000001'), '00000000-0000-0000-0000-0000000000b3'::uuid, 'request with t3');
 select is((select count(*)::int from public.request_events where event_type = 'visit_reassigned' and visit_id = '00000000-0000-0000-0000-0000000000f1'), 1, 'visit reassignment logged');
