@@ -178,6 +178,8 @@ Indizes: `request_id`, `inbox_dispatcher_id` (nur unzugeordnete), `(mailbox_key,
 
 Archiv (task-10-10, Migration `20261013140000_inbox_archive.sql`): `archived_at`, `archived_by`, `archive_reason` (alle drei gesetzt oder alle leer; nur unzugeordnete eingehende Nachrichten), Teilindex für den offenen Posteingang. Ein Trigger verhindert das Zuordnen einer archivierten Nachricht (RW422).
 
+Unterhaltungen im Posteingang (task-12-3, Migration `20261015180000_inbox_reply.sql`): `inbox_root_id` verweist auf die erste unzugeordnete E-Mail (Wurzel); spätere Kunden-E-Mails und unsere Antworten tragen sie. Ausgehende Nachrichten ohne Anfrage sind nur mit `inbox_root_id` und `inbox_dispatcher_id` zulässig (`messages_outgoing_has_request`), ein Lauf `email_send` darf ohne Anfrage laufen. `reply_to_inbox_message(message_id, subject, body_text)` (Dispatcher des Posteingangs, Manager, Admin; nicht für zugeordnete oder archivierte E-Mails; gleicher Text binnen einer Minute nur einmal) legt die Antwort als `clarification`, `queued`, freigegeben von der aufrufenden Person an. `link_message`, `create_request_from_message`, `archive_message` und `restore_message` arbeiten auf der Wurzel; Zuordnen und Anlegen verschieben die ganze Unterhaltung mit Anhängen (`private.move_inbox_conversation`, Ereignis mit `conversation_messages`). Auslastung zählt nur Wurzeln.
+
 ### `automation_runs`
 
 Pflicht: `id`, `operation_key` (UNIQUE), `step`, `status` (Default `running`), `started_at`, `created_at`, `updated_at`.
@@ -654,3 +656,7 @@ Migration `20261015140000_inbox_load_balancing.sql`. `private.least_loaded_dispa
 `admin_deactivate_employee` gibt offene Posteingangs-E-Mails der deaktivierten Person an die Vertretung, ohne Vertretung an den am wenigsten ausgelasteten anderen Dispatcher; archivierte bleiben. Rückgabe zusätzlich `reassigned_inbox`.
 
 Tests: `supabase/tests/database/inbox_load_balancing.test.sql` (10).
+
+## Einsatzzeiten für die Monatsauslastung (task-12-1)
+
+Migration `20261015160000_technician_load_intervals.sql`. `technician_load_intervals(range_start, range_end)` (`security definer`, Dispatcher/Manager/Admin, sonst leer; `anon` ohne Zugriff) liefert je aktivem Techniker die geplanten Intervalle seiner Einsätze mit Status `scheduled`, `in_progress`, `waiting_parts` oder `completed` – nur Techniker und Zeit wie `technician_busy_intervals`, das nur blockierende Einsätze liefert. Tests: `supabase/tests/database/technician_load_intervals.test.sql` (5).

@@ -1157,8 +1157,10 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .plan3__row { display: contents; }
 .plan3__rowh { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding-right: var(--rw-space-12); }
 .plan3__rowh strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 600; }
-.plan3__load { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--rw-text-secondary); }
-.plan3__loadbar { flex: 0 0 3rem; height: 4px; background: var(--rw-color-steel-100); overflow: hidden; }
+/* Monthly load (task-12-1): text in one line, bar below, so the narrow name column does not wrap */
+.plan3__load { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--rw-text-secondary); white-space: nowrap; cursor: help; }
+.plan3__load > span:nth-child(2) { order: -1; }
+.plan3__loadbar { width: 100%; max-width: 7rem; height: 4px; background: var(--rw-color-steel-100); overflow: hidden; }
 .plan3__loadbar i { display: block; height: 100%; background: var(--rw-color-blue-700); }
 .plan3__colh { display: flex; flex-direction: column; gap: 1px; margin: 0 3px; padding: 6px 6px 2px; border-top: 2px solid transparent; border-radius: 2px 2px 0 0; font-size: 13px; line-height: 1.3; color: var(--rw-text-secondary); }
 .plan3__colh strong { color: var(--rw-text-primary); font-weight: 600; white-space: nowrap; }
@@ -1371,8 +1373,10 @@ details.tech-step[open] { padding-bottom: 20px; }
 .side-page__count { font-size: 18px; font-weight: 500; color: var(--rw-text-secondary); letter-spacing: 0; }
 .side-page__desc { margin-top: 6px; max-width: none; font-size: 15px; color: var(--rw-text-secondary); }
 
-.req2__toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--rw-space-8); flex: 0 1 34rem; }
-.req2__search { position: relative; display: flex; align-items: center; gap: var(--rw-space-8); flex: 1 1 20rem; }
+/* One row: phone request, search, filter; the search gives way first */
+.req2__toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: var(--rw-space-8); flex: 0 1 46rem; min-width: 0; }
+.req2__search { position: relative; display: flex; align-items: center; gap: var(--rw-space-8); flex: 1 1 20rem; min-width: 12rem; }
+.req2__filter { flex: none; }
 /* Phone requests (task-11-4); on the phone only the icon, the label stays for screen readers */
 .req2__new { flex: none; gap: 6px; }
 .req2__search > svg { position: absolute; left: 12px; color: var(--rw-text-secondary); pointer-events: none; }
@@ -1676,6 +1680,18 @@ details.tech-step[open] { padding-bottom: 20px; }
 .inbox-mail__action-body { display: flex; flex-direction: column; gap: var(--rw-space-12); padding: 4px 14px 14px; }
 .inbox-mail__action-body .save-form { padding: 0; border: 0; background: transparent; }
 .inbox-search { display: flex; gap: var(--rw-space-8); }
+/* Inbox conversations (task-12-3): state in the list, later messages under the e-mail, reply form in one column */
+.inbox-item__state { align-self: flex-start; margin: 2px 0 0; color: var(--rw-color-info-800); background: var(--rw-color-info-surface); border-color: var(--rw-color-info-border); }
+.inbox-item__state[data-state="replied"] { color: var(--rw-color-success-800); background: var(--rw-color-success-surface); border-color: var(--rw-color-success-border); }
+.inbox-item__state[data-state="failed"] { color: var(--rw-color-danger-800); background: var(--rw-color-danger-surface); border-color: var(--rw-color-danger-border); }
+.inbox-thread { display: flex; flex-direction: column; gap: var(--rw-space-12); margin: 0; padding: 0; list-style: none; }
+.inbox-thread__item { display: flex; flex-direction: column; gap: 6px; padding-left: 12px; border-left: 3px solid var(--rw-border-default); }
+.inbox-thread__item--outgoing { border-left-color: var(--rw-color-blue-700); }
+.inbox-thread__item[data-status="failed"] { border-left-color: var(--rw-color-danger-700); }
+.inbox-thread__meta { margin: 0; font-size: 13px; color: var(--rw-text-secondary); overflow-wrap: anywhere; }
+.inbox-thread__meta strong { color: var(--rw-text-primary); font-weight: 600; }
+.inbox-thread__failed { color: var(--rw-color-danger-700); }
+.inbox-mail__action-body .form-grid.form-grid--single { grid-template-columns: minmax(0, 1fr); }
 .inbox-search .rw-input { flex: 1; min-width: 0; }
 @media (min-width: 768px) { .inbox-mail__action-body .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 

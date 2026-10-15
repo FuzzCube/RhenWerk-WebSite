@@ -525,6 +525,41 @@ try {
       await page.open(`${BASE}/dashboard/posteingang?nachricht=${mail.id}`);
       const shown = await page.eval(`({ body: document.querySelector(".inbox-mail__body")?.textContent ?? "", email: document.querySelector('[name="business_email"]')?.value ?? "", target: document.querySelector('[name="target"]')?.value ?? "" })`);
       check("  Text sichtbar, neue Anfrage mit Absender vorbelegt, Anfrage des Absenders vorgeschlagen", shown.body.includes("Anfragenummer liegt mir nicht vor") && shown.email === target.business_email && shown.target.startsWith(target.id), JSON.stringify(shown));
+      const placeholder = await page.eval(`(() => { const o = document.querySelector('[name="target"]')?.options[0]; return o ? { value: o.value, text: o.textContent, disabled: o.disabled } : null; })()`);
+      check("  leerer Eintrag „Anfrage wählen …“ zuerst, wählbar", placeholder?.value === "" && placeholder.text === "Anfrage wählen …" && !placeholder.disabled, JSON.stringify(placeholder));
+      // Only the same domain (task-12-2): suggested and marked, never preselected; the help text names the other ways
+      const { data: domainMail, error: domainError } = await admin.from("messages").insert({
+        inbox_dispatcher_id: dispoId, direction: "incoming", kind: "other", status: "received", from_address: `fremd-${runId}@example.com`,
+        subject: `UI-Test Domain ${runId}`, body_text: "Wann kommt der Techniker?", received_at: new Date().toISOString(),
+      }).select().single();
+      if (domainError) throw new Error(`Posteingang: ${domainError.message}`);
+      extraMails.push(domainMail.id);
+      await page.open(`${BASE}/dashboard/posteingang?nachricht=${domainMail.id}`);
+      const domainView = await page.eval(`({ value: document.querySelector('[name="target"]')?.value ?? null, labels: [...(document.querySelector('[name="target"]')?.options ?? [])].slice(1).map((o) => o.textContent), missing: document.querySelector(".inbox-mail__missing")?.textContent ?? "" })`);
+      check("  nur gleiche Domain: gekennzeichnet, nichts vorausgewählt, Hinweis bei fehlender Anfrage",
+        domainView.value === "" && domainView.labels.length > 0 && domainView.labels.every((l) => l.includes("nur gleiche Domain")) && domainView.missing.includes("Neue Anfrage anlegen"), JSON.stringify(domainView));
+      // Reply to the sender (task-12-3): template, queued after "Senden", state in the list, customer answer in the conversation
+      const replyForm = `document.getElementById("antworten")`;
+      const template = await page.eval(`({ subject: document.querySelector('#antworten [name="subject"]')?.value, body: document.querySelector('#antworten [name="body_text"]')?.value ?? "" })`);
+      check("  Antworten: Betreff „AW: …“, Vorlage fragt nach Anfragenummer und Standort, mit Namen", template.subject === `AW: UI-Test Domain ${runId}` && template.body.includes("Anfragenummer") && template.body.includes("Standort") && template.body.includes("Mit freundlichen Grüßen"), JSON.stringify(template));
+      await fillIn(replyForm, { body_text: `Bitte nennen Sie uns Ihre Anfragenummer. ${runId}` });
+      const replied = await waitFor(async () => (await admin.from("messages").select("id").eq("inbox_root_id", domainMail.id).eq("direction", "outgoing")).data?.length === 1);
+      const { data: reply } = await admin.from("messages").select("status, to_address, approved_by, request_id").eq("inbox_root_id", domainMail.id).eq("direction", "outgoing").single();
+      check("  Senden stellt die Antwort in die Warteschlange (an den Absender, freigegeben vom Dispatcher, ohne Anfrage)",
+        replied && reply.status === "queued" && reply.to_address === domainMail.from_address && reply.approved_by === dispoId && reply.request_id === null, JSON.stringify(reply));
+      await waitFor(() => page.eval(`location.search.includes("gesendet=1")`));
+      const afterReply = await page.eval(`({ notice: [...document.querySelectorAll(".inbox-mail .notice")].map((e) => e.textContent).join(" "), thread: [...document.querySelectorAll(".inbox-thread__item--outgoing")].map((e) => e.textContent).join(" "), state: [...document.querySelectorAll(".inbox-item")].find((a) => a.textContent.includes(${JSON.stringify(`UI-Test Domain ${runId}`)}))?.querySelector(".inbox-item__state")?.textContent ?? null })`);
+      check("  danach: Hinweis, Antwort im Verlauf, E-Mail bleibt offen mit „Antwort wird gesendet“",
+        afterReply.notice.includes("Versandwarteschlange") && afterReply.thread.includes(runId) && afterReply.state === "Antwort wird gesendet", JSON.stringify(afterReply));
+      const { error: answerError } = await admin.from("messages").insert({
+        inbox_dispatcher_id: dispoId, inbox_root_id: domainMail.id, direction: "incoming", kind: "customer_reply", status: "received",
+        from_address: domainMail.from_address, subject: `Re: UI-Test Domain ${runId}`, body_text: "Unsere Nummer ist RIS-2026-00001.", received_at: new Date(Date.now() + 1000).toISOString(),
+      });
+      if (answerError) throw new Error(`Posteingang: ${answerError.message}`);
+      await page.open(`${BASE}/dashboard/posteingang?nachricht=${domainMail.id}`);
+      const answered = await page.eval(`({ items: document.querySelectorAll(".inbox-thread__item").length, state: document.querySelector('.inbox-item[aria-current="true"] .inbox-item__state')?.textContent ?? null, separate: [...document.querySelectorAll(".inbox-item__subject")].filter((e) => e.textContent.startsWith("Re: UI-Test Domain")).length })`);
+      check("  Kundenantwort im selben Verlauf, Liste „Neue Antwort“, kein eigener Listeneintrag", answered.items === 2 && answered.state === "Neue Antwort" && answered.separate === 0, JSON.stringify(answered));
+      await page.open(`${BASE}/dashboard/posteingang?nachricht=${mail.id}`);
       await fillIn(`[...document.querySelectorAll("form.save-form")].find((f) => f.querySelector('[name="target"]'))`, {});
       const linkedOk = await waitFor(async () => (await admin.from("messages").select("request_id").eq("id", mail.id).single()).data?.request_id === target.id);
       const { data: linkEvents } = await admin.from("request_events").select("actor_id").eq("request_id", target.id).eq("event_type", "message_linked");
@@ -567,7 +602,8 @@ try {
       await waitFor(() => page.eval(`!location.search.includes("ansicht=archiv") && document.getElementById("mail-title")?.textContent === ${JSON.stringify(signed)}`));
       check("  Wiederherstellen: wieder unter „Offen“ geöffnet", restored && await page.eval(`document.getElementById("mail-title")?.textContent === ${JSON.stringify(signed)} && !!document.getElementById("inbox-suche")`));
     } finally {
-      // A failed run must not leave test e-mails in the inboxes of manager and admin
+      // A failed run must not leave test e-mails in the inboxes of manager and admin; replies are removed so they are never sent
+      await admin.from("messages").delete().in("inbox_root_id", [mail.id, ...extraMails]);
       await admin.from("messages").update({ archived_at: null, archived_by: null, archive_reason: null }).in("id", extraMails);
       await admin.from("messages").update({ request_id: target.id, handled_at: new Date().toISOString() }).in("id", [mail.id, ...extraMails]).is("request_id", null);
     }
@@ -624,6 +660,22 @@ try {
   const visitsOf = async (requestId) => (await admin.from("visits").select("technician_id, scheduled_start, scheduled_end, status").eq("request_id", requestId)).data;
   const bookingForm = `document.querySelector("#auswahl form")`;
   await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  // task-12-1: load next to the names is the calendar month of the shown day and follows the navigation
+  {
+    const SHORT = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
+    const LONG = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+    const loads = () => page.eval(`[...document.querySelectorAll(".plan3__row .plan3__load")].map((e) => ({ text: e.textContent, title: e.title, value: e.dataset.monthLoad }))`);
+    const monthOk = (rows, month, year) => rows.length >= 3 && rows.every((row) => row.text.startsWith(`${SHORT[month]} · `) && row.title.startsWith(`${LONG[month]} ${year}:`)
+      && (row.value === "abwesend" ? row.text.includes("abwesend") : /^\d+$/.test(row.value) && row.text.includes(`${row.value} % belegt`) && row.title.includes("Arbeitszeit eingeplant")));
+    const month = Number(week.slice(5, 7)) - 1;
+    await page.open(`${BASE}/dashboard/planung?ansicht=tag&tag=${week}`);
+    const current = await loads();
+    check(`Plantafel: Auslastung im Monat ${SHORT[month]} neben jedem Techniker, Stunden im Tooltip`, monthOk(current, month, week.slice(0, 4)), JSON.stringify(current));
+    const nextMonth = new Date(Date.UTC(Number(week.slice(0, 4)), month + 1, 1)).toISOString().slice(0, 10);
+    await page.open(`${BASE}/dashboard/planung?ansicht=tag&tag=${nextMonth}`);
+    const next = await loads();
+    check("  Monat wechselt mit der Navigation", monthOk(next, Number(nextMonth.slice(5, 7)) - 1, nextMonth.slice(0, 4)), JSON.stringify(next));
+  }
   await page.open(`${BASE}/dashboard/planung?woche=${week}&anfrage=${planA.id}`);
   check("Anfrage in „Zu planen“ ausgewählt", await page.eval(`document.querySelector('.plan3__item[aria-current="true"]')?.textContent.includes(${JSON.stringify(planA.request_number)})`));
   // Click at 09:00 (plus a few minutes; the board snaps to the nearest half hour) in Tobias' lane on Monday of the planning board

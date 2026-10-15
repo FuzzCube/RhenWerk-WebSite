@@ -3,6 +3,7 @@ import { addDays, berlinToInstant, isDayKey, weekStart, dayKeyOf } from "@/lib/b
 import type { Employee } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { nextWorkingDays, suggestSlots, type SlotBusy, type SlotExperience, type SlotSuggestion } from "@/lib/slot-suggestions";
+import { monthDays, monthLoad, type MonthLoad } from "@/lib/technician-load";
 import type { QueueRow } from "./queues";
 
 // Data of the planning page. Occupancy of all technicians comes from technician_busy_intervals
@@ -162,4 +163,24 @@ export async function loadSelectedContext(requestId: string): Promise<SelectedCo
     visits: (visits.data ?? []).map((row) => ({ start: row.scheduled_start, technicianId: row.technician_id, status: row.status })),
     orderedParts: (parts.data ?? []).map((row) => ({ description: row.description, quantity: Number(row.quantity), orderedAt: row.created_at })),
   };
+}
+
+// Monthly load per technician for the planning board (task-12-1): calendar month of the shown day. Visits come from
+// technician_load_intervals (incl. completed and waiting for parts), absences from technician_busy_intervals; both
+// only technician and time.
+export type MonthLoads = { month: string; loads: Record<string, MonthLoad>; error: boolean };
+
+export async function loadMonthLoads(day: string, technicians: Technician[], workingHours: WorkingHours[]): Promise<MonthLoads> {
+  const supabase = await createClient();
+  const days = monthDays(day);
+  const rangeStart = berlinToInstant(days[0], "00:00").toISOString();
+  const rangeEnd = berlinToInstant(addDays(days[days.length - 1], 1), "00:00").toISOString();
+  const [visits, busy] = await Promise.all([
+    supabase.rpc("technician_load_intervals", { range_start: rangeStart, range_end: rangeEnd }),
+    supabase.rpc("technician_busy_intervals", { range_start: rangeStart, range_end: rangeEnd }),
+  ]);
+  const visitList = (visits.data ?? []).map((row) => ({ technicianId: row.technician_id, start: row.starts_at, end: row.ends_at }));
+  const absences = (busy.data ?? []).filter((row) => row.busy_kind === "absence").map((row) => ({ technicianId: row.technician_id, start: row.starts_at, end: row.ends_at }));
+  const loads = Object.fromEntries(technicians.map((tech) => [tech.id, monthLoad({ technicianId: tech.id, day, workingHours, visits: visitList, absences })]));
+  return { month: days[0], loads, error: Boolean(visits.error || busy.error) };
 }

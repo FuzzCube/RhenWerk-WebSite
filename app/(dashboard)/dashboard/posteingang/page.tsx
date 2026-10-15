@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { archiveMessage, createRequestFromMessage, linkMessage, restoreMessage } from "@/app/(dashboard)/dashboard/posteingang/actions";
+import { archiveMessage, createRequestFromMessage, linkMessage, replyToMessage, restoreMessage } from "@/app/(dashboard)/dashboard/posteingang/actions";
 import { RequestFields } from "@/components/dashboard/request-fields";
-import { SaveForm, SelectField, HiddenField } from "@/components/dashboard/ui/save-form";
+import { SaveForm, SelectField, HiddenField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { addDays } from "@/lib/berlin-time";
-import { getInboxMessage, linkCandidates, listArchived, listInbox, listLinked, type ArchivedItem, type ArchiveReason, type InboxMessage } from "@/lib/dashboard/inbox";
+import { getInboxMessage, linkCandidates, listArchived, listInbox, listLinked, type ArchivedItem, type ArchiveReason, type ConversationEntry, type InboxMessage } from "@/lib/dashboard/inbox";
+import { replySubject, replyTemplate, STATE_LABEL, type ConversationState } from "@/lib/inbox-conversation";
 import { extractRequestFields, type ExtractedField } from "@/lib/inbox-extract";
 import { berlinDayKey, formatDateTime, formatNumber } from "@/lib/format";
 
@@ -28,14 +29,15 @@ const ARCHIVE_REASONS: Record<ArchiveReason, string> = {
   other: "Sonstiges, kein Auftrag",
 };
 const DESCRIPTIONS: Record<View, string> = {
-  offen: "E-Mails ohne Anfragenummer und ohne bekannten Verlauf. Einer bestehenden Anfrage zuordnen, daraus eine neue Anfrage anlegen oder archivieren, wenn sie keinen Auftrag betrifft.",
+  offen: "E-Mails ohne Anfragenummer und ohne bekannten Verlauf. Einer bestehenden Anfrage zuordnen, beim Absender nachfragen, daraus eine neue Anfrage anlegen oder archivieren, wenn sie keinen Auftrag betrifft.",
   zugeordnet: "Aus dem Posteingang zugeordnete E-Mails der letzten 14 Tage.",
   archiv: "E-Mails ohne Auftragsbezug (Werbung, Lieferanten, Bewerbungen). Nichts wird gelöscht; wiederhergestellte E-Mails stehen wieder unter „Offen“.",
 };
 
 // Inbox of unmatched incoming e-mails (task-10-5): e-mails without request number or thread land in a dispatcher's
 // inbox. Dispatchers see their own inbox, manager and admin all. Each e-mail is assigned to an existing request
-// (link_message) or becomes a new request; both are logged on the request.
+// (link_message) or becomes a new request; both are logged on the request. Replies to the sender (task-12-3) keep the
+// e-mail open as one conversation with the customer's answers.
 export default async function InboxPage({ searchParams }: Props) {
   const employee = await requireRole(rolesFor(BASE));
   const params = await searchParams;
@@ -50,6 +52,7 @@ export default async function InboxPage({ searchParams }: Props) {
   const term = one(params.suche);
   const candidates = selected && !selected.request && !selected.archived ? await linkCandidates(selected.from_address, term) : [];
   // Just archived (undo offered once on the next page)
+  const justSent = view === "offen" && one(params.gesendet) === "1" && !!selected && !selected.request;
   const justArchived = view === "offen" && UUID.test(one(params.archiviert)) ? archived.rows.find((row) => row.id === one(params.archiviert)) ?? null : null;
   const names = new Map([...inbox.names, ...archived.names]);
   const href = (next: Record<string, string>) => `${BASE}?${new URLSearchParams(next).toString()}`;
@@ -128,6 +131,7 @@ export default async function InboxPage({ searchParams }: Props) {
                           <Link className="inbox-item" href={`${href(view === "archiv" ? { ansicht: "archiv", nachricht: row.id } : { nachricht: row.id })}#nachricht`} aria-current={row.id === selected?.id ? "true" : undefined} scroll={false}>
                             <span className="inbox-item__top"><strong className="inbox-item__from">{row.from_address}</strong><span className="mono">{row.received_at ? formatDateTime(row.received_at) : "–"}</span></span>
                             <span className="inbox-item__subject">{row.subject || "(ohne Betreff)"}</span>
+                            {view === "offen" && <StateFlag state={row.state} />}
                             <span className="inbox-item__meta">
                               {view === "archiv" && <span className="rw-flag rw-flag--neutral">{ARCHIVE_REASONS[(row as ArchivedItem).archive_reason]}</span>}
                               {row.attachments > 0 && <><Icon name="document" size={14} />{formatNumber(row.attachments)} · </>}
@@ -139,7 +143,7 @@ export default async function InboxPage({ searchParams }: Props) {
                       ))}
                     </ul>
                   </div>
-                  {selected ? <MessageView message={selected} candidates={candidates} term={term} names={names} owner={allInboxes && selected.inbox_dispatcher_id ? names.get(selected.inbox_dispatcher_id) ?? null : null} /> : (
+                  {selected ? <MessageView message={selected} candidates={candidates} term={term} names={names} senderName={employee.displayName} justSent={justSent} owner={allInboxes && selected.inbox_dispatcher_id ? names.get(selected.inbox_dispatcher_id) ?? null : null} /> : (
                     <div className="side-page__list"><EmptyState title="E-Mail nicht gefunden oder bereits zugeordnet." action={<Link className="rw-button-secondary" href={BASE}>Zum Posteingang</Link>} /></div>
                   )}
                 </div>
@@ -152,18 +156,56 @@ export default async function InboxPage({ searchParams }: Props) {
   );
 }
 
-const MATCH_LABEL = { sender: "gleiche Absenderadresse", domain: "gleiche Firmendomain", search: "Suche" } as const;
+// The reply goes to the latest customer e-mail of the conversation
+const lastSender = (message: InboxMessage) => [...message.conversation].reverse().find((entry) => entry.direction === "incoming")?.from_address ?? message.from_address;
 
-function MessageView({ message, candidates, term, owner, names }: { message: InboxMessage; candidates: Awaited<ReturnType<typeof linkCandidates>>; term: string; owner: string | null; names: Map<string, string> }) {
+const MATCH_LABEL = { sender: "gleiche Absenderadresse", domain: "nur gleiche Domain – bitte prüfen", search: "Suchtreffer" } as const;
+
+function StateFlag({ state }: { state: ConversationState }) {
+  const label = STATE_LABEL[state];
+  return label ? <span className="rw-flag inbox-item__state" data-state={state}>{label}</span> : null;
+}
+
+const SEND_STATUS: Record<string, string> = { queued: "wird gesendet", sent: "gesendet", failed: "Versand fehlgeschlagen", draft: "Entwurf" };
+
+// Later messages of the conversation: our replies and further customer e-mails, oldest first
+function Conversation({ entries }: { entries: ConversationEntry[] }) {
+  if (entries.length === 0) return null;
+  return (
+    <ol className="inbox-thread" aria-label="Verlauf">
+      {entries.map((entry) => (
+        <li key={entry.id} className={`inbox-thread__item inbox-thread__item--${entry.direction}`} data-status={entry.status}>
+          <p className="inbox-thread__meta">
+            {entry.direction === "outgoing"
+              ? <><strong>Antwort{entry.author ? ` von ${entry.author}` : ""}</strong> an {entry.to_address} · <span className="mono">{formatDateTime(entry.at)}</span> · <span className={entry.status === "failed" ? "inbox-thread__failed" : undefined}>{SEND_STATUS[entry.status] ?? entry.status}</span></>
+              : <><strong>{entry.from_address}</strong> · <span className="mono">{formatDateTime(entry.at)}</span></>}
+          </p>
+          <div className="inbox-mail__body">{entry.body_text}</div>
+          {entry.status === "failed" && entry.error_text && <p className="rw-card__note inbox-thread__failed">{entry.error_text}</p>}
+          {entry.files.length > 0 && (
+            <ul className="inbox-mail__files" aria-label="Anhänge">
+              {entry.files.map((file) => (
+                <li key={file.id}><a href={`/dashboard/posteingang/dateien/${file.id}`} target="_blank" rel="noreferrer"><Icon name="document" size={16} />{file.file_name}</a></li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function MessageView({ message, candidates, term, owner, names, senderName, justSent }: { message: InboxMessage; candidates: Awaited<ReturnType<typeof linkCandidates>>; term: string; owner: string | null; names: Map<string, string>; senderName: string; justSent: boolean }) {
   const today = berlinDayKey(new Date());
   // Rule-based prefill (task-10-10); recognised fields carry a hint so they are checked before saving
   const found = message.request || message.archived ? {} : extractRequestFields({ subject: message.subject, body: message.body_text, fromAddress: message.from_address, today });
   const recognised = Object.keys(found).length;
   const hint = (field: ExtractedField) => (found[field] ? "Aus der E-Mail erkannt – bitte prüfen." : undefined);
   const search = term || message.from_address || "";
-  // Preselect the request of the same sender when it is the only one (domain matches may add more)
+  // Preselect only the single request of the same sender address; a domain or search hit is never preselected
+  // (task-12-2), and the empty first entry undoes a choice
   const senderMatches = candidates.filter((row) => row.match === "sender");
-  const preselected = senderMatches.length === 1 ? senderMatches[0] : candidates.length === 1 ? candidates[0] : null;
+  const preselected = senderMatches.length === 1 ? senderMatches[0] : null;
   return (
     <article className="rw-card rw-card--list rw-card--flush rw-card--neutral inbox-mail" id="nachricht" aria-labelledby="mail-title">
       <header className="rw-card__header inbox-mail__head">
@@ -185,6 +227,8 @@ function MessageView({ message, candidates, term, owner, names }: { message: Inb
             ))}
           </ul>
         )}
+        <Conversation entries={message.conversation} />
+        {justSent && <p className="notice" role="status">Antwort in die Versandwarteschlange gestellt. Die E-Mail bleibt offen, bis sie zugeordnet, als Anfrage angelegt oder archiviert ist.</p>}
 
         {message.archived ? (
           <div className="notice inbox-undo" role="status">
@@ -205,11 +249,11 @@ function MessageView({ message, candidates, term, owner, names }: { message: Inb
                 <form className="inbox-search" method="get" action="/dashboard/posteingang" role="search" aria-label="Anfrage suchen">
                   <input type="hidden" name="nachricht" value={message.id} />
                   <label className="sr-only" htmlFor="inbox-suche">Anfrage suchen</label>
-                  <input id="inbox-suche" className="rw-input" name="suche" type="search" defaultValue={search} placeholder="Anfragenummer, Firma oder E-Mail" />
+                  <input id="inbox-suche" className="rw-input" name="suche" type="search" defaultValue={search} placeholder="Anfragenummer, Firma, Ort oder E-Mail" />
                   <button className="rw-button-secondary" type="submit">Suchen</button>
                 </form>
                 {candidates.length === 0 ? (
-                  <p className="rw-card__note">{term ? "Keine passende Anfrage gefunden." : "Keine Anfrage mit dieser Absenderadresse oder Firmendomain. Suche anpassen (Nummer, Firma oder E-Mail) und „Suchen“ drücken."}</p>
+                  <p className="rw-card__note">{term ? "Keine passende Anfrage gefunden." : "Keine Anfrage mit dieser Absenderadresse oder Firmendomain."} Nach Anfragenummer, Firma oder Ort suchen.</p>
                 ) : (
                   <SaveForm action={linkMessage} submitLabel="Zuordnen">
                     <HiddenField name="message_id" value={message.id} />
@@ -217,11 +261,27 @@ function MessageView({ message, candidates, term, owner, names }: { message: Inb
                       name="target"
                       label="Anfrage"
                       required
+                      placeholder="Anfrage wählen …"
+                      hint={preselected ? "Vorgeschlagen: Anfrage derselben Absenderadresse – bitte prüfen." : "Nichts vorausgewählt – nur zuordnen, wenn die Anfrage sicher passt."}
                       defaultValue={preselected ? `${preselected.id}:${preselected.version}` : undefined}
                       options={candidates.map((row) => ({ value: `${row.id}:${row.version}`, label: `${row.request_number ?? "ohne Nummer"} · ${row.company_name} · ${row.city} · ${formatDateTime(row.created_at).slice(0, 10)} · ${MATCH_LABEL[row.match]}` }))}
                     />
                   </SaveForm>
                 )}
+                <p className="rw-card__note inbox-mail__missing"><strong>Passende Anfrage nicht dabei?</strong> Oben nach Anfragenummer, Firma oder Ort suchen. Fehlen Angaben, unten „Antworten“ und beim Absender nachfragen. Gibt es keine Anfrage, „Neue Anfrage anlegen“; betrifft die E-Mail keinen Auftrag, „Archivieren“.</p>
+              </div>
+            </details>
+            <details className="action" id="antworten" open={message.state === "failed" || undefined}>
+              <summary>Antworten</summary>
+              <div className="inbox-mail__action-body">
+                <p className="rw-card__note">Geht an <strong>{lastSender(message)}</strong> im selben E-Mail-Verlauf, erst nach Klick auf „Senden“. Die Vorlage fragt nach Anfragenummer, Firma, Standort und Anliegen – bitte anpassen.</p>
+                <SaveForm action={replyToMessage} submitLabel="Senden">
+                  <HiddenField name="message_id" value={message.id} />
+                  <div className="form-grid form-grid--single">
+                    <TextField name="subject" label="Betreff" required defaultValue={replySubject(message.subject)} />
+                    <TextAreaField name="body_text" label="Text" required rows={12} defaultValue={replyTemplate(senderName)} />
+                  </div>
+                </SaveForm>
               </div>
             </details>
             <details className="action">

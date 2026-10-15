@@ -70,3 +70,24 @@ export async function restoreMessage(_previous: FormState, formData: FormData): 
   refresh();
   redirect(`/dashboard/posteingang?nachricht=${values.message_id}#nachricht`);
 }
+
+// Reply to the sender of an inbox e-mail (task-12-3): queued for sending through n8n in the same Gmail thread;
+// the click on "Senden" is the approval. The e-mail stays open until it is assigned, becomes a request or is archived.
+export async function replyToMessage(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const values = formValues(formData);
+  if (!UUID.test(values.message_id ?? "")) return formError("Ungültige Nachricht. Bitte die Seite neu laden.", values);
+  const subject = (values.subject ?? "").trim();
+  const body = (values.body_text ?? "").trim();
+  const fieldErrors: Record<string, string> = {};
+  if (!subject) fieldErrors.subject = "Pflichtangabe.";
+  else if (subject.length > 200) fieldErrors.subject = "Höchstens 200 Zeichen.";
+  if (!body) fieldErrors.body_text = "Pflichtangabe.";
+  else if (body.length > 10000) fieldErrors.body_text = "Höchstens 10000 Zeichen.";
+  if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", values, fieldErrors);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reply_to_inbox_message", { message_id: values.message_id, subject, body_text: body });
+  if (error || !data) return formError(databaseErrorMessage(error), values);
+  refresh();
+  redirect(`/dashboard/posteingang?nachricht=${data.inbox_root_id ?? values.message_id}&gesendet=1#nachricht`);
+}

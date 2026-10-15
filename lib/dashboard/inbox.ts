@@ -1,4 +1,5 @@
 import "server-only";
+import { conversationState, type ConversationState, type StateRow } from "@/lib/inbox-conversation";
 import { createClient } from "@/lib/supabase/server";
 
 // Inbox of unmatched incoming e-mails (task-10-5). All reads use the user's rights: RLS (can_read_message) shows a
@@ -11,6 +12,25 @@ export type InboxItem = {
   inbox_dispatcher_id: string | null;
   excerpt: string;
   attachments: number;
+  // Conversation state (task-12-3): latest message of the conversation decides
+  state: ConversationState;
+  last_at: string | null;
+};
+
+// One message of an inbox conversation (customer e-mails and our replies), oldest first
+export type { ConversationState };
+export type ConversationEntry = {
+  id: string;
+  direction: "incoming" | "outgoing";
+  from_address: string | null;
+  to_address: string | null;
+  subject: string;
+  body_text: string;
+  at: string;
+  status: string;
+  author: string | null;
+  error_text: string | null;
+  files: Array<{ id: string; file_name: string; mime_type: string; size_bytes: number | null }>;
 };
 
 export type ArchiveReason = "advertising" | "supplier" | "application" | "other";
@@ -21,6 +41,8 @@ export type InboxMessage = InboxItem & {
   archived: { at: string; by: string | null; reason: ArchiveReason } | null;
   request: { id: string; request_number: string | null; company_name: string } | null;
   files: Array<{ id: string; file_name: string; mime_type: string; size_bytes: number | null }>;
+  // Later messages of the conversation (our replies, further customer e-mails), oldest first
+  conversation: ConversationEntry[];
 };
 
 // match: same sender address, same company domain (not for mail providers), or the search term
@@ -32,10 +54,20 @@ export type LinkedItem = { message_id: string; subject: string; request_id: stri
 
 const excerpt = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, 140);
 
+// Later messages of the given roots, grouped by root
+async function laterMessages(rootIds: string[]) {
+  const byRoot = new Map<string, StateRow[]>();
+  if (rootIds.length === 0) return byRoot;
+  const supabase = await createClient();
+  const { data } = await supabase.from("messages").select("inbox_root_id, direction, status, received_at, created_at").in("inbox_root_id", rootIds);
+  for (const row of data ?? []) byRoot.set(row.inbox_root_id!, [...(byRoot.get(row.inbox_root_id!) ?? []), row]);
+  return byRoot;
+}
+
 // Number of open messages for the navigation; null when the count fails (the badge is then left out)
 export async function inboxCount(): Promise<number | null> {
   const supabase = await createClient();
-  const { count, error } = await supabase.from("messages").select("id", { count: "exact", head: true }).eq("direction", "incoming").is("request_id", null).is("archived_at", null);
+  const { count, error } = await supabase.from("messages").select("id", { count: "exact", head: true }).eq("direction", "incoming").is("request_id", null).is("archived_at", null).is("inbox_root_id", null);
   return error ? null : count ?? 0;
 }
 
@@ -47,21 +79,29 @@ export async function listInbox(): Promise<{ rows: InboxItem[]; names: Map<strin
     .eq("direction", "incoming")
     .is("request_id", null)
     .is("archived_at", null)
+    .is("inbox_root_id", null)
     .order("received_at", { ascending: false })
     .order("id")
     .limit(200);
   const ids = [...new Set((data ?? []).map((row) => row.inbox_dispatcher_id).filter((id): id is string => !!id))];
-  const { data: people } = ids.length ? await supabase.from("profiles").select("id, display_name").in("id", ids) : { data: [] };
+  const [{ data: people }, later] = await Promise.all([
+    ids.length ? supabase.from("profiles").select("id, display_name").in("id", ids) : Promise.resolve({ data: [] as Array<{ id: string; display_name: string }> }),
+    laterMessages((data ?? []).map((row) => row.id)),
+  ]);
+  const rows = (data ?? []).map((row) => ({
+    id: row.id,
+    from_address: row.from_address,
+    subject: row.subject,
+    received_at: row.received_at,
+    inbox_dispatcher_id: row.inbox_dispatcher_id,
+    excerpt: excerpt(row.body_text),
+    attachments: (row.attachments as unknown as Array<{ count: number }>)?.[0]?.count ?? 0,
+    ...conversationState(row.received_at, later.get(row.id) ?? []),
+  }));
+  // Latest activity first: a customer answer brings the conversation back to the top
+  rows.sort((a, b) => (b.last_at ?? "").localeCompare(a.last_at ?? ""));
   return {
-    rows: (data ?? []).map((row) => ({
-      id: row.id,
-      from_address: row.from_address,
-      subject: row.subject,
-      received_at: row.received_at,
-      inbox_dispatcher_id: row.inbox_dispatcher_id,
-      excerpt: excerpt(row.body_text),
-      attachments: (row.attachments as unknown as Array<{ count: number }>)?.[0]?.count ?? 0,
-    })),
+    rows,
     names: new Map((people ?? []).map((person) => [person.id, person.display_name])),
     error: !!error,
   };
@@ -75,6 +115,7 @@ export async function listArchived(): Promise<{ rows: ArchivedItem[]; names: Map
     .select("id, from_address, subject, received_at, inbox_dispatcher_id, body_text, archived_at, archive_reason, archived_by, attachments(count)")
     .eq("direction", "incoming")
     .is("request_id", null)
+    .is("inbox_root_id", null)
     .not("archived_at", "is", null)
     .order("archived_at", { ascending: false })
     .order("id")
@@ -90,6 +131,8 @@ export async function listArchived(): Promise<{ rows: ArchivedItem[]; names: Map
       inbox_dispatcher_id: row.inbox_dispatcher_id,
       excerpt: excerpt(row.body_text),
       attachments: (row.attachments as unknown as Array<{ count: number }>)?.[0]?.count ?? 0,
+      state: "new" as const,
+      last_at: row.received_at,
       archived_at: row.archived_at as string,
       archive_reason: row.archive_reason as ArchiveReason,
       archived_by: row.archived_by,
@@ -127,15 +170,34 @@ export async function listLinked(): Promise<{ rows: LinkedItem[]; error: boolean
   };
 }
 
+// The conversation of a message (task-12-3): a later message opens its root; null when not readable or outgoing
 export async function getInboxMessage(id: string): Promise<InboxMessage | null> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("messages")
-    .select("id, from_address, subject, received_at, inbox_dispatcher_id, body_text, request_id, direction, archived_at, archived_by, archive_reason, attachments(id, file_name, mime_type, size_bytes), requests!messages_request_id_fkey(id, request_number, company_name)")
-    .eq("id", id)
-    .maybeSingle();
+  const columns = "id, from_address, subject, received_at, inbox_dispatcher_id, inbox_root_id, body_text, request_id, direction, archived_at, archived_by, archive_reason, attachments(id, file_name, mime_type, size_bytes), requests!messages_request_id_fkey(id, request_number, company_name)";
+  const { data: opened } = await supabase.from("messages").select(columns).eq("id", id).maybeSingle();
+  const { data } = opened?.inbox_root_id ? await supabase.from("messages").select(columns).eq("id", opened.inbox_root_id).maybeSingle() : { data: opened };
   if (!data || data.direction !== "incoming") return null;
+  const { data: later } = await supabase
+    .from("messages")
+    .select("id, direction, from_address, to_address, subject, body_text, status, received_at, created_at, inbox_root_id, author_id, error_text, attachments(id, file_name, mime_type, size_bytes), author:profiles!messages_author_id_fkey(display_name)")
+    .eq("inbox_root_id", data.id)
+    .order("created_at");
   const files = (data.attachments ?? []) as InboxMessage["files"];
+  const conversation = (later ?? [])
+    .map((row) => ({
+      id: row.id,
+      direction: row.direction as ConversationEntry["direction"],
+      from_address: row.from_address,
+      to_address: row.to_address,
+      subject: row.subject,
+      body_text: row.body_text,
+      at: row.received_at ?? row.created_at,
+      status: row.status,
+      author: (row.author as unknown as { display_name: string } | null)?.display_name ?? null,
+      error_text: row.error_text,
+      files: (row.attachments ?? []) as ConversationEntry["files"],
+    }))
+    .sort((a, b) => a.at.localeCompare(b.at));
   return {
     id: data.id,
     from_address: data.from_address,
@@ -144,10 +206,12 @@ export async function getInboxMessage(id: string): Promise<InboxMessage | null> 
     inbox_dispatcher_id: data.inbox_dispatcher_id,
     excerpt: excerpt(data.body_text),
     attachments: files.length,
+    ...conversationState(data.received_at, later ?? []),
     body_text: data.body_text,
     archived: data.archived_at ? { at: data.archived_at, by: data.archived_by, reason: data.archive_reason as ArchiveReason } : null,
     request: (data.requests as unknown as InboxMessage["request"]) ?? null,
     files,
+    conversation,
   };
 }
 
@@ -160,7 +224,7 @@ export function companyDomain(address: string | null): string | null {
 }
 
 // Requests to assign a message to: same sender address first, then the same company domain, then the search term
-// (number, company, e-mail)
+// (number, company, city, e-mail)
 export async function linkCandidates(fromAddress: string | null, term: string): Promise<LinkCandidate[]> {
   const supabase = await createClient();
   const columns = "id, request_number, company_name, city, business_email, version, intake_status, created_at";
@@ -179,7 +243,7 @@ export async function linkCandidates(fromAddress: string | null, term: string): 
     const { data } = await supabase
       .from("requests")
       .select(columns)
-      .or(`request_number.ilike.%${q}%,company_name.ilike.%${q}%,business_email.ilike.%${q}%`)
+      .or(`request_number.ilike.%${q}%,company_name.ilike.%${q}%,city.ilike.%${q}%,business_email.ilike.%${q}%`)
       .order("created_at", { ascending: false })
       .limit(10);
     for (const row of data ?? []) if (!found.has(row.id)) found.set(row.id, { ...row, match: "search" });

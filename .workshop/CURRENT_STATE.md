@@ -2,19 +2,27 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v6 mit 12 Phasen und 48 Tasks. Fortschritt 100,00 % (Gewicht 146 von 146, 48 von 48 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v8 mit 13 Phasen und 51 Tasks. Fortschritt 100,00 % (Gewicht 153 von 153, 51 von 51 Tasks).
 
 ## Aktive Phase
 
-Alle Phasen 0–11 sind abgeschlossen (Phase 11 „Nachbesserungen“ am 15.10.2026 angelegt und abgeschlossen).
+Alle Phasen 0–12 sind abgeschlossen (Phase 12 „Weitere Nachbesserungen“ am 15.10.2026).
 
 ## Aktive Aufgabe
 
 Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue Roadmap-Tasks.
 
+Hinweis: `npm run demo:verify` meldet lokal drei Abweichungen der Demo-Daten (Anzahl Anfragen im 24-Monats-Fenster, 34 Chronologie-Fälle, 4 Snapshots ohne Basiswert 15 Minuten); sie betreffen Anfragen und Einstellungen, nicht den Posteingang, und sind nicht Teil von Phase 12.
+
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-12-3` (15.10.2026): Posteingang „Antworten“ – Rückfrage an den Absender mit Vorlage, Versand nach Klick über n8n im selben Gmail-Verlauf; Unterhaltung (`inbox_root_id`) mit Kundenantworten beim selben Dispatcher, Stand in der Liste, Zuordnen/Anlegen/Archivieren für die ganze Unterhaltung. test:unit 83, test:db 689, n8n-Integration, test:ui, lint, typecheck, build.
+
+`task-12-2` (15.10.2026): Posteingang „Einer Anfrage zuordnen“ mit leerem Eintrag „Anfrage wählen …“, Vorauswahl nur bei eindeutiger gleicher Absenderadresse, Domain-Treffer gekennzeichnet, Suche auch nach Ort, Hinweis bei fehlender Anfrage. test:ui, lint, typecheck, build.
+
+`task-12-1` (15.10.2026): Plantafel zeigt neben jedem Techniker die Auslastung im Kalendermonat („Okt. · 14 % belegt“, Tooltip mit Stunden), Abwesenheit mindert die Arbeitszeit statt als belegt zu zählen. test:unit 80, test:db 659, test:ui 262, lint, typecheck, build.
 
 `task-11-7` (15.10.2026): Posteingang nach Auslastung (offene Erstbearbeitungen + offene Posteingangs-E-Mails) statt immer an den ersten Dispatcher; bei Deaktivierung gehen offene E-Mails an die Vertretung. test:db 654, n8n-SQL-Test, demo:verify, test:ui 260, test:unit 75, lint, typecheck, build.
 
@@ -116,4 +124,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-Phase 11 ist abgeschlossen. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); weitere Arbeit als neue Roadmap-Tasks. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.
+Phasen 11 und 12 sind abgeschlossen. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); weitere Arbeit als neue Roadmap-Tasks. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.

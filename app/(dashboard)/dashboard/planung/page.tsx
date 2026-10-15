@@ -8,7 +8,7 @@ import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTi
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { getEmployeeNames } from "@/lib/dashboard/requests";
-import { loadAvailability, loadPlanningDays, loadSelectedContext, type Availability, type WorkingHours } from "@/lib/dashboard/planning";
+import { loadAvailability, loadMonthLoads, loadPlanningDays, loadSelectedContext, type Availability, type WorkingHours } from "@/lib/dashboard/planning";
 import { formatCalendarDate, formatDate, formatDateTime, formatNumber, formatWeekdayDate } from "@/lib/format";
 import { hoursOn, nextWorkingDays, SLOT_DURATIONS } from "@/lib/slot-suggestions";
 import { label } from "@/lib/status";
@@ -39,10 +39,12 @@ export default async function PlanningPage({ searchParams }: Props) {
   const durationParam = Number.parseInt(single(params.dauer), 10);
   const duration = (SLOT_DURATIONS as readonly number[]).includes(durationParam) ? durationParam : 120;
   const selected = data.selected;
-  const [availability, context, names] = await Promise.all([
+  const [availability, context, names, monthLoads] = await Promise.all([
     loadAvailability(selected?.id ?? null, data.technicians, data.workingHours, duration),
     selected?.id ? loadSelectedContext(selected.id) : Promise.resolve(null),
     getEmployeeNames(),
+    // Load next to the names: calendar month of the first shown day (task-12-1)
+    loadMonthLoads(days[0], data.technicians, data.workingHours),
   ]);
 
   // Chosen slot from the URL (suggestion, board click or a shared link)
@@ -117,7 +119,7 @@ export default async function PlanningPage({ searchParams }: Props) {
         </dl>
       </header>
 
-      {(data.error || availability.error) && (
+      {(data.error || availability.error || monthLoads.error) && (
         <ErrorState title="Ein Teil der Planungsdaten konnte nicht geladen werden." action={<Link className="rw-button-secondary" href={link({})}>Erneut versuchen</Link>}>
           Angezeigte Belegungen können unvollständig sein.
         </ErrorState>
@@ -163,6 +165,7 @@ export default async function PlanningPage({ searchParams }: Props) {
           emptyPanel={emptyPanel}
           initialDuration={duration}
           initialPick={pick}
+          monthLoads={{ month: monthLoads.month, loads: monthLoads.loads }}
         />
       </div>
     </div>

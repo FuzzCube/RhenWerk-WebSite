@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 6,
+  "roadmapVersion": 8,
   "status": "active",
   "phases": [
     {
@@ -1106,7 +1106,7 @@
       "description": "Kennzahlen-Wörterbuch, n8n-Vertrag und Gesamtprüfung.",
       "order": 10,
       "weight": 6,
-      "status": "ready",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-9-1",
@@ -1194,7 +1194,7 @@
       "description": "Nachträge nach Rücksprache: Bereinigung der Testkonten, Zahlungserinnerungen, Überarbeitung des Designs, n8n-Integration und Posteingang für nicht zugeordnete E-Mails.",
       "order": 11,
       "weight": 15,
-      "status": "blocked",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-10-1",
@@ -1747,6 +1747,108 @@
               "psql < n8n/test_integration.sql",
               "npm run demo:verify",
               "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3201 npm run test:ui"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-12",
+      "title": "Weitere Nachbesserungen",
+      "description": "Nach Rücksprache am 15.10.2026: weitere Anpassungen nach Abschluss von Phase 11.",
+      "order": 13,
+      "weight": 2,
+      "status": "completed",
+      "tasks": [
+        {
+          "id": "task-12-1",
+          "title": "Plantafel: Auslastung der Techniker im Monat",
+          "description": "Neben dem Namen des Technikers zeigt die Plantafel die Auslastung im Kalendermonat des gewählten Datums statt in den sichtbaren Tagen: eingeplante Einsatzzeit (geplant, läuft, wartet auf Teile, erledigt) durch Arbeitszeit abzüglich Abwesenheiten; Monat folgt der Navigation, Tooltip mit Stunden und Abwesenheitstagen.",
+          "order": 1,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "startedAt": "2026-10-15T11:46:33Z",
+          "definitionOfDone": [
+            "Reine Berechnungsfunktion in lib mit Unit-Tests (Wochenenden, Abwesenheit, Monatsgrenze, Mitternacht, storniert)",
+            "Monatsdaten serverseitig mit Nutzerrechten geladen, Anzeige „Mon. · X % belegt“ mit Tooltip, ganz abwesend als „abwesend“",
+            "Kopfkennzahl der nächsten 7 Arbeitstage unverändert",
+            "test:ui für Anzeige und Monatswechsel, Sichtprüfung 390/768/1440 px, lint, typecheck, build, Dokumentation"
+          ],
+          "completedAt": "2026-10-15T11:54:39Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Plantafel zeigt neben jedem Techniker die Auslastung im Kalendermonat des ersten angezeigten Tags („Okt. · 14 % belegt“, Tooltip mit Stunden und Abwesenheitstagen, ganz abwesend „abwesend“), folgt der Navigation. Berechnung lib/technician-load.ts: Einsatzzeit in der Arbeitszeit ohne Abwesenheitszeit durch Arbeitszeit minus Abwesenheit. Neue RPC technician_load_intervals (Migration 20261015160000, geplant/läuft/wartet/erledigt, nur Zeit). Kopfkennzahl der 7 Arbeitstage unverändert. Text über dem Balken, damit die schmale Namensspalte nicht umbricht; Monatsnamen ohne Intl (gleiches Rendering Server/Browser). Geprüft: test:unit 80 (neu 5: Monatstage, Wochenenden, Abwesenheit, ganz abwesend, Monatsgrenze/Überlappung), test:db 659 (technician_load_intervals 5: Rechte, Status inkl. storniert, Bereich), test:ui 262 (neu: Anzeige und Monatswechsel), lint, typecheck, build; Sichtprüfung 390/1440 px ohne horizontales Scrollen.",
+            "commands": [
+              "supabase migration up",
+              "npm run db:types",
+              "npm run test:unit",
+              "supabase test db",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3201 npm run test:ui"
+            ]
+          }
+        },
+        {
+          "id": "task-12-2",
+          "title": "Posteingang: Zuordnen ohne Zwang",
+          "description": "Auswahl „Einer Anfrage zuordnen“ mit leerer Option; vorausgewählt nur ein eindeutiger Treffer derselben Absenderadresse; Domain-Treffer als „nur gleiche Domain – bitte prüfen“ ohne Vorauswahl; klarer Hinweis, was zu tun ist, wenn die passende Anfrage fehlt (Suche nach Nummer, Firma, Ort; sonst antworten oder neue Anfrage).",
+          "order": 2,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "startedAt": "2026-10-15T12:16:28Z",
+          "definitionOfDone": [
+            "Leere Option, Pflichtprüfung bleibt serverseitig",
+            "Vorauswahl nur bei eindeutigem Absendertreffer, Domain-Treffer gekennzeichnet",
+            "Hinweis bei fehlender Anfrage mit Wegen zu Suche, Neuanlage, Antwort",
+            "test:ui, Sichtprüfung 390/1440 px, lint, typecheck, build"
+          ],
+          "completedAt": "2026-10-15T12:21:18Z",
+          "verification": {
+            "status": "passed",
+            "summary": "„Einer Anfrage zuordnen“: leerer erster Eintrag „Anfrage wählen …“ (SelectField-Option placeholder), vorausgewählt nur eine eindeutige Anfrage derselben Absenderadresse, Domain-Treffer als „nur gleiche Domain – bitte prüfen“ ohne Vorauswahl, Suchtreffer gekennzeichnet; Suche zusätzlich nach Ort; Hinweis „Passende Anfrage nicht dabei?“ mit Suche, Neuanlage, Archiv. Geprüft: test:ui (neu: leerer Eintrag, Domain ohne Vorauswahl mit Hinweis), lint, typecheck, build; Sichtprüfung 390/1440 px ohne horizontales Scrollen.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3201 npm run test:ui"
+            ]
+          }
+        },
+        {
+          "id": "task-12-3",
+          "title": "Posteingang: Antwort an den Absender",
+          "description": "Block „Antworten“ für offene E-Mails im Posteingang mit editierbarer Vorlage (Anfragenummer bzw. Firma und Standort erfragen); Versand nur nach Klick über n8n im selben Gmail-Verlauf; E-Mail bleibt offen mit Kennzeichnung „beantwortet, wartet auf Antwort“; Kundenantwort im selben Verlauf erscheint dazu; beim Zuordnen oder Anlegen wandert der ganze Verlauf in die Korrespondenz der Anfrage.",
+          "order": 3,
+          "weight": 3,
+          "status": "completed",
+          "dependsOn": [
+            "task-12-2"
+          ],
+          "definitionOfDone": [
+            "Migration: ausgehende Nachricht ohne Anfrage im Posteingang zulässig, Rechte wie beim Posteingang",
+            "Versand über bestehende n8n-Warteschlange im selben Gmail-Thread",
+            "Verlauf zusammen angezeigt und beim Zuordnen/Anlegen mitgenommen",
+            "pgTAP, n8n-Integrationstest, test:ui, Sichtprüfung 390/1440 px, Dokumentation"
+          ],
+          "startedAt": "2026-10-15T12:26:19Z",
+          "completedAt": "2026-10-15T12:38:50Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Posteingang: Block „Antworten“ mit editierbarer Vorlage (Betreff „AW: …“, Rückfrage nach Anfragenummer, Firma/Standort, Ansprechpartner, Anliegen, Signatur); reply_to_inbox_message stellt die Antwort erst beim Klick auf „Senden“ freigegeben in die n8n-Warteschlange, im selben Gmail-Verlauf (Thread, In-Reply-To, References). Unterhaltung über messages.inbox_root_id (Migration 20261015180000_inbox_reply.sql): Kundenantworten im Verlauf oder auf unsere Antwort landen beim selben Dispatcher unter der E-Mail; Liste zeigt Stand (Antwort wird gesendet, Beantwortet · wartet auf Antwort, Versand fehlgeschlagen, Neue Antwort) und sortiert nach letzter Aktivität. Zuordnen, Neue Anfrage und Archivieren wirken auf die ganze Unterhaltung; danach steht sie samt Antworten unter Korrespondenz. claim/confirm/mark_failed ohne Anfrage, Versand nur für Unterhaltungen aus dem echten Postfach (Demo/Test nie). Auslastung zählt Unterhaltungen. Geprüft: test:unit 83 (neu 3), test:db 689 (inbox_reply 30), n8n/test_integration.sql, test:ui (neu: Vorlage, Senden, Verlauf, Kundenantwort), lint, typecheck, build; Sichtprüfung 390/1440 px ohne horizontales Scrollen.",
+            "commands": [
+              "supabase migration up",
+              "npm run db:types",
+              "npm run test:unit",
+              "supabase test db",
+              "docker exec -i supabase_db_A.Sadkovojs_Project psql -U postgres < n8n/test_integration.sql",
               "npm run lint",
               "npm run typecheck",
               "npm run build",

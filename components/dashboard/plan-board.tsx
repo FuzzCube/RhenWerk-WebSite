@@ -10,12 +10,16 @@ import type { BusyBlock, Technician, WorkingHours } from "@/lib/dashboard/planni
 import { initialFormState, type FormState } from "@/lib/forms";
 import { formatWeekdayDate, TIME_ZONE } from "@/lib/format";
 import { hoursOn, nextWorkingDays, SLOT_DURATIONS, slotReasonText, suggestSlots, type SlotBusy, type SlotExperience } from "@/lib/slot-suggestions";
+import type { MonthLoad } from "@/lib/technician-load";
 
 // Planning board of the Einsatzplanung (task-10-3, redesign after the user's dashboard draft
 // "Einsatzplanung Redesign"): one board for 7 working days or a single day, suggestions and the booking
 // form in one panel. Picking a slot and changing the duration happen in the browser (no server round trip);
 // the URL is kept in sync with history.replaceState. Paging the board loads the new days from the server.
 // The database stays the authority for conflicts (schedule_visit, RW410); the board only warns early.
+
+const MONTH_SHORT = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sept.", "Okt.", "Nov.", "Dez."];
+const MONTH_LONG = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
 export type BoardPick = { technicianId: string; day: string; start: string; end: string };
 
@@ -36,6 +40,8 @@ type Props = {
   emptyPanel: ReactNode;
   initialDuration: number;
   initialPick: BoardPick | null;
+  // Load per technician in the calendar month of the shown day (task-12-1); month as its first day
+  monthLoads: { month: string; loads: Record<string, MonthLoad> };
 };
 
 const toMinutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
@@ -251,20 +257,18 @@ export function PlanBoard(props: Props) {
       });
   }
 
-  // Share of the working time that is booked within the shown days
-  function loadOf(technicianId: string): number | null {
-    let total = 0;
-    let used = 0;
-    for (const day of days) {
-      const segments = segmentsOf(technicianId, day);
-      for (const row of hoursOn(workingHours, technicianId, day)) {
-        const from = toMinutes(row.start);
-        const to = toMinutes(row.end);
-        total += to - from;
-        used += segments.reduce((sum, segment) => sum + Math.max(0, Math.min(segment.end, to) - Math.max(segment.start, from)), 0);
-      }
-    }
-    return total > 0 ? Math.round((used / total) * 100) : null;
+  // Monthly load next to the name (task-12-1): "Okt. · 22 % belegt", details in the tooltip
+  // Fixed names instead of Intl, so server and browser render the same text
+  const monthIndex = Number(props.monthLoads.month.slice(5, 7)) - 1;
+  const monthShort = MONTH_SHORT[monthIndex];
+  const monthLong = `${MONTH_LONG[monthIndex]} ${props.monthLoads.month.slice(0, 4)}`;
+  const hoursText = (minutes: number) => `${Math.round(minutes / 60).toLocaleString("de-DE")} h`;
+  function loadLabel(technicianId: string) {
+    const load = props.monthLoads.loads[technicianId];
+    if (!load || load.kind === "none") return null;
+    if (load.kind === "absent") return { percent: null, title: `${monthLong}: den ganzen Monat abwesend` };
+    const absent = load.absentDays > 0 ? ` · davon ${load.absentDays} ${load.absentDays === 1 ? "Tag" : "Tage"} abwesend` : "";
+    return { percent: load.percent, title: `${monthLong}: ${hoursText(load.plannedMinutes)} von ${hoursText(load.capacityMinutes)} Arbeitszeit eingeplant${absent}` };
   }
 
   const live = drag && !drag.ignore ? drag.snapped : pick;
@@ -590,13 +594,17 @@ export function PlanBoard(props: Props) {
               </div>
             ))}
             {technicians.map((tech) => {
-              const load = loadOf(tech.id);
+              const load = loadLabel(tech.id);
               return (
                 <div key={tech.id} className="plan3__row">
                   <div className="plan3__rowh">
                     <strong>{tech.name}</strong>
-                    {load !== null && (
-                      <span className="plan3__load"><span className="plan3__loadbar" aria-hidden="true"><i style={{ width: `${load}%` }} /></span><span className="mono">{load}</span> % belegt</span>
+                    {load && (
+                      <span className="plan3__load" title={load.title} data-month-load={load.percent ?? "abwesend"}>
+                        <span className="plan3__loadbar" aria-hidden="true"><i style={{ width: `${Math.min(100, load.percent ?? 0)}%` }} /></span>
+                        <span>{monthShort} · {load.percent === null ? "abwesend" : <><span className="mono">{load.percent}</span> % belegt</>}</span>
+                        <span className="sr-only">, {load.title}</span>
+                      </span>
                     )}
                   </div>
                   {days.map((day) => <div key={day} className="plan3__cell">{lane(tech.id, day)}</div>)}
