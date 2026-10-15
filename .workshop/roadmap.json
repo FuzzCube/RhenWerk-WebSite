@@ -1965,7 +1965,7 @@
           "description": "Freie Fenster je Tag aus Arbeitszeiten, Einsätzen, Abwesenheiten und Vormerkungen (Dauer nach Leistung); Terminvormerkung an der Anfrage, blockiert das Fenster, läuft nach 2 Werktagen ab; im Dashboard „Terminwunsch (Telefon)“: Bestätigen plant den Einsatz mit Konfliktprüfung und sendet eine Bestätigung, Ablehnen mit Grund und Alternative informiert den Kunden.",
           "order": 4,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-13-2"
           ],
@@ -1973,7 +1973,25 @@
             "RPC freie Fenster, Vormerkung, Bestätigen, Ablehnen, Ablauf",
             "Oberfläche für Dispatcher, E-Mails an Kunden über die Warteschlange",
             "pgTAP, test:ui, Sichtprüfung 390/1440 px"
-          ]
+          ],
+          "startedAt": "2026-10-15T13:51:06Z",
+          "completedAt": "2026-10-15T14:07:29Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261015230000_visit_holds.sql: visit_holds (offen/bestätigt/abgelehnt/abgelaufen, keine Überschneidung offener Vormerkungen je Techniker, eine offene je Anfrage, RLS), freie Fenster (Arbeitszeit, Abwesenheit, reservierende Einsätze, offene Vormerkungen; Vormittag/Nachmittag, 30-Minuten-Raster, Dauer nach Leistung, ab nächstem Werktag bis 6 Wochen, am wenigsten belegter Techniker), agent_free_slots mit gesprochener Ansage, agent_create_request(…, termin_beginn) mit Vormerkung (nicht bei Notfall, ohne Vormerkung wenn vergeben), Lage „vorgemerkt“, confirm_visit_hold über schedule_visit mit Bestätigungs-E-Mail (freigegeben vom Dispatcher, nur nach Erstbearbeitung), reject_visit_hold mit Grund und Gegenvorschlag, expire_visit_holds stündlich. Dashboard: Block „Terminwunsch (Telefon)“ in der Anfrage, Kennzeichen in Anfragenliste und Erstbearbeitung, schraffierte Vormerkung auf der Plantafel ohne Sperre. Seed: Vormerkungen nach Löschen des Einsatzes zulässig. Geprüft: test:db 774 (visit_holds 31), test:ui (neu: Liste, Erstbearbeitung, Plantafel, Bestätigen, Ablehnen), test:unit 85, demo:verify 18/18 nach Seed, lint, typecheck, build; Sichtprüfung 390/1440 px.",
+            "commands": [
+              "supabase migration up",
+              "npm run db:types",
+              "supabase test db",
+              "npm run test:unit",
+              "APP_URL=http://localhost:3201 npm run test:ui",
+              "npm run demo:seed",
+              "npm run demo:verify",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         },
         {
           "id": "task-13-4",

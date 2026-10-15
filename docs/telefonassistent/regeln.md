@@ -40,11 +40,13 @@ Auskunft nur, wenn `anfrage_finden` genau einen Treffer liefert und der Anrufer 
 ## Terminvormerkung (task-13-3)
 
 - Dauer nach Leistung: Inspektion 120 min, Wartung 180 min, Diagnose/Reparatur 120 min (erster Einsatz).
-- Freie Fenster: Arbeitszeiten aktiver Techniker abzüglich Einsätzen (geplant, läuft, wartet auf Teile), Abwesenheiten und offener Vormerkungen; Start im 30-Minuten-Raster; frühestens ab dem nächsten Werktag, nicht weiter als 6 Wochen; höchstens drei Fenster je Abfrage, verschiedene Uhrzeiten bevorzugt.
+- Freie Fenster (`agent_free_slots`, umgesetzt in task-13-3): Arbeitszeiten aktiver Techniker abzüglich reservierender Einsätze (geplant, läuft), Abwesenheiten und offener Vormerkungen; Start im 30-Minuten-Raster ab Beginn der Arbeitszeit; frühestens ab dem nächsten Werktag, nicht weiter als 6 Wochen; je Tag der früheste Vormittags- und der früheste Nachmittagsbeginn, höchstens drei Fenster, frühester Tag zuerst. Den Techniker wählt die Datenbank (am wenigsten belegt an dem Tag). Feiertage kennt die Suche noch nicht; Fahrzeiten und die PLZ fließen noch nicht ein.
 - Mira nennt Beginn und ungefähre Dauer, nie einen Technikernamen.
 - Vormerkung blockiert das Fenster für andere Anrufer, bis der Dispatcher entscheidet, höchstens 2 Werktage. Danach verfällt sie; die Anfrage bleibt in der Erstbearbeitung mit Hinweis.
 - Bestätigen plant den Einsatz mit Konfliktprüfung und sendet eine Bestätigung per E-Mail; Ablehnen verlangt einen Grund und optional einen Gegenvorschlag, der Kunde erhält eine E-Mail.
-- Notfälle (Stillstand, Gefahr) bekommen keine Vormerkung: sie gehen sofort an Menschen.
+- Notfälle (Stillstand, Gefahr) bekommen keine Vormerkung: sie gehen sofort an Menschen (`termin_hinweis: notfall_ohne_vormerkung`).
+- Ist das Fenster beim Anlegen schon vergeben, entsteht die Anfrage ohne Vormerkung (`termin_vorgemerkt: false`, `termin_hinweis: fenster_nicht_mehr_frei`); Mira bietet ein anderes Fenster an oder sagt, dass der Service Desk den Termin abstimmt.
+- Bestätigen ist erst nach abgeschlossener Erstbearbeitung möglich (wie jede Einsatzplanung). Vormerkungen blockieren die manuelle Planung nicht; die Plantafel zeigt sie schraffiert.
 
 ## Rückrufbitte an Techniker (task-13-4)
 
@@ -54,7 +56,7 @@ Auskunft nur, wenn `anfrage_finden` genau einen Treffer liefert und der Anrufer 
 
 ## Werkzeugverträge
 
-Alle Werkzeuge sind POST-Webhooks in n8n (`/webhook/agent-<name>`) mit Header `x-agent-secret`. Datenbankfunktionen dahinter (task-13-2, `docs/n8n-contract.md` Abschnitt 6): `anfrage_anlegen` → `agent_create_request`, `anfrage_finden` → `agent_find_request`, `einsatzgebiet_pruefen` → `agent_check_area`, `sla_pruefen` → `agent_check_contract`; `anlage_pruefen` läuft in n8n mit dem bestehenden Katalogabgleich. Antwortzeit-Ziel unter 1,5 s. Jeder Aufruf trägt `call_id` (Gesprächs-ID der Plattform). Fehler: `{ "ok": false, "fehler": "<code>" }`; Mira nutzt dann den Text „Werkzeug gestört“.
+Alle Werkzeuge sind POST-Webhooks in n8n (`/webhook/agent-<name>`) mit Header `x-agent-secret`. Datenbankfunktionen dahinter (task-13-2, `docs/n8n-contract.md` Abschnitt 6): `freie_termine` → `agent_free_slots`, `anfrage_anlegen` → `agent_create_request` (mit `termin_beginn`), `anfrage_finden` → `agent_find_request`, `einsatzgebiet_pruefen` → `agent_check_area`, `sla_pruefen` → `agent_check_contract`; `anlage_pruefen` läuft in n8n mit dem bestehenden Katalogabgleich. Antwortzeit-Ziel unter 1,5 s. Jeder Aufruf trägt `call_id` (Gesprächs-ID der Plattform). Fehler: `{ "ok": false, "fehler": "<code>" }`; Mira nutzt dann den Text „Werkzeug gestört“.
 
 | Werkzeug | Eingabe | Ausgabe |
 | --- | --- | --- |

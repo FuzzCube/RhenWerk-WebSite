@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { confirmHold, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
 import { availableActions, DraftActions, RequestActions } from "@/components/dashboard/request-actions";
+import { HiddenField, SaveForm, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
@@ -57,6 +59,7 @@ export default async function RequestPage({ params }: Props) {
 
   const actions = availableActions(detail, employee);
   // Planning happens on the planning page; the request page points there as the next step
+  const openHold = detail.holds.find((hold) => hold.status === "open") ?? null;
   const canPlan = (employee.role === "dispatcher" || employee.role === "manager") && request.intake_status === "processed" && ["not_planned", "waiting_parts"].includes(request.work_status);
   const hasActions = Object.values(actions).some(Boolean);
   const closedFor = !technician ? null
@@ -176,6 +179,7 @@ export default async function RequestPage({ params }: Props) {
         </div>
 
         <aside className="request-layout__side">
+          {!technician && openHold && <HoldCard hold={openHold} request={request} person={person} />}
           {!hasActions && closedFor && (
             // Technician: nothing left to do, so the slot says how the request ended
             <section id="aktionen" className={`rw-card ${closedFor === "completed" ? "rw-card--success" : "rw-card--neutral"} request-next`} aria-labelledby="aktionen-title">
@@ -346,6 +350,34 @@ function Contact({ detail, dispatcher }: { detail: RequestDetail; dispatcher?: s
       <p className="rw-card__note">{r.business_email}</p>
       {dispatcher && <p className="request-contact__internal">Intern: <strong>{dispatcher}</strong> (Dispatcher)</p>}
     </>
+  );
+}
+
+// Window held by the phone assistant (task-13-3): the dispatcher confirms (visit planned, customer e-mail) or rejects
+function HoldCard({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
+  const intakeOpen = request.intake_status !== "processed";
+  return (
+    <section id="terminwunsch" className="rw-card rw-card--action request-hold" aria-labelledby="terminwunsch-title">
+      <p className="request-next__eyebrow">Terminwunsch (Telefon)</p>
+      <h2 id="terminwunsch-title" className="request-next__title request-hold__when">{formatTimeRange(hold.starts_at, hold.ends_at)}</h2>
+      <p className="rw-card__note">
+        Vom Telefonassistenten für {person(hold.technician_id)} vorgemerkt, gilt bis <span className="mono">{formatDateTime(hold.expires_at)}</span>. Bestätigen plant den Einsatz und schickt dem Kunden eine Bestätigung.
+      </p>
+      {intakeOpen && <p className="rw-card__note request-hold__hint">Erst nach abgeschlossener Erstbearbeitung bestätigen.</p>}
+      <SaveForm action={confirmHold} submitLabel="Termin bestätigen">
+        <HiddenField name="request_id" value={request.id} />
+        <HiddenField name="version" value={request.version} />
+        <HiddenField name="hold_id" value={hold.id} />
+      </SaveForm>
+      <details className="action">
+        <summary>Ablehnen</summary>
+        <SaveForm action={rejectHold} submitLabel="Vormerkung ablehnen" submitVariant="danger">
+          <HiddenField name="hold_id" value={hold.id} />
+          <TextField name="reason" label="Grund für den Kunden" required />
+          <TextAreaField name="alternative" label="Gegenvorschlag" rows={2} hint="Zum Beispiel „Donnerstag ab 10 Uhr“. Steht in der E-Mail an den Kunden." />
+        </SaveForm>
+      </details>
+    </section>
   );
 }
 

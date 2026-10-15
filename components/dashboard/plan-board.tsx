@@ -62,7 +62,7 @@ const nextWorkday = (day: string, step: 1 | -1) => {
   return next;
 };
 
-type Segment = { start: number; end: number; kind: "own" | "busy" | "absence"; label: string; block: BusyBlock };
+type Segment = { start: number; end: number; kind: "own" | "busy" | "absence" | "hold"; label: string; block: BusyBlock };
 // Dragging the selection (task-10-7) or a planned visit (task-10-8): the block follows the pointer exactly
 // (minute as float), the time it will get is the 15-minute grid position (snapped); x/y place the time tip next to
 // the pointer. A moved visit is left out of the conflict check (ignore), it does not collide with itself.
@@ -114,6 +114,8 @@ export function PlanBoard(props: Props) {
     const seen = new Set<string>();
     const blocks: SlotBusy[] = [];
     for (const block of [...busy, ...availability.busy]) {
+      // Holds of the phone assistant are shown, but do not block manual planning
+      if (block.kind === "hold") continue;
       const key = `${block.technicianId}|${Date.parse(block.start)}|${Date.parse(block.end)}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -251,8 +253,8 @@ export function PlanBoard(props: Props) {
       .map((block) => {
         const start = dayKeyOf(new Date(block.start)) < day ? 0 : minutesOfDay(new Date(block.start));
         const end = dayKeyOf(new Date(block.end)) > day ? 24 * 60 : minutesOfDay(new Date(block.end));
-        const kind = block.kind === "absence" ? "absence" : block.requestNumber ? "own" : "busy";
-        const label = kind === "absence" ? "Abwesend" : block.requestNumber ?? "Belegt";
+        const kind = block.kind === "absence" ? "absence" : block.kind === "hold" ? "hold" : block.requestNumber ? "own" : "busy";
+        const label = kind === "absence" ? "Abwesend" : kind === "hold" ? `Vorgemerkt ${block.requestNumber ?? ""}`.trim() : block.requestNumber ?? "Belegt";
         return { start, end, kind, label, block };
       });
   }
@@ -416,7 +418,7 @@ export function PlanBoard(props: Props) {
     const absentAllDay = hours.length === 0 || segments.some((segment) => segment.kind === "absence" && segment.start <= toMinutes(hours[0].start) && segment.end >= toMinutes(hours[hours.length - 1].end));
     const firstWindow = canPick && !absentAllDay ? windowFrom(technicianId, day, 0) : null;
     const name = techName(technicianId);
-    const busyText = segments.filter((segment) => segment.kind !== "absence").map((segment) => `${toTime(segment.start)}–${toTime(segment.end)}`).join(", ");
+    const busyText = segments.filter((segment) => segment.kind !== "absence" && segment.kind !== "hold").map((segment) => `${toTime(segment.start)}–${toTime(segment.end)}`).join(", ");
     const label = `${name}, ${shortDay(day)}: ${absentAllDay ? "nicht verfügbar" : `${busyText ? `belegt ${busyText}` : "frei"}${canPick ? (firstWindow ? `, frei ab ${firstWindow.start}` : `, kein freies Fenster für ${duration / 60} h`) : ""}`}`;
     const pickHere = !drag && pick && pick.technicianId === technicianId && pick.day === day ? pick : null;
     const dragHere = drag && drag.technicianId === technicianId && drag.day === day ? drag : null;
@@ -575,6 +577,7 @@ export function PlanBoard(props: Props) {
           <li><i className="plan3__key plan3__key--own" />Eigene Einsätze</li>
           <li><i className="plan3__key plan3__key--busy" />Belegt</li>
           <li><i className="plan3__key plan3__key--absence" />Abwesend</li>
+          <li><i className="plan3__key plan3__key--hold" />Vorgemerkt (Telefon)</li>
           {canPick && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
           {canPick && <li><i className="plan3__key plan3__key--pick" />Auswahl</li>}
           <li><i className="plan3__key plan3__key--past" />Vorbei</li>

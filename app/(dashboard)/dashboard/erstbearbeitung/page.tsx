@@ -41,7 +41,7 @@ export default async function IntakeQueuesPage({ searchParams }: Props) {
   const tab = tabFor(typeof params.tab === "string" ? params.tab : undefined);
   const pageParam = Number.parseInt(typeof params.seite === "string" ? params.seite : "1", 10);
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
-  const { counts, rows, total, now, error } = await loadQueue(employee.id, tab, page);
+  const { counts, rows, total, now, holds, error } = await loadQueue(employee.id, tab, page);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const minutesSince = (value: string | null) => (value ? (now - new Date(value).getTime()) / 60000 : null);
@@ -66,7 +66,7 @@ export default async function IntakeQueuesPage({ searchParams }: Props) {
       ) : <span className="muted">Keine</span>),
     },
     { key: "waiting", header: "Wartet seit", cell: (row) => <>{formatElapsed(minutesSince(row.waiting_since))}<span className="cell-sub">{formatDateTime(row.waiting_since)}</span></> },
-    { key: "notes", header: "Hinweise", cell: (row) => <Hints row={row} /> },
+    { key: "notes", header: "Hinweise", cell: (row) => <Hints row={row} holdAt={row.id ? holds.get(row.id) : undefined} /> },
   ];
   const allColumns: Column<QueueRow>[] = [
     queueColumns[0],
@@ -157,8 +157,9 @@ export default async function IntakeQueuesPage({ searchParams }: Props) {
   );
 }
 
-function Hints({ row }: { row: QueueRow }) {
+function Hints({ row, holdAt }: { row: QueueRow; holdAt?: string }) {
   const hints: Array<{ text: string; tone: "info" | "warning" | "danger" }> = [];
+  if (holdAt) hints.push({ text: `Terminwunsch (Telefon): ${formatDateTime(holdAt)}`, tone: "info" });
   if (row.safety_check_required) hints.push({ text: "Sicherheitsgefahr: vor Planung prüfen", tone: "danger" });
   else if (row.safety_risk && row.safety_risk !== "none_known") hints.push({ text: `Sicherheitsgefahr ${label("safety_risk", row.safety_risk).toLowerCase()}`, tone: "warning" });
   if (row.queue === "planning" && row.work_status === "waiting_parts") hints.push({ text: "Folgeeinsatz nach Teilelieferung", tone: "info" });

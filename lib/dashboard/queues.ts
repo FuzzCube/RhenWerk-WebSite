@@ -1,3 +1,4 @@
+import { openHoldStarts } from "@/lib/dashboard/requests";
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
@@ -27,6 +28,8 @@ export type QueueData = {
   rows: QueueRow[];
   total: number;
   now: number;
+  // Open window holds of the phone assistant per request (task-13-3)
+  holds: Map<string, string>;
   error: boolean;
 };
 
@@ -45,5 +48,6 @@ export async function loadQueue(dispatcherId: string, tab: QueueTab, page: numbe
   const result: Record<QueueKey, number> = { review: 0, reply_received: 0, planning: 0, awaiting_customer: 0 };
   for (const row of counts.data ?? []) result[row.queue as QueueKey] += 1;
   const error = Boolean(counts.error || (rows.error && rows.error.code !== "PGRST103"));
-  return { counts: result, rows: rows.data ?? [], total: rows.count ?? 0, now, error };
+  const holds = await openHoldStarts((rows.data ?? []).map((row) => row.id).filter((id): id is string => !!id));
+  return { counts: result, rows: rows.data ?? [], total: rows.count ?? 0, now, holds, error };
 }

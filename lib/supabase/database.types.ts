@@ -494,6 +494,50 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"visit_holds": {
+                  Row: {
+                    "alternative": string | null,"conversation_id": string | null,"created_at": string,"decided_at": string | null,"decided_by": string | null,"ends_at": string,"expires_at": string,"id": string,"reject_reason": string | null,"request_id": string,"starts_at": string,"status": string,"technician_id": string,"updated_at": string,"visit_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alternative"?: string | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"ends_at": string,"expires_at": string,"id"?: string,"reject_reason"?: string | null,"request_id": string,"starts_at": string,"status"?: string,"technician_id": string,"updated_at"?: string,"visit_id"?: string | null
+                  }
+                  Update: {
+                    "alternative"?: string | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"ends_at"?: string,"expires_at"?: string,"id"?: string,"reject_reason"?: string | null,"request_id"?: string,"starts_at"?: string,"status"?: string,"technician_id"?: string,"updated_at"?: string,"visit_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "visit_holds_decided_by_fkey"
+      columns: ["decided_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_holds_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "dispatcher_queue"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_holds_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "requests"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_holds_technician_id_fkey"
+      columns: ["technician_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_holds_visit_id_fkey"
+      columns: ["visit_id"]
+isOneToOne: false
+      referencedRelation: "visits"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"visits": {
                   Row: {
                     "actual_end": string | null,"actual_start": string | null,"actual_work_minutes": number | null,"cancellation_reason": string | null,"created_at": string,"created_by": string,"id": string,"request_id": string,"scheduled_end": string,"scheduled_start": string,"status": Database["public"]['Enums']["visit_status"],"summary": string | null,"technician_id": string,"updated_at": string,"waiting_reason": string | null
@@ -813,10 +857,13 @@ isOneToOne: false
 { Args: { "company_name"?: string,"contract_number": string,"postal_code"?: string }; Returns: Json
                            },
 "agent_create_request":
-{ Args: { "call_id": string,"fields": Json }; Returns: Json
+{ Args: { "call_id": string,"fields": Json,"termin_beginn"?: string }; Returns: Json
                            },
 "agent_find_request":
 { Args: { "call_id": string,"firma"?: string,"nummer"?: string,"plz"?: string,"strasse"?: string }; Returns: Json
+                           },
+"agent_free_slots":
+{ Args: { "bis_tag"?: string,"call_id": string,"leistung"?: string,"plz"?: string,"von_tag"?: string }; Returns: Json
                            },
 "analytics_automation":
 { Args: { "anchor"?: string,"as_of"?: string,"kind"?: string }; Returns: {
@@ -1358,6 +1405,30 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"confirm_visit_hold":
+{ Args: { "expected_version": number,"hold_id": string }; Returns: {
+              "actual_end": string | null,
+"actual_start": string | null,
+"actual_work_minutes": number | null,
+"cancellation_reason": string | null,
+"created_at": string,
+"created_by": string,
+"id": string,
+"request_id": string,
+"scheduled_end": string,
+"scheduled_start": string,
+"status": Database["public"]['Enums']["visit_status"],
+"summary": string | null,
+"technician_id": string,
+"updated_at": string,
+"waiting_reason": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "visits"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "correct_analysis":
 { Args: { "automation_run_id"?: string,"expected_version": number,"priority"?: Database["public"]['Enums']["request_priority"],"reason": string,"request_id": string,"service_kind"?: Database["public"]['Enums']["service_kind"] }; Returns: {
               "business_email": string,
@@ -1603,6 +1674,9 @@ isOneToOne: false
                            },
 "demo_seed_purge":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"expire_visit_holds":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "find_submission":
 { Args: { "submission_id": string }; Returns: Json
@@ -2122,6 +2196,30 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"reject_visit_hold":
+{ Args: { "alternative"?: string,"hold_id": string,"reason": string }; Returns: {
+              "alternative": string | null,
+"conversation_id": string | null,
+"created_at": string,
+"decided_at": string | null,
+"decided_by": string | null,
+"ends_at": string,
+"expires_at": string,
+"id": string,
+"reject_reason": string | null,
+"request_id": string,
+"starts_at": string,
+"status": string,
+"technician_id": string,
+"updated_at": string,
+"visit_id": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "visit_holds"
         isOneToOne: true
         isSetofReturn: false
       } },

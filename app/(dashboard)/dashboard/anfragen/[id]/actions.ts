@@ -232,3 +232,25 @@ export async function resumePaymentReminders(_previous: FormState, formData: For
   return run(input.values, "Erinnerungen fortgesetzt.", () =>
     supabase.rpc("resume_payment_reminders", { invoice_id: input.values.invoice_id, expected_version: input.version }));
 }
+
+// Window hold of the phone assistant (task-13-3): confirm plans the visit in the held window (schedule_visit with all
+// checks) and queues a confirmation e-mail; reject needs a reason and may offer an alternative to the customer
+export async function confirmHold(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const ctx = context(formData);
+  if (!ctx || !UUID.test(ctx.values.hold_id ?? "")) return invalid(formValues(formData));
+  const supabase = await createClient();
+  return run(ctx.values, "Termin bestätigt. Der Einsatz ist eingeplant, die Bestätigung an den Kunden steht in der Warteschlange.", () =>
+    supabase.rpc("confirm_visit_hold", { hold_id: ctx.values.hold_id, expected_version: ctx.version }));
+}
+
+export async function rejectHold(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const values = formValues(formData);
+  if (!UUID.test(values.hold_id ?? "")) return invalid(values);
+  const reason = (values.reason ?? "").trim();
+  if (!reason) return formError("Bitte einen Grund angeben.", values, { reason: "Pflichtangabe." });
+  const supabase = await createClient();
+  return run(values, "Vormerkung abgelehnt. Die Nachricht an den Kunden steht in der Warteschlange.", () =>
+    supabase.rpc("reject_visit_hold", { hold_id: values.hold_id, reason, alternative: (values.alternative ?? "").trim() || undefined }));
+}

@@ -523,6 +523,54 @@ try {
   await page.open(requestUrl);
   check("Nach Ablehnung keine Prüfaktionen mehr", await page.eval(`!document.getElementById("aktionen")`));
   // Inbox (task-10-5) as the temporary dispatcher: list, badge, prefilled new-request form, assignment via link_message
+  console.log("\nTerminwunsch vom Telefonassistenten: Hinweis, bestätigen, ablehnen (task-13-3)");
+  {
+    // A weekday about five weeks ahead, far from demo visits; two holds of one technician
+    const day = new Date(Date.now() + 35 * 86400000);
+    while ([0, 6].includes(day.getUTCDay())) day.setUTCDate(day.getUTCDate() + 1);
+    const dayKey = day.toISOString().slice(0, 10);
+    const at = (hhmm) => new Date(`${dayKey}T${hhmm}:00+01:00`).toISOString().replace(/\.000Z$/, "Z");
+    const { data: tech } = await admin.from("profiles").select("id").eq("role", "technician").eq("is_active", true).order("id").limit(1).single();
+    const processed = { intake_status: "processed", intake_completed_at: new Date().toISOString(), intake_mode: "manual", manual_minutes_baseline: 15, human_review_required: false, postal_code: "68159", city: "Mannheim", service_kind: "diagnosis_repair" };
+    const holdFor = async (key, start, end) => {
+      const req = await newRequest(key, processed);
+      const { data, error } = await admin.from("visit_holds").insert({ request_id: req.id, technician_id: tech.id, starts_at: at(start), ends_at: at(end), expires_at: new Date(Date.now() + 2 * 86400000).toISOString(), conversation_id: `ui-${key}-${runId}` }).select().single();
+      if (error) throw new Error(`Vormerkung: ${error.message}`);
+      return { req, hold: data };
+    };
+    const confirmCase = await holdFor("hold-ok", "13:00", "15:00");
+    const rejectCase = await holdFor("hold-no", "08:00", "10:00");
+    try {
+      await page.open(`${BASE}/dashboard/anfragen?suche=${encodeURIComponent(confirmCase.req.request_number)}`);
+      check("Anfragenliste: Kennzeichen „Terminwunsch“", await page.eval(`[...document.querySelectorAll(".rw-flag--hold")].some((e) => e.textContent === "Terminwunsch")`));
+      await page.open(`${BASE}/dashboard/erstbearbeitung?tab=planung`);
+      check("  Erstbearbeitung: Hinweis „Terminwunsch (Telefon)“", await page.eval(`[...document.querySelectorAll(".hint")].some((e) => e.textContent.startsWith("Terminwunsch (Telefon)"))`));
+      await page.open(`${BASE}/dashboard/planung?woche=${dayKey}`);
+      check("  Plantafel zeigt die Vormerkung (schraffiert, nicht blockierend)", await page.eval(`[...document.querySelectorAll(".plan3__blk--hold")].some((e) => (e.getAttribute("title") ?? "").includes(${JSON.stringify(confirmCase.req.request_number)}))`));
+      await page.open(`${BASE}/dashboard/anfragen/${confirmCase.req.id}`);
+      const card = await page.eval(`(() => { const c = document.getElementById("terminwunsch"); return c ? { title: c.querySelector("h2")?.textContent ?? "", text: c.textContent } : null; })()`);
+      check("  Anfrage: Block „Terminwunsch (Telefon)“ mit Zeitfenster", !!card && /\d{2}:\d{2}/.test(card.title) && card.text.includes("Termin bestätigen"), JSON.stringify(card));
+      await page.eval(`document.querySelector("#terminwunsch form.save-form").requestSubmit()`);
+      const confirmed = await waitFor(async () => (await admin.from("visit_holds").select("status").eq("id", confirmCase.hold.id).single()).data?.status === "confirmed");
+      const { data: planned } = await admin.from("visits").select("scheduled_start, technician_id, status").eq("request_id", confirmCase.req.id);
+      const { data: mails } = await admin.from("messages").select("subject, status, approved_by, to_address").eq("request_id", confirmCase.req.id).eq("kind", "other");
+      check("  Bestätigen: Einsatz im Fenster geplant, Bestätigung an den Kunden in der Warteschlange",
+        confirmed && planned?.length === 1 && Date.parse(planned[0].scheduled_start) === Date.parse(at("13:00")) && mails?.length === 1 && mails[0].approved_by === dispoId && mails[0].subject.startsWith("Terminbestätigung"),
+        JSON.stringify({ planned, mails }));
+      await page.open(`${BASE}/dashboard/anfragen/${confirmCase.req.id}`);
+      check("  danach kein offener Terminwunsch mehr", await page.eval(`!document.getElementById("terminwunsch")`));
+      await page.open(`${BASE}/dashboard/anfragen/${rejectCase.req.id}`);
+      await fillIn(`document.querySelector("#terminwunsch details.action")`, { reason: "Techniker auf Schulung", alternative: "Donnerstag ab 10 Uhr" });
+      const rejected = await waitFor(async () => (await admin.from("visit_holds").select("status").eq("id", rejectCase.hold.id).single()).data?.status === "rejected");
+      const { data: rejectMail } = await admin.from("messages").select("body_text").eq("request_id", rejectCase.req.id).eq("kind", "other").maybeSingle();
+      check("  Ablehnen mit Grund und Gegenvorschlag, E-Mail an den Kunden", rejected && !!rejectMail?.body_text.includes("Techniker auf Schulung") && rejectMail.body_text.includes("Donnerstag ab 10 Uhr"), JSON.stringify(rejectMail));
+    } finally {
+      // Demo requests: the seed removes them; the planned test visit is cancelled so it never blocks the calendar
+      await admin.from("visits").update({ status: "cancelled", cancellation_reason: "UI-Test" }).eq("request_id", confirmCase.req.id).eq("status", "scheduled");
+      await admin.from("visit_holds").update({ status: "expired" }).in("id", [confirmCase.hold.id, rejectCase.hold.id]).eq("status", "open");
+    }
+  }
+
   console.log("\nPosteingang: nicht zugeordnete E-Mail anzeigen und zuordnen");
   {
     const target = await newRequest("inbox-link", { intake_status: "awaiting_customer", human_review_required: false });

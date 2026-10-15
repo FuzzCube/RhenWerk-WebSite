@@ -2,7 +2,7 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v10 mit 14 Phasen und 60 Tasks. Fortschritt 91,43 % (Gewicht 160 von 175, 54 von 60 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v10 mit 14 Phasen und 60 Tasks. Fortschritt 93,14 % (Gewicht 163 von 175, 55 von 60 Tasks).
 
 ## Aktive Phase
 
@@ -10,13 +10,15 @@ Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/tele
 
 ## Aktive Aufgabe
 
-Keine in Arbeit. Bereit: `task-13-3` „Termine vormerken“ und `task-13-4` „Rückrufbitte an Techniker“.
+Keine in Arbeit. Bereit: `task-13-4` „Rückrufbitte an Techniker“.
 
 Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-13-3` (15.10.2026): Terminvormerkung des Telefonassistenten – freie Fenster (`agent_free_slots`), Vormerkung beim Anlegen, Bestätigen (Einsatz + E-Mail) oder Ablehnen (Grund, Gegenvorschlag) in der Anfrage, Ablauf nach zwei Werktagen, Kennzeichen in Listen, Plantafel schraffiert. test:db 774, test:ui, demo:verify 18/18.
 
 `task-13-2` (15.10.2026): Daten für den Telefonassistenten – `phone_calls`, Quelle `phone_agent`, `agent_create_request` (fehlende Felder als Liste, idempotent je Gespräch), `agent_find_request` (Lage nach Regeln, gesprochene Terminansage), `agent_check_area`, Transkripte nach 30 Tagen gelöscht. test:db 743, lint, typecheck, build.
 

@@ -7,9 +7,9 @@ import { HazardFlag, PriorityText, RequestStatusChip } from "@/components/dashbo
 import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
-import { DATE_FIELDS, countViews, filterQuery, getEmployeeNames, listRequests, PAGE_SIZE, parseRequestFilters, viewsFor, type RequestFilters, type RequestListItem, type RequestView } from "@/lib/dashboard/requests";
+import { DATE_FIELDS, countViews, filterQuery, getEmployeeNames, listRequests, openHoldStarts, PAGE_SIZE, parseRequestFilters, viewsFor, type RequestFilters, type RequestListItem, type RequestView } from "@/lib/dashboard/requests";
 import { REQUEST_DISPLAY_STATUSES } from "@/lib/display-status";
-import { formatDate, formatNumber, formatTime } from "@/lib/format";
+import { formatDate, formatDateTime, formatNumber, formatTime } from "@/lib/format";
 import { label, STATUS } from "@/lib/status";
 
 export const metadata: Metadata = { title: "Anfragen" };
@@ -46,6 +46,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const employee = await requireRole(rolesFor("/dashboard/anfragen"));
   const filters = parseRequestFilters(await searchParams);
   const [{ rows, total, error }, names, counts] = await Promise.all([listRequests(filters, employee.id), getEmployeeNames(), countViews(employee.role, employee.id)]);
+  const holds = employee.role === "technician" ? new Map<string, string>() : await openHoldStarts(rows.map((row) => row.id));
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const views = viewsFor(employee.role);
   const current = views.find((view) => view.key === filters.view) ?? views[0];
@@ -56,7 +57,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const furtherCount = [filters.display, filters.intake, filters.work, filters.priority].filter(Boolean).length;
 
   const columns: Column<RequestListItem>[] = [
-    { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} /></>, mobile: "title" },
+    { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} />{holds.has(row.id) && <span className="rw-flag rw-flag--hold" title={`Vorgemerkt: ${formatDateTime(holds.get(row.id)!)}`}>Terminwunsch</span>}</>, mobile: "title" },
     { key: "company", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub">{row.city}</span></> },
     { key: "service", header: "Leistung", cell: (row) => <>{label("service_kind", row.service_kind)}<span className="cell-sub">{label("equipment_kind", row.equipment_kind)}</span></>, mobile: "hide" },
     { key: "status", header: "Status", cell: (row) => <RequestStatusChip intakeStatus={row.intake_status} workStatus={row.work_status} /> },

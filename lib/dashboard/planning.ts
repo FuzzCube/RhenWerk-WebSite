@@ -15,7 +15,8 @@ export type BusyBlock = {
   technicianId: string;
   start: string;
   end: string;
-  kind: "visit" | "absence";
+  // hold: window held by the phone assistant (task-13-3); shown, but does not block manual planning
+  kind: "visit" | "absence" | "hold";
   // Only for readable visits
   requestId: string | null;
   requestNumber: string | null;
@@ -57,12 +58,13 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
     .order("priority_rank").order("due_at", { ascending: true, nullsFirst: false }).order("waiting_since").order("id");
   if (employee.role === "dispatcher") queueQuery = queueQuery.eq("dispatcher_id", employee.id);
 
-  const [technicians, hours, busy, visits, queue] = await Promise.all([
+  const [technicians, hours, busy, visits, queue, holds] = await Promise.all([
     supabase.from("profiles").select("id, display_name").eq("role", "technician").eq("is_active", true).order("display_name"),
     supabase.from("employee_availability").select("employee_id, weekday, local_start, local_end, valid_from, valid_to").eq("kind", "working_hours"),
     supabase.rpc("technician_busy_intervals", { range_start: rangeStart, range_end: rangeEnd }),
     supabase.from("visits").select("id, request_id, technician_id, scheduled_start, scheduled_end, status").in("status", ["scheduled", "in_progress"]).lt("scheduled_start", rangeEnd).gt("scheduled_end", rangeStart),
     queueQuery,
+    employee.role === "technician" ? null : supabase.from("visit_holds").select("request_id, technician_id, starts_at, ends_at, requests!inner(request_number)").eq("status", "open").lt("starts_at", rangeEnd).gt("ends_at", rangeStart),
   ]);
 
   // Request numbers of readable visits (RLS)
@@ -96,7 +98,7 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
       validFrom: row.valid_from,
       validTo: row.valid_to,
     })),
-    busy: (busy.data ?? []).map((interval) => {
+    busy: (busy.data ?? []).map((interval): BusyBlock => {
       const visit = interval.busy_kind === "visit"
         ? readableBySlot.get(`${interval.technician_id}|${new Date(interval.starts_at).getTime()}|${new Date(interval.ends_at).getTime()}`)
         : undefined;
@@ -111,7 +113,15 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
           ? { visitId: visit.id, version: versionOf.get(visit.request_id) as number }
           : null,
       };
-    }),
+    }).concat((holds?.data ?? []).map((hold) => ({
+      technicianId: hold.technician_id,
+      start: hold.starts_at,
+      end: hold.ends_at,
+      kind: "hold" as const,
+      requestId: hold.request_id,
+      requestNumber: (hold.requests as unknown as { request_number: string | null }).request_number,
+      move: null,
+    }))),
     queue: queueRows,
     selected,
     selectedPlanned,

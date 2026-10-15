@@ -146,6 +146,14 @@ export function filterQuery(filters: RequestFilters, overrides: Partial<RequestF
 const LIST_COLUMNS = "id, request_number, company_name, city, service_kind, equipment_kind, intake_status, work_status, priority, created_at, dispatcher_id, technician_id, is_demo, safety_risk";
 export type RequestListItem = Pick<RequestRow, "id" | "request_number" | "company_name" | "city" | "service_kind" | "equipment_kind" | "intake_status" | "work_status" | "priority" | "created_at" | "dispatcher_id" | "technician_id" | "is_demo" | "safety_risk">;
 
+// Requests with an open window hold of the phone assistant (task-13-3) → start of the held window
+export async function openHoldStarts(requestIds: string[]): Promise<Map<string, string>> {
+  if (requestIds.length === 0) return new Map();
+  const supabase = await createClient();
+  const { data } = await supabase.from("visit_holds").select("request_id, starts_at").eq("status", "open").in("request_id", requestIds);
+  return new Map((data ?? []).map((row) => [row.request_id, row.starts_at]));
+}
+
 export async function listRequests(filters: RequestFilters, userId: string): Promise<{ rows: RequestListItem[]; total: number; error: boolean }> {
   const supabase = await createClient();
   const from = (filters.page - 1) * PAGE_SIZE;
@@ -228,6 +236,8 @@ export type RequestDetail = {
   events: Tables["request_events"]["Row"][];
   // Contract master data for the SLA number the customer gave (task-13-9); staff only, null without match or number
   contract: Tables["service_contracts"]["Row"] | null;
+  // Window holds of the phone assistant (task-13-3), newest first; staff only
+  holds: Tables["visit_holds"]["Row"][];
   failed: string[];
 };
 
@@ -241,7 +251,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
 
   const staff = role !== "technician";
   const contractNumber = staff ? normalizeContractNumber(request.sla_contract_number) : null;
-  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract] = await Promise.all([
+  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds] = await Promise.all([
     staff ? supabase.from("messages").select("*").eq("request_id", id).order("created_at") : null,
     staff ? supabase.from("automation_runs").select("*").eq("request_id", id).order("started_at") : null,
     supabase.from("visits").select("*").eq("request_id", id).order("scheduled_start"),
@@ -250,6 +260,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     supabase.from("invoices").select("*").eq("request_id", id).maybeSingle(),
     supabase.from("request_events").select("*").eq("request_id", id).order("occurred_at", { ascending: false }).order("seq", { ascending: false }),
     contractNumber ? supabase.from("service_contracts").select("*").eq("contract_number", contractNumber).maybeSingle() : null,
+    staff ? supabase.from("visit_holds").select("*").eq("request_id", id).order("created_at", { ascending: false }) : null,
   ]);
   const invoiceId = invoice?.data && invoice.data.status !== "draft" ? invoice.data.id : null;
   const [invoiceItems, reminderState, reminders] = invoice?.data
@@ -283,6 +294,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     }),
     events: pick("verlauf", events, []),
     contract: contract?.data ?? null,
+    holds: holds ? pick("einsaetze", holds, []) : [],
     failed,
   };
 });
