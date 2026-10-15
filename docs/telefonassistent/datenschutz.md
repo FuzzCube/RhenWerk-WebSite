@@ -25,12 +25,12 @@ Aufnahme von Serviceanfragen, Terminvormerkung, Auskunft zu bestehenden Anfragen
 | Transkript | Supabase `phone_calls` | 30 Tage, automatische Löschung per pg_cron |
 | Zusammenfassung, Kategorie, Kennzahlen | Supabase `phone_calls` | wie die zugehörige Anfrage; ohne Anfrage 12 Monate |
 | Anfrage | Supabase `requests` | wie alle Serviceanfragen |
-| Rückrufbitte an Techniker | Supabase, Telegram | Rückrufnummer nur für diesen Einsatz; Telegram-Nachricht ohne weitere Kundendaten |
+| Rückrufbitte an Techniker | Supabase (Benachrichtigung im Dashboard) | Rückrufnummer nur für diesen Einsatz; Benachrichtigung nur mit Firma, Standort, Nummer und geplantem Beginn |
 | Gesprächsdaten bei der Plattform | ElevenLabs | Aufbewahrung minimal einstellen (Zero-Retention, soweit verfügbar) |
 
 ## Auftragsverarbeitung (Art. 28 DSGVO)
 
-AV-Verträge mit ElevenLabs (Sprachplattform), dem LLM-Anbieter der Plattform und der Auswertung (OpenAI), Supabase, Telegram (nur Rückrufbitten) und, falls später genutzt, dem Telefonieanbieter. Für Anbieter mit Verarbeitung in den USA: EU-US Data Privacy Framework oder Standardvertragsklauseln prüfen; EU-Hosting bevorzugen, wo verfügbar.
+AV-Verträge mit ElevenLabs (Sprachplattform), dem LLM-Anbieter der Plattform und der Auswertung (OpenAI), Supabase und, falls später genutzt, dem Telefonieanbieter. Für Anbieter mit Verarbeitung in den USA: EU-US Data Privacy Framework oder Standardvertragsklauseln prüfen; EU-Hosting bevorzugen, wo verfügbar.
 
 ## Sicherheit
 

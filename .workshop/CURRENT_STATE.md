@@ -2,21 +2,23 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v10 mit 14 Phasen und 60 Tasks. Fortschritt 93,14 % (Gewicht 163 von 175, 55 von 60 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v10 mit 14 Phasen und 60 Tasks. Fortschritt 94,29 % (Gewicht 165 von 175, 56 von 60 Tasks).
 
 ## Aktive Phase
 
-Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/telefonassistent-plan.md`) ist angelegt: ElevenLabs-Agent „Mira“ (nur Deutsch), Werkzeuge über n8n hinter benanntem Cloudflare-Tunnel, Terminvormerkung mit Bestätigung durch den Dispatcher, Rückrufbitte an den Techniker bei Verspätung, Web-Widget statt Telefonnummer.
+Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/telefonassistent-plan.md`) ist angelegt: ElevenLabs-Agent „Mira“ (nur Deutsch), Werkzeuge über n8n hinter benanntem Cloudflare-Tunnel, Terminvormerkung mit Bestätigung durch den Dispatcher, Rückrufbitte an den Techniker bei Verspätung (Benachrichtigung im Dashboard, kein Telegram), Web-Widget statt Telefonnummer.
 
 ## Aktive Aufgabe
 
-Keine in Arbeit. Bereit: `task-13-4` „Rückrufbitte an Techniker“.
+Keine in Arbeit. Bereit: `task-13-5` „Agent und Werkzeuge“.
 
 Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-13-4` (15.10.2026): Rückrufbitte an den Techniker – `agent_request_callback` nur bei überfälligem Einsatz (eine offene je Einsatz), Banner über jeder Dashboard-Seite (Abfrage alle 20 s, `tel:`-Schaltfläche, „Kunde angerufen“, Tab-Zähler, optionale Browser-Benachrichtigung), nach 15 Minuten ohne Quittung dringend an den Dispatcher der Anfrage (sonst alle aktiven), Einsatzbeginn erledigt die Bitte. Kein Telegram (Nutzerentscheidung; später ggf. Push in einer Techniker-App). test:db 800, test:ui 284, test:unit 85, demo:verify 18/18, lint, typecheck, build.
 
 `task-13-3` (15.10.2026): Terminvormerkung des Telefonassistenten – freie Fenster (`agent_free_slots`), Vormerkung beim Anlegen, Bestätigen (Einsatz + E-Mail) oder Ablehnen (Grund, Gegenvorschlag) in der Anfrage, Ablauf nach zwei Werktagen, Kennzeichen in Listen, Plantafel schraffiert. test:db 774, test:ui, demo:verify 18/18.
 
@@ -70,7 +72,7 @@ Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen de
 
 ## Bereite nächste Aufgaben
 
-Keine. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
+`task-13-5` „Telefonassistent: Agent und Werkzeuge“. Danach in Folge `task-13-6` bis `task-13-8`. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
 
 ## Blockiert
 
@@ -80,6 +82,7 @@ Keine Blockierung. Lokale Integration task-10-4 nach den tatsächlich geprüften
 
 ## Wichtige Entscheidungen
 
+- Nutzerentscheidung 15.10.2026 (task-13-4): Rückrufbitten nicht über Telegram, sondern als Benachrichtigung im Dashboard (Banner mit Abfrage, Browser-Benachrichtigung optional); eine eigene Techniker-App mit Push ist eine spätere Möglichkeit.
 - Design-Überarbeitung (Nutzerentscheidungen 08.10.2026 zu den offenen Punkten der Spezifikation): Kennzahl-Richtungen bleiben wie in `KPI_INFO` (Automatisierungsanteil und Zeitersparnis „besser“ bei Anstieg; Warteschlangen, offene und überfällige Forderungen: niedriger ist besser). Einheitlicher Anzeigestatus aus Erstbearbeitung × Arbeit; nicht vorgesehene Kombinationen fallen auf die Erstbearbeitung zurück. „Zahlung erfassen“ (`record_payment`) in der Rechnungsliste und auf der Anfrageseite. Foto beim Einsatzabschluss nicht Pflicht. Einsatzvorschläge: zuerst Techniker mit abgeschlossenen Einsätzen bei derselben Firma (Kundennummer, sonst Firmenname); bei Neukunden Erfahrung mit Anlagentyp/Hersteller, dann geringere Auslastung, dann frühestes Fenster.
 - n8n-Vertrag: lokale Integrations-RPCs mit Idempotenz, `expected_version`, Audit und Versandfreigabe sind vorhanden. Sechs ungruppierte veröffentlichte Workflows; aktuelle JSON-Graphen unter n8n/workflows/*.workflow.json. Unbekannte/mehrdeutige Modelle gehen an Menschen, nie automatisch ablehnen. Anhänge privat, Antwortanalyse erst nach abgeschlossener Registrierung. Unfertige Gmail-Eingänge werden erneut aufgenommen. Keine automatische Speicherlöschung (Genehmigungsprüfung abgewiesen); Rollenprüfung weiterhin strikt service_role. Test-JWTs für service_role korrigiert. Team-Kennzahlen zählen nach aktueller Zuweisung.
 - Verwaltung: Mitarbeitende werden deaktiviert, nie gelöscht; aktive Zuweisungen gehen dabei in einer Transaktion an eine Vertretung derselben Rolle, der Login wird gesperrt. Rollenwechsel nur ohne aktive Zuweisungen, eigenes Konto weder Rollenwechsel noch Deaktivierung. Öffentliche Registrierung aus (`[auth] enable_signup = false`; `[auth.email]` bleibt an, sonst ist die E-Mail-Anmeldung lokal aus). Einstellungen wirken nur auf spätere Vorgänge.
@@ -121,7 +124,7 @@ Keine Blockierung. Lokale Integration task-10-4 nach den tatsächlich geprüften
 - `supabase db lint` meldet `warning extra` zu Composite-OUT-Parametern der Hilfsfunktionen `private.lock_visit`, `lock_work_entry`, `lock_invoice`, `lock_outgoing_message` (stilistisch, ohne Auswirkung).
 - Kein Supabase-Cloud-Projekt verknüpft; für das spätere Deployment nötig (`supabase login`, `supabase link`).
 - `npm run test:api` und `npm run test:ui` legen Testnutzer und Testanfragen an. Die Anfragen (`is_demo`) entfernt `npm run demo:seed`; die Testnutzer erscheinen lokal in Namenslisten, bis `supabase db reset` sie entfernt.
-- Port 3000 kann lokal von einem anderen Projekt belegt sein; App dann z. B. mit `npx next start -p 3100` und `APP_URL=http://127.0.0.1:3100` für `test:auth`/`test:ui` starten.
+- Port 3000 kann lokal von einem anderen Projekt belegt sein; App dann z. B. mit `npx next start -p 3100` starten. Für `test:ui` `APP_URL=http://localhost:3100` verwenden: der Link aus der Passwort-Mail leitet über `request.nextUrl` auf `localhost` weiter, mit `127.0.0.1` gehen dabei die Sitzungs-Cookies verloren (Prüfung „Link öffnet Neues Passwort festlegen“ schlägt fehl).
 - Lokale Entwicklung setzt laufendes Docker und `supabase start` voraus; `.env.local` mit Werten aus `supabase status`.
 
 ## Prüfung der n8n-Integration
@@ -132,4 +135,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-Phasen 11 und 12 sind abgeschlossen. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); weitere Arbeit als neue Roadmap-Tasks. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.
+`task-13-5` „Agent und Werkzeuge“: n8n-Webhooks (inkl. `rueckrufbitte_techniker` → `agent_request_callback`) hinter Cloudflare-Tunnel und Agent in ElevenLabs. Phasen 11 und 12 sind abgeschlossen. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); weitere Arbeit als neue Roadmap-Tasks. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CallbackAlerts } from "@/components/dashboard/callback-alerts";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { Logo } from "@/components/ui";
 import { logout } from "@/lib/auth/actions";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { requireEmployee } from "@/lib/auth/session";
+import { loadCallbackAlerts } from "@/lib/dashboard/callbacks";
 import { inboxCount } from "@/lib/dashboard/inbox";
 
 export const metadata: Metadata = {
@@ -18,6 +20,9 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
   const employee = await requireEmployee();
   // Open inbox e-mails for the navigation badge (RLS: own inbox for dispatchers, all for manager and admin)
   const inbox = employee.role === "technician" ? null : await inboxCount();
+  // Callback requests of the phone assistant (task-13-4): technicians their own, dispatchers escalations
+  const alertRole = employee.role === "technician" || employee.role === "dispatcher" ? employee.role : null;
+  const callbacks = alertRole ? await loadCallbackAlerts(alertRole) : [];
   return (
     <div className="dash-shell">
       <a className="skip-link" href="#dash-main">Zum Inhalt springen</a>
@@ -34,7 +39,10 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
         </div>
         <DashboardNav role={employee.role} counts={inbox ? { "/dashboard/posteingang": inbox } : {}} />
       </header>
-      <main id="dash-main" className="dash-main">{children}</main>
+      <main id="dash-main" className="dash-main">
+        {alertRole && <CallbackAlerts initial={callbacks} role={alertRole} />}
+        {children}
+      </main>
     </div>
   );
 }

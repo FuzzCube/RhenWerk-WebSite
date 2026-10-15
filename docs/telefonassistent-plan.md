@@ -62,7 +62,7 @@
    - **Время прошло, выезд не начат** (пример: план на 11:00, звонок в 11:05):
      - агент говорит: «Ihr Techniker ist für 11 Uhr eingeplant und auf dem Weg. Ich habe ihn eben benachrichtigt, er meldet sich in den nächsten Minuten bei Ihnen.»;
      - **одновременно** `rueckrufbitte_techniker` отправляет технику просьбу: «Kunde XY (Tel. …) wartet seit 11:00 – bitte kurz anrufen.»;
-     - техник видит просьбу в своём дашборде (баннер на выезде) и в Telegram, и отмечает «Kunde angerufen»;
+     - техник видит просьбу в своём дашборде (баннер на каждой странице, без Telegram — решение 15.10.2026), и отмечает «Kunde angerufen»;
      - если техник не ответил за 15 минут, просьба уходит диспетчеру как срочная.
    - **Выезда нет** → статус заявки простыми словами («wird geprüft», «wartet auf Teile» …) и обещание, что Service Desk свяжется.
 3. Агент никогда не называет внутренние заметки, цены из заявки и чужие данные. Если заявку не удалось однозначно найти, он только обещает обратный звонок.
@@ -90,7 +90,7 @@ flowchart LR
     D -->|"RPC (service_role)"| E[("Supabase (lokal)")]
     D -->|"wissen()"| R["RAG-Assistent (Oracle)"]
     B -->|"Post-Call Webhook"| C
-    D -->|"Rückrufbitte, dringend"| T["Telegram an Techniker / Service Desk"]
+    D -->|"Rückrufbitte, dringend"| T["Banner im Dashboard: Techniker / Dispatcher"]
     E --> G["/dashboard: Anrufe, Terminwunsch, Rückrufbitte, Auswertung"]
 ```
 
@@ -158,7 +158,7 @@ flowchart LR
 | 13-1 Konzept | Gesprächsleitfaden со всеми ветками; база знаний; немецкий системный промпт; список PLZ; правила перевода; правила, что агент может говорить о заявке; Datenschutzkonzept |
 | 13-2 Daten für den Agenten | таблица `phone_calls` с RLS; RPC для инструментов (`anfrage_anlegen` идемпотентно, `anfrage_finden`, проверка PLZ) только для service_role; хранение транскриптов 30 дней (pg_cron); pgTAP |
 | 13-3 Termine | свободные окна из рабочих часов, выездов, отсутствий и резервов; резерв окна у заявки; в дашборде «Terminwunsch»: подтвердить (выезд с проверкой конфликтов, e-mail клиенту) или отклонить (причина, альтернатива, e-mail); резерв истекает |
-| 13-4 Rückrufbitte an Techniker | поиск опоздавшего выезда; просьба технику (баннер в дашборде техника и Telegram), «Kunde angerufen»; эскалация диспетчеру через 15 минут |
+| 13-4 Rückrufbitte an Techniker | поиск опоздавшего выезда; просьба технику (баннер в дашборде техника, без Telegram), «Kunde angerufen»; эскалация диспетчеру через 15 минут |
 | 13-5 Agent und Werkzeuge | вебхуки n8n для всех инструментов за именным Cloudflare-туннелем, секрет; агент в ElevenLabs: промпт, голос, словарь произношения, инструменты; тесты в браузере |
 | 13-6 Gesprächsauswertung | post-call webhook → JSON через LLM → `phone_calls` → привязка к заявке → срочные уведомления |
 | 13-7 Dashboard | «Anrufe» (список, резюме, «Rückruf erledigt»), блок «Telefonat» в карточке заявки, KPI «Telefon» в Auswertung, демо-звонки, test:ui, 390/1440 px |
@@ -185,6 +185,6 @@ flowchart LR
 - В первой фразе агент говорит, что он ИИ (AI Act, ст. 50), плюс короткое предупреждение о Datenschutz.
 - Аудио не храним (§ 201 StGB), только транскрипт и резюме. Транскрипт удаляется через 30 дней.
 - Имена и номера контактных лиц — персональные данные и в B2B. Собираем только поля заявки.
-- AVV с ElevenLabs, LLM-провайдером, Telegram и Supabase. Проверить хостинг и передачу данных в США.
+- AVV с ElevenLabs, LLM-провайдером и Supabase. Проверить хостинг и передачу данных в США.
 - О заявке агент говорит только после того, как она однозначно найдена. Никаких внутренних заметок и имён техников.
 - Номер клиента в просьбе технику — только для обратного звонка по этому выезду.

@@ -1996,19 +1996,38 @@
         {
           "id": "task-13-4",
           "title": "Telefonassistent: Rückrufbitte an Techniker",
-          "description": "Agent erkennt überfälligen, nicht begonnenen Einsatz; Rückrufbitte an den Techniker (Banner im Techniker-Dashboard, Telegram über n8n), Quittung „Kunde angerufen“; ohne Quittung nach 15 Minuten dringend an den Dispatcher.",
+          "description": "Agent erkennt überfälligen, nicht begonnenen Einsatz; Rückrufbitte an den Techniker als Benachrichtigung im Dashboard (Banner auf jeder Seite, regelmäßig aktualisiert, optional Browser-Benachrichtigung), Quittung „Kunde angerufen“; ohne Quittung nach 15 Minuten dringend an den Dispatcher. Kein Telegram (Nutzerentscheidung 15.10.2026; später ggf. eigene Techniker-App mit Push).",
           "order": 5,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-13-2"
           ],
           "definitionOfDone": [
             "RPC und Eskalation",
             "Banner und Quittung beim Techniker (mobil zuerst)",
-            "Telegram-Benachrichtigung",
+            "Benachrichtigung im Dashboard statt Telegram (Aktualisierung ohne Neuladen)",
             "pgTAP, test:ui"
-          ]
+          ],
+          "startedAt": "2026-10-15T14:31:45Z",
+          "completedAt": "2026-10-15T14:58:05Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Rückrufbitte über agent_request_callback nur bei überfälligem Einsatz, eine offene je Einsatz; Banner im Dashboard für Techniker (Abfrage alle 20 s, tel:-Link, „Kunde angerufen“, Tab-Zähler, optionale Browser-Benachrichtigung) und nach 15 Minuten für den Dispatcher; Einsatzbeginn schließt die Bitte. Kein Telegram (Nutzerentscheidung). test:db 800/800 (neu 26), test:ui 284 (neu 7), test:unit 85, demo:verify 18/18, lint, typecheck, build; Screenshots 390/1440 px. Nicht ausgeführt: supabase db reset (lokale Integrationsdaten erhalten, Migration per migration up), test:api, test:auth, eigener Screenshot bei 768 px, echter Erlaubnisdialog der Browser-Benachrichtigung.",
+            "commands": [
+              "supabase migration up --local",
+              "npm run test:db",
+              "npm run db:types",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3100 npm run test:ui",
+              "npm run test:unit",
+              "npm run demo:seed",
+              "npm run demo:verify"
+            ],
+            "checkedAt": "2026-10-15T14:58:05Z"
+          }
         },
         {
           "id": "task-13-5",
@@ -2016,7 +2035,7 @@
           "description": "n8n-Webhooks für wissen, einsatzgebiet_pruefen, freie_termine, anfrage_anlegen, anfrage_finden, rueckrufbitte_techniker hinter benanntem Cloudflare-Tunnel mit gemeinsamem Geheimnis; Agent in ElevenLabs (Prompt, Stimme, Aussprache, Werkzeuge, Weiterleitung, Gesprächsende); Tests im Browser.",
           "order": 6,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-13-3",
             "task-13-4"

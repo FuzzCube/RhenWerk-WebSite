@@ -51,8 +51,9 @@ Auskunft nur, wenn `anfrage_finden` genau einen Treffer liefert und der Anrufer 
 ## Rückrufbitte an Techniker (task-13-4)
 
 - Nur bei `lage = ueberfaellig` und bestätigter Rückrufnummer; höchstens eine offene Bitte je Einsatz (Wiederholung liefert die bestehende).
-- Empfänger: zugewiesener Techniker des Einsatzes (Banner im Dashboard, Telegram). Inhalt: Firma, Standort, Rückrufnummer, geplanter Beginn.
-- Quittung „Kunde angerufen“ durch den Techniker. Ohne Quittung nach 15 Minuten dringend an den Dispatcher der Anfrage (ersatzweise alle aktiven Dispatcher).
+- Empfänger: zugewiesener Techniker des Einsatzes, als Benachrichtigung im Dashboard (Banner auf jeder Seite, Aktualisierung alle 20 Sekunden, auf Wunsch Browser-Benachrichtigung). Inhalt: Firma, Standort, Rückrufnummer, geplanter Beginn. Kein Telegram (Nutzerentscheidung 15.10.2026); später ggf. Push über eine eigene Techniker-App.
+- Quittung „Kunde angerufen“ durch den Techniker. Ohne Quittung nach 15 Minuten dringend an den Dispatcher der Anfrage (ersatzweise alle aktiven Dispatcher), ebenfalls als Banner mit Quittung. Beginnt der Einsatz, ist die Bitte erledigt.
+- Werkzeug: `agent_request_callback` (Migration `20261016090000_callback_requests.sql`, [../database.md](../database.md)).
 
 ## Werkzeugverträge
 

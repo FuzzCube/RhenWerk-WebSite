@@ -112,6 +112,56 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"callback_requests": {
+                  Row: {
+                    "callback_number": string,"closed_at": string | null,"closed_by": string | null,"closed_reason": string | null,"company_name": string,"conversation_id": string,"created_at": string,"escalated_at": string | null,"escalated_to": string | null,"id": string,"request_id": string,"scheduled_start": string,"site": string,"status": string,"technician_id": string,"updated_at": string,"visit_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "callback_number": string,"closed_at"?: string | null,"closed_by"?: string | null,"closed_reason"?: string | null,"company_name": string,"conversation_id": string,"created_at"?: string,"escalated_at"?: string | null,"escalated_to"?: string | null,"id"?: string,"request_id": string,"scheduled_start": string,"site": string,"status"?: string,"technician_id": string,"updated_at"?: string,"visit_id": string
+                  }
+                  Update: {
+                    "callback_number"?: string,"closed_at"?: string | null,"closed_by"?: string | null,"closed_reason"?: string | null,"company_name"?: string,"conversation_id"?: string,"created_at"?: string,"escalated_at"?: string | null,"escalated_to"?: string | null,"id"?: string,"request_id"?: string,"scheduled_start"?: string,"site"?: string,"status"?: string,"technician_id"?: string,"updated_at"?: string,"visit_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "callback_requests_closed_by_fkey"
+      columns: ["closed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "callback_requests_escalated_to_fkey"
+      columns: ["escalated_to"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "callback_requests_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "dispatcher_queue"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "callback_requests_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "requests"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "callback_requests_technician_id_fkey"
+      columns: ["technician_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "callback_requests_visit_id_fkey"
+      columns: ["visit_id"]
+isOneToOne: false
+      referencedRelation: "visits"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"employee_availability": {
                   Row: {
                     "created_at": string,"employee_id": string,"ends_at": string | null,"id": string,"kind": Database["public"]['Enums']["availability_kind"],"label": string | null,"local_end": string | null,"local_start": string | null,"starts_at": string | null,"updated_at": string,"valid_from": string | null,"valid_to": string | null,"weekday": number | null
@@ -654,7 +704,33 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "add_visit_photo":
+            "acknowledge_callback":
+{ Args: { "callback_id": string }; Returns: {
+              "callback_number": string,
+"closed_at": string | null,
+"closed_by": string | null,
+"closed_reason": string | null,
+"company_name": string,
+"conversation_id": string,
+"created_at": string,
+"escalated_at": string | null,
+"escalated_to": string | null,
+"id": string,
+"request_id": string,
+"scheduled_start": string,
+"site": string,
+"status": string,
+"technician_id": string,
+"updated_at": string,
+"visit_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "callback_requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"add_visit_photo":
 { Args: { "expected_version": number,"file_name": string,"mime_type": string,"size_bytes": number,"storage_path": string,"visit_id": string }; Returns: {
               "bucket": string,
 "created_at": string,
@@ -864,6 +940,9 @@ isOneToOne: false
                            },
 "agent_free_slots":
 { Args: { "bis_tag"?: string,"call_id": string,"leistung"?: string,"plz"?: string,"von_tag"?: string }; Returns: Json
+                           },
+"agent_request_callback":
+{ Args: { "anfrage_id": string,"call_id": string,"rueckrufnummer": string }; Returns: Json
                            },
 "analytics_automation":
 { Args: { "anchor"?: string,"as_of"?: string,"kind"?: string }; Returns: {
@@ -1674,6 +1753,9 @@ isOneToOne: false
                            },
 "demo_seed_purge":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"escalate_callbacks":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "expire_visit_holds":
 { Args: Record<PropertyKey, never>; Returns: number

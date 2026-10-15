@@ -571,6 +571,65 @@ try {
     }
   }
 
+  console.log("\nRückrufbitte an den Techniker: Banner, Quittung, Eskalation (task-13-4)");
+  {
+    // Own test technician with an overdue visit, so demo banners do not interfere
+    const techEmail = `ui-callback-tech-${runId}@example.com`;
+    const { data: techUser } = await admin.auth.admin.createUser({ email: techEmail, password, email_confirm: true });
+    const techId = techUser.user.id;
+    testAccounts.push(techId);
+    await admin.from("profiles").insert({ id: techId, display_name: `UI-Test Rückruf ${runId}`, role: "technician" });
+    const req = await newRequest("callback", { intake_status: "processed", intake_completed_at: new Date().toISOString(), intake_mode: "manual", manual_minutes_baseline: 15, human_review_required: false, technician_id: techId, work_status: "scheduled", phone_number: "+49 621 4455667" });
+    const { error: visitError } = await admin.from("visits").insert({ request_id: req.id, technician_id: techId, scheduled_start: new Date(Date.now() - 20 * 60000).toISOString(), scheduled_end: new Date(Date.now() + 100 * 60000).toISOString(), created_by: dispoId });
+    if (visitError) throw new Error(`Einsatz: ${visitError.message}`);
+    const ask = async (n) => (await admin.rpc("agent_request_callback", { call_id: `ui-callback-${runId}-${n}`, anfrage_id: req.id, rueckrufnummer: "0621 4455667" })).data;
+    const banner = () => page.eval(`(() => { const b = document.querySelector(".callback-alert"); return b ? { text: b.textContent, tel: b.querySelector("a[href^='tel:']")?.getAttribute("href"), title: document.title, scroll: document.documentElement.scrollWidth, width: window.innerWidth } : null; })()`);
+    const clickAck = () => page.eval(`[...document.querySelectorAll(".callback-alert button")].find((b) => b.textContent.includes("Kunde angerufen"))?.click()`);
+    try {
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies(techEmail) });
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+      await page.open(`${BASE}/dashboard/heute`);
+      check("Mein Tag ohne offene Rückrufbitte: kein Banner", (await banner()) === null);
+      const first = await ask(1);
+      check("  Werkzeug legt die Rückrufbitte an", first?.ok === true && first.bereits_offen === false, JSON.stringify(first));
+      const appeared = await waitFor(async () => (await banner()) !== null, 30000);
+      const shown = await banner();
+      check("  Banner erscheint ohne Neuladen (Abfrage alle 20 s)", appeared);
+      check("  Firma, Standort, Rückrufnummer als tel:-Link, Zähler im Tab-Titel, kein horizontales Scrollen bei 390 px",
+        !!shown && shown.text.includes(req.company_name) && shown.text.includes("Werkstr. 1, 40210 Düsseldorf") && shown.tel === "tel:06214455667" && shown.title.startsWith("(1) ") && shown.scroll <= shown.width,
+        JSON.stringify(shown));
+      if (process.env.UI_SCREENSHOTS) {
+        const shot = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, "rueckrufbitte-390.png"), Buffer.from(shot.data, "base64"));
+      }
+      await clickAck();
+      const acknowledged = await waitFor(async () => (await admin.from("callback_requests").select("status, closed_by").eq("request_id", req.id).eq("closed_reason", "acknowledged").maybeSingle()).data?.closed_by === techId);
+      check("  „Kunde angerufen“ quittiert, Banner verschwindet", acknowledged && await waitFor(async () => (await banner()) === null));
+
+      // No acknowledgement within 15 minutes: escalated to the dispatcher of the request
+      const second = await ask(2);
+      await admin.from("callback_requests").update({ created_at: new Date(Date.now() - 16 * 60000).toISOString() }).eq("id", second.rueckrufbitte_id);
+      await admin.rpc("escalate_callbacks");
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await page.open(`${BASE}/dashboard/erstbearbeitung`);
+      const urgent = await banner();
+      if (process.env.UI_SCREENSHOTS) {
+        const shot = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, "rueckrufbitte-dispatcher-1440.png"), Buffer.from(shot.data, "base64"));
+      }
+      check("Dispatcher: dringender Banner nach Eskalation mit Techniker", !!urgent && urgent.text.includes("Dringend") && urgent.text.includes(`UI-Test Rückruf ${runId}`), JSON.stringify(urgent));
+      await clickAck();
+      const closed = await waitFor(async () => (await admin.from("callback_requests").select("status, closed_by").eq("id", second.rueckrufbitte_id).single()).data?.closed_by === dispoId);
+      check("  Dispatcher quittiert die Eskalation", closed);
+    } finally {
+      await admin.from("visits").update({ status: "cancelled", cancellation_reason: "UI-Test" }).eq("request_id", req.id).eq("status", "scheduled");
+      await admin.rpc("escalate_callbacks");
+    }
+  }
+
   console.log("\nPosteingang: nicht zugeordnete E-Mail anzeigen und zuordnen");
   {
     const target = await newRequest("inbox-link", { intake_status: "awaiting_customer", human_review_required: false });

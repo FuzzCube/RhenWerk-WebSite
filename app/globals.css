@@ -1745,3 +1745,18 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .plan3__key--hold, .plan3__blk--hold { background: repeating-linear-gradient(135deg, var(--rw-color-info-border) 0 3px, var(--rw-color-info-surface) 3px 7px); border: 1px dashed var(--rw-color-info-800); }
 .plan3__blk--hold { z-index: 2; color: var(--rw-color-info-800); }
 .request-hold__when { font-family: var(--rw-font-body); font-size: 20px; }
+
+/* Callback requests of the phone assistant (task-13-4): banner above every dashboard page, mobile first */
+.callback-alerts { display: grid; gap: 8px; max-width: 1680px; margin: 0 auto 16px; }
+.callback-alert { align-items: flex-start; padding: 14px 16px; }
+.callback-alert > svg { flex: none; margin-top: 2px; color: var(--rw-color-danger-700); }
+.callback-alert__text { flex: 1 1 240px; min-width: 0; display: grid; gap: 2px; }
+.callback-alert__text a { color: inherit; font-weight: 600; }
+.callback-alert__actions { flex: 1 1 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.callback-alert__actions > * { justify-content: center; min-height: 48px; padding: 0 12px; }
+.callback-alert__call .mono { white-space: nowrap; }
+.callback-alerts__permission { justify-self: start; padding: 0; border: 0; background: none; cursor: pointer; }
+@media (min-width: 768px) {
+  .callback-alert { align-items: center; padding: 14px 20px; }
+  .callback-alert__actions { flex: 0 0 auto; display: flex; }
+}
