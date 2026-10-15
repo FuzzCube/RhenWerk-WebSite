@@ -1,8 +1,9 @@
 // Fictional customers, sites and texts for the demo seed. Any resemblance to real companies is unintended.
 
+// Region around Mannheim (Rhein-Neckar), matching the website and the service area of the phone assistant (task-13-9)
 export const COMPANY_PREFIXES = [
-  "Rheinauer", "Niederrhein", "Ruhrtal", "Bergische", "Westfalen", "Lippe", "Erft", "Wupper", "Emscher", "Sauerland",
-  "Volme", "Kaiserswerther", "Hafen", "Nordstern", "Lenne", "Agger", "Sieg", "Eifel", "Kempener", "Moerser",
+  "Rheinauer", "Kurpfalz", "Neckartal", "Bergsträßer", "Pfälzer", "Odenwald", "Hardt", "Neckarauer", "Friedrichsfelder", "Käfertaler",
+  "Rheinhafen", "Speyerer", "Wormser", "Weinheimer", "Schwetzinger", "Hockenheimer", "Ladenburger", "Heidelberger", "Kraichgau", "Lindenhof",
 ];
 export const COMPANY_CORES = [
   "Kunststofftechnik", "Lebensmittelwerke", "Metallverarbeitung", "Papierfabrik", "Getränke", "Chemiepark Service",
@@ -11,11 +12,14 @@ export const COMPANY_CORES = [
 ];
 export const COMPANY_FORMS = ["GmbH", "GmbH & Co. KG", "AG", "KG", "GmbH"];
 
+// [postal code, city, area code]; all inside docs/telefonassistent/einsatzgebiet.json
 export const CITIES = [
-  ["40210", "Düsseldorf"], ["40474", "Düsseldorf"], ["41460", "Neuss"], ["47051", "Duisburg"], ["47798", "Krefeld"],
-  ["45127", "Essen"], ["44135", "Dortmund"], ["42103", "Wuppertal"], ["50667", "Köln"], ["50999", "Köln"],
-  ["41061", "Mönchengladbach"], ["40721", "Hilden"], ["42651", "Solingen"], ["46045", "Oberhausen"], ["45468", "Mülheim an der Ruhr"],
-  ["51373", "Leverkusen"], ["40822", "Mettmann"], ["47441", "Moers"], ["41515", "Grevenbroich"], ["40880", "Ratingen"],
+  ["68159", "Mannheim", "621"], ["68219", "Mannheim", "621"], ["68307", "Mannheim", "621"], ["68169", "Mannheim", "621"],
+  ["67059", "Ludwigshafen am Rhein", "621"], ["67063", "Ludwigshafen am Rhein", "621"], ["69115", "Heidelberg", "6221"],
+  ["69123", "Heidelberg", "6221"], ["67346", "Speyer", "6232"], ["67547", "Worms", "6241"], ["69469", "Weinheim", "6201"],
+  ["68723", "Schwetzingen", "6202"], ["68766", "Hockenheim", "6205"], ["68519", "Viernheim", "6204"], ["68526", "Ladenburg", "6203"],
+  ["67227", "Frankenthal (Pfalz)", "6233"], ["69190", "Walldorf", "6227"], ["69168", "Wiesloch", "6222"], ["68623", "Lampertheim", "6206"],
+  ["67105", "Schifferstadt", "6235"],
 ];
 export const STREETS = [
   "Industriestraße", "Am Hafen", "Gewerbering", "Werkstraße", "Hansaallee", "Im Schiffahrtshafen", "Carl-Benz-Straße",
@@ -88,4 +92,23 @@ export const UNCERTAINTIES = [
   "Unklar, ob die Anlage unter Druck steht.",
   "Widersprüchliche Angaben zu Hersteller und Modell.",
   "Sicherheitsgefahr als „Unklar“ angegeben.",
+];
+
+// Demo service contracts (task-13-9): fixed, so the test list for the phone assistant (docs/telefonassistent/testdaten.md)
+// stays valid after every reseed. Each contract belongs to one fixed demo customer at the given site(s).
+export const SERVICE_CONTRACTS = [
+  { contract_number: "SLA-2021-801", company_name: "Neckartal Brauerei GmbH", postal_codes: ["69115"], city: "Heidelberg", street: "Bergheimer Straße 120", area: "6221", emergency_24_7: true, valid_from: "2021-03-01", valid_until: null },
+  { contract_number: "SLA-2022-176", company_name: "Kurpfalz Präzisionsteile KG", postal_codes: ["68219"], city: "Mannheim", street: "Rhenaniastraße 30", area: "621", emergency_24_7: true, valid_from: "2022-01-01", valid_until: null },
+  { contract_number: "SLA-2022-340", company_name: "Rheinhafen Logistikzentrum GmbH & Co. KG", postal_codes: ["68159"], city: "Mannheim", street: "Hafenstraße 12", area: "621", emergency_24_7: true, valid_from: "2022-07-01", valid_until: null },
+  { contract_number: "SLA-2023-512", company_name: "Pfälzer Lebensmittelwerke AG", postal_codes: ["67059"], city: "Ludwigshafen am Rhein", street: "Industriestraße 8", area: "621", emergency_24_7: true, valid_from: "2023-02-01", valid_until: null },
+  { contract_number: "SLA-2023-627", company_name: "Bergsträßer Kunststofftechnik GmbH", postal_codes: ["69469"], city: "Weinheim", street: "Gewerbering 4", area: "6201", emergency_24_7: true, valid_from: "2023-05-01", valid_until: null },
+  { contract_number: "SLA-2024-118", company_name: "Hardt Getränke AG", postal_codes: ["68766"], city: "Hockenheim", street: "Carl-Benz-Straße 21", area: "6205", emergency_24_7: true, valid_from: "2024-01-01", valid_until: null },
+  { contract_number: "SLA-2024-328", company_name: "Speyerer Papierfabrik GmbH & Co. KG", postal_codes: ["67346"], city: "Speyer", street: "Am Hafen 5", area: "6232", emergency_24_7: true, valid_from: "2024-04-01", valid_until: null },
+  { contract_number: "SLA-2025-205", company_name: "Odenwald Molkerei GmbH", postal_codes: ["69168", "69190"], city: "Wiesloch", street: "Werkstraße 17", area: "6222", emergency_24_7: true, valid_from: "2025-01-01", valid_until: null },
+  { contract_number: "SLA-2021-373", company_name: "Wormser Glaswerk GmbH", postal_codes: ["67547"], city: "Worms", street: "Siemensstraße 9", area: "6241", emergency_24_7: false, valid_from: "2021-06-01", valid_until: null },
+  { contract_number: "SLA-2022-558", company_name: "Schwetzinger Druckerei KG", postal_codes: ["68723"], city: "Schwetzingen", street: "Robert-Bosch-Straße 3", area: "6202", emergency_24_7: false, valid_from: "2022-09-01", valid_until: null },
+  { contract_number: "SLA-2023-905", company_name: "Ladenburger Galvanik GmbH", postal_codes: ["68526"], city: "Ladenburg", street: "Fabrikweg 2", area: "6203", emergency_24_7: false, valid_from: "2023-03-01", valid_until: null },
+  { contract_number: "SLA-2025-751", company_name: "Frankenthaler Verpackungen GmbH", postal_codes: ["67227"], city: "Frankenthal (Pfalz)", street: "Lagerstraße 11", area: "6233", emergency_24_7: false, valid_from: "2025-02-01", valid_until: null },
+  { contract_number: "SLA-2020-433", company_name: "Viernheimer Metallverarbeitung GmbH", postal_codes: ["68519"], city: "Viernheim", street: "Max-Planck-Ring 6", area: "6204", emergency_24_7: true, valid_from: "2020-07-01", valid_until: "2026-06-30" },
+  { contract_number: "SLA-2026-990", company_name: "Lampertheimer Recycling GmbH", postal_codes: ["68623"], city: "Lampertheim", street: "Kanalstraße 40", area: "6206", emergency_24_7: true, valid_from: "2027-01-01", valid_until: null },
 ];

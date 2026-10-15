@@ -1,0 +1,162 @@
+{
+  "version": "2026-10-15",
+  "hinweis": "Demo-Festlegung für den Telefonassistenten (task-13-1): Einsatzgebiet Rhein-Neckar ab Mannheim. Postleitzahlen in diesen Bereichen gelten als im Gebiet; jede andere gültige deutsche PLZ als 'nur_mit_vertrag'. Vor einem Produktivbetrieb mit dem Service Desk abgleichen.",
+  "in_gebiet": [
+    {
+      "ort": "Mannheim",
+      "von": "68159",
+      "bis": "68309"
+    },
+    {
+      "ort": "Ludwigshafen am Rhein",
+      "von": "67059",
+      "bis": "67071"
+    },
+    {
+      "ort": "Heidelberg",
+      "von": "69115",
+      "bis": "69126"
+    },
+    {
+      "ort": "Speyer",
+      "von": "67346",
+      "bis": "67346"
+    },
+    {
+      "ort": "Worms",
+      "von": "67547",
+      "bis": "67551"
+    },
+    {
+      "ort": "Weinheim",
+      "von": "69469",
+      "bis": "69469"
+    },
+    {
+      "ort": "Schwetzingen, Plankstadt",
+      "von": "68723",
+      "bis": "68723"
+    },
+    {
+      "ort": "Hockenheim",
+      "von": "68766",
+      "bis": "68766"
+    },
+    {
+      "ort": "Viernheim",
+      "von": "68519",
+      "bis": "68519"
+    },
+    {
+      "ort": "Ladenburg",
+      "von": "68526",
+      "bis": "68526"
+    },
+    {
+      "ort": "Edingen-Neckarhausen",
+      "von": "68535",
+      "bis": "68535"
+    },
+    {
+      "ort": "Heddesheim",
+      "von": "68542",
+      "bis": "68542"
+    },
+    {
+      "ort": "Ilvesheim",
+      "von": "68549",
+      "bis": "68549"
+    },
+    {
+      "ort": "Lampertheim",
+      "von": "68623",
+      "bis": "68623"
+    },
+    {
+      "ort": "Ketsch",
+      "von": "68775",
+      "bis": "68775"
+    },
+    {
+      "ort": "Brühl",
+      "von": "68782",
+      "bis": "68782"
+    },
+    {
+      "ort": "St. Leon-Rot",
+      "von": "68789",
+      "bis": "68789"
+    },
+    {
+      "ort": "Reilingen",
+      "von": "68799",
+      "bis": "68799"
+    },
+    {
+      "ort": "Altlußheim",
+      "von": "68804",
+      "bis": "68804"
+    },
+    {
+      "ort": "Wiesloch",
+      "von": "69168",
+      "bis": "69168"
+    },
+    {
+      "ort": "Leimen",
+      "von": "69181",
+      "bis": "69181"
+    },
+    {
+      "ort": "Walldorf",
+      "von": "69190",
+      "bis": "69190"
+    },
+    {
+      "ort": "Schriesheim",
+      "von": "69198",
+      "bis": "69198"
+    },
+    {
+      "ort": "Eppelheim",
+      "von": "69214",
+      "bis": "69214"
+    },
+    {
+      "ort": "Dossenheim",
+      "von": "69221",
+      "bis": "69221"
+    },
+    {
+      "ort": "Hirschberg an der Bergstraße",
+      "von": "69493",
+      "bis": "69493"
+    },
+    {
+      "ort": "Hemsbach",
+      "von": "69502",
+      "bis": "69502"
+    },
+    {
+      "ort": "Schifferstadt",
+      "von": "67105",
+      "bis": "67105"
+    },
+    {
+      "ort": "Limburgerhof",
+      "von": "67117",
+      "bis": "67117"
+    },
+    {
+      "ort": "Altrip",
+      "von": "67122",
+      "bis": "67122"
+    },
+    {
+      "ort": "Frankenthal (Pfalz)",
+      "von": "67227",
+      "bis": "67227"
+    }
+  ],
+  "gueltig": "^[0-9]{5}$"
+}

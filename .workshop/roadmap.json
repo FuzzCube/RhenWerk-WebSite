@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 8,
+  "roadmapVersion": 10,
   "status": "active",
   "phases": [
     {
@@ -1855,6 +1855,207 @@
               "APP_URL=http://localhost:3201 npm run test:ui"
             ]
           }
+        }
+      ]
+    },
+    {
+      "id": "phase-13",
+      "title": "KI-Telefonassistent",
+      "description": "Deutschsprachiger Voice Agent (ElevenLabs, n8n, Supabase) für den Service Desk: Anfragen mit vorgemerktem Termin, Statusauskunft mit Rückrufbitte an den Techniker, Notfallweiterleitung, Gesprächsauswertung im Dashboard. Plan: docs/telefonassistent-plan.md.",
+      "order": 14,
+      "weight": 3,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-13-1",
+          "title": "Telefonassistent: Konzept",
+          "description": "Gesprächsleitfaden mit allen Zweigen (neue Anfrage mit Terminwunsch, Status/Verspätung, Frage, Notfall nach Servicezeit und SLA, außerhalb Gebiet, Beschwerde, Spam), Wissensbasis aus der Website (RAG), deutscher Systemprompt für „Mira“, PLZ-Liste Rhein-Neckar, Regeln für Weiterleitung und für Auskünfte zu Anfragen, einseitiges Datenschutzkonzept. Dazu die Liste der betreuten Anlagen (Hersteller und Typen) für Fragen wie „Reparieren Sie …?“.",
+          "order": 1,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Leitfaden und Prompt in docs",
+            "PLZ-Liste und Weiterleitungsregeln",
+            "Regeln, was der Agent über Anfragen sagen darf",
+            "Datenschutzkonzept (KI-Hinweis, keine Audioaufnahme, 30 Tage Transkript, AVV)"
+          ],
+          "startedAt": "2026-10-15T13:05:28Z",
+          "completedAt": "2026-10-15T13:09:37Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Konzept unter docs/telefonassistent/ (Deutsch): leitfaden.md (alle Zweige, feste Texte: KI-Hinweis, Gefahr für Personen, Weiterleitung, Störung), systemprompt.md (Mira, nur Deutsch, Zeit/Servicezeit-Variablen, Regeln, Abläufe, Werkzeuge), wissensbasis.md (Unternehmen, Servicezeiten, SLA, Gebiet, Preise als Ausgangswerte, Ablauf, betreute Anlagen: 20 Hersteller/74 Baureihen aus dem Anlagenkatalog mit Antwortregeln und Ausschlüssen, FAQ), regeln.md (Weiterleitungsmatrix Servicezeit × SLA, Auskunftsregeln je Lage aus Erstbearbeitungs-/Arbeits-/Einsatzstatus, Terminvormerkung, Rückrufbitte, Werkzeugverträge inkl. anlage_pruefen mit dem bestehenden deterministischen Katalogabgleich), einsatzgebiet.json (31 PLZ-Bereiche Rhein-Neckar, sonst nur_mit_vertrag), datenschutz.md (AI Act Art. 50, keine Audioaufnahme, Transkript 30 Tage, AVV, Auskunftsgrenzen). Plan docs/telefonassistent-plan.md verlinkt. Festgestellt: kein SLA-Stammdatenbestand – SLA prüft der Mensch; der Agent leitet mit genannter Vertragsnummer weiter.",
+            "commands": [
+              "python3 -c \"import json;json.load(open('docs/telefonassistent/einsatzgebiet.json'))\"",
+              "Abgleich der Wissensbasis mit components/pages.tsx und docs/equipment/RheinWerk_Anlagenkatalog_DE.md"
+            ]
+          }
+        },
+        {
+          "id": "task-13-9",
+          "title": "Demo-Region Rhein-Neckar und SLA-Verträge",
+          "description": "Demo-Kunden und alle Demo-Anfragen in die Region um Mannheim (Rhein-Neckar) verlegen, passend zu Website und Einsatzgebiet des Agenten (Nutzerentscheidung 15.10.2026). Tabelle service_contracts mit Demo-SLA-Verträgen aus den Demo-Kunden (mit/ohne 24/7, abgelaufen) und Negativnummern; Prüffunktion für den Agenten (gueltig_24_7, gueltig_ohne_24_7, abgelaufen, passt_nicht, unbekannt, ohne Firmenauskunft); Hinweis „Vertrag im Bestand“ in der Anfrage; Testdatenliste für Anrufe.",
+          "order": 2,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-13-1"
+          ],
+          "startedAt": "2026-10-15T13:24:03Z",
+          "definitionOfDone": [
+            "Demo-Daten neu erzeugt: alle Standorte im Einsatzgebiet, demo:verify grün",
+            "service_contracts mit RLS, Demo-Verträge im Seed, Prüffunktion nur für service_role",
+            "Hinweis in der Anfrage, test:ui, Sichtprüfung 390/1440 px",
+            "pgTAP, docs/telefonassistent/testdaten.md, Regeln und Leitfaden angepasst"
+          ],
+          "completedAt": "2026-10-15T13:36:37Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Demo-Daten in die Region um Mannheim verlegt (20 Orte aus einsatzgebiet.json, Vorwahl je Ort, Firmennamen Rhein-Neckar) und neu erzeugt. Tabelle service_contracts (Migration 20261015200000, RLS: Lesen Dispatcher/Manager/Admin, kein API-Schreiben) mit 14 festen Demo-Verträgen und festen Kunden (8 mit 24/7, 4 ohne, 1 abgelaufen, 1 noch nicht gültig, 1 mit zwei Standorten); private.contract_status mit Normalisierung gesprochener Nummern und Firmenvergleich ohne Rechtsform; public.agent_check_contract nur service_role, ohne Firmenauskunft. Anfrage zeigt „Vertragsbestand“ (lib/service-contract.ts). Seed: Verträge werden ersetzt, Live-Einsätze blockieren den Demo-Kalender; Fixture „Analyse läuft“ ohne Rückmeldefrist (vorher konnte die Frist den Ablauf vor der Analyse stoppen). Testliste docs/telefonassistent/testdaten.md; Regeln, Leitfaden, Prompt mit Werkzeug sla_pruefen. Geprüft: test:unit 85 (neu 2), test:db 705 (service_contracts 16), test:ui (neu: Vertragsbestand gültig/abgelaufen), demo:verify 18/18 nach Seed, lint, typecheck, build; Sichtprüfung 390/1440 px.",
+            "commands": [
+              "supabase migration up",
+              "npm run db:types",
+              "npm run demo:seed",
+              "npm run demo:verify",
+              "npm run test:unit",
+              "supabase test db",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3201 npm run test:ui"
+            ]
+          }
+        },
+        {
+          "id": "task-13-2",
+          "title": "Telefonassistent: Daten für den Agenten",
+          "description": "Tabelle phone_calls mit RLS; RPCs nur für service_role: Anfrage aus Anruf anlegen (idempotent je call_id, Prüfung wie Telefonanfrage, Dispatcher nach Auslastung), Anfrage finden (Nummer, Firma+PLZ, Adresse; nur freigegebene Auskünfte), Einsatzgebiet prüfen (SLA-Prüfung agent_check_contract liegt seit task-13-9 vor); Transkripte nach 30 Tagen löschen (pg_cron).",
+          "order": 3,
+          "weight": 3,
+          "status": "completed",
+          "dependsOn": [
+            "task-13-9"
+          ],
+          "definitionOfDone": [
+            "Migration mit RLS und Rechten",
+            "Idempotenz, Prüfungen, Auskunftsgrenzen",
+            "pgTAP",
+            "Dokumentation"
+          ],
+          "startedAt": "2026-10-15T13:42:55Z",
+          "completedAt": "2026-10-15T13:47:32Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261015220000_phone_agent_data.sql: phone_calls (Gespräch je conversation_id, Zusammenfassung, Transkript 30 Tage, Rückruf, Weiterleitung, Kosten, Anfrage; RLS Lesen Dispatcher/Manager/Admin, Schreiben nur über Funktionen), Quelle phone_agent, private.service_area aus einsatzgebiet.json. service_role-Funktionen: agent_create_request (fehlende Felder als Liste statt Fehler, idempotent je Gespräch, Dispatcher nach Auslastung, Standarddatum +7 Tage, SLA-Nummer, Eingangsbestätigung, Ereignis request_created_by_agent), agent_find_request (PLZ Pflicht, Nummer gesprochen normalisiert oder Firma ohne Rechtsform, nur ein Treffer gibt Daten, Lage nach regeln.md mit Einsatz und gesprochener Terminansage, keine internen/Kontaktdaten), agent_check_area, purge_call_transcripts per pg_cron täglich. Doku: database.md, n8n-contract.md Abschnitt 6, regeln.md Zuordnung Werkzeug→Funktion, testing.md. Geprüft: test:db 743 (phone_agent_data 38), test:unit 85, demo:verify grün, lint, typecheck, build.",
+            "commands": [
+              "supabase migration up",
+              "npm run db:types",
+              "supabase test db",
+              "npm run test:unit",
+              "npm run demo:verify",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
+        },
+        {
+          "id": "task-13-3",
+          "title": "Telefonassistent: Termine vormerken",
+          "description": "Freie Fenster je Tag aus Arbeitszeiten, Einsätzen, Abwesenheiten und Vormerkungen (Dauer nach Leistung); Terminvormerkung an der Anfrage, blockiert das Fenster, läuft nach 2 Werktagen ab; im Dashboard „Terminwunsch (Telefon)“: Bestätigen plant den Einsatz mit Konfliktprüfung und sendet eine Bestätigung, Ablehnen mit Grund und Alternative informiert den Kunden.",
+          "order": 4,
+          "weight": 3,
+          "status": "ready",
+          "dependsOn": [
+            "task-13-2"
+          ],
+          "definitionOfDone": [
+            "RPC freie Fenster, Vormerkung, Bestätigen, Ablehnen, Ablauf",
+            "Oberfläche für Dispatcher, E-Mails an Kunden über die Warteschlange",
+            "pgTAP, test:ui, Sichtprüfung 390/1440 px"
+          ]
+        },
+        {
+          "id": "task-13-4",
+          "title": "Telefonassistent: Rückrufbitte an Techniker",
+          "description": "Agent erkennt überfälligen, nicht begonnenen Einsatz; Rückrufbitte an den Techniker (Banner im Techniker-Dashboard, Telegram über n8n), Quittung „Kunde angerufen“; ohne Quittung nach 15 Minuten dringend an den Dispatcher.",
+          "order": 5,
+          "weight": 2,
+          "status": "ready",
+          "dependsOn": [
+            "task-13-2"
+          ],
+          "definitionOfDone": [
+            "RPC und Eskalation",
+            "Banner und Quittung beim Techniker (mobil zuerst)",
+            "Telegram-Benachrichtigung",
+            "pgTAP, test:ui"
+          ]
+        },
+        {
+          "id": "task-13-5",
+          "title": "Telefonassistent: Agent und Werkzeuge",
+          "description": "n8n-Webhooks für wissen, einsatzgebiet_pruefen, freie_termine, anfrage_anlegen, anfrage_finden, rueckrufbitte_techniker hinter benanntem Cloudflare-Tunnel mit gemeinsamem Geheimnis; Agent in ElevenLabs (Prompt, Stimme, Aussprache, Werkzeuge, Weiterleitung, Gesprächsende); Tests im Browser.",
+          "order": 6,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-13-3",
+            "task-13-4"
+          ],
+          "definitionOfDone": [
+            "Webhooks antworten in 1–2 s, nur mit Geheimnis",
+            "Agent führt die Kernszenarien im Browser durch",
+            "Konfiguration dokumentiert, keine Geheimnisse im Repository"
+          ]
+        },
+        {
+          "id": "task-13-6",
+          "title": "Telefonassistent: Gesprächsauswertung",
+          "description": "Post-Call-Webhook → JSON-Zusammenfassung per LLM (feste Schema) → phone_calls → Verknüpfung mit Anfrage → dringende Benachrichtigung bei Notfall.",
+          "order": 7,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-13-5"
+          ],
+          "definitionOfDone": [
+            "Workflow mit Schema und Wiederholungsschutz",
+            "Verknüpfung und Benachrichtigung geprüft",
+            "Integrationstest"
+          ]
+        },
+        {
+          "id": "task-13-7",
+          "title": "Telefonassistent: Dashboard",
+          "description": "Bereich „Anrufe“ (Liste, Zusammenfassung, Transkript 30 Tage, „Rückruf erledigt“), Block „Telefonat“ in der Anfrage, Quelle „Telefon (KI)“, Kennzahlen „Telefon“ in der Auswertung (Anrufe, ohne Mensch gelöst, Anfragen, außerhalb Servicezeit, Notfälle, Dauer, Kosten), Demo-Anrufe.",
+          "order": 8,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-13-6"
+          ],
+          "definitionOfDone": [
+            "Oberfläche mit Rechten nach Rolle",
+            "Kennzahlen und Demo-Daten",
+            "test:ui, Sichtprüfung 390/1440 px"
+          ]
+        },
+        {
+          "id": "task-13-8",
+          "title": "Telefonassistent: Test und Demo",
+          "description": "Testprotokoll mit 14 Szenarien, Latenzmessung, Web-Widget „Mit Mira sprechen“ auf der Kontaktseite mit Minutenlimit, Dokumentation.",
+          "order": 9,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-13-7"
+          ],
+          "definitionOfDone": [
+            "Protokoll mit Ergebnissen und Latenz",
+            "Widget mit Limit",
+            "Dokumentation aktualisiert"
+          ]
         }
       ]
     }

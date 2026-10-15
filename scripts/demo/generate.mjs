@@ -40,7 +40,8 @@ function lineAmounts(quantity, unitPrice, taxRate) {
   return { net: fromCents(net), tax: fromCents(tax), gross: fromCents(net + tax) };
 }
 
-export function generateDemoData({ anchor, now, staff }) {
+// liveVisits: visits of live (non-demo) requests; demo bookings avoid them, so the calendar stays conflict-free
+export function generateDemoData({ anchor, now, staff, liveVisits = [] }) {
   const rnd = createRandom(`rheinwerk-demo:${isoDate(anchor)}`);
   const anchorEnd = berlinDay(anchor, 1);
   const cutoff = new Date(Math.min(now.getTime(), anchorEnd.getTime() - MINUTE));
@@ -58,6 +59,9 @@ export function generateDemoData({ anchor, now, staff }) {
     invoice_items: [],
     messages: [],
     invoice_reminders: [],
+    service_contracts: C.SERVICE_CONTRACTS.map(({ contract_number, company_name, postal_codes, emergency_24_7, valid_from, valid_until }, index) => ({
+      contract_number, company_name, postal_codes, emergency_24_7, valid_from, valid_until, customer_number: `K-${10000 + index * 7}`, is_demo: true,
+    })),
     automation_runs: [],
     request_events: [],
   };
@@ -102,6 +106,7 @@ export function generateDemoData({ anchor, now, staff }) {
   // Calendar: conflict-free bookings within working hours, absences blocked
   const busy = new Map(technicians.map((id) => [id, []]));
   for (const [employeeId, start, end] of absences) busy.get(employeeId).push([start.getTime(), end.getTime()]);
+  for (const visit of liveVisits) busy.get(visit.technician_id)?.push([Date.parse(visit.scheduled_start), Date.parse(visit.scheduled_end)]);
   const isFree = (technicianId, start, end) =>
     busy.get(technicianId).every(([s, e]) => end.getTime() <= s || start.getTime() >= e);
   function findSlot(preferred, fromDate, hours, { maxDays = 40, notBefore = fromDate, onlyDay = false } = {}) {
@@ -130,10 +135,13 @@ export function generateDemoData({ anchor, now, staff }) {
     return { technicianId, start, end };
   }
 
-  // Customers
+  // Customers: the first ones are the fixed contract customers (C.SERVICE_CONTRACTS), the others have no contract
   const customers = Array.from({ length: 70 }, (_, i) => {
-    const [postalCode, city] = rnd.pick(C.CITIES);
-    const name = `${rnd.pick(C.COMPANY_PREFIXES)} ${rnd.pick(C.COMPANY_CORES)} ${rnd.pick(C.COMPANY_FORMS)}`;
+    const contract = C.SERVICE_CONTRACTS[i] ?? null;
+    const [randomPostalCode, randomCity, randomArea] = rnd.pick(C.CITIES);
+    const randomName = `${rnd.pick(C.COMPANY_PREFIXES)} ${rnd.pick(C.COMPANY_CORES)} ${rnd.pick(C.COMPANY_FORMS)}`;
+    const [postalCode, city, area] = contract ? [contract.postal_codes[0], contract.city, contract.area] : [randomPostalCode, randomCity, randomArea];
+    const name = contract ? contract.company_name : randomName;
     const first = rnd.pick(C.FIRST_NAMES);
     const last = rnd.pick(C.LAST_NAMES);
     const slug = name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 28);
@@ -141,13 +149,14 @@ export function generateDemoData({ anchor, now, staff }) {
       company_name: name,
       contact_name: `${first} ${last}`,
       business_email: `${slug}.${i + 1}@example.com`,
-      phone_number: `+49 ${rnd.int(201, 2199)} ${rnd.int(100000, 999999)}`,
-      customer_number: rnd.chance(0.65) ? `K-${10000 + i * 7}` : null,
-      street_house_number: `${rnd.pick(C.STREETS)} ${rnd.int(1, 140)}`,
+      phone_number: `+49 ${area} ${rnd.int(100000, 999999)}`,
+      customer_number: rnd.chance(0.65) || contract ? `K-${10000 + i * 7}` : null,
+      street_house_number: contract ? contract.street : `${rnd.pick(C.STREETS)} ${rnd.int(1, 140)}`,
       postal_code: postalCode,
       city,
       site_label: rnd.chance(0.4) ? rnd.pick(C.SITE_LABELS) : null,
-      sla_contract_number: rnd.chance(0.25) ? `SLA-${2020 + rnd.int(0, 5)}-${rnd.int(100, 999)}` : null,
+      sla_contract_number: contract?.contract_number ?? null,
+      emergency_24_7: contract?.emergency_24_7 ?? false,
     };
   });
 
@@ -183,7 +192,8 @@ export function generateDemoData({ anchor, now, staff }) {
     const manufacturer = rnd.chance(0.75) ? rnd.pick(equipment) : null;
     const modelType = manufacturer && rnd.chance(0.7) ? `${manufacturer.slice(0, 2).toUpperCase()}-${rnd.int(100, 990)}` : null;
     const machineNumber = rnd.chance(0.45) ? `MN-${rnd.int(100000, 999999)}` : null;
-    const emergencyClaimed = rnd.weighted([[null, 0.45], [false, 0.45], [true, 0.1]]);
+    // Customers with a 24/7 contract claim it more often; the others rarely (and then wrongly)
+    const emergencyClaimed = rnd.weighted(customer.emergency_24_7 ? [[null, 0.3], [false, 0.3], [true, 0.4]] : [[null, 0.45], [false, 0.45], [true, 0.1]]);
     const description = rnd.pick(C.DESCRIPTIONS[serviceKind][equipmentKind]);
 
     const req = {
@@ -735,7 +745,7 @@ export function generateDemoData({ anchor, now, staff }) {
     { demoCase: "Prüfung offen mit E-Mail-Entwurf", path: "review", createdAt: addHours(cutoff, -3), reviewHours: 200, draftReply: true, safetyRisk: "known", cancelStage: null },
     { demoCase: "Warten auf Kundenantwort", path: "clarify", createdAt: addHours(cutoff, -26), replyHours: 300, safetyRisk: "none_known", cancelStage: null },
     { demoCase: "Neu und noch nicht zugewiesen", path: "manual", createdAt: addMinutes(cutoff, -25), manualHours: 200, unassigned: true, safetyRisk: "none_known", cancelStage: null },
-    { demoCase: "Analyse läuft", path: "auto", createdAt: addMinutes(cutoff, -2.5), safetyRisk: "none_known", cancelStage: null },
+    { demoCase: "Analyse läuft", path: "auto", createdAt: addMinutes(cutoff, -2.5), safetyRisk: "none_known", cancelStage: null, responseDeadline: false },
     { demoCase: "Kundenantwort erhalten", path: "clarify", createdAt: addHours(cutoff, -30), replyHours: 27, replyNeedsReview: true, safetyRisk: "none_known", cancelStage: null },
     { demoCase: "Kundenantwort erhalten (2)", path: "clarify", createdAt: addHours(cutoff, -52), replyHours: 46, replyNeedsReview: true, safetyRisk: "none_known", cancelStage: null },
     { demoCase: "Prüfung offen", path: "review", createdAt: addHours(cutoff, -7), reviewHours: 200, safetyRisk: "unclear", cancelStage: null },

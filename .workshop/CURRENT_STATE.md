@@ -2,21 +2,27 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v8 mit 13 Phasen und 51 Tasks. Fortschritt 100,00 % (Gewicht 153 von 153, 51 von 51 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v10 mit 14 Phasen und 60 Tasks. Fortschritt 91,43 % (Gewicht 160 von 175, 54 von 60 Tasks).
 
 ## Aktive Phase
 
-Alle Phasen 0–12 sind abgeschlossen (Phase 12 „Weitere Nachbesserungen“ am 15.10.2026).
+Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/telefonassistent-plan.md`) ist angelegt: ElevenLabs-Agent „Mira“ (nur Deutsch), Werkzeuge über n8n hinter benanntem Cloudflare-Tunnel, Terminvormerkung mit Bestätigung durch den Dispatcher, Rückrufbitte an den Techniker bei Verspätung, Web-Widget statt Telefonnummer.
 
 ## Aktive Aufgabe
 
-Keine. Alle Tasks sind abgeschlossen; weitere Arbeit nur nach Absprache als neue Roadmap-Tasks.
+Keine in Arbeit. Bereit: `task-13-3` „Termine vormerken“ und `task-13-4` „Rückrufbitte an Techniker“.
 
-Hinweis: `npm run demo:verify` meldet lokal drei Abweichungen der Demo-Daten (Anzahl Anfragen im 24-Monats-Fenster, 34 Chronologie-Fälle, 4 Snapshots ohne Basiswert 15 Minuten); sie betreffen Anfragen und Einstellungen, nicht den Posteingang, und sind nicht Teil von Phase 12.
+Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-13-2` (15.10.2026): Daten für den Telefonassistenten – `phone_calls`, Quelle `phone_agent`, `agent_create_request` (fehlende Felder als Liste, idempotent je Gespräch), `agent_find_request` (Lage nach Regeln, gesprochene Terminansage), `agent_check_area`, Transkripte nach 30 Tagen gelöscht. test:db 743, lint, typecheck, build.
+
+`task-13-9` (15.10.2026): Demo-Daten in der Region um Mannheim (Rhein-Neckar) neu erzeugt; SLA-Verträge `service_contracts` mit 14 festen Demo-Verträgen, Prüfung `agent_check_contract` für den Agenten, „Vertragsbestand“ in der Anfrage, Testliste `docs/telefonassistent/testdaten.md`. demo:verify 18/18, test:db 705, test:ui, lint, typecheck, build.
+
+`task-13-1` (15.10.2026): Konzept des Telefonassistenten unter `docs/telefonassistent/` – Gesprächsleitfaden, Systemprompt, Wissensbasis mit betreuten Anlagen (20 Hersteller, 74 Baureihen), Regeln und Werkzeugverträge (inkl. `anlage_pruefen`), PLZ-Liste, Datenschutzkonzept. SLA wird vom Menschen geprüft (keine SLA-Stammdaten).
 
 `task-12-3` (15.10.2026): Posteingang „Antworten“ – Rückfrage an den Absender mit Vorlage, Versand nach Klick über n8n im selben Gmail-Verlauf; Unterhaltung (`inbox_root_id`) mit Kundenantworten beim selben Dispatcher, Stand in der Liste, Zuordnen/Anlegen/Archivieren für die ganze Unterhaltung. test:unit 83, test:db 689, n8n-Integration, test:ui, lint, typecheck, build.
 

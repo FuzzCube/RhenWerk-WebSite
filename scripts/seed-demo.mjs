@@ -67,10 +67,21 @@ async function removeDemoFiles() {
   return removed;
 }
 
+// Demo service contracts (task-13-9) live outside demo_seed_apply: replaced as a whole, live contracts stay
+async function replaceDemoContracts(contracts) {
+  const { error: deleteError } = await admin.from("service_contracts").delete().eq("is_demo", true);
+  if (deleteError) throw new Error(`Verträge: ${deleteError.message}`);
+  if (contracts.length === 0) return 0;
+  const { error: insertError } = await admin.from("service_contracts").insert(contracts);
+  if (insertError) throw new Error(`Verträge: ${insertError.message}`);
+  return contracts.length;
+}
+
 if (process.argv.includes("--purge")) {
   const files = await removeDemoFiles();
   const { data, error } = await admin.rpc("demo_seed_purge");
   if (error) throw new Error(error.message);
+  await replaceDemoContracts([]);
   console.log("Demodaten entfernt:", { ...data, storage_files: files });
   console.log("Testkonten:", await cleanupTestAccounts(admin));
   process.exit(0);
@@ -111,7 +122,10 @@ if (anchorText) {
   anchor = berlinTime(Number(match[1]), Number(match[2]), Number(match[3]), 12, 0);
 }
 
-const { payload, cutoff, rateChange } = generateDemoData({ anchor, now: new Date(), staff });
+// Live visits (not cancelled) block the demo calendar, so demo and live data never overlap
+const { data: liveVisits, error: liveError } = await admin.from("visits").select("technician_id, scheduled_start, scheduled_end, requests!inner(is_demo)").eq("requests.is_demo", false).neq("status", "cancelled").range(0, 99999);
+if (liveError) throw new Error(`Einsätze: ${liveError.message}`);
+const { payload, cutoff, rateChange } = generateDemoData({ anchor, now: new Date(), staff, liveVisits });
 console.log(`Seed-Anker ${isoDate(anchor)}, Stichzeitpunkt ${cutoff.toISOString()}, Tarifwechsel ${isoDate(rateChange)}`);
 
 const removedFiles = await removeDemoFiles();
@@ -121,7 +135,7 @@ if (error) {
   process.exit(1);
 }
 console.log("Entfernt:", { ...data.purged, storage_files: removedFiles });
-console.log("Eingefügt:", data.inserted);
+console.log("Eingefügt:", { ...data.inserted, service_contracts: await replaceDemoContracts(payload.service_contracts) });
 
 // Safe demo files (scripts/demo/files) attached to selected demo cases
 const caseRequest = (demoCase) => payload.requests.find((r) => r.raw_payload.demo_case === demoCase);

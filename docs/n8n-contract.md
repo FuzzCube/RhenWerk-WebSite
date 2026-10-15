@@ -39,6 +39,10 @@ Dieser Vertrag beschreibt, wie die lokale n8n-Integration mit der Datenbank zusa
 | `complete_incoming_message(message_id, warnings?)` | **vorhanden**, nur `service_role` | Antwort erst nach allen Anhängen zur Analyse freigeben; Dateiprobleme menschlich prüfen |
 | `list_incomplete_incoming(batch_limit?)` | **vorhanden**, nur `service_role` | abgebrochene Verarbeitung eingehender Anhänge erneut aufnehmen |
 | `list_orphaned_integration_files()` | **vorhanden**, nur `service_role` | verwaiste Speicherobjekte nur auflisten; keine Löschung |
+| `agent_create_request(call_id, fields)` | **vorhanden**, nur `service_role` | Telefonassistent: Anfrage aus dem Gespräch (Abschnitt 6) |
+| `agent_find_request(call_id, nummer?, firma?, plz, strasse?)` | **vorhanden**, nur `service_role` | Telefonassistent: Anfrage und Lage für die Auskunft (Abschnitt 6) |
+| `agent_check_area(call_id, plz)` | **vorhanden**, nur `service_role` | Telefonassistent: Einsatzgebiet (Abschnitt 6) |
+| `agent_check_contract(contract_number, company_name?, postal_code?)` | **vorhanden**, nur `service_role` | Telefonassistent: Notfall-SLA prüfen, ohne Firmenauskunft (Abschnitt 6) |
 
 Die vorhandenen Tabellen enthalten bereits alle Felder für diese Funktionen (`requests.source_event_key`, `automation_runs.operation_key`/`input_version`/`workflow_execution_id`, `messages.mailbox_key`/`gmail_message_id`/`gmail_thread_id`/`mime_message_id`/`in_reply_to`/`references_header`, `attachments.bucket`/`storage_path`).
 
@@ -144,6 +148,16 @@ Ausnahme Eingangsbestätigung (task-10-6): `ingest_submission` legt für jede ne
 | Zeitplan (täglich) | Aufräumen von Staging-Dateien |
 
 Statusänderungen durch den Workflow selbst (`apply_analysis_result`, `confirm_message_sent`) sind **keine** Auslöser. Datenbank-Trigger oder Webhooks auf `requests`/`request_events` werden nicht verwendet, damit eine Statusänderung keine erneute Analyse derselben Anfrage auslöst. Jeder Lauf ist über `operation_key` an genau eine Eingabeversion gebunden.
+
+## 6. Telefonassistent (task-13-2)
+
+Der Sprachagent „Mira“ (ElevenLabs) ruft n8n-Webhooks auf; n8n ruft diese Funktionen mit `service_role` auf. Jede trägt die Gesprächs-ID der Plattform als `call_id`: Der erste Aufruf legt die Zeile in `phone_calls` an, die Gesprächsauswertung (task-13-6) ergänzt sie. Regeln und Werkzeugverträge: `docs/telefonassistent/regeln.md`.
+
+- `agent_create_request(call_id, fields)` – Felder wie bei der Telefonanfrage (`company_name`, `contact_name`, `business_email`, `phone_number`, `street_house_number`, `postal_code`, `city`, `equipment_kind`, `service_kind`, `customer_urgency`, `safety_risk`, `description` ≥ 10 Zeichen; optional `customer_number`, `site_label`, `manufacturer`, `model_type`, `requested_visit_date`, `sla_contract_number`). Fehlt etwas: `{ ok: false, fehler: "fehlende_felder", fehlende_felder: [...] }`, keine Ausnahme, damit der Agent nachfragt. Sonst Quelle `phone_agent`, Schlüssel `phone_agent:<call_id>` (Wiederholung liefert dieselbe Anfrage, `wiederholt: true`), Dispatcher nach Auslastung, ohne Wunschtermin heute + 7 Tage, Eingangsbestätigung in die Warteschlange, Ereignis `request_created_by_agent` (Automation), normale Analyse wie jede neue Anfrage. Antwort: `anfrage_id`, `anfrage_nummer`.
+- `agent_find_request(call_id, nummer, firma, plz, strasse)` – PLZ des Standorts ist Pflicht; dazu Anfragenummer (gesprochene Schreibweisen wie „RIS 2026 123“ werden normalisiert) oder Firma (ohne Rechtsform, nur offene oder in den letzten 30 Tagen geänderte Anfragen), optional Straße. Nur bei genau einem Treffer: `anfrage_id`, `anfrage_nummer`, `standort` („Pumpe, Hafenstraße 12, Mannheim“), `lage` nach `regeln.md`, bei `geplant`/`ueberfaellig` zusätzlich `einsatz_id`, `termin_beginn`, `termin_ansage` („Mittwoch, der 21. Oktober, um 13 Uhr“). Sonst nur `treffer` (0 oder Anzahl). Keine Technikernamen, Notizen, Preise oder Kontaktdaten.
+- `agent_check_area(call_id, plz)` – `in_gebiet` (mit `ort`), `nur_mit_vertrag`, `ungueltig`; Bereiche aus `docs/telefonassistent/einsatzgebiet.json` in `private.service_area`.
+- `agent_check_contract(contract_number, company_name, postal_code)` – siehe Datenbank „SLA-Verträge“.
+- Transkripte löscht `purge_call_transcripts()` täglich (pg_cron 02:30 UTC) nach 30 Tagen; Zusammenfassung und Kennzahlen bleiben.
 
 ## Modellabgleich und Anhänge
 

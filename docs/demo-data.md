@@ -53,6 +53,9 @@ Optional `DEMO_SEED_ANCHOR=JJJJ-MM-TT` (Standard: heute, Europe/Berlin). Der See
 - Arbeitszeiten Mo–Fr 07:00–16:00 für alle Techniker, eine Abwesenheit in der laufenden Woche sowie historische Abwesenheiten. Alle Einsätze liegen in der Arbeitszeit, außerhalb von Abwesenheiten und überschneidungsfrei.
 - Tarifwechsel vor 180 Tagen: alte Tarife (`DEMO-…-2024`, inaktiv) und neue Tarife (`DEMO-…`). Ausgestellte Rechnungen behalten die alten Preise.
 - Eine unzugeordnete eingehende E-Mail im Posteingang von Dispatcherin 1.
+- Kunden und Standorte in der Region um Mannheim (Rhein-Neckar), passend zur Website und zum Einsatzgebiet des Telefonassistenten (task-13-9; Postleitzahlen aus `docs/telefonassistent/einsatzgebiet.json`, Vorwahl passend zum Ort).
+- 14 feste SLA-Verträge (`service_contracts`, `is_demo`) mit festen Kunden: 8 mit 24/7, 4 ohne, einer abgelaufen, einer noch nicht gültig, einer mit zwei Standorten. Sie ändern sich bei keinem Seed; Liste und Testfälle in `docs/telefonassistent/testdaten.md`. Ihre Anfragen tragen die Vertragsnummer; Kunden mit 24/7 geben das Notfall-SLA häufiger an.
+- Einsätze echter (nicht Demo-)Anfragen blockieren den Demo-Kalender, damit Demo- und Live-Einsätze sich nie überschneiden.
 - Kein Seed-Datensatz löst einen echten Versand aus; Rechnungen tragen „Musterrechnung / Demodaten“.
 
 ### Funktionsweise
@@ -68,6 +71,7 @@ Optional `DEMO_SEED_ANCHOR=JJJJ-MM-TT` (Standard: heute, Europe/Berlin). Der See
 | Anfragen und alle Kinddaten (Ereignisse, Nachrichten, Läufe, Einsätze, Positionen, Rechnungen) | `requests.is_demo = true` |
 | Tarife, Arbeitszeiten, Abwesenheiten, unzugeordnete E-Mails | `private.demo_seed_records` |
 | Einstellungen | nur befüllt, wenn unverändert (`company_details = {}`, `updated_by` leer); Originalwerte in `private.demo_seed_records`, beim Bereinigen wiederhergestellt. Verkäuferdaten wie auf der Website (Mannheim, Geschäftsführung, Fiktiv-Hinweis), Zahlungsdaten als „(Demo)“ gekennzeichnet |
+| SLA-Verträge | `service_contracts.is_demo = true`, vom Seed-Skript nach `demo_seed_apply` ersetzt, bei `--purge` entfernt |
 | Demo-Nutzer | `app_metadata.demo_seed` (werden vom Seed nicht gelöscht) |
 | Konten automatischer Tests | Adresse `api-…`, `ui-…` oder `e2e-…@example.com` ohne `demo_seed` (`scripts/demo/test-accounts.mjs`). Der Seed löscht sie nach den Testanfragen (Arbeitszeiten, Profil, Auth-Konto); ist ein Konto noch referenziert, wird es deaktiviert und gesperrt. Andere Konten werden nie angefasst |
 

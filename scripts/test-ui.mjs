@@ -338,6 +338,21 @@ try {
     check("  Menüpunkt „Überfällig“ wechselt die Liste", switched);
   }
 
+  console.log("\nSLA-Vertrag: Abgleich mit dem Vertragsbestand in der Anfrage (task-13-9)");
+  {
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+    const contractNote = async (number) => {
+      const { data } = await admin.from("requests").select("id").eq("is_demo", true).eq("sla_contract_number", number).limit(1).maybeSingle();
+      if (!data) return null;
+      await page.open(`${BASE}/dashboard/anfragen/${data.id}`);
+      return page.eval(`(() => { const e = document.querySelector(".contract-note"); return e ? { state: e.dataset.state, text: e.textContent } : null; })()`);
+    };
+    const valid = await contractNote("SLA-2021-801");
+    check("Gültiger Vertrag mit 24/7 erkannt", valid?.state === "valid_24_7" && valid.text.includes("24/7"), JSON.stringify(valid));
+    const expired = await contractNote("SLA-2020-433");
+    check("  abgelaufener Vertrag mit Datum", expired?.state === "expired" && expired.text.includes("30.06.2026"), JSON.stringify(expired));
+  }
+
   console.log("\nZahlungserinnerungen: Mahnstufe in Liste und Anfrage, Stufen in den Einstellungen (task-10-2)");
   {
     await page.open(`${BASE}/dashboard/rechnungen?status=ueberfaellig`);

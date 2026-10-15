@@ -17,6 +17,7 @@ import { getEmployeeNames, getRequestDetail, sectionsFor, type RequestDetail, ty
 import { describeEvent } from "@/lib/events";
 import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange } from "@/lib/format";
 import { nextReminderText, stageLabel } from "@/lib/reminders";
+import { contractHint } from "@/lib/service-contract";
 import { label, statusInfo } from "@/lib/status";
 
 type Props = { params: Promise<{ id: string }> };
@@ -348,6 +349,12 @@ function Contact({ detail, dispatcher }: { detail: RequestDetail; dispatcher?: s
   );
 }
 
+// What the contract master data says about the SLA number (task-13-9); the dispatcher still sets "SLA geprüft"
+function ContractNote({ detail }: { detail: RequestDetail }) {
+  const hint = contractHint(detail.contract, detail.request.postal_code, berlinDayKey(new Date()));
+  return <span className="contract-note" data-state={hint.state}>{hint.text}</span>;
+}
+
 // technical: only what matters on site (no intake gaps, no SLA checks of the dispatcher)
 function Equipment({ detail, technical = false }: { detail: RequestDetail; technical?: boolean }) {
   const r = detail.request;
@@ -363,6 +370,7 @@ function Equipment({ detail, technical = false }: { detail: RequestDetail; techn
         ["Maschinennummer", r.machine_number ? <span key="m" className="mono">{r.machine_number}</span> : missing],
         ["Sicherheitsgefahr", label("safety_risk", r.safety_risk)],
         ["SLA-Vertrag", r.sla_contract_number ? <span key="sla" className="mono">{r.sla_contract_number}</span> : "Keiner"],
+        ...(!technical && r.sla_contract_number ? [["Vertragsbestand", <ContractNote key="contract" detail={detail} />]] as Array<[string, ReactNode]> : []),
         ...(technical ? [] : [
           ["24/7-Notfall-SLA angegeben", yesNo(r.emergency_sla_claimed)],
           ["SLA geprüft", yesNo(r.sla_verified)],

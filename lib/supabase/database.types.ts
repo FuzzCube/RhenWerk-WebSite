@@ -322,6 +322,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"phone_calls": {
+                  Row: {
+                    "analysis": Json | null,"callback_done_at": string | null,"callback_done_by": string | null,"callback_needed": boolean,"caller_number": string | null,"category": string | null,"conversation_id": string,"cost_cents": number | null,"created_at": string,"duration_seconds": number | null,"ended_at": string | null,"forwarded": boolean,"id": string,"in_service_hours": boolean | null,"is_demo": boolean,"request_id": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"] | null,"sentiment": string | null,"started_at": string,"summary": string | null,"transcript": string | null,"transcript_deleted_at": string | null,"updated_at": string,"urgency": Database["public"]['Enums']["customer_urgency"] | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"caller_number"?: string | null,"category"?: string | null,"conversation_id": string,"cost_cents"?: number | null,"created_at"?: string,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
+                  }
+                  Update: {
+                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"caller_number"?: string | null,"category"?: string | null,"conversation_id"?: string,"cost_cents"?: number | null,"created_at"?: string,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "phone_calls_callback_done_by_fkey"
+      columns: ["callback_done_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "phone_calls_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "dispatcher_queue"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "phone_calls_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "requests"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "created_at": string,"display_name": string,"id": string,"is_active": boolean,"role": Database["public"]['Enums']["employee_role"],"updated_at": string
@@ -413,6 +445,20 @@ isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
+                  ]
+                },"service_contracts": {
+                  Row: {
+                    "company_name": string,"contract_number": string,"created_at": string,"customer_number": string | null,"emergency_24_7": boolean,"id": string,"is_demo": boolean,"postal_codes": (string)[],"updated_at": string,"valid_from": string,"valid_until": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_name": string,"contract_number": string,"created_at"?: string,"customer_number"?: string | null,"emergency_24_7"?: boolean,"id"?: string,"is_demo"?: boolean,"postal_codes"?: (string)[],"updated_at"?: string,"valid_from": string,"valid_until"?: string | null
+                  }
+                  Update: {
+                    "company_name"?: string,"contract_number"?: string,"created_at"?: string,"customer_number"?: string | null,"emergency_24_7"?: boolean,"id"?: string,"is_demo"?: boolean,"postal_codes"?: (string)[],"updated_at"?: string,"valid_from"?: string,"valid_until"?: string | null
+                  }
+                  Relationships: [
+                    
                   ]
                 },"service_rates": {
                   Row: {
@@ -760,6 +806,18 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"agent_check_area":
+{ Args: { "call_id": string,"plz": string }; Returns: Json
+                           },
+"agent_check_contract":
+{ Args: { "company_name"?: string,"contract_number": string,"postal_code"?: string }; Returns: Json
+                           },
+"agent_create_request":
+{ Args: { "call_id": string,"fields": Json }; Returns: Json
+                           },
+"agent_find_request":
+{ Args: { "call_id": string,"firma"?: string,"nummer"?: string,"plz"?: string,"strasse"?: string }; Returns: Json
+                           },
 "analytics_automation":
 { Args: { "anchor"?: string,"as_of"?: string,"kind"?: string }; Returns: {
               "corrected": number,"decision": Database["public"]['Enums']["automation_decision"],"runs": number,"status": Database["public"]['Enums']["automation_status"],"step": Database["public"]['Enums']["automation_step"]
@@ -1911,6 +1969,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"purge_call_transcripts":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "queue_message":
 { Args: { "expected_version": number,"message_id": string }; Returns: {
               "approved_at": string | null,

@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { normalizeContractNumber } from "@/lib/service-contract";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import type { EmployeeRole } from "@/lib/auth/roles";
@@ -225,6 +226,8 @@ export type RequestDetail = {
   reminderState: ReminderState | null;
   reminders: Array<Pick<Tables["invoice_reminders"]["Row"], "id" | "stage" | "trigger" | "created_at" | "created_by"> & { message_status: string | null; sent_at: string | null }>;
   events: Tables["request_events"]["Row"][];
+  // Contract master data for the SLA number the customer gave (task-13-9); staff only, null without match or number
+  contract: Tables["service_contracts"]["Row"] | null;
   failed: string[];
 };
 
@@ -237,7 +240,8 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
   if (!request) return null;
 
   const staff = role !== "technician";
-  const [messages, automationRuns, visits, workEntries, attachments, invoice, events] = await Promise.all([
+  const contractNumber = staff ? normalizeContractNumber(request.sla_contract_number) : null;
+  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract] = await Promise.all([
     staff ? supabase.from("messages").select("*").eq("request_id", id).order("created_at") : null,
     staff ? supabase.from("automation_runs").select("*").eq("request_id", id).order("started_at") : null,
     supabase.from("visits").select("*").eq("request_id", id).order("scheduled_start"),
@@ -245,6 +249,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     supabase.from("attachments").select("*").eq("request_id", id).order("created_at"),
     supabase.from("invoices").select("*").eq("request_id", id).maybeSingle(),
     supabase.from("request_events").select("*").eq("request_id", id).order("occurred_at", { ascending: false }).order("seq", { ascending: false }),
+    contractNumber ? supabase.from("service_contracts").select("*").eq("contract_number", contractNumber).maybeSingle() : null,
   ]);
   const invoiceId = invoice?.data && invoice.data.status !== "draft" ? invoice.data.id : null;
   const [invoiceItems, reminderState, reminders] = invoice?.data
@@ -277,6 +282,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
       return { ...row, message_status: sent?.status ?? null, sent_at: sent?.sent_at ?? null };
     }),
     events: pick("verlauf", events, []),
+    contract: contract?.data ?? null,
     failed,
   };
 });
