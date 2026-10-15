@@ -43,6 +43,9 @@ Dieser Vertrag beschreibt, wie die lokale n8n-Integration mit der Datenbank zusa
 | `agent_find_request(call_id, nummer?, firma?, plz, strasse?)` | **vorhanden**, nur `service_role` | Telefonassistent: Anfrage und Lage für die Auskunft (Abschnitt 6) |
 | `agent_check_area(call_id, plz)` | **vorhanden**, nur `service_role` | Telefonassistent: Einsatzgebiet (Abschnitt 6) |
 | `agent_check_contract(contract_number, company_name?, postal_code?)` | **vorhanden**, nur `service_role` | Telefonassistent: Notfall-SLA prüfen, ohne Firmenauskunft (Abschnitt 6) |
+| `agent_request_callback(call_id, anfrage_id, rueckrufnummer)` | **vorhanden**, nur `service_role` | Telefonassistent: Rückrufbitte an den Techniker (Abschnitt 6) |
+| `agent_service_hours(call_id)` | **vorhanden**, nur `service_role` | Telefonassistent: Servicezeit (Abschnitt 6) |
+| `agent_request_service_callback(call_id, grund, rueckrufnummer, dringend?, anfrage_id?)` | **vorhanden**, nur `service_role` | Telefonassistent: Rückruf durch den Service Desk (Abschnitt 6) |
 
 Die vorhandenen Tabellen enthalten bereits alle Felder für diese Funktionen (`requests.source_event_key`, `automation_runs.operation_key`/`input_version`/`workflow_execution_id`, `messages.mailbox_key`/`gmail_message_id`/`gmail_thread_id`/`mime_message_id`/`in_reply_to`/`references_header`, `attachments.bucket`/`storage_path`).
 
@@ -158,6 +161,10 @@ Der Sprachagent „Mira“ (ElevenLabs) ruft n8n-Webhooks auf; n8n ruft diese Fu
 - `agent_free_slots(call_id, von_tag?, bis_tag?, leistung, plz?)` (task-13-3) – bis zu drei freie Fenster `{ beginn, ende, dauer_minuten, ansage }` ab `von_tag` (Standard und frühestens: nächster Werktag) bis `bis_tag` (Standard: +7 Tage, höchstens heute + 42); Dauer Inspektion/Reparatur 120, Wartung 180 Minuten. `agent_create_request(call_id, fields, termin_beginn?)` merkt das gewählte Fenster vor (`termin_vorgemerkt`, `termin_ansage`, `termin_hinweis`); Wunschtermin der Anfrage = Tag des Fensters. Offene Vormerkungen verfallen nach zwei Werktagen (`expire_visit_holds`, pg_cron stündlich).
 - `agent_check_area(call_id, plz)` – `in_gebiet` (mit `ort`), `nur_mit_vertrag`, `ungueltig`; Bereiche aus `docs/telefonassistent/einsatzgebiet.json` in `private.service_area`.
 - `agent_check_contract(contract_number, company_name, postal_code)` – siehe Datenbank „SLA-Verträge“.
+- `agent_request_callback(call_id, anfrage_id, rueckrufnummer)` (task-13-4) – nur bei Lage `ueberfaellig`; siehe Datenbank „Rückrufbitte an den Techniker“.
+- `agent_service_hours(call_id)` (task-13-5) – `in_servicezeit` (Mo–Fr 07:00–18:00 Europe/Berlin ohne Feiertage Baden-Württemberg, `private.is_bw_holiday`), `jetzt` und `heute` für den Agenten, außerhalb `naechste_servicezeit`; setzt `phone_calls.in_service_hours`.
+- `agent_request_service_callback(call_id, grund, rueckrufnummer, dringend?, anfrage_id?)` (task-13-5) – Ersatz der Weiterleitung im Web-Widget: markiert das Gespräch für einen Rückruf durch den Service Desk (`callback_needed`, `callback_reason`, `callback_number`, `callback_urgent`).
+- Webhooks, Geheimnis und Agent: `docs/telefonassistent/setup.md`.
 - Transkripte löscht `purge_call_transcripts()` täglich (pg_cron 02:30 UTC) nach 30 Tagen; Zusammenfassung und Kennzahlen bleiben.
 
 ## Modellabgleich und Anhänge

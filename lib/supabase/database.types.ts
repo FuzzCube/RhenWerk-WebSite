@@ -374,14 +374,14 @@ isOneToOne: false
                   ]
                 },"phone_calls": {
                   Row: {
-                    "analysis": Json | null,"callback_done_at": string | null,"callback_done_by": string | null,"callback_needed": boolean,"caller_number": string | null,"category": string | null,"conversation_id": string,"cost_cents": number | null,"created_at": string,"duration_seconds": number | null,"ended_at": string | null,"forwarded": boolean,"id": string,"in_service_hours": boolean | null,"is_demo": boolean,"request_id": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"] | null,"sentiment": string | null,"started_at": string,"summary": string | null,"transcript": string | null,"transcript_deleted_at": string | null,"updated_at": string,"urgency": Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis": Json | null,"callback_done_at": string | null,"callback_done_by": string | null,"callback_needed": boolean,"callback_number": string | null,"callback_reason": string | null,"callback_urgent": boolean,"caller_number": string | null,"category": string | null,"conversation_id": string,"cost_cents": number | null,"created_at": string,"duration_seconds": number | null,"ended_at": string | null,"forwarded": boolean,"id": string,"in_service_hours": boolean | null,"is_demo": boolean,"request_id": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"] | null,"sentiment": string | null,"started_at": string,"summary": string | null,"transcript": string | null,"transcript_deleted_at": string | null,"updated_at": string,"urgency": Database["public"]['Enums']["customer_urgency"] | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"caller_number"?: string | null,"category"?: string | null,"conversation_id": string,"cost_cents"?: number | null,"created_at"?: string,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"conversation_id": string,"cost_cents"?: number | null,"created_at"?: string,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
                   }
                   Update: {
-                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"caller_number"?: string | null,"category"?: string | null,"conversation_id"?: string,"cost_cents"?: number | null,"created_at"?: string,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"conversation_id"?: string,"cost_cents"?: number | null,"created_at"?: string,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
                   }
                   Relationships: [
                     {
@@ -943,6 +943,12 @@ isOneToOne: false
                            },
 "agent_request_callback":
 { Args: { "anfrage_id": string,"call_id": string,"rueckrufnummer": string }; Returns: Json
+                           },
+"agent_request_service_callback":
+{ Args: { "anfrage_id"?: string,"call_id": string,"dringend"?: boolean,"grund": string,"rueckrufnummer": string }; Returns: Json
+                           },
+"agent_service_hours":
+{ Args: { "call_id": string }; Returns: Json
                            },
 "analytics_automation":
 { Args: { "anchor"?: string,"as_of"?: string,"kind"?: string }; Returns: {

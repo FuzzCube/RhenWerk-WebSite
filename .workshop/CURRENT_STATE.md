@@ -10,7 +10,7 @@ Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/tele
 
 ## Aktive Aufgabe
 
-Keine in Arbeit. Bereit: `task-13-5` „Agent und Werkzeuge“.
+In Arbeit: `task-13-5` „Agent und Werkzeuge“. Erledigt: neun n8n-Webhooks (`rwAgentTools2026`) hinter `x-agent-secret` und Cloudflare-Access-Service-Token (Pfad `webhook/agent-*` auf dem bestehenden Tunnel `n8n.rheinwerk-service.online`), Migration `20261016100000_agent_service_desk.sql` (Servicezeit mit BW-Feiertagen, Rückruf durch den Service Desk statt Weiterleitung), Agent „RheinWerk Mira“ in ElevenLabs (`npm run agent:sync`, IDs in `docs/telefonassistent/elevenlabs.json`, LLM `claude-haiku-4-5`). Geprüft: test:agent 19/19 lokal und öffentlich (110–245 ms), agent:simulate 4/4, test:db 814, lint, typecheck. Offen: Test im Browser durch den Nutzer (vier Szenarien in `docs/telefonassistent/setup.md`; neue Anfrage mit eigener E-Mail), danach Prompt-Feinschliff und Abschluss. Einrichtung: `docs/telefonassistent/setup.md`.
 
 Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 

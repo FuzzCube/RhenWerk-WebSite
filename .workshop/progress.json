@@ -3,10 +3,10 @@
   "overall": 94.29,
   "completedWeight": 165,
   "totalWeight": 175,
-  "currentPhaseId": null,
-  "currentTaskId": null,
+  "currentPhaseId": "phase-13",
+  "currentTaskId": "task-13-5",
   "completedTasks": 56,
   "totalTasks": 60,
   "blockedTasks": 0,
-  "updatedAt": "2026-10-15T14:58:05Z"
+  "updatedAt": "2026-10-15T15:01:56Z"
 }

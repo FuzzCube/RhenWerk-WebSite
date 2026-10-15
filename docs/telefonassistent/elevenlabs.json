@@ -1,0 +1,25 @@
+{
+  "tools": {
+    "rueckruf_service_desk": "tool_8901m504g99tfwatj5yscgtgrf5q",
+    "rueckrufbitte_techniker": "tool_9301m504g7agehs87494q8fkrwbt",
+    "anfrage_finden": "tool_1001m504g65hf49ana442jtmdeph",
+    "anfrage_anlegen": "tool_0701m504g510f5pt95pqdzsx9awb",
+    "freie_termine": "tool_4301m504g4nnec0ry58trjp5fxn1",
+    "sla_pruefen": "tool_6201m504g3fxfvq94sm7temxmknr",
+    "einsatzgebiet_pruefen": "tool_4401m504g1x4eb3agbftbn74papr",
+    "anlage_pruefen": "tool_1401m504g0rnfyqb0h06z9rgfa2g",
+    "servicezeit": "tool_6401m504fzh6f8qbvsdhdbnm0sdq"
+  },
+  "secrets": {
+    "agent": "duie5fSItbcakQC2CUQw",
+    "cfId": "5PArZ7KJR83NzzXyQeMF",
+    "cfSecret": "be6kY69pZdtyII0o5fvZ"
+  },
+  "voice_id": "LB5G0Z4EP98YaEgL654m",
+  "dictionary": {
+    "id": "Mt1IIJzpIMgllpK8QY6F",
+    "version_id": "d8kIXTQpUC9agB900Oak"
+  },
+  "agent_id": "agent_5101m504vtn2f80thr39rbtqv6ws",
+  "llm": "claude-haiku-4-5"
+}

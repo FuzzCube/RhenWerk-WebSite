@@ -15,6 +15,9 @@
     "test:api": "node --env-file=.env.local scripts/test-api.mjs",
     "test:auth": "node --env-file=.env.local scripts/test-auth.mjs",
     "test:ui": "node --env-file=.env.local scripts/test-ui.mjs",
+    "test:agent": "node --env-file=.env.local scripts/test-agent.mjs",
+    "agent:sync": "node --env-file=.env.local scripts/elevenlabs-agent.mjs",
+    "agent:simulate": "node --env-file=.env.local scripts/agent-simulate.mjs",
     "demo:users": "node --env-file=.env.local scripts/bootstrap-demo-users.mjs",
     "demo:seed": "node --env-file=.env.local scripts/seed-demo.mjs",
     "demo:verify": "docker exec -i supabase_db_A.Sadkovojs_Project psql -U postgres -qAt < scripts/demo/verify-seed.sql"
