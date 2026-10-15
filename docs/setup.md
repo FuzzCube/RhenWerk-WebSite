@@ -103,6 +103,23 @@ Neue Schemaänderungen nur als Migration unter `supabase/migrations/`; eine einz
 - **n8n (lokal, `http://localhost:5678`):** sechs Workflows für Eingang, Analyse, Anhänge und Gmail. Importierbare Graphen unter `n8n/workflows/*.workflow.json`, Vertrag und Prüfungen in [n8n-contract.md](n8n-contract.md). Danach `N8N_WEBHOOK_URL` in `.env.local` setzen. Ohne diese Variable leitet das Formular an `MAKE_WEBHOOK_URL` weiter; ist keine der beiden gesetzt, antwortet `/api/service-request` mit 503 (`not_configured`).
 - **Zahlungserinnerungen:** pg_cron-Job `payment-reminders` täglich 06:00 UTC, wird von den Migrationen angelegt; Versand nur über den n8n-Gmail-Workflow.
 
+## Passwort-E-Mails (Supabase Auth)
+
+Lokal landen die E-Mails „Neues Passwort festlegen“ und „Ihr Passwort wurde geändert“ in Mailpit unter `http://127.0.0.1:54324`, nicht im echten Postfach. Für echte Zustellung braucht Supabase einen SMTP-Server, z. B. Gmail mit App-Passwort (Google-Konto → Sicherheit → App-Passwörter), in `supabase/config.toml` bzw. im Supabase-Projekt (Authentication → SMTP):
+
+```toml
+[auth.email.smtp]
+enabled = true
+host = "smtp.gmail.com"
+port = 587
+user = "rheinwerk.industrieservice@gmail.com"
+pass = "env(SUPABASE_AUTH_SMTP_PASSWORD)"
+admin_email = "rheinwerk.industrieservice@gmail.com"
+sender_name = "RheinWerk Service Desk"
+```
+
+Das App-Passwort gehört nur in die Umgebung, nie ins Repository. Ohne eigenen SMTP-Server begrenzt Supabase den Versand stark (`[auth.rate_limit] email_sent`). Im Betrieb außerdem `site_url` und `additional_redirect_urls` auf die echte Domain setzen, sonst verweist der Link auf eine lokale Adresse. Wer keinen Link nutzen kann, erhält vom Admin ein vorläufiges Passwort (Verwaltung → Person → Passwort).
+
 ## Ports des lokalen Stacks
 
 | Dienst | Port |

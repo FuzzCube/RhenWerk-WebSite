@@ -1080,6 +1080,89 @@ try {
     await page.open(`${BASE}/dashboard/verwaltung?status=alle`);
     check("  unter „Alle“ sichtbar", await listed());
   }
+
+  console.log("\nPasswort vergessen, ändern, zurücksetzen (task-11-5)");
+  {
+    // Own temporary technician; demo passwords stay untouched. Mails come from the local Mailpit.
+    const pwRun = Date.now().toString(36);
+    const email = `ui-passwort-${pwRun}@example.com`;
+    const { data: pwUser } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    testAccounts.push(pwUser.user.id);
+    await admin.from("profiles").insert({ id: pwUser.user.id, display_name: `UI Passwort ${pwRun}`, role: "technician" });
+    const mailpit = "http://127.0.0.1:54324/api/v1";
+    const mails = async (to, subject) => ((await (await fetch(`${mailpit}/search?query=${encodeURIComponent(`to:${to}`)}`)).json()).messages ?? []).filter((m) => m.Subject.includes(subject));
+    const signsIn = async (secret) => {
+      const probe = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } });
+      const { error } = await probe.auth.signInWithPassword({ email, password: secret });
+      if (!error) await probe.auth.signOut({ scope: "local" });
+      return !error;
+    };
+    const firstForm = `document.querySelector("form.save-form")`;
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+    await page.open(`${BASE}/login`);
+    check("Anmeldung verlinkt „Passwort vergessen?“", await page.eval(`!!document.querySelector('a[href="/auth/passwort-vergessen"]')`));
+
+    // Same answer for an unknown and a known address; only the known one gets a mail
+    const unknown = `ui-niemand-${pwRun}@example.com`;
+    await page.open(`${BASE}/auth/passwort-vergessen`);
+    await fillIn(firstForm, { email: unknown });
+    const unknownState = await settled(firstForm, "save-status--success");
+    await page.open(`${BASE}/auth/passwort-vergessen`);
+    await fillIn(firstForm, { email });
+    const knownState = await settled(firstForm, "save-status--success");
+    const sameText = (state) => state?.status.replace(/ · \d{2}:\d{2}$/, "");
+    check("  gleiche Antwort für unbekannte und bekannte Adresse", Boolean(unknownState && knownState) && sameText(unknownState) === sameText(knownState), JSON.stringify([unknownState?.status, knownState?.status]));
+    const resetMail = await waitFor(async () => (await mails(email, "Neues Passwort festlegen")).length === 1, 10000);
+    check("  Link-E-Mail nur an die bekannte Adresse", resetMail && (await mails(unknown, "Neues Passwort")).length === 0);
+    const [message] = await mails(email, "Neues Passwort festlegen");
+    const html = message ? (await (await fetch(`${mailpit}/message/${message.ID}`)).json()).HTML : "";
+    const link = (html.match(/href="([^"]*token_hash[^"]*)"/)?.[1] ?? "").replace(/&amp;/g, "&");
+    check("  Link führt zur App, aus der angefordert wurde", link.startsWith(`${BASE}/auth/bestaetigen?token_hash=`), link.slice(0, 80));
+
+    // The link opens the form; a mismatch is rejected, then the new password signs in
+    await page.open(link);
+    check("  Link öffnet „Neues Passwort festlegen“", await page.eval(`location.pathname === "/auth/passwort-neu" && !!document.querySelector('[name="password_repeat"]')`));
+    const first = `Erstes-Neues-${pwRun}`;
+    await fillIn(firstForm, { password: first, password_repeat: `${first}x` });
+    state = await settled(firstForm, "save-status--error");
+    check("  abweichende Wiederholung: Fehler am Feld", Boolean(state) && await page.eval(`!!document.getElementById("password_repeat-error")`), JSON.stringify(state?.status));
+    await fillIn(firstForm, { password: first, password_repeat: first });
+    check("  gespeichert, danach angemeldet im Dashboard", await page.until(`location.pathname === "/dashboard/heute"`, 10000));
+    check("  Anmeldung mit neuem Passwort, altes ungültig", (await signsIn(first)) && !(await signsIn(password)));
+    await page.open(`${BASE}/auth/passwort-neu`);
+    check("  nach dem Speichern ist das Formular ohne neuen Link gesperrt", await page.eval(`!document.querySelector('[name="password"]')`));
+    await page.open(link);
+    check("  Link ein zweites Mal: ungültig, neuer Link angeboten", await page.eval(`location.pathname === "/auth/passwort-vergessen" && location.search.includes("link=ungueltig")`));
+
+    // Mein Konto: header link, wrong current password, change
+    await page.open(`${BASE}/dashboard/konto`);
+    check("  Kopfzeile verlinkt „Mein Konto“", await page.eval(`!!document.querySelector('.dash-header a.dash-user[href="/dashboard/konto"]')`));
+    const second = `Zweites-Neues-${pwRun}`;
+    await fillIn(firstForm, { current_password: "falsch-falsch-falsch", password: second, password_repeat: second });
+    state = await settled(firstForm, "save-status--error");
+    check("Mein Konto: falsches aktuelles Passwort abgewiesen", Boolean(state) && await page.eval(`!!document.getElementById("current_password-error")`) && (await signsIn(first)), state?.status);
+    await fillIn(firstForm, { current_password: first, password: second, password_repeat: second });
+    state = await settled(firstForm, "save-status--success");
+    check("  Passwort geändert, Felder geleert, Anmeldung nur mit neuem", Boolean(state) && (await signsIn(second)) && !(await signsIn(first))
+      && await page.eval(`[...document.querySelectorAll('form.save-form input[type="password"]')].every((input) => input.value === "")`), state?.status);
+    check("  Bestätigungs-E-Mail „Passwort geändert“", await waitFor(async () => (await mails(email, "Passwort wurde geändert")).length >= 1, 10000));
+    // A normal session cannot use the reset form
+    await page.open(`${BASE}/auth/passwort-neu`);
+    check("  „Neues Passwort“ ohne Link gesperrt", await page.eval(`!document.querySelector('[name="password"]') && !!document.querySelector('a[href="/auth/passwort-vergessen"]')`));
+
+    // Admin sets a temporary password; not for the own account
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
+    await page.open(`${BASE}/dashboard/verwaltung/mitarbeitende/${pwUser.user.id}`);
+    const third = `Vorlaeufig-${pwRun}-1`;
+    await fillIn(formWithButton("Neues Passwort setzen"), { password: third, password_repeat: third });
+    state = await settled(formWithButton("Neues Passwort setzen"), "save-status--success");
+    check("Admin: vorläufiges Passwort gesetzt, Anmeldung damit möglich", Boolean(state) && (await signsIn(third)) && !(await signsIn(second)), state?.status);
+    const adminSelf = (await admin.from("profiles").select("id").eq("display_name", "Clara Becker").single()).data?.id;
+    await page.open(`${BASE}/dashboard/verwaltung/mitarbeitende/${adminSelf}`);
+    check("  eigenes Konto: kein Formular, Verweis auf „Mein Konto“", await page.eval(`!${formWithButton("Neues Passwort setzen")} && !!document.querySelector('#passwort-title ~ p a[href="/dashboard/konto"]')`));
+  }
 } catch (error) {
   console.error(error);
   failures += 1;

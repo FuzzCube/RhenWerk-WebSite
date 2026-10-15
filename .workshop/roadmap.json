@@ -1665,7 +1665,7 @@
           "description": "„Passwort vergessen“ auf der Anmeldeseite mit E-Mail-Link (Supabase Auth, lokal Mailpit), „Passwort ändern“ im eigenen Konto, „Neues Passwort setzen“ für Admin in der Verwaltung. Keine Auskunft, ob eine E-Mail-Adresse existiert.",
           "order": 5,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Reset-Anfrage und Seite zum Setzen des neuen Passworts",
@@ -1673,7 +1673,23 @@
             "Admin setzt Passwort eines Mitarbeiters; Ereignis/Protokoll ohne Passwort",
             "SMTP-Hinweis für den Betrieb in docs/setup.md",
             "test:auth, test:ui, lint, typecheck, build"
-          ]
+          ],
+          "startedAt": "2026-10-15T10:50:57Z",
+          "completedAt": "2026-10-15T11:06:37Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Passwort vergessen (/auth/passwort-vergessen, gleiche Antwort für jede Adresse, Supabase-Link mit token_hash an /auth/bestaetigen, verifyOtp, /auth/passwort-neu nur in frischer Link-Sitzung, danach Link-Sitzung durch Passwort-Sitzung ersetzt), Passwort ändern unter /dashboard/konto (aktuelles Passwort per separater Anmeldung geprüft, Link über den Namen in der Kopfzeile), vorläufiges Passwort durch Admin auf der Personenseite (nicht eigenes Konto). Regel einheitlich 12 Zeichen (wie beim Anlegen, statt der im Plan genannten 10). Deutsche Vorlagen für Reset und Änderungsbenachrichtigung, Rücksprungadressen localhost/127.0.0.1 in config.toml, Supabase neu gestartet (Daten erhalten). SMTP für echte Zustellung nur dokumentiert (docs/setup.md). Geprüft: test:ui 260 (neu 18: Link, gleiche Antwort, Mailpit, falsche Wiederholung, Anmeldung neu/alt, verbrauchter Link, Sperre ohne Link, Mein Konto falsch/richtig, Bestätigungsmail, Admin-Reset, eigenes Konto), test:auth 130 gegen next start, test:unit 73, test:db 631, lint, typecheck, build. Sichtprüfung Anmeldung, Passwort vergessen, Mein Konto bei 390/768 px.",
+            "commands": [
+              "supabase stop && supabase start",
+              "npm run test:unit",
+              "supabase test db",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
+              "APP_URL=http://localhost:3201 npm run test:ui"
+            ]
+          }
         },
         {
           "id": "task-11-6",

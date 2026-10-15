@@ -1,4 +1,5 @@
 // Administration (task-8-1): pure helpers for forms and display. No database access; usable in tests.
+import { MIN_PASSWORD_LENGTH } from "./auth/password";
 import { addDays, berlinToInstant, isDayKey, isTime } from "./berlin-time";
 
 export const WEEKDAYS = [
@@ -35,7 +36,7 @@ export const COMPANY_FIELDS = [
   { key: "invoice_note", label: "Hinweis auf der Rechnung" },
 ] as const;
 
-export const MIN_PASSWORD_LENGTH = 12;
+export { MIN_PASSWORD_LENGTH };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type WorkingHour = { weekday: number; local_start: string; local_end: string };

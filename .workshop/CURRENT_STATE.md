@@ -2,7 +2,7 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v6 mit 12 Phasen und 48 Tasks. Fortschritt 95,89 % (Gewicht 140 von 146, 45 von 48 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v6 mit 12 Phasen und 48 Tasks. Fortschritt 97,95 % (Gewicht 143 von 146, 46 von 48 Tasks).
 
 ## Aktive Phase
 
@@ -15,6 +15,8 @@ Keine.
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-11-5` (15.10.2026): Passwort vergessen per E-Mail-Link (`/auth/passwort-vergessen` → `/auth/bestaetigen` → `/auth/passwort-neu`), ändern unter `/dashboard/konto`, vorläufiges Passwort durch Admin. Mindestens 12 Zeichen. Lokal kommen die Mails in Mailpit an (54324); echte Zustellung braucht SMTP (`docs/setup.md`). test:ui 260, test:auth 130, test:unit 73, test:db 631, lint, typecheck, build.
 
 `task-11-4` (15.10.2026): Telefonische Anfrage unter `/dashboard/anfragen/neu` (Dispatcher, Manager, Admin), `create_phone_request` mit Quelle `phone`, idempotent, Dispatcher-Zuweisung, optionale Eingangsbestätigung; Feldbaustein und -prüfung gemeinsam mit dem Posteingang. test:db phone_request 18/18, test:ui 243, test:unit 71, lint, typecheck, build. Details in `docs/architecture.md` und `docs/database.md`.
 
@@ -50,7 +52,6 @@ Keine.
 
 Alle ohne Abhängigkeiten `ready`:
 
-- `task-11-5` Passwort vergessen, ändern und zurücksetzen (bisher nicht vorhanden)
 - `task-11-6` Schutz bei falschen Passwörtern (bisher nur IP-Limit von Supabase: 30 Anmeldungen je 5 min)
 - `task-11-7` Posteingang nach Auslastung verteilen (bisher immer erster aktiver Dispatcher nach ID)
 
@@ -114,4 +115,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-Weiter mit `task-11-5` bis `task-11-7`. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.
+Weiter mit `task-11-6` und `task-11-7`. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`). Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.

@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { absenceInterval, companyDetailsFrom, parseDecimal, parseWorkingHours, validateNewEmployee } from "@/lib/admin";
+import { newPasswordErrors } from "@/lib/auth/password";
 import { EMPLOYEE_ROLES, isEmployeeRole } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { databaseErrorMessage, formError, formSuccess, formValues, type FormState } from "@/lib/forms";
@@ -90,6 +91,20 @@ export async function deactivateEmployee(_previous: FormState, formData: FormDat
   const query = new URLSearchParams({ ergebnis: "deaktiviert", anfragen: String(moved?.reassigned_requests ?? 0), einsaetze: String(moved?.reassigned_visits ?? 0) });
   if (banError) query.set("sperre", "fehlgeschlagen");
   redirect(`/dashboard/verwaltung/mitarbeitende/${values.employee_id}?${query}`);
+}
+
+// Temporary password for an employee who cannot use the reset link (task-11-5). Not for the own account (that
+// goes through "Mein Konto" with the current password). The password only goes to Supabase Auth.
+export async function setEmployeePassword(_previous: FormState, formData: FormData): Promise<FormState> {
+  const admin = await requireRole(ADMIN);
+  const { employee_id = "", password = "", password_repeat = "" } = formValues(formData);
+  if (!UUID.test(employee_id)) return invalid({});
+  if (employee_id === admin.id) return formError("Das eigene Passwort bitte unter „Mein Konto“ ändern.", {});
+  const fieldErrors = newPasswordErrors(password, password_repeat);
+  if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", {}, fieldErrors);
+  const { error } = await createAdminClient().auth.admin.updateUserById(employee_id, { password });
+  if (error) return formError("Das Passwort konnte nicht gesetzt werden. Bitte erneut versuchen.", {});
+  return formSuccess("Neues Passwort gesetzt. Bitte der Person persönlich mitteilen.");
 }
 
 export async function reactivateEmployee(_previous: FormState, formData: FormData): Promise<FormState> {

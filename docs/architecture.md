@@ -26,6 +26,8 @@ Der Proxy schützt keine Routen. Zugriffskontrolle erfolgt serverseitig in jeder
 | --- | --- | --- |
 | alle Website-Pfade | `app/(site)/[[...slug]]/page.tsx`, `app/(site)/layout.tsx` | Öffentliche Website mit `SiteShell` (Kopf, Fuß, Assistent); unverändert |
 | `/login` | `app/(dashboard)/login/page.tsx` | Anmeldung mit E-Mail und Passwort, keine Registrierung |
+| `/auth/passwort-vergessen`, `/auth/bestaetigen`, `/auth/passwort-neu` | `app/(dashboard)/auth/*` | Passwort per E-Mail-Link zurücksetzen (task-11-5) |
+| `/dashboard/konto` | `app/(dashboard)/dashboard/konto/page.tsx` | Mein Konto: eigenes Passwort ändern (alle Rollen, Link über den Namen in der Kopfzeile) |
 | `/dashboard` | `app/(dashboard)/dashboard/page.tsx` | Leitet zur Startseite der Rolle |
 | `/dashboard/<bereich>` | `app/(dashboard)/dashboard/*/page.tsx` | Rollenbereiche, Kopfzeile und Navigation aus `layout.tsx` |
 
@@ -43,6 +45,12 @@ Der Proxy schützt keine Routen. Zugriffskontrolle erfolgt serverseitig in jeder
 | Techniker | Mein Tag | Mein Tag, Kalender, Anfragen |
 
 - **Anmelden/Abmelden (`lib/auth/actions.ts`):** Server Actions; das Formular funktioniert auch ohne JavaScript. Unbekannte Adresse und falsches Passwort ergeben dieselbe Meldung. Angemeldete Konten ohne aktives Profil sehen auf `/login` einen Hinweis und „Abmelden“.
+- **Passwörter (task-11-5, `lib/auth/password.ts`, `lib/auth/password-actions.ts`):** Regel für alle Wege mindestens 12 Zeichen (wie beim Anlegen), keine Leerzeichen am Rand, Wiederholung gleich, beim Ändern anders als das bisherige. Passwörter gehen nur an Supabase Auth; Fehlerzustände geben keine Passwortwerte an den Browser zurück.
+  - *Vergessen:* `/auth/passwort-vergessen` ruft `resetPasswordForEmail` mit `redirectTo = <App-Origin>/auth/bestaetigen` auf und antwortet immer gleich („Wenn zu dieser Adresse ein Konto besteht …“), auch bei unbekannter Adresse oder Ratenlimit. Die E-Mail (Vorlage `supabase/templates/passwort-zuruecksetzen.html`) verlinkt `{{ .RedirectTo }}?token_hash=…&type=recovery`; die Route `/auth/bestaetigen` prüft das Einmal-Token mit `verifyOtp` und öffnet `/auth/passwort-neu`, ungültige oder verbrauchte Links führen zurück mit Hinweis. Kein PKCE-Cookie nötig: der Link funktioniert auch in einem anderen Browser.
+  - *Neues Passwort:* nur in einer frischen Link-Sitzung (`amr` Methode `otp`, höchstens 1 Stunde alt, `isFreshRecovery`). Nach dem Speichern wird die Link-Sitzung beendet und durch eine normale Passwort-Sitzung ersetzt, damit das Formular nicht erneut ohne Link nutzbar ist.
+  - *Ändern* unter `/dashboard/konto`: das aktuelle Passwort wird mit einer separaten, sofort beendeten Anmeldung geprüft, dann `updateUser`.
+  - *Admin* setzt auf der Personenseite in der Verwaltung ein vorläufiges Passwort (`auth.admin.updateUserById`), nicht für das eigene Konto.
+  - Nach jeder Änderung durch die Person verschickt Supabase „Ihr Passwort wurde geändert“ (`supabase/templates/passwort-geaendert.html`). Erlaubte Rücksprungadressen und Vorlagen stehen in `supabase/config.toml` (Änderungen erst nach `supabase stop` / `supabase start`).
 - **Zwischenspeicherung:** Antworten unter `/login`, `/dashboard` und `/auth/*` tragen `Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate` (Proxy) und `robots: noindex`.
 
 Entwicklung gegen den lokalen Supabase-Stack (`supabase start`, Docker). Schemaänderungen ausschließlich als Migrationen unter `supabase/migrations/`. Verbindungsprüfung: `npm run supabase:check`. Tabellen, Enums und Nullability: [database.md](database.md). Tests: [testing.md](testing.md).

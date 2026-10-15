@@ -24,10 +24,10 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
       <header className="dash-header">
         <div className="dash-header__inner">
           <Link href="/dashboard" aria-label="Dashboard-Startseite"><Logo compact inverse /></Link>
-          <div className="dash-user">
+          <Link className="dash-user" href="/dashboard/konto" title="Mein Konto">
             <span className="dash-user__name">{employee.displayName}</span>
             <span className="dash-user__role">{ROLE_LABELS[employee.role]}</span>
-          </div>
+          </Link>
           <form action={logout}>
             <button className="dash-logout" type="submit">Abmelden</button>
           </form>

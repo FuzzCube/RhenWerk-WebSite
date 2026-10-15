@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addAbsence, deactivateEmployee, deleteAbsence, reactivateEmployee, saveWorkingHours, updateEmployee } from "@/app/(dashboard)/dashboard/verwaltung/actions";
+import { addAbsence, deactivateEmployee, deleteAbsence, reactivateEmployee, setEmployeePassword, saveWorkingHours, updateEmployee } from "@/app/(dashboard)/dashboard/verwaltung/actions";
 import { AdminShell } from "@/components/dashboard/admin-nav";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { CheckboxField, HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
 import { EmptyState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
 import { ASSIGNMENT_LABELS, WEEKDAYS } from "@/lib/admin";
+import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password";
 import { EMPLOYEE_ROLES, ROLE_LABELS, rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { getEmployee, type Assignment } from "@/lib/dashboard/admin";
@@ -140,6 +141,29 @@ export default async function EmployeePage({ params, searchParams }: Props) {
           empty={<EmptyState title="Keine offenen Anfragen oder geplanten Einsätze." />}
         />
       </section>
+
+      {profile.is_active && (
+        <section className="request-section" aria-labelledby="passwort-title">
+          <h2 id="passwort-title">Passwort</h2>
+          {self ? (
+            <p className="section-note">Das eigene Passwort ändern Sie unter <Link href="/dashboard/konto">Mein Konto</Link>.</p>
+          ) : (
+            <>
+              <p className="section-note">
+                Für vergessene Passwörter, wenn kein Link per E-Mail möglich ist: ein vorläufiges Passwort setzen (mindestens {MIN_PASSWORD_LENGTH} Zeichen) und der Person persönlich mitteilen.
+                Sie kann es danach unter „Mein Konto“ ändern. Das Passwort wird nicht gespeichert und nicht angezeigt.
+              </p>
+              <SaveForm action={setEmployeePassword} submitLabel="Neues Passwort setzen" submitVariant="secondary" resetOnSuccess>
+                <HiddenField name="employee_id" value={profile.id} />
+                <div className="form-grid">
+                  <TextField name="password" label="Neues Passwort" type="password" autoComplete="new-password" required />
+                  <TextField name="password_repeat" label="Neues Passwort wiederholen" type="password" autoComplete="new-password" required />
+                </div>
+              </SaveForm>
+            </>
+          )}
+        </section>
+      )}
 
       {profile.is_active && !self && (
         <section className="request-section" aria-labelledby="deaktivieren-title">

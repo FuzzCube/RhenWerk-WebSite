@@ -33,6 +33,7 @@ export default async function LoginPage() {
           <>
             <p className="dash-login__hint">Konten werden von der Administration angelegt. Eine Registrierung ist nicht möglich.</p>
             <LoginForm />
+            <Link className="dash-login__back" href="/auth/passwort-vergessen">Passwort vergessen?</Link>
           </>
         )}
       </div>
