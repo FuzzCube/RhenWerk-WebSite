@@ -2,7 +2,7 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v10 mit 14 Phasen und 60 Tasks. Fortschritt 94,29 % (Gewicht 165 von 175, 56 von 60 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v11 mit 14 Phasen und 61 Tasks. Fortschritt 94,92 % (Gewicht 168 von 177, 57 von 61 Tasks).
 
 ## Aktive Phase
 
@@ -10,13 +10,15 @@ Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/tele
 
 ## Aktive Aufgabe
 
-In Arbeit: `task-13-5` „Agent und Werkzeuge“. Erledigt: neun n8n-Webhooks (`rwAgentTools2026`) hinter `x-agent-secret` und Cloudflare-Access-Service-Token (Pfad `webhook/agent-*` auf dem bestehenden Tunnel `n8n.rheinwerk-service.online`), Migration `20261016100000_agent_service_desk.sql` (Servicezeit mit BW-Feiertagen, Rückruf durch den Service Desk statt Weiterleitung), Agent „RheinWerk Mira“ in ElevenLabs (`npm run agent:sync`, IDs in `docs/telefonassistent/elevenlabs.json`, LLM `claude-haiku-4-5`). Geprüft: test:agent 19/19 lokal und öffentlich (110–245 ms), agent:simulate 4/4, test:db 814, lint, typecheck. Offen: Test im Browser durch den Nutzer (vier Szenarien in `docs/telefonassistent/setup.md`; neue Anfrage mit eigener E-Mail), danach Prompt-Feinschliff und Abschluss. Einrichtung: `docs/telefonassistent/setup.md`.
+Keine Aufgabe in Arbeit. Bereit: `task-13-10` und `task-13-6`.
 
 Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-13-5` (19.10.2026): Telefonassistent „Mira“ – zehn n8n-Webhooks (`rwAgentTools2026`, inkl. `email_pruefen`) hinter `x-agent-secret` und Cloudflare-Access-Service-Token, Agent in ElevenLabs per `npm run agent:sync` (LLM `claude-sonnet-4-5`, TTS `eleven_v3_conversational` mit Expressive Mode, ASR-Schlüsselwörter aus dem Katalog, `turn_eagerness: patient`). Nach drei Browsertests nachgebessert: E-Mail deterministisch aus der Buchstabierung (`agent_check_email`), ähnliche Baureihen als Rückfrage, Kalender in `servicezeit`, Prompt verschärft. test:db 831, test:agent 23/23 (lokal und Tunnel), agent:simulate 4/4, test:unit 85, lint, typecheck, build. Nicht geprüft: Browsertest nach den letzten Änderungen (ElevenLabs-Guthaben aufgebraucht); Status- und Notfallszenario nur in der Simulation. Einrichtung: `docs/telefonassistent/setup.md`.
 
 `task-13-4` (15.10.2026): Rückrufbitte an den Techniker – `agent_request_callback` nur bei überfälligem Einsatz (eine offene je Einsatz), Banner über jeder Dashboard-Seite (Abfrage alle 20 s, `tel:`-Schaltfläche, „Kunde angerufen“, Tab-Zähler, optionale Browser-Benachrichtigung), nach 15 Minuten ohne Quittung dringend an den Dispatcher der Anfrage (sonst alle aktiven), Einsatzbeginn erledigt die Bitte. Kein Telegram (Nutzerentscheidung; später ggf. Push in einer Techniker-App). test:db 800, test:ui 284, test:unit 85, demo:verify 18/18, lint, typecheck, build.
 
@@ -72,7 +74,7 @@ Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen de
 
 ## Bereite nächste Aufgaben
 
-`task-13-5` „Telefonassistent: Agent und Werkzeuge“. Danach in Folge `task-13-6` bis `task-13-8`. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
+`task-13-10` „Kundenstamm und Bestandskunden am Telefon“ (Tabelle customers mit Standorten, Werkzeug kunde_finden) und `task-13-6` „Telefonassistent: Gesprächsauswertung“; danach `task-13-7`, `task-13-8`. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
 
 ## Blockiert
 
@@ -135,4 +137,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-`task-13-5` „Agent und Werkzeuge“: n8n-Webhooks (inkl. `rueckrufbitte_techniker` → `agent_request_callback`) hinter Cloudflare-Tunnel und Agent in ElevenLabs. Phasen 11 und 12 sind abgeschlossen. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); weitere Arbeit als neue Roadmap-Tasks. Für eine spätere öffentliche Demonstration die Website mit produktivem Turnstile und geschütztem Zugriff auf das lokale n8n konfigurieren; nicht automatisch deployen.
+`task-13-10` (Kundenstamm, Nutzerwunsch) oder `task-13-6` (Gesprächsauswertung). Browsertest von Mira nach den letzten Änderungen nachholen, sobald wieder ElevenLabs-Guthaben vorhanden ist. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); öffentliche Demonstration nicht automatisch deployen.

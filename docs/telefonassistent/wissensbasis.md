@@ -58,7 +58,7 @@ Antwortregeln (Kurzfassung der Abgleichregeln des Katalogs; im Gespräch entsche
 - Nicht im Leistungsumfang: Kälteanlagen und Kältekompressoren, Prozessgas-, Atemluft-, Zentrifugal- und mobile Dieselkompressoren (gesonderte Klärung), Hydraulik, Wohnraumlüftung, alles außerhalb von Kompressoren, Pumpen und industrieller Lüftung. Freundlich absagen.
 - Ventilatorkomponenten (RadiPac, RadiCal, ZAbluefin, ZAplus) gehören zu einer Lüftungsanlage: Hersteller und Typ der Gesamtanlage zusätzlich erfragen.
 - Ein Treffer ist keine Herstellerautorisierung und keine Zusage zu Ersatzteilen, Kosten, Terminen oder Garantie.
-- Pumpen: Fördermedium, Dichtung und Werkstoff erfragen. Kompressoren: Betriebsdruck, Fehlercode. Lüftung: Geräte- oder Auftragsnummer, Störungscode.
+- Am Telefon nur Anlagenart, Hersteller und Typ aufnehmen, bei Störung ein Symptom oder einen Fehlercode. Technische Details (bei Pumpen Fördermedium, Dichtung, Werkstoff; bei Kompressoren Betriebsdruck) klärt der Service Desk.
 
 ## Häufige Fragen
 

@@ -17,18 +17,18 @@ flowchart LR
 
 | Teil | Wo | Quelle im Repository |
 | --- | --- | --- |
-| Workflow „RheinWerk · Telefonassistent Werkzeuge“ (`rwAgentTools2026`), neun Webhooks `/webhook/agent-<werkzeug>` | n8n | `n8n/generate_agent_tools.py` → `n8n/workflows/rheinwerk-agent-tools.workflow.json` |
+| Workflow „RheinWerk · Telefonassistent Werkzeuge“ (`rwAgentTools2026`), zehn Webhooks `/webhook/agent-<werkzeug>` | n8n | `n8n/generate_agent_tools.py` → `n8n/workflows/rheinwerk-agent-tools.workflow.json` |
 | Header-Auth `x-agent-secret` (Credential `rwAgentSecret001`) | n8n, `.env.local` `AGENT_WEBHOOK_SECRET` | `n8n/bootstrap_agent_secret.py` |
 | Datenbankfunktionen | Supabase | Migrationen task-13-2 bis 13-5, `docs/n8n-contract.md` Abschnitt 6 |
 | Access-Anwendung für den Pfad `webhook/agent-*` mit Policy „Service Auth“ (Service Token „ElevenLabs Mira“) | Cloudflare Zero Trust | `.env.local` `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` |
-| Agent, neun Webhook-Werkzeuge, Aussprache-Wörterbuch, Workspace-Secrets | ElevenLabs | `scripts/elevenlabs-agent.mjs`, IDs in `elevenlabs.json` |
+| Agent, zehn Webhook-Werkzeuge, Aussprache-Wörterbuch, Workspace-Secrets | ElevenLabs | `scripts/elevenlabs-agent.mjs`, IDs in `elevenlabs.json` |
 | Prompt | ElevenLabs | `systemprompt.md` + `wissensbasis.md` (als Abschnitt „Wissen“), Begrüßung aus `leitfaden.md` |
 
 Der Rest von `n8n.rheinwerk-service.online` (Editor, andere Webhooks) bleibt hinter der bisherigen Access-Anmeldung; der Service Token öffnet nur `webhook/agent-*`.
 
 ## Agent
 
-- Name „RheinWerk Mira“, Sprache Deutsch, LLM `claude-haiku-4-5` (Temperatur 0,2), TTS `eleven_flash_v2_5`, Stimme `LB5G0Z4EP98YaEgL654m` („Mira (Laura)“, deutsch), Aussprache-Wörterbuch „RheinWerk Mira“ (RheinWerk, RIS, KAESER, KSB, SLA, PLZ …).
+- Name „RheinWerk Mira“, Sprache Deutsch, LLM `claude-sonnet-4-5` (Temperatur 0,2; vorher `claude-haiku-4-5`, ersetzt am 19.10.2026, weil Haiku Buchstabiertes und frühere Angaben im Gespräch schlecht verknüpfte), TTS `eleven_v3_conversational` mit Expressive Mode, Stabilität 0,4, Latenzoptimierung 2 (Nutzerentscheidung 19.10.2026: lebendigere Betonung, etwas mehr Verzögerung akzeptiert; Modell in `elevenlabs.json` `tts_model`, vorher `eleven_flash_v2_5`), Stimme `LB5G0Z4EP98YaEgL654m` („Mira (Laura)“, deutsch), Aussprache-Wörterbuch „RheinWerk Mira“ (RheinWerk, RIS, KAESER, KSB, SLA, PLZ …). Spracherkennung mit Schlüsselwörtern (`asr.keywords`: Hersteller mit Schreibvarianten und Baureihen ab drei Zeichen aus `catalog.json`), Sprecherwechsel `turn_eagerness: patient` (wartet bei „äh“-Pausen länger).
 - Systemwerkzeug `end_call`. Keine Weiterleitung im Web-Widget: an ihrer Stelle `rueckruf_service_desk` (Rückruf durch einen Menschen, dringend bei Notfällen).
 - Wissen (Leistungen, Preise, Servicezeiten, Einsatzgebiet) steht im Prompt statt in einem eigenen Werkzeug `wissen`: kurz genug und ohne zusätzlichen Aufruf schneller.
 - Grenzen: höchstens 10 Minuten je Gespräch, 2 gleichzeitige Gespräche, 30 Gespräche am Tag; keine Sprachaufnahme, Gesprächsdaten bei ElevenLabs 30 Tage.
@@ -39,7 +39,8 @@ Der Rest von `n8n.rheinwerk-service.online` (Editor, andere Webhooks) bleibt hin
 | ElevenLabs | Webhook | Datenbank |
 | --- | --- | --- |
 | `servicezeit` | `agent-servicezeit` | `agent_service_hours` |
-| `anlage_pruefen` | `agent-anlage-pruefen` | Katalogabgleich in n8n (`catalog.json`) |
+| `anlage_pruefen` | `agent-anlage-pruefen` | Katalogabgleich in n8n (`catalog.json`), ähnliche Baureihen als `rueckfrage` |
+| `email_pruefen` | `agent-email-pruefen` | `agent_check_email` |
 | `einsatzgebiet_pruefen` | `agent-einsatzgebiet-pruefen` | `agent_check_area` |
 | `sla_pruefen` | `agent-sla-pruefen` | `agent_check_contract` |
 | `freie_termine` | `agent-freie-termine` | `agent_free_slots` |

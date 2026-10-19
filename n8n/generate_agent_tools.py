@@ -38,6 +38,7 @@ TOOLS = [
     ("rueckrufbitte-techniker", "agent_request_callback", f"{{{{ {{call_id:{B}.call_id, anfrage_id:{B}.anfrage_id, rueckrufnummer:{B}.rueckrufnummer ?? null}} }}}}"),
     ("servicezeit", "agent_service_hours", f"{{{{ {{call_id:{B}.call_id}} }}}}"),
     ("rueckruf-service-desk", "agent_request_service_callback", f"{{{{ {{call_id:{B}.call_id, grund:{B}.grund ?? null, rueckrufnummer:{B}.rueckrufnummer ?? null, dringend:{B}.dringend === true, anfrage_id:{B}.anfrage_id || null}} }}}}"),
+    ("email-pruefen", "agent_check_email", f"{{{{ {{call_id:{B}.call_id, buchstaben:{B}.buchstaben ?? null}} }}}}"),
     ("anlage-pruefen", None, None),
 ]
 
@@ -62,8 +63,15 @@ if(exact.length===1){row=exact[0];status=row.object_level==='component'?'needs_r
 else if(exact.length>1)status='needs_review';
 else{const series=rowsOf.filter(r=>{const tokens=[r.series,...r.aliases.split(',')].filter(x=>x&&x!=='-');return tokens.some(t=>{const n=norm(t);const v=norm(modelOnly);return v.startsWith(n)&&(!/[a-z]$/.test(n)||!/^[a-z]/.test(v.slice(n.length)));})||(r.key==='compair_dh'&&/^d\\d+h/i.test(modelOnly))||(r.key==='netzsch_nemo'&&/^nm\\d/i.test(modelOnly));}).sort((x,y)=>y.series.length-x.series.length);row=series[0]??null;status=row?'series_match':'needs_review';}}
 if(!kind&&status!=='out_of_scope')missing.unshift('anlagenart');
+// Known brand, unknown series: series whose letters differ by at most one (speech recognition: "CIR 32" for "CR 32")
+let similar=[];
+if(brand&&model&&status==='needs_review'&&!row){const head=norm(modelOnly).match(/^[a-z]+/)?.[0]??'';
+const lev=(a,c)=>{const d=Array.from({length:a.length+1},(_,i)=>[i,...Array(c.length).fill(0)]);for(let j=1;j<=c.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=c.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===c[j-1]?0:1));return d[a.length][c.length];};
+if(head)for(const r of rowsOf){const tokens=[r.series,...r.aliases.split(',')].filter(x=>x&&x!=='-');if(tokens.some(t=>{const h=norm(t).match(/^[a-z]+/)?.[0]??'';return h&&h!==head&&lev(h,head)<=1&&Math.max(h.length,head.length)>=2;}))similar.push(r.series);}
+similar=[...new Set(similar)].slice(0,3);}
 const satz={listed_model:'Diese Anlage betreuen wir.',series_match:'Diese Baureihe betreuen wir. Den genauen Typ vom Typenschild nehme ich gern auf, falls er zur Hand ist.',brand_only:'Das prüft unser Service Desk anhand der Typenangaben.',needs_review:'Das prüft unser Service Desk anhand der Typenangaben.',out_of_scope:'Diese Anlagenart gehört leider nicht zu unserem Leistungsumfang.'}[status];
-return [{json:{ok:true,status,hersteller:label,baureihe:row?.series??null,fehlende_angaben:missing,satz}}];""".replace("CATALOG", json.dumps(catalog, ensure_ascii=False))
+const rueckfrage=similar.length?`Meinen Sie die Baureihe ${similar.join(' oder ')}?`:null;
+return [{json:{ok:true,status,hersteller:label,baureihe:row?.series??null,fehlende_angaben:missing,aehnliche_baureihen:similar,rueckfrage,satz}}];""".replace("CATALOG", json.dumps(catalog, ensure_ascii=False))
 
 nodes, connections = [], {}
 

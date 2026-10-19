@@ -52,6 +52,11 @@ try {
     ["anlage-pruefen", { anlagenart: "Kompressor", hersteller: "Kaeser", typ: "SM 13" }, (j) => j.status === "listed_model" && j.satz === "Diese Anlage betreuen wir."],
     ["anlage-pruefen", { anlagenart: "Pumpe", hersteller: "Grundfos" }, (j) => j.status === "brand_only" && j.fehlende_angaben.includes("typ")],
     ["anlage-pruefen", { anlagenart: "Kälteanlage", hersteller: "Bitzer" }, (j) => j.status === "out_of_scope"],
+    // Speech recognition wrote "CIR 32" for "CR 32"
+    ["anlage-pruefen", { anlagenart: "Pumpe", hersteller: "Grundfos", typ: "CIR 32" }, (j) => j.status === "needs_review" && j.aehnliche_baureihen.includes("CR") && j.rueckfrage === "Meinen Sie die Baureihe CR?"],
+    ["anlage-pruefen", { anlagenart: "Pumpe", hersteller: "Grundfos", typ: "CR 32" }, (j) => j.status === "series_match" && j.rueckfrage === null],
+    ["email-pruefen", { call_id: callId, buchstaben: "A, N, D, R, E, J, S, Punkt, S, A, D, K, O, V, O, J, S, @gmail.com." }, (j) => j.ok === true && j.email === "andrejs.sadkovojs@gmail.com" && j.ansage.endsWith("O, J, S, at gmail Punkt com")],
+    ["email-pruefen", { call_id: callId, buchstaben: "A, N, D at gmail" }, (j) => j.ok === false && j.fehler === "email_ungueltig"],
     ["sla-pruefen", { vertragsnummer: "SLA-0000-0", plz: "68159" }, (j) => typeof j.status === "string"],
     ["freie-termine", { call_id: callId, leistung: "inspection", plz: "68159" }, (j) => j.ok === true && Array.isArray(j.fenster) && j.fenster.every((f) => f.beginn && f.ansage)],
     ["anfrage-finden", { call_id: callId, nummer: demo.request_number, plz: demo.postal_code }, (j) => j.treffer === 1 && j.lage === "abgeschlossen" && !("technician" in j)],

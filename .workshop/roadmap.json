@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 10,
+  "roadmapVersion": 11,
   "status": "active",
   "phases": [
     {
@@ -2035,7 +2035,7 @@
           "description": "n8n-Webhooks für wissen, einsatzgebiet_pruefen, freie_termine, anfrage_anlegen, anfrage_finden, rueckrufbitte_techniker hinter benanntem Cloudflare-Tunnel mit gemeinsamem Geheimnis; Agent in ElevenLabs (Prompt, Stimme, Aussprache, Werkzeuge, Weiterleitung, Gesprächsende); Tests im Browser.",
           "order": 6,
           "weight": 3,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-13-3",
             "task-13-4"
@@ -2045,7 +2045,25 @@
             "Agent führt die Kernszenarien im Browser durch",
             "Konfiguration dokumentiert, keine Geheimnisse im Repository"
           ],
-          "startedAt": "2026-10-15T15:01:56Z"
+          "startedAt": "2026-10-15T15:01:56Z",
+          "completedAt": "2026-10-19T13:28:50Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Neun Webhooks plus email_pruefen in n8n (rwAgentTools2026) hinter x-agent-secret und Cloudflare-Access-Service-Token; Agent „RheinWerk Mira“ in ElevenLabs per npm run agent:sync aus dem Repository. Nach drei Browsertests des Nutzers nachgebessert: E-Mail deterministisch aus der Buchstabierung (agent_check_email, Migration 20261019100000; agent_create_request speichert nur die geprüfte Adresse), anlage_pruefen mit rueckfrage für ähnliche Baureihen (CIR → CR), Kalender der nächsten 21 Tage in servicezeit (Migration 20261019110000), Prompt gekürzt und verschärft (nur Art/Hersteller/Typ, Straße, eine Frage je Antwort, Rückrufnummer und Firma bestätigen, Zusammenfassung vor anfrage_anlegen, Buchstabiertes hat Vorrang, Daten aus dem Kalender), LLM claude-sonnet-4-5, TTS eleven_v3_conversational mit Expressive Mode, ASR-Schlüsselwörter aus dem Katalog, turn_eagerness patient. Geprüft: test:db 831, test:agent 23/23 lokal und über den Tunnel, agent:simulate 4/4, test:unit 85, lint, typecheck, build; Browsertests des Nutzers (RIS-2026-03316 bis 03318), letzte Anfrage mit korrekten Kontaktdaten. Nicht geprüft: Browsertest nach den letzten Änderungen (LLM Sonnet, Kalender, ASR-Schlüsselwörter, turn_eagerness) – ElevenLabs-Guthaben des Nutzers aufgebraucht; test:ui, test:api, test:auth nicht wiederholt (keine Oberflächenänderung).",
+            "commands": [
+              "supabase migration up",
+              "npm run db:types",
+              "supabase test db",
+              "npm run test:agent",
+              "AGENT_BASE_URL=https://n8n.rheinwerk-service.online npm run test:agent",
+              "npm run agent:sync",
+              "npm run agent:simulate",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         },
         {
           "id": "task-13-6",
@@ -2053,7 +2071,7 @@
           "description": "Post-Call-Webhook → JSON-Zusammenfassung per LLM (feste Schema) → phone_calls → Verknüpfung mit Anfrage → dringende Benachrichtigung bei Notfall.",
           "order": 7,
           "weight": 2,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-13-5"
           ],
@@ -2093,6 +2111,23 @@
             "Protokoll mit Ergebnissen und Latenz",
             "Widget mit Limit",
             "Dokumentation aktualisiert"
+          ]
+        },
+        {
+          "id": "task-13-10",
+          "title": "Kundenstamm und Bestandskunden am Telefon",
+          "description": "Eigene Tabelle customers (Kundennummer, Firma, Kontakt-E-Mail, Telefon) mit Standorten (customer_sites: Straße, PLZ, Ort, Bezeichnung), befüllt aus den Demo-Daten und vom Demo-Seed gepflegt; Anfragen verweisen auf Kunde und Standort. Werkzeug kunde_finden(kundennummer, plz) für Mira: Bestandskunde nach Kundennummer mit PLZ als Prüfung, Standort bestätigen lassen; Firma, Adresse und E-Mail aus dem Kundenstamm (E-Mail nicht vorlesen, Bestätigung an die hinterlegte Adresse), Ansprechperson und Rückrufnummer weiterhin erfragen. Nutzerentscheidung 19.10.2026: Frage nach Kundennummer vor Standort und Kontakt.",
+          "order": 10,
+          "weight": 2,
+          "status": "ready",
+          "dependsOn": [
+            "task-13-5"
+          ],
+          "definitionOfDone": [
+            "customers und customer_sites mit RLS, Backfill/Seed, demo:verify grün",
+            "kunde_finden nur für service_role, keine Auskunft ohne passende PLZ, agent_create_request übernimmt Kundendaten",
+            "Prompt, Leitfaden, Regeln angepasst; test:agent und agent:simulate mit Bestandskunden-Szenario",
+            "pgTAP, test:db, lint, typecheck, build"
           ]
         }
       ]

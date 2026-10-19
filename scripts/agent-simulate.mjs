@@ -31,9 +31,12 @@ const SCENARIOS = {
     must: [], never: ["anfrage_anlegen", "freie_termine", "einsatzgebiet_pruefen"],
   },
   neu: {
-    caller: "Du bist Anna Schulz von der Neckar Pumpenwerk GmbH, Industriestraße 5, 68219 Mannheim, Telefon 0621 5550123, E-Mail anna.schulz@neckar-pumpenwerk.de. Deine Grundfos-Pumpe CR 32 leckt an der Gleitringdichtung, kein Stillstand, keine Gefahr, zeitnah. Du möchtest einen Termin in den nächsten Tagen und nimmst den ersten Vorschlag. Antworte kurz und bestätige Zusammenfassungen.",
-    tools: { anlage_pruefen: { anlagenart: "Pumpe", hersteller: "Grundfos", typ: "CR 32" }, einsatzgebiet_pruefen: { plz: "68219" }, freie_termine: { leistung: "diagnosis_repair", plz: "68219" }, anfrage_anlegen: null },
-    must: ["anlage_pruefen", "einsatzgebiet_pruefen", "freie_termine", "anfrage_anlegen"], never: ["rueckruf_service_desk"],
+    caller: "Du bist Anna Schulz von der Neckar Pumpenwerk GmbH, Industriestraße 5, 68219 Mannheim, Telefon 0621 5550123, E-Mail a.schulz@npw.de (buchstabiere sie, wenn du gefragt wirst: A, Punkt, S, C, H, U, L, Z, at N, P, W, Punkt, D, E). Deine Grundfos-Pumpe CR 32 leckt an der Gleitringdichtung, kein Stillstand, keine Gefahr, zeitnah. Du möchtest einen Termin in den nächsten Tagen und nimmst den ersten Vorschlag. Antworte kurz und bestätige Zusammenfassungen.",
+    tools: { anlage_pruefen: { anlagenart: "Pumpe", hersteller: "Grundfos", typ: "CR 32" }, einsatzgebiet_pruefen: { plz: "68219" }, freie_termine: { leistung: "diagnosis_repair", plz: "68219" },
+      email_pruefen: { buchstaben: "A, Punkt, S, C, H, U, L, Z, at N, P, W, Punkt, D, E" }, anfrage_anlegen: null },
+    must: ["anlage_pruefen", "einsatzgebiet_pruefen", "email_pruefen", "freie_termine", "anfrage_anlegen"], never: ["rueckruf_service_desk"],
+    // Street asked, e-mail taken from email_pruefen
+    params: { anfrage_anlegen: (p) => /Industriestra(ß|ss)e 5/.test(p.street_house_number ?? "") && p.business_email === "a.schulz@npw.de" },
   },
   notfall: {
     caller: "Du bist Herr Krämer von der Rheinhafen Logistikzentrum GmbH & Co. KG, Hafenstraße 12, 68159 Mannheim, Rückrufnummer 0621 4440001. Dein Kompressor ist ausgefallen, die Produktion steht. Keine Gefahr für Personen. Wenn nach einem Vertrag gefragt wird: SLA-2022-340. Antworte kurz.",
@@ -66,15 +69,21 @@ for (const [name, scenario] of Object.entries(SCENARIOS)) {
   console.log(`\n=== ${name} ===`);
   if (!response.ok) { console.log(JSON.stringify(data).slice(0, 600)); failures += 1; continue; }
   const called = new Set();
+  const badParams = [];
   for (const turn of data.simulated_conversation) {
-    for (const call of turn.tool_calls ?? []) { called.add(call.tool_name); console.log(`  → ${call.tool_name} ${call.params_as_json}`); }
+    for (const call of turn.tool_calls ?? []) {
+      called.add(call.tool_name);
+      console.log(`  → ${call.tool_name} ${call.params_as_json}`);
+      const expect = scenario.params?.[call.tool_name];
+      if (expect && !expect(JSON.parse(call.params_as_json))) badParams.push(call.tool_name);
+    }
     if (turn.message) console.log(`${turn.role === "agent" ? "Mira" : "Anrufer"}: ${turn.message}`);
   }
   const missing = scenario.must.filter((tool) => !called.has(tool));
   const wrong = scenario.never.filter((tool) => called.has(tool));
-  const ok = missing.length === 0 && wrong.length === 0;
+  const ok = missing.length === 0 && wrong.length === 0 && badParams.length === 0;
   if (!ok) failures += 1;
-  console.log(`${ok ? "✓" : "✗"} ${name}: Werkzeuge ${[...called].join(", ")}${missing.length ? ` · fehlt: ${missing.join(", ")}` : ""}${wrong.length ? ` · unerwartet: ${wrong.join(", ")}` : ""}`);
+  console.log(`${ok ? "✓" : "✗"} ${name}: Werkzeuge ${[...called].join(", ")}${missing.length ? ` · fehlt: ${missing.join(", ")}` : ""}${wrong.length ? ` · unerwartet: ${wrong.join(", ")}` : ""}${badParams.length ? ` · Parameter falsch: ${badParams.join(", ")}` : ""}`);
 }
 console.log(`\n${failures === 0 ? "Alle Szenarien wie erwartet." : `${failures} Szenario(s) mit Abweichung.`}`);
 process.exit(failures === 0 ? 0 : 1);

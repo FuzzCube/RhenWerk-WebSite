@@ -51,9 +51,12 @@ const str = (description) => ({ type: "string", description });
 const bool = (description) => ({ type: "boolean", description });
 const TOOLS = [
   ["servicezeit", "Heutiges Datum, aktuelle Uhrzeit (Europe/Berlin) und ob der Service Desk gerade erreichbar ist. Zu Beginn jedes Gesprächs still aufrufen.", {}, []],
-  ["anlage_pruefen", "Prüft, ob RheinWerk die Anlage betreut (Katalogabgleich). Antwort: status und satz für den Anrufer.", {
+  ["anlage_pruefen", "Prüft, ob RheinWerk die Anlage betreut (Katalogabgleich). Antwort: status, satz für den Anrufer und ggf. rueckfrage (ähnliche Baureihe, einmal stellen).", {
     anlagenart: str("Pumpe, Kompressor, Lüftung oder die genannte andere Anlagenart"), hersteller: str("Hersteller, falls genannt"), typ: str("Typ vom Typenschild, falls genannt"),
   }, []],
+  ["email_pruefen", "Setzt die vom Anrufer buchstabierte E-Mail-Adresse zusammen und merkt sie für das Gespräch. Antwort: email und ansage (so vorlesen). Bei fehler email_ungueltig erneut buchstabieren lassen.", {
+    buchstaben: str("Buchstaben und Wörter genau wie gehört, durch Kommas getrennt, z. B. „A, N, N, A, Punkt, M, at gmail Punkt com“; nichts weglassen oder ergänzen"),
+  }, ["buchstaben"]],
   ["einsatzgebiet_pruefen", "Prüft, ob die Postleitzahl des Standorts im Einsatzgebiet liegt.", { plz: str("Fünfstellige Postleitzahl des Standorts") }, ["plz"]],
   ["sla_pruefen", "Prüft eine Notfall-SLA-Vertragsnummer. Nennt nie die Firma.", {
     vertragsnummer: str("Vertragsnummer wie genannt"), firma: str("Firma des Anrufers, falls bekannt"), plz: str("Postleitzahl des Standorts"),
@@ -63,8 +66,8 @@ const TOOLS = [
     leistung: str("inspection (Inspektion), scheduled_maintenance (Wartung) oder diagnosis_repair (Störung/Reparatur)"), plz: str("Postleitzahl des Standorts"),
   }, ["leistung"]],
   ["anfrage_anlegen", "Legt die Serviceanfrage an und merkt den gewählten Termin vor. Erst nach Zusammenfassung und Bestätigung aufrufen. Fehlen Angaben, kommt fehlende_felder zurück.", {
-    company_name: str("Firma"), contact_name: str("Ansprechperson"), business_email: str("Geschäftliche E-Mail, buchstabiert bestätigt"),
-    phone_number: str("Rückrufnummer"), customer_number: str("Kundennummer, falls vorhanden"),
+    company_name: str("Firma"), contact_name: str("Ansprechperson"), business_email: str("email aus email_pruefen, unverändert"),
+    phone_number: str("Rückrufnummer in Ziffern, z. B. 0621 5550123"), customer_number: str("Kundennummer, falls vorhanden"),
     street_house_number: str("Straße und Hausnummer des Standorts"), postal_code: str("Postleitzahl des Standorts"), city: str("Ort"),
     site_label: str("Halle, Gebäude oder Linie, falls genannt"),
     equipment_kind: str("pump, compressor, ventilation oder other"), manufacturer: str("Hersteller"), model_type: str("Typ vom Typenschild"),
@@ -78,10 +81,10 @@ const TOOLS = [
     nummer: str("Anfragenummer wie genannt, z. B. RIS 2026 123"), firma: str("Firma, wenn keine Nummer"), plz: str("Postleitzahl des Standorts"), strasse: str("Straße, falls mehrere Treffer"),
   }, ["plz"]],
   ["rueckrufbitte_techniker", "Nur bei lage ueberfaellig: bittet den eingeplanten Techniker, den Kunden zurückzurufen.", {
-    anfrage_id: str("anfrage_id aus anfrage_finden"), rueckrufnummer: str("Bestätigte Rückrufnummer"),
+    anfrage_id: str("anfrage_id aus anfrage_finden"), rueckrufnummer: str("Bestätigte Rückrufnummer in Ziffern, z. B. 0621 5550123"),
   }, ["anfrage_id", "rueckrufnummer"]],
   ["rueckruf_service_desk", "Rückruf durch einen Menschen (statt Weiterleitung): Notfall, Beschwerde, Wunsch nach einem Menschen oder Werkzeugstörung.", {
-    grund: str("Anliegen in einem Satz"), rueckrufnummer: str("Bestätigte Rückrufnummer"), dringend: bool("true bei Notfall, Stillstand oder Sicherheitsgefahr"), anfrage_id: str("anfrage_id, falls bekannt"),
+    grund: str("Anliegen in einem Satz"), rueckrufnummer: str("Bestätigte Rückrufnummer in Ziffern, z. B. 0621 5550123"), dringend: bool("true bei Notfall, Stillstand oder Sicherheitsgefahr"), anfrage_id: str("anfrage_id, falls bekannt"),
   }, ["grund", "rueckrufnummer"]],
 ];
 
@@ -126,6 +129,11 @@ const promptFile = await readFile(new URL("../docs/telefonassistent/systemprompt
 const knowledge = await readFile(new URL("../docs/telefonassistent/wissensbasis.md", import.meta.url), "utf8");
 const guide = await readFile(new URL("../docs/telefonassistent/leitfaden.md", import.meta.url), "utf8");
 const prompt = promptFile.match(/```text\n([\s\S]*?)```/)[1].trim() + "\n\n# Wissen\n" + knowledge.replace(/^# .*\n/, "").trim();
+// Speech recognition hints: manufacturers and series of the catalog (test call 19.10.2026: "Grundfos" heard as "Dahlhof")
+const catalog = JSON.parse(await readFile(new URL("../n8n/workflows/catalog.json", import.meta.url), "utf8"));
+// Short series ("G", "CR") left out: as hints they would bend ordinary words
+const keywords = [...new Set([...Object.entries(catalog.aliases).flat(2), ...catalog.rows.map((r) => r.series).filter((x) => x.length >= 3 && !x.includes("/")),
+  "RheinWerk", "Gleitringdichtung", "Typenschild"])].filter((k) => k && k !== "-");
 const greeting = guide.match(/\| Begrüßung \| „(.+?)“ \|/)[1];
 
 // German voice from the ElevenLabs library ("Laura – Sharp and Professional", made for hotlines); added to the
@@ -151,9 +159,14 @@ const agent = {
       },
     },
     tts: {
-      voice_id: voiceId, model_id: "eleven_flash_v2_5",
+      // Expressive mode: livelier intonation; stability below the default 0.5 for more variation, latency
+      // optimisation one step lower than the default 3 for better sound (user decision 19.10.2026)
+      voice_id: voiceId, model_id: state.tts_model ?? "eleven_flash_v2_5", expressive_mode: true, stability: 0.4, optimize_streaming_latency: 2,
       ...(state.dictionary ? { pronunciation_dictionary_locators: [{ pronunciation_dictionary_id: state.dictionary.id, version_id: state.dictionary.version_id }] } : {}),
     },
+    asr: { keywords },
+    // Waits longer during "äh" pauses before answering (test call 19.10.2026: Mira interrupted the caller)
+    turn: { turn_eagerness: "patient" },
     conversation: { max_duration_seconds: 600 },
   },
   platform_settings: {
