@@ -252,6 +252,35 @@ try {
     const { count } = await admin.from("requests").select("id", { count: "exact", head: true }).gte("created_at", monthStart);
     const tableValue = await page.eval(`(() => { const rows = [...document.querySelectorAll("#flow-chart .figure__table tbody tr")]; const last = rows.at(-1); return last ? last.querySelectorAll("td")[1].textContent.replace(/\\D/g, "") : null; })()`);
     check(`  Eingänge des laufenden Monats: Tabelle ${tableValue} = Datenbank ${count}`, Number(tableValue) === count);
+    // Legend toggles (task-12-5): a click hides a series (with its dashed running segment), the y-axis follows the
+    // visible series, the last visible series stays, the data table keeps every series
+    const legendState = `(() => { const f = document.querySelector("#flow-chart"); const ticks = [...f.querySelectorAll(".recharts-yAxis-tick-labels text")].map((t) => Number(t.textContent.replace(/\\D/g, ""))); return { lines: f.querySelectorAll(".recharts-line-curve").length, top: Math.max(...ticks), pressed: [...f.querySelectorAll(".rw-legend--toggle button")].map((b) => b.getAttribute("aria-pressed")).join(","), lastLocked: f.querySelector('.rw-legend--toggle [data-series="completed"]')?.getAttribute("aria-disabled"), columns: f.querySelectorAll(".figure__table thead th").length }; })()`;
+    const pressSeries = (key) => page.eval(`document.querySelector('#flow-chart .rw-legend--toggle [data-series="${key}"]').click()`);
+    const allShown = await page.eval(legendState);
+    await pressSeries("received");
+    await pressSeries("intake_completed");
+    await sleep(300);
+    const oneShown = await page.eval(legendState);
+    if (SHOTS) {
+      for (const width of [390, 1440]) {
+        await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 600 });
+        await sleep(400);
+        await page.eval(`document.querySelector("#flow-chart").scrollIntoView({ block: "start", behavior: "instant" })`);
+        const shot = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, `legende-umschalten-${width}.png`), Buffer.from(shot.data, "base64"));
+      }
+    }
+    await pressSeries("completed");
+    await sleep(200);
+    const stillOne = await page.eval(legendState);
+    await pressSeries("received");
+    await pressSeries("intake_completed");
+    await sleep(300);
+    const restored = await page.eval(legendState);
+    check("  Legende: Reihen aus- und einblenden, y-Achse folgt, letzte Reihe bleibt, Tabelle vollständig",
+      allShown.pressed === "true,true,true" && oneShown.pressed === "false,false,true" && oneShown.lines < allShown.lines && oneShown.top < allShown.top
+        && oneShown.lastLocked === "true" && stillOne.pressed === "false,false,true" && restored.pressed === "true,true,true" && restored.lines === allShown.lines && oneShown.columns === allShown.columns,
+      JSON.stringify({ allShown, oneShown, stillOne, restored }));
     // Tooltip of the time savings shows count and baseline
     await page.open(`${BASE}/dashboard/auswertung?bereich=automatisierung`);
     await page.until(`!!document.querySelector("#savings-chart .recharts-surface")`, 10000);

@@ -2,7 +2,7 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v13 mit 14 Phasen und 63 Tasks. Fortschritt 100 % (Gewicht 182 von 182, 63 von 63 Tasks). Roadmap v13.
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v14 mit 14 Phasen und 64 Tasks. Fortschritt 100 % (Gewicht 183 von 183, 64 von 64 Tasks). Roadmap v14.
 
 ## Aktive Phase
 
@@ -10,13 +10,15 @@ Alle Phasen 0–13 abgeschlossen (19.10.2026). Phase 13 „KI-Telefonassistent�
 
 ## Aktive Aufgabe
 
-Keine Aufgabe in Arbeit. Alle Tasks der Roadmap v13 sind abgeschlossen; offen sind nur die Sprachtests des Telefonassistenten nach neuem ElevenLabs-Guthaben (siehe Bekannte Probleme).
+Keine Aufgabe in Arbeit. Alle Tasks der Roadmap v14 sind abgeschlossen; offen sind nur die Sprachtests des Telefonassistenten nach neuem ElevenLabs-Guthaben (siehe Bekannte Probleme).
 
 Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-12-5` (19.10.2026, Nutzerwunsch, Roadmap v14): Reihen in Diagrammen ein- und ausblenden – `TimeChart` zeichnet bei zwei oder mehr Reihen die Legende als Schalter (aria-pressed); Klick blendet die Reihe samt laufendem Abschnitt aus, y-Achse und Tooltip folgen, die letzte sichtbare Reihe bleibt, Datentabelle vollständig, Auswahl nicht gespeichert. test:ui alle bestanden, Sichtprüfung 390/1440 px, lint, typecheck, build.
 
 `task-13-11` (19.10.2026): Demo-Anruf und Demo-Weiterleitung – Portfolio ohne Telefonleitung (Nutzerentscheidung): jeder Link auf die Service-Desk-Nummer öffnet einen simulierten Anruf bei Mira (`components/demo-call.tsx`, ersetzt die Widget-Karte der Kontaktseite; Limits wie task-13-8). Werkzeug `weiterleiten` (`agent_forward`, Migration `20261019160000_agent_forward.sql`): Mira sagt, dass es ein Demo-Projekt ist und hier verbunden würde, und nimmt dann einen Rückruf auf; „weitergeleitet (Demo)“ im Bereich Anrufe. test:db 920, test:agent, test:ui, agent:simulate (zwei Volläufe), lint, typecheck, build. Nicht geprüft: Anruf mit Stimme (Guthaben).
 

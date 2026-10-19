@@ -211,7 +211,7 @@ Vorlage: `docs/design/RheinWerk Rechnungsvorlage.html` (Claude Design, gebündel
 | Automatisierungsläufe je Schritt, Status, Entscheidung | `analytics_automation` | gewählter Zeitraum |
 | Telefon: 8 Kennzahlen (Anrufe, ohne Mitarbeiter gelöst, Anfragen angelegt, außerhalb der Servicezeit, Notfälle und Dringendes, Rückrufe/offen, Ø Dauer, Kosten und Credits) mit Vorzeitraum, Anrufe je Tag, Anliegen je Kategorie | `analytics_phone`, `analytics_phone_days`, `analytics_phone_categories` (task-13-7) | gewählter Zeitraum |
 
-Jede Abbildung hat Titel, Textzusammenfassung, Legende bei mindestens zwei Reihen (Linien- bzw. Flächenschlüssel), Tooltip (Fadenkreuz bei Linien, Wert vor Reihenname) und eine aufklappbare Datentabelle. Darstellung nach den Dataviz-Regeln: 2-px-Linien, Säulen höchstens 24 px mit 4-px-Rundung am Datenende und 2 px Abstand, Haarlinien-Raster, Achsentexte in Textfarben. Farben `lib/chart-colors.ts` (feste Reihenfolge, nie zyklisch).
+Jede Abbildung hat Titel, Textzusammenfassung, Legende bei mindestens zwei Reihen (Quadrat in Reihenfarbe; als Schalter: ein Klick blendet die Reihe aus und wieder ein, y-Achse und Tooltip folgen den sichtbaren Reihen, die letzte sichtbare Reihe bleibt, Auswahl wird nicht gespeichert; task-12-5), Tooltip (Fadenkreuz bei Linien, Wert vor Reihenname) und eine aufklappbare Datentabelle. Darstellung nach den Dataviz-Regeln: 2-px-Linien, Säulen höchstens 24 px mit 4-px-Rundung am Datenende und 2 px Abstand, Haarlinien-Raster, Achsentexte in Textfarben. Farben `lib/chart-colors.ts` (feste Reihenfolge, nie zyklisch).
 
 ## Verwaltung (task-8-1)
 

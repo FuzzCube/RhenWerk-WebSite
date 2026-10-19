@@ -374,7 +374,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .dash-user:hover .dash-user__name, .dash-user:focus-visible .dash-user__name { text-decoration: underline; text-underline-offset: 3px; }
 .dash-user__name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
 .dash-user__role { font-family: var(--rw-font-mono); font-size: 12px; color: var(--rw-text-on-dark-secondary); }
-.dash-logout { min-height: 40px; padding: 0 14px; border: 1px solid var(--rw-border-on-dark-strong); border-radius: var(--rw-radius-sm, 4px); background: transparent; color: var(--rw-text-on-dark); font-size: 14px; cursor: pointer; }
+.dash-logout { min-height: 40px; padding: 0 14px; border: 1px solid var(--rw-border-on-dark-strong); border-radius: var(--rw-radius-sm); background: transparent; color: var(--rw-text-on-dark); font-size: 14px; cursor: pointer; }
 .dash-logout:hover { background: var(--rw-surface-inverse-raised); }
 .dash-nav { border-top: 1px solid var(--rw-border-on-dark); }
 .dash-nav ul { max-width: var(--rw-container-max); margin: 0 auto; padding: 0 8px; display: flex; overflow-x: auto; scrollbar-width: none; }
@@ -1814,3 +1814,11 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .search-suggest__item[aria-selected="true"] { background: var(--rw-surface-default); box-shadow: inset 3px 0 0 var(--rw-color-steel-500); }
 .search-suggest__title { font-size: 15px; font-weight: 600; color: var(--rw-text-primary); overflow-wrap: anywhere; }
 .search-suggest__meta { font-size: 13px; color: var(--rw-text-secondary); overflow-wrap: anywhere; }
+
+/* Legend as toggles (task-12-5): a click hides or shows a series; a hidden series keeps an outlined square */
+.rw-legend--toggle button { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; margin: -4px -6px; padding: 4px 6px; border: 0; border-radius: var(--rw-radius-sm); background: none; color: inherit; font: inherit; cursor: pointer; }
+.rw-legend--toggle button:hover { background: var(--rw-color-steel-100); color: var(--rw-text-primary); }
+.rw-legend--toggle button[aria-pressed="false"] { text-decoration: line-through; text-decoration-thickness: 1px; }
+.rw-legend--toggle button[aria-pressed="false"] .rw-legend__key { border: 0; background: transparent; }
+.rw-legend--toggle button[aria-disabled="true"] { cursor: default; }
+.rw-legend--toggle button[aria-disabled="true"]:hover { background: none; }

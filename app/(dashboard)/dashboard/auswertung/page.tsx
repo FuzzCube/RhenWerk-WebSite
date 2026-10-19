@@ -4,7 +4,7 @@ import { cache, Suspense, type ReactNode } from "react";
 import { TimeChart, type ChartFormat, type ChartSeries } from "@/components/dashboard/charts";
 import { PeriodControl } from "@/components/dashboard/period-bar";
 import { Card } from "@/components/dashboard/ui/card";
-import { Legend, PeriodChip } from "@/components/dashboard/ui/legend";
+import { PeriodChip } from "@/components/dashboard/ui/legend";
 import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { EmptyState, ErrorState, LoadingState } from "@/components/dashboard/ui/states";
@@ -51,7 +51,8 @@ function areaHref(area: Area, period: PeriodParams) {
 }
 
 // Charts and automation area (task-7-3, tabs since task-10-3). Every chart reads database data through the
-// analytics functions; each figure has a text summary, a legend for two or more series and a data table.
+// analytics functions; each figure has a text summary, a legend for two or more series (toggles in TimeChart,
+// task-12-5) and a data table.
 export default async function InsightsPage({ searchParams }: Props) {
   await requireRole(rolesFor("/dashboard/auswertung"));
   const params = await searchParams;
@@ -190,7 +191,6 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
   ].filter((item): item is { key: Area; area: string; value: string; text: string; href: string; warn: boolean } => Boolean(item))
     .sort((a, b) => AREAS.findIndex((entry) => entry.key === a.key) - AREAS.findIndex((entry) => entry.key === b.key));
   const running = `${monthLabel(`${today.slice(0, 7)}-01`)} läuft noch (gestrichelt).`;
-  const legend = (series: ChartSeries[]) => <Legend items={series.map((entry) => ({ label: entry.label, color: entry.color }))} />;
 
   const last12Note = `Letzte 12 Monate: ${formatNumber(sum(last12.map((row) => row.received)))} Eingänge, ${formatNumber(sum(last12.map((row) => row.intake_completed)))} Erstbearbeitungen, ${formatNumber(sum(last12.map((row) => row.completed)))} technische Abschlüsse.`;
 
@@ -210,13 +210,13 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
       </section>
 
       {area === "durchsatz" && <div className="insights-grid">
-        <Figure className="insights-grid__full" id="flow-chart" title="Eingang, Erstbearbeitung und Abschluss je Monat" chip="24 Monate" summary={`${last12Note} Jede Reihe zählt nach ihrem eigenen Zeitpunkt. ${running}`} legend={legend(flowSeries)} table={table(months, "month", "Monat", flowSeries, "count")}>
+        <Figure className="insights-grid__full" id="flow-chart" title="Eingang, Erstbearbeitung und Abschluss je Monat" chip="24 Monate" summary={`${last12Note} Jede Reihe zählt nach ihrem eigenen Zeitpunkt. ${running}`} table={table(months, "month", "Monat", flowSeries, "count")}>
           <TimeChart kind="line" data={months} xKey="month" series={flowSeries} format="count" runningLast label="Liniendiagramm: Eingang, Erstbearbeitung und Abschluss je Monat" />
         </Figure>
-        <Figure className="insights-grid__half" id="comparison-chart" title={`Eingänge ${periodTitle(period.kind, w.startDay)} kumuliert`} chip={`${elapsed} Tage`} summary={`Bis Tag ${elapsed}: ${formatNumber(currentTotal)} Eingänge; Vorzeitraum bis Tag ${elapsed}: ${formatNumber(previousSame)}.`} legend={legend(comparisonSeries)} table={table(comparison, "label", "Tag", comparisonSeries, "count")}>
+        <Figure className="insights-grid__half" id="comparison-chart" title={`Eingänge ${periodTitle(period.kind, w.startDay)} kumuliert`} chip={`${elapsed} Tage`} summary={`Bis Tag ${elapsed}: ${formatNumber(currentTotal)} Eingänge; Vorzeitraum bis Tag ${elapsed}: ${formatNumber(previousSame)}.`} table={table(comparison, "label", "Tag", comparisonSeries, "count")}>
           <TimeChart kind="line" data={comparison} xKey="label" series={comparisonSeries} format="count" height={220} label="Liniendiagramm: Eingänge kumuliert, aktueller Zeitraum und Vorzeitraum" />
         </Figure>
-        <Figure className="insights-grid__half" id="season-chart" title="Saisonalität: Eingänge je Kalendermonat" chip={`ab ${season.years.slice(-3)[0] ?? ""}`} summary={`Eingänge je Monat für ${season.years.slice(-3).join(", ")}; Monate ohne Daten bleiben leer.`} legend={legend(seasonSeries)} table={table(season.data, "month", "Monat", seasonSeries, "count")}>
+        <Figure className="insights-grid__half" id="season-chart" title="Saisonalität: Eingänge je Kalendermonat" chip={`ab ${season.years.slice(-3)[0] ?? ""}`} summary={`Eingänge je Monat für ${season.years.slice(-3).join(", ")}; Monate ohne Daten bleiben leer.`} table={table(season.data, "month", "Monat", seasonSeries, "count")}>
           <TimeChart kind="line" data={season.data} xKey="month" series={seasonSeries} format="count" height={220} label="Liniendiagramm: Eingänge je Kalendermonat und Jahr" />
         </Figure>
       </div>}
@@ -244,7 +244,6 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
           title="Ausgestellt und bezahlt je Monat"
           chip="12 Monate"
           summary={`${monthLabel(`${today.slice(0, 7)}-01`)} enthält nur die bisherigen Tage.`}
-          legend={legend(financeSeries)}
           table={table(last12, "month", "Monat", financeSeries, "eur")}
           lead={
             <div className="rw-figures">
@@ -365,7 +364,6 @@ function PhoneArea({ data, period }: { data: Insights; period: PeriodParams }) {
         title={`Anrufe je Tag ${title}`}
         chip={`${days.length} Tage`}
         summary={`${formatNumber(current.calls)} Anrufe, davon ${formatNumber(current.resolved)} ohne Rückruf durch einen Mitarbeiter; ${formatNumber(current.requests)} neue Anfragen. Gezählt werden ausgewertete Gespräche nach ihrem Beginn.`}
-        legend={<Legend items={daySeries.map((entry) => ({ label: entry.label, color: entry.color }))} />}
         table={<DataTable caption="Anrufe je Tag" columns={dayColumns} rows={dayRows} rowKey={(row) => row.day} empty={<EmptyState title="Keine Daten." />} />}
       >
         <TimeChart kind="line" data={dayRows} xKey="label" series={daySeries} format="count" height={220} label="Liniendiagramm: Anrufe, ohne Mitarbeiter gelöste Anrufe und angelegte Anfragen je Tag" />
@@ -407,7 +405,7 @@ function tableValue(format: ChartFormat | "mixed", value: unknown): string {
 }
 
 // Chart card with the compact header bar of the list cards (Anfragen, Übersicht)
-function Figure({ id, title, summary, chip, legend, table, lead, stripe = "neutral", className = "", children }: { id: string; title: string; summary: string; chip?: string; legend?: ReactNode; table: ReactNode; lead?: ReactNode; stripe?: "neutral" | "attention"; className?: string; children: ReactNode }) {
+function Figure({ id, title, summary, chip, table, lead, stripe = "neutral", className = "", children }: { id: string; title: string; summary: string; chip?: string; table: ReactNode; lead?: ReactNode; stripe?: "neutral" | "attention"; className?: string; children: ReactNode }) {
   return (
     <figure className={`figure rw-card rw-card--list rw-card--flush rw-card--${stripe} ${className}`} id={id} data-chart={id}>
       <figcaption className="rw-card__header">
@@ -417,7 +415,6 @@ function Figure({ id, title, summary, chip, legend, table, lead, stripe = "neutr
       <div className="rw-card--list__pad figure__body">
         <p className="rw-card__note">{summary}</p>
         {lead}
-        {legend}
         {children}
         <details className="figure__table">
           <summary>Daten als Tabelle</summary>
