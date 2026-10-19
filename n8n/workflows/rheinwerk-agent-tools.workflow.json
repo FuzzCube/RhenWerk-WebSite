@@ -614,6 +614,82 @@
     {
       "parameters": {
         "httpMethod": "POST",
+        "path": "agent-kunde-finden",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "332da782-64ca-57cc-b6da-382e134b5f1c",
+      "name": "Werkzeug Kunde finden",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        1600
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rwAgentSecret001",
+          "name": "RheinWerk Agent-Secret"
+        }
+      },
+      "webhookId": "e6c9e8fe-ad72-5f92-96fb-161c70153b38"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/agent_find_customer",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {call_id:($json.body ?? {}).call_id, kundennummer:($json.body ?? {}).kundennummer ?? null, plz:($json.body ?? {}).plz ?? null} }}",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "6fe34245-547b-5e1d-8242-2b288871d26b",
+      "name": "Kunde finden: Datenbank",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        260,
+        1600
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.error || $json.code || $json.message ? {ok:false,fehler:'werkzeug_gestoert'} : $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "5880d52f-bac7-5a86-8140-04588defbc81",
+      "name": "Kunde finden: Antwort",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        520,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
         "path": "agent-email-pruefen",
         "authentication": "headerAuth",
         "responseMode": "responseNode",
@@ -625,7 +701,7 @@
       "typeVersion": 2.1,
       "position": [
         0,
-        1600
+        1800
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -660,7 +736,7 @@
       "typeVersion": 4.5,
       "position": [
         260,
-        1600
+        1800
       ],
       "credentials": {
         "supabaseApi": {
@@ -684,7 +760,7 @@
       "typeVersion": 1.5,
       "position": [
         520,
-        1600
+        1800
       ]
     },
     {
@@ -701,7 +777,7 @@
       "typeVersion": 2.1,
       "position": [
         0,
-        1800
+        2000
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -722,7 +798,7 @@
       "typeVersion": 2,
       "position": [
         260,
-        1800
+        2000
       ],
       "onError": "continueRegularOutput"
     },
@@ -740,7 +816,7 @@
       "typeVersion": 1.5,
       "position": [
         520,
-        1800
+        2000
       ]
     }
   ],
@@ -915,6 +991,28 @@
         [
           {
             "node": "Rueckruf service desk: Antwort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Werkzeug Kunde finden": {
+      "main": [
+        [
+          {
+            "node": "Kunde finden: Datenbank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kunde finden: Datenbank": {
+      "main": [
+        [
+          {
+            "node": "Kunde finden: Antwort",
             "type": "main",
             "index": 0
           }

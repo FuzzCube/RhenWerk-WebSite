@@ -236,6 +236,8 @@ export type RequestDetail = {
   events: Tables["request_events"]["Row"][];
   // Contract master data for the SLA number the customer gave (task-13-9); staff only, null without match or number
   contract: Tables["service_contracts"]["Row"] | null;
+  // Linked customer of the master data with the linked site (task-13-10); staff only
+  customer: (Tables["customers"]["Row"] & { site: Tables["customer_sites"]["Row"] | null; sites: Tables["customer_sites"]["Row"][] }) | null;
   // Window holds of the phone assistant (task-13-3), newest first; staff only
   holds: Tables["visit_holds"]["Row"][];
   failed: string[];
@@ -251,7 +253,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
 
   const staff = role !== "technician";
   const contractNumber = staff ? normalizeContractNumber(request.sla_contract_number) : null;
-  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds] = await Promise.all([
+  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds, customer] = await Promise.all([
     staff ? supabase.from("messages").select("*").eq("request_id", id).order("created_at") : null,
     staff ? supabase.from("automation_runs").select("*").eq("request_id", id).order("started_at") : null,
     supabase.from("visits").select("*").eq("request_id", id).order("scheduled_start"),
@@ -261,6 +263,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     supabase.from("request_events").select("*").eq("request_id", id).order("occurred_at", { ascending: false }).order("seq", { ascending: false }),
     contractNumber ? supabase.from("service_contracts").select("*").eq("contract_number", contractNumber).maybeSingle() : null,
     staff ? supabase.from("visit_holds").select("*").eq("request_id", id).order("created_at", { ascending: false }) : null,
+    staff && request.customer_id ? supabase.from("customers").select("*, customer_sites(*)").eq("id", request.customer_id).maybeSingle() : null,
   ]);
   const invoiceId = invoice?.data && invoice.data.status !== "draft" ? invoice.data.id : null;
   const [invoiceItems, reminderState, reminders] = invoice?.data
@@ -294,6 +297,9 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     }),
     events: pick("verlauf", events, []),
     contract: contract?.data ?? null,
+    customer: customer?.data
+      ? (({ customer_sites: sites, ...row }) => ({ ...row, sites, site: sites.find((site) => site.id === request.customer_site_id) ?? null }))(customer.data)
+      : null,
     holds: holds ? pick("einsaetze", holds, []) : [],
     failed,
   };

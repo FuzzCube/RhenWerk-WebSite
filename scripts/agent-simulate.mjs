@@ -38,6 +38,13 @@ const SCENARIOS = {
     // Street asked, e-mail taken from email_pruefen
     params: { anfrage_anlegen: (p) => /Industriestra(ß|ss)e 5/.test(p.street_house_number ?? "") && p.business_email === "a.schulz@npw.de" },
   },
+  // Existing customer (task-13-10): demo contract customer K-10000, site 69115; no address or e-mail questions
+  bestand: {
+    caller: "Du bist Herr Braun von der Neckartal Brauerei. Dein Kompressor von Kaeser, Typ SM 13, schaltet mit Fehlermeldung ab, keine Gefahr, kein Stillstand. Du bist Kunde, Kundennummer K-10000, der Standort hat die Postleitzahl 69115. Rückrufnummer 06221 555000. Du möchtest einen Termin in den nächsten Tagen und nimmst den ersten Vorschlag. Antworte kurz und bestätige Zusammenfassungen.",
+    tools: { anlage_pruefen: { anlagenart: "Kompressor", hersteller: "Kaeser", typ: "SM 13" }, kunde_finden: { kundennummer: "K-10000", plz: "69115" },
+      freie_termine: { leistung: "diagnosis_repair", plz: "69115" }, anfrage_anlegen: null },
+    must: ["kunde_finden", "freie_termine", "anfrage_anlegen"], never: ["email_pruefen", "einsatzgebiet_pruefen"],
+  },
   notfall: {
     caller: "Du bist Herr Krämer von der Rheinhafen Logistikzentrum GmbH & Co. KG, Hafenstraße 12, 68159 Mannheim, Rückrufnummer 0621 4440001. Dein Kompressor ist ausgefallen, die Produktion steht. Keine Gefahr für Personen. Wenn nach einem Vertrag gefragt wird: SLA-2022-340. Antworte kurz.",
     // Always outside the service hours, independent of the time of the run

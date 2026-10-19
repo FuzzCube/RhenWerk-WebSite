@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PaymentForm } from "@/components/dashboard/payment-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
+import { SearchSuggest } from "@/components/dashboard/ui/search-suggest";
 import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { InvoiceStatusChip } from "@/components/dashboard/ui/status-chip";
@@ -104,7 +105,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
           <form className="req2__search" method="get" role="search" aria-label="Rechnungen durchsuchen">
             <label className="sr-only" htmlFor="filter-suche">Rechnungsnummer</label>
             <Icon name="search" size={18} />
-            <input id="filter-suche" name="suche" type="search" defaultValue={filters.q} placeholder="Rechnungsnummer, z. B. RE-2026-…" />
+            <SearchSuggest area="rechnungen" id="filter-suche" name="suche" defaultValue={filters.q} placeholder="Rechnungsnummer, z. B. RE-2026-…" />
             <input type="hidden" name="status" value={tab} />
             <button className="rw-button-secondary req2__search-btn" type="submit">Suchen</button>
           </form>

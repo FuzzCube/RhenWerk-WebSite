@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 11,
+  "roadmapVersion": 12,
   "status": "active",
   "phases": [
     {
@@ -1855,6 +1855,36 @@
               "APP_URL=http://localhost:3201 npm run test:ui"
             ]
           }
+        },
+        {
+          "id": "task-12-4",
+          "title": "Autovervollständigung in allen Suchen",
+          "description": "Vorschläge beim Tippen in den Suchen von Anfragen, Kunden, Rechnungen und Posteingang sowie im Feld Kundennummer des Blocks Kundenstamm (Nutzerwunsch 19.10.2026): ein gemeinsamer Combobox-Baustein (ab 2 Zeichen, ca. 200 ms Verzögerung, bis 8 Treffer, Pfeiltasten/Enter/Esc, barrierefrei), Auswahl öffnet den Datensatz direkt, Enter ohne Auswahl sucht wie bisher; ein Vorschlags-Endpunkt je Bereich mit den Rechten des Nutzers (RLS), also nie mehr als die Liste zeigt.",
+          "order": 4,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Gemeinsamer Baustein in allen vier Suchen und im Feld Kundennummer",
+            "Vorschläge nur mit Nutzerrechten (Dispatcher sieht nur eigene Anfragen), Tastatur und Screenreader bedienbar",
+            "test:ui (Vorschläge, Tastatur, Rollen, kein horizontales Scrollen bei 390 px), Sichtprüfung 390/1440 px",
+            "lint, typecheck, build"
+          ],
+          "startedAt": "2026-10-19T14:37:57Z",
+          "completedAt": "2026-10-19T14:52:30Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Baustein SearchSuggest (ARIA-Combobox, ab 2 Zeichen, 200 ms, bis 8 Vorschläge, Pfeiltasten/Enter/Esc, Statusansage) in Anfragen, Kunden, Rechnungen, Posteingang und als SuggestField im Feld Kundennummer (Block Kundenstamm). Endpunkt GET /dashboard/suche/vorschlaege (lib/dashboard/suggestions.ts): Rolle je Bereich (403), RLS, dieselben Suchspalten wie die Listen. Auswahl öffnet Anfrage/Kunde/Rechnung, wählt im Posteingang die Anfrage vor (auswahl), trägt die Kundennummer ein; Enter ohne Auswahl sucht wie bisher. Geprüft: test:ui alle bestanden (neu 12 Prüfungen: Vorschläge, Esc, Pfeil+Enter, Klick, Dispatcher ohne fremde Anfragen, 403 für Dispatcher/Rechnungen und Techniker/Kunden, Posteingang-Vorauswahl, Kundennummer füllen ohne Absenden, 390 px ohne horizontales Scrollen), test:unit 85, lint, typecheck, build, demo:verify 19/19 nach Seed; Sichtprüfung 390/1440 px (Lupensymbol nach Fund wieder sichtbar). Nicht ausgeführt: test:db (keine Schemaänderung), test:auth, test:api.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3201 npm run test:ui",
+              "npm run test:unit",
+              "npm run demo:seed",
+              "npm run demo:verify"
+            ]
+          }
         }
       ]
     },
@@ -2116,10 +2146,10 @@
         {
           "id": "task-13-10",
           "title": "Kundenstamm und Bestandskunden am Telefon",
-          "description": "Eigene Tabelle customers (Kundennummer, Firma, Kontakt-E-Mail, Telefon) mit Standorten (customer_sites: Straße, PLZ, Ort, Bezeichnung), befüllt aus den Demo-Daten und vom Demo-Seed gepflegt; Anfragen verweisen auf Kunde und Standort. Werkzeug kunde_finden(kundennummer, plz) für Mira: Bestandskunde nach Kundennummer mit PLZ als Prüfung, Standort bestätigen lassen; Firma, Adresse und E-Mail aus dem Kundenstamm (E-Mail nicht vorlesen, Bestätigung an die hinterlegte Adresse), Ansprechperson und Rückrufnummer weiterhin erfragen. Nutzerentscheidung 19.10.2026: Frage nach Kundennummer vor Standort und Kontakt.",
+          "description": "Eigene Tabelle customers (Kundennummer, Firma, Kontakt-E-Mail, Telefon) mit Standorten (customer_sites: Straße, PLZ, Ort, Bezeichnung), befüllt aus den Demo-Daten und vom Demo-Seed gepflegt; Anfragen verweisen auf Kunde und Standort. Werkzeug kunde_finden(kundennummer, plz) für Mira: Bestandskunde nach Kundennummer mit PLZ als Prüfung, Standort bestätigen lassen; Firma, Adresse und E-Mail aus dem Kundenstamm (E-Mail nicht vorlesen, Bestätigung an die hinterlegte Adresse), Ansprechperson und Rückrufnummer weiterhin erfragen. Nutzerentscheidung 19.10.2026: Frage nach Kundennummer vor Standort und Kontakt. Erweiterung (Nutzerentscheidung 19.10.2026): Oberfläche Kunden im Dashboard für Admin, Manager und Dispatcher – Liste mit Suche, Kunde und Standorte anlegen und bearbeiten (z. B. Fehler des Telefonassistenten korrigieren), Verknüpfung in der Anfrage.",
           "order": 10,
-          "weight": 2,
-          "status": "ready",
+          "weight": 3,
+          "status": "completed",
           "dependsOn": [
             "task-13-5"
           ],
@@ -2127,8 +2157,32 @@
             "customers und customer_sites mit RLS, Backfill/Seed, demo:verify grün",
             "kunde_finden nur für service_role, keine Auskunft ohne passende PLZ, agent_create_request übernimmt Kundendaten",
             "Prompt, Leitfaden, Regeln angepasst; test:agent und agent:simulate mit Bestandskunden-Szenario",
+            "Seite Kunden (Admin, Manager, Dispatcher): Liste mit Suche, Anlegen/Bearbeiten von Kunde und Standorten über kontrollierte RPCs mit Version; Anfrage zeigt verknüpften Kunden; test:ui, Sichtprüfung 390/1440 px",
             "pgTAP, test:db, lint, typecheck, build"
-          ]
+          ],
+          "startedAt": "2026-10-19T13:43:54Z",
+          "completedAt": "2026-10-19T14:07:18Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261019120000_customers.sql: customers und customer_sites (RLS Lesen Dispatcher/Manager/Admin, Schreiben nur über RPCs mit Version), requests.customer_id/customer_site_id mit Konsistenztrigger, create_customer (Nummer ab K-20000 automatisch), update_customer, add_customer_site, update_customer_site, link_request_customer (Standort gewählt/Adresse/Hauptstandort, copy_data, Ereignisse customer_linked/unlinked), agent_find_customer (nur mit PLZ eines aktiven Standorts, ohne E-Mail/Telefon), agent_create_request übernimmt Kundendaten, demo_seed_customers. Demo-Seed legt 53 Kunden an und verknüpft die Anfragen; demo:verify mit neuer Prüfung (19/19). Werkzeug kunde_finden (n8n agent-kunde-finden, ElevenLabs), Prompt-Schritt Bestandskunde, Leitfaden/Regeln/Testdaten. Oberfläche: Bereich Kunden (Dispatcher, Manager, Admin) mit Liste, Suche (Nummer, Firma, Kontakt, E-Mail, Straße, PLZ, Ort), Anlegen; Kundenseite mit Stammdaten, Standorten, Anfragen; Anfrageseite mit Block Kundenstamm (verknüpfen, ändern, entfernen, Daten übernehmen). Geprüft: test:db 861 (customers 30), test:agent alle bestanden (inkl. kunde-finden), agent:simulate 5/5 (neu: bestand), test:ui alle bestanden (neu: Kundenstamm, Kunden in der Scroll-Prüfung für Admin/Manager/Dispatcher bei 390/768/1440), test:auth, test:unit 85, lint, typecheck, build, demo:verify 19/19; Sichtprüfung der Screenshots 390/1440 px. Hinweis: während der Arbeit wurde die lokale Datenbank versehentlich mit supabase db reset zurückgesetzt; Demo-Nutzer und Demodaten neu erzeugt, frühere lokale Testanfragen (RIS-2026-03316 bis 03318) entfallen. Nicht ausgeführt: test:api, Anruf im Browser (ElevenLabs-Guthaben).",
+            "commands": [
+              "supabase migration up",
+              "npm run db:types",
+              "supabase test db",
+              "npm run demo:users",
+              "npm run demo:seed",
+              "npm run demo:verify",
+              "npm run test:agent",
+              "npm run agent:sync",
+              "npm run agent:simulate",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3201 npm run test:ui",
+              "APP_URL=http://localhost:3201 npm run test:auth",
+              "npm run test:unit"
+            ]
+          }
         }
       ]
     }

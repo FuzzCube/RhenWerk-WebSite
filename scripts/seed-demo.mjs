@@ -77,11 +77,19 @@ async function replaceDemoContracts(contracts) {
   return contracts.length;
 }
 
+// Demo customers (task-13-10): replaced as a whole after the requests, then linked by customer number
+async function replaceDemoCustomers(customers) {
+  const { data, error } = await admin.rpc("demo_seed_customers", { customers });
+  if (error) throw new Error(`Kunden: ${error.message}`);
+  return data;
+}
+
 if (process.argv.includes("--purge")) {
   const files = await removeDemoFiles();
   const { data, error } = await admin.rpc("demo_seed_purge");
   if (error) throw new Error(error.message);
   await replaceDemoContracts([]);
+  await replaceDemoCustomers([]);
   console.log("Demodaten entfernt:", { ...data, storage_files: files });
   console.log("Testkonten:", await cleanupTestAccounts(admin));
   process.exit(0);
@@ -129,13 +137,14 @@ const { payload, cutoff, rateChange } = generateDemoData({ anchor, now: new Date
 console.log(`Seed-Anker ${isoDate(anchor)}, Stichzeitpunkt ${cutoff.toISOString()}, Tarifwechsel ${isoDate(rateChange)}`);
 
 const removedFiles = await removeDemoFiles();
-const { data, error } = await admin.rpc("demo_seed_apply", { payload });
+const { customers, ...seedPayload } = payload;
+const { data, error } = await admin.rpc("demo_seed_apply", { payload: seedPayload });
 if (error) {
   console.error("Seed fehlgeschlagen:", error.message, error.details ?? "", error.hint ?? "");
   process.exit(1);
 }
 console.log("Entfernt:", { ...data.purged, storage_files: removedFiles });
-console.log("Eingefügt:", { ...data.inserted, service_contracts: await replaceDemoContracts(payload.service_contracts) });
+console.log("Eingefügt:", { ...data.inserted, service_contracts: await replaceDemoContracts(payload.service_contracts), kunden: await replaceDemoCustomers(customers) });
 
 // Safe demo files (scripts/demo/files) attached to selected demo cases
 const caseRequest = (demoCase) => payload.requests.find((r) => r.raw_payload.demo_case === demoCase);

@@ -148,9 +148,9 @@ try {
     { name: "1440", width: 1440, height: 900, mobile: false },
   ];
   const roles = [
-    { email: "admin.demo@example.com", pages: ["/dashboard/bausteine", "/dashboard/verwaltung", "detail:/dashboard/verwaltung", "detail:/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/tarife", "/dashboard/verwaltung/einstellungen", "/dashboard/uebersicht", "/dashboard/anfragen", "/dashboard/posteingang"] },
-    { email: "manager.demo@example.com", pages: ["/dashboard/uebersicht", "/dashboard/uebersicht?zeitraum=jahr", "/dashboard/rechnungen", "/dashboard/auswertung", "/dashboard/auswertung?bereich=warteschlangen", "/dashboard/auswertung?bereich=automatisierung", "/dashboard/planung", "/dashboard/anfragen", "detail:/dashboard/anfragen?arbeit=completed", "detail:/dashboard/anfragen?erstbearbeitung=needs_review", "/dashboard/posteingang", "/dashboard/posteingang?ansicht=zugeordnet"] },
-    { email: "dispo3.demo@example.com", pages: ["/dashboard/erstbearbeitung", "/dashboard/erstbearbeitung?tab=planung", "/dashboard/erstbearbeitung?tab=alle", "/dashboard/posteingang"] },
+    { email: "admin.demo@example.com", pages: ["/dashboard/bausteine", "/dashboard/verwaltung", "detail:/dashboard/verwaltung", "detail:/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/tarife", "/dashboard/verwaltung/einstellungen", "/dashboard/uebersicht", "/dashboard/anfragen", "/dashboard/posteingang", "/dashboard/kunden"] },
+    { email: "manager.demo@example.com", pages: ["/dashboard/uebersicht", "/dashboard/uebersicht?zeitraum=jahr", "/dashboard/rechnungen", "/dashboard/auswertung", "/dashboard/auswertung?bereich=warteschlangen", "/dashboard/auswertung?bereich=automatisierung", "/dashboard/planung", "/dashboard/anfragen", "detail:/dashboard/anfragen?arbeit=completed", "detail:/dashboard/anfragen?erstbearbeitung=needs_review", "/dashboard/posteingang", "/dashboard/posteingang?ansicht=zugeordnet", "/dashboard/kunden", "detail:/dashboard/kunden"] },
+    { email: "dispo3.demo@example.com", pages: ["/dashboard/erstbearbeitung", "/dashboard/erstbearbeitung?tab=planung", "/dashboard/erstbearbeitung?tab=alle", "/dashboard/posteingang", "/dashboard/kunden"] },
     { email: "technik1.demo@example.com", pages: ["/dashboard/heute", "/dashboard/kalender", "/dashboard/anfragen", "detail:/dashboard/anfragen", "einsatz:/dashboard/heute"] },
   ];
 
@@ -627,6 +627,147 @@ try {
     } finally {
       await admin.from("visits").update({ status: "cancelled", cancellation_reason: "UI-Test" }).eq("request_id", req.id).eq("status", "scheduled");
       await admin.rpc("escalate_callbacks");
+    }
+  }
+
+  console.log("\nKundenstamm: Liste, Anlegen, Bearbeiten, Standort, Verknüpfung in der Anfrage (task-13-10)");
+  {
+    const company = `UI-Test Kunde ${runId}`;
+    const req = await newRequest("customer", { company_name: "Falsch verstanden GmbH", business_email: `falsch-${runId}@example.com` });
+    const noScroll = () => page.eval(`document.documentElement.scrollWidth <= window.innerWidth`);
+    const shot = async (name) => {
+      if (!SHOTS) return;
+      const image = await page.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
+      await writeFile(path.join(SHOTS, name), Buffer.from(image.data, "base64"));
+    };
+    let customerId = null;
+    try {
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      const { data: demoCustomer } = await admin.from("customers").select("company_name, customer_number").eq("is_demo", true).order("customer_number").limit(1).single();
+      await page.open(`${BASE}/dashboard/kunden?suche=${encodeURIComponent(demoCustomer.customer_number)}`);
+      const listed = await page.eval(`({ nav: !!document.querySelector('.dash-nav a[href="/dashboard/kunden"]'), rows: [...document.querySelectorAll("a[href^='/dashboard/kunden/']")].map((a) => a.textContent) })`);
+      check("Dispatcher: „Kunden“ in der Navigation, Suche nach Kundennummer findet den Kunden", listed.nav && listed.rows.some((t) => t.includes(demoCustomer.company_name)), JSON.stringify(listed));
+      await shot("kunden-1440.png");
+
+      await page.open(`${BASE}/dashboard/kunden`);
+      await fillIn(`[...document.querySelectorAll("details.action")].find((d) => d.querySelector("summary").textContent.includes("Kunde anlegen"))`,
+        { company_name: company, business_email: `kunde-${runId}@example.com`, street_house_number: "Testweg 7", postal_code: "68159", city: "Mannheim" });
+      const created = await waitFor(async () => Boolean((await admin.from("customers").select("id").eq("company_name", company).maybeSingle()).data));
+      const { data: customer } = await admin.from("customers").select("id, customer_number").eq("company_name", company).single();
+      customerId = customer?.id ?? null;
+      check("  Kunde anlegen: Kundennummer automatisch, Weiterleitung zur Kundenseite", created && /^K-2\d{4}$/.test(customer.customer_number)
+        && await waitFor(async () => (await page.eval("location.pathname")) === `/dashboard/kunden/${customer.id}`), JSON.stringify(customer));
+
+      await fillIn(`document.querySelector("#stammdaten-title").closest("section")`, { phone_number: "0621 999000" });
+      const saved = await settled(`document.querySelector("#stammdaten-title").closest("section")`, "save-status--success");
+      check("  Stammdaten speichern", Boolean(saved) && (await admin.from("customers").select("phone_number").eq("id", customer.id).single()).data.phone_number === "0621 999000", JSON.stringify(saved));
+      await fillIn(`[...document.querySelectorAll("details.action")].find((d) => d.querySelector("summary").textContent.includes("Standort hinzufügen"))`,
+        { street_house_number: "Lagerstraße 2", postal_code: "68219", city: "Mannheim", label: "Lager" });
+      check("  zweiter Standort", await waitFor(async () => ((await admin.from("customer_sites").select("id").eq("customer_id", customer.id)).data ?? []).length === 2));
+
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+      await page.open(`${BASE}/dashboard/kunden/${customer.id}`);
+      check("  Kundenseite bei 390 px ohne horizontales Scrollen", await noScroll());
+      await shot("kunde-390.png");
+      await page.open(`${BASE}/dashboard/kunden`);
+      check("  Kundenliste bei 390 px ohne horizontales Scrollen", await noScroll());
+
+      // Correction of a request: link with the master data and take company, address and e-mail
+      await page.open(`${BASE}/dashboard/anfragen/${req.id}`);
+      await page.eval(`(() => { const d = [...document.querySelectorAll(".request-customer details.action")][0]; d.open = true; d.querySelector('[name="copy_data"]').checked = true; })()`);
+      await fillIn(`document.querySelector(".request-customer details.action")`, { customer_number: customer.customer_number });
+      const linked = await waitFor(async () => Boolean((await admin.from("requests").select("customer_id").eq("id", req.id).single()).data?.customer_id));
+      const { data: after } = await admin.from("requests").select("customer_id, company_name, business_email, street_house_number").eq("id", req.id).single();
+      check("  Anfrage mit Kunde verknüpft, Firma, Adresse und E-Mail übernommen", linked && after.customer_id === customer.id && after.company_name === company
+        && after.business_email === `kunde-${runId}@example.com` && after.street_house_number === "Testweg 7", JSON.stringify(after));
+      await page.open(`${BASE}/dashboard/anfragen/${req.id}`);
+      check("  Anfrageseite zeigt die Verknüpfung, kein horizontales Scrollen bei 390 px",
+        (await page.eval(`document.querySelector(".request-customer")?.textContent ?? ""`)).includes(customer.customer_number) && await noScroll());
+      await shot("anfrage-kunde-390.png");
+    } finally {
+      if (customerId) await admin.from("customers").delete().eq("id", customerId);
+    }
+  }
+
+  console.log("\nAutovervollständigung in den Suchen (task-12-4)");
+  {
+    const KEYS = { ArrowDown: 40, Enter: 13, Escape: 27 };
+    const press = async (key) => {
+      await page.send("Input.dispatchKeyEvent", { type: "keyDown", key, code: key, windowsVirtualKeyCode: KEYS[key] });
+      await page.send("Input.dispatchKeyEvent", { type: "keyUp", key, code: key, windowsVirtualKeyCode: KEYS[key] });
+    };
+    const typeInto = async (selector, text) => {
+      await page.eval(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); el.focus(); el.select?.(); })()`);
+      await page.send("Input.insertText", { text });
+    };
+    const options = (selector) => page.eval(`(() => { const input = document.querySelector(${JSON.stringify(selector)}); const list = input && document.getElementById(input.getAttribute("aria-controls")); return list && !list.hidden ? [...list.querySelectorAll('[role="option"]')].map((o) => o.textContent) : []; })()`);
+    const suggestAs = async (email, area, q, extra = "") => {
+      const cookies = await loginCookies(email);
+      const response = await fetch(`${BASE}/dashboard/suche/vorschlaege?bereich=${area}&q=${encodeURIComponent(q)}${extra}`, { headers: { cookie: cookies.map((c) => `${c.name}=${c.value}`).join("; ") } });
+      return { status: response.status, items: response.ok ? (await response.json()).items : [] };
+    };
+    const own = await newRequest("suggest", { company_name: `UI-Vorschlag ${runId}` });
+    const { data: foreign } = await admin.from("requests").select("request_number").eq("is_demo", true).neq("dispatcher_id", dispoId).not("request_number", "is", null).limit(1).single();
+    const { data: invoice } = await admin.from("invoices").select("invoice_number").not("invoice_number", "is", null).limit(1).single();
+    const { data: demoCustomer } = await admin.from("customers").select("company_name, customer_number").eq("is_demo", true).eq("is_active", true).order("customer_number").limit(1).single();
+
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.open(`${BASE}/dashboard/anfragen`);
+    await typeInto("#filter-suche", `UI-Vorschlag ${runId}`);
+    const shown = await waitFor(async () => (await options("#filter-suche")).some((t) => t.includes(`UI-Vorschlag ${runId}`)));
+    check("Anfragen: Vorschläge beim Tippen", shown, JSON.stringify(await options("#filter-suche")));
+    await press("Escape");
+    check("  Esc schließt die Liste", (await options("#filter-suche")).length === 0);
+    await press("ArrowDown");
+    await press("Enter");
+    check("  Pfeil runter und Enter öffnen die Anfrage", await waitFor(async () => (await page.eval("location.pathname")) === `/dashboard/anfragen/${own.id}`));
+    check("  Dispatcher: keine Vorschläge zu fremden Anfragen", (await suggestAs(dispoEmail, "anfragen", foreign.request_number)).items.length === 0);
+
+    await page.open(`${BASE}/dashboard/kunden`);
+    await typeInto("#kunden-suche", demoCustomer.customer_number);
+    check("Kunden: Vorschlag mit Kundennummer", await waitFor(async () => (await options("#kunden-suche")).some((t) => t.includes(demoCustomer.company_name))));
+    await page.eval(`document.getElementById(document.querySelector("#kunden-suche").getAttribute("aria-controls")).querySelector('[role="option"]').click()`);
+    check("  Klick öffnet den Kunden", await waitFor(async () => (await page.eval("location.pathname")).startsWith("/dashboard/kunden/")));
+
+    // Fill field: customer number in the Kundenstamm block of a request
+    await page.open(`${BASE}/dashboard/anfragen/${own.id}`);
+    await page.eval(`document.querySelector(".request-customer details.action").open = true`);
+    await typeInto("#field-customer_number", demoCustomer.company_name.slice(0, 12));
+    const filled = await waitFor(async () => (await options("#field-customer_number")).some((t) => t.includes(demoCustomer.customer_number)));
+    const index = (await options("#field-customer_number")).findIndex((t) => t.includes(demoCustomer.customer_number));
+    for (let i = 0; i <= index; i += 1) await press("ArrowDown");
+    await press("Enter");
+    check("Anfrage: Kundennummer per Vorschlag eingetragen, Formular nicht abgeschickt", filled
+      && await waitFor(async () => (await page.eval(`document.querySelector("#field-customer_number").value`)) === demoCustomer.customer_number)
+      && !(await admin.from("requests").select("customer_id").eq("id", own.id).single()).data.customer_id);
+
+    const managerInvoices = await suggestAs("manager.demo@example.com", "rechnungen", invoice.invoice_number.slice(0, 9));
+    check("Rechnungen: Manager erhält Vorschläge mit Link zur Rechnung", managerInvoices.status === 200 && managerInvoices.items.length > 0 && managerInvoices.items.every((i) => i.href.endsWith("#rechnung")), JSON.stringify(managerInvoices).slice(0, 200));
+    check("  Dispatcher: Rechnungsvorschläge abgewiesen (403)", (await suggestAs(dispoEmail, "rechnungen", "RE")).status === 403);
+    check("  Techniker: Kundenvorschläge abgewiesen (403)", (await suggestAs("technik1.demo@example.com", "kunden", "GmbH")).status === 403);
+    const inbox = await suggestAs(dispoEmail, "posteingang", `UI-Vorschlag ${runId}`, `&nachricht=${own.id}`);
+    check("Posteingang: Vorschlag wählt die Anfrage zum Zuordnen aus", inbox.items.some((i) => i.href.includes(`auswahl=${own.id}`) && i.href.startsWith("/dashboard/posteingang?")), JSON.stringify(inbox.items[0]));
+
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+    await page.open(`${BASE}/dashboard/anfragen`);
+    await typeInto("#filter-suche", `UI-Vorschlag ${runId}`);
+    await waitFor(async () => (await options("#filter-suche")).length > 0);
+    check("  390 px: Vorschlagsliste ohne horizontales Scrollen", await page.eval(`document.documentElement.scrollWidth <= window.innerWidth`));
+    if (SHOTS) {
+      const image = await page.send("Page.captureScreenshot", { format: "png" });
+      await writeFile(path.join(SHOTS, "vorschlaege-390.png"), Buffer.from(image.data, "base64"));
+    }
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.open(`${BASE}/dashboard/kunden`);
+    await typeInto("#kunden-suche", "Brauerei");
+    await waitFor(async () => (await options("#kunden-suche")).length > 0);
+    if (SHOTS) {
+      const image = await page.send("Page.captureScreenshot", { format: "png" });
+      await writeFile(path.join(SHOTS, "vorschlaege-1440.png"), Buffer.from(image.data, "base64"));
     }
   }
 

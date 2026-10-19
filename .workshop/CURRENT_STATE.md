@@ -2,7 +2,7 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v11 mit 14 Phasen und 61 Tasks. Fortschritt 94,92 % (Gewicht 168 von 177, 57 von 61 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v12 mit 14 Phasen und 62 Tasks. Fortschritt 96,11 % (Gewicht 173 von 180, 59 von 62 Tasks).
 
 ## Aktive Phase
 
@@ -10,13 +10,17 @@ Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/tele
 
 ## Aktive Aufgabe
 
-Keine Aufgabe in Arbeit. Bereit: `task-13-10` und `task-13-6`.
+Keine Aufgabe in Arbeit. Bereit: `task-13-6`.
 
 Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-12-4` (19.10.2026): Autovervollständigung in den Suchen von Anfragen, Kunden, Rechnungen, Posteingang und im Feld Kundennummer – Baustein `SearchSuggest`, Endpunkt `/dashboard/suche/vorschlaege` mit Rollenprüfung und RLS. test:ui (12 neue Prüfungen), test:unit 85, lint, typecheck, build. Details in `docs/architecture.md` (Autovervollständigung).
+
+`task-13-10` (19.10.2026): Kundenstamm – Tabellen `customers`/`customer_sites` (Migration `20261019120000_customers.sql`), Bereich „Kunden“ für Dispatcher, Manager und Admin (Liste mit Suche, Anlegen, Stammdaten, Standorte, Anfragen), Block „Kundenstamm“ in der Anfrage (verknüpfen, Daten übernehmen), Werkzeug `kunde_finden` (Kundennummer + PLZ) und Prompt-Schritt Bestandskunde; Demo-Seed mit 53 Kunden. test:db 861, test:ui, test:auth, test:unit 85, test:agent, agent:simulate 5/5, demo:verify 19/19, lint, typecheck, build. Lokale Datenbank dabei einmal zurückgesetzt (frühere Testanfragen RIS-2026-03316 bis 03318 entfallen).
 
 `task-13-5` (19.10.2026): Telefonassistent „Mira“ – zehn n8n-Webhooks (`rwAgentTools2026`, inkl. `email_pruefen`) hinter `x-agent-secret` und Cloudflare-Access-Service-Token, Agent in ElevenLabs per `npm run agent:sync` (LLM `claude-sonnet-4-5`, TTS `eleven_v3_conversational` mit Expressive Mode, ASR-Schlüsselwörter aus dem Katalog, `turn_eagerness: patient`). Nach drei Browsertests nachgebessert: E-Mail deterministisch aus der Buchstabierung (`agent_check_email`), ähnliche Baureihen als Rückfrage, Kalender in `servicezeit`, Prompt verschärft. test:db 831, test:agent 23/23 (lokal und Tunnel), agent:simulate 4/4, test:unit 85, lint, typecheck, build. Nicht geprüft: Browsertest nach den letzten Änderungen (ElevenLabs-Guthaben aufgebraucht); Status- und Notfallszenario nur in der Simulation. Einrichtung: `docs/telefonassistent/setup.md`.
 
@@ -74,7 +78,7 @@ Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen de
 
 ## Bereite nächste Aufgaben
 
-`task-13-10` „Kundenstamm und Bestandskunden am Telefon“ (Tabelle customers mit Standorten, Werkzeug kunde_finden) und `task-13-6` „Telefonassistent: Gesprächsauswertung“; danach `task-13-7`, `task-13-8`. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
+`task-13-6` „Telefonassistent: Gesprächsauswertung“; danach `task-13-7`, `task-13-8`. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
 
 ## Blockiert
 
@@ -137,4 +141,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-`task-13-10` (Kundenstamm, Nutzerwunsch) oder `task-13-6` (Gesprächsauswertung). Browsertest von Mira nach den letzten Änderungen nachholen, sobald wieder ElevenLabs-Guthaben vorhanden ist. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); öffentliche Demonstration nicht automatisch deployen.
+`task-13-6` (Gesprächsauswertung). Browsertest von Mira nach den letzten Änderungen nachholen, sobald wieder ElevenLabs-Guthaben vorhanden ist. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); öffentliche Demonstration nicht automatisch deployen.

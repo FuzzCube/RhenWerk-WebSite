@@ -162,6 +162,40 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"customer_sites": {
+                  Row: {
+                    "city": string,"created_at": string,"customer_id": string,"id": string,"is_active": boolean,"is_demo": boolean,"label": string | null,"postal_code": string,"street_house_number": string,"updated_at": string,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "city": string,"created_at"?: string,"customer_id": string,"id"?: string,"is_active"?: boolean,"is_demo"?: boolean,"label"?: string | null,"postal_code": string,"street_house_number": string,"updated_at"?: string,"version"?: number
+                  }
+                  Update: {
+                    "city"?: string,"created_at"?: string,"customer_id"?: string,"id"?: string,"is_active"?: boolean,"is_demo"?: boolean,"label"?: string | null,"postal_code"?: string,"street_house_number"?: string,"updated_at"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "customer_sites_customer_id_fkey"
+      columns: ["customer_id"]
+isOneToOne: false
+      referencedRelation: "customers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"customers": {
+                  Row: {
+                    "business_email": string | null,"company_name": string,"contact_name": string | null,"created_at": string,"customer_number": string,"id": string,"is_active": boolean,"is_demo": boolean,"notes": string | null,"phone_number": string | null,"updated_at": string,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "business_email"?: string | null,"company_name": string,"contact_name"?: string | null,"created_at"?: string,"customer_number": string,"id"?: string,"is_active"?: boolean,"is_demo"?: boolean,"notes"?: string | null,"phone_number"?: string | null,"updated_at"?: string,"version"?: number
+                  }
+                  Update: {
+                    "business_email"?: string | null,"company_name"?: string,"contact_name"?: string | null,"created_at"?: string,"customer_number"?: string,"id"?: string,"is_active"?: boolean,"is_demo"?: boolean,"notes"?: string | null,"phone_number"?: string | null,"updated_at"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"employee_availability": {
                   Row: {
                     "created_at": string,"employee_id": string,"ends_at": string | null,"id": string,"kind": Database["public"]['Enums']["availability_kind"],"label": string | null,"local_end": string | null,"local_start": string | null,"starts_at": string | null,"updated_at": string,"valid_from": string | null,"valid_to": string | null,"weekday": number | null
@@ -374,14 +408,14 @@ isOneToOne: false
                   ]
                 },"phone_calls": {
                   Row: {
-                    "analysis": Json | null,"callback_done_at": string | null,"callback_done_by": string | null,"callback_needed": boolean,"callback_number": string | null,"callback_reason": string | null,"callback_urgent": boolean,"caller_number": string | null,"category": string | null,"checked_email": string | null,"conversation_id": string,"cost_cents": number | null,"created_at": string,"duration_seconds": number | null,"ended_at": string | null,"forwarded": boolean,"id": string,"in_service_hours": boolean | null,"is_demo": boolean,"request_id": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"] | null,"sentiment": string | null,"started_at": string,"summary": string | null,"transcript": string | null,"transcript_deleted_at": string | null,"updated_at": string,"urgency": Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis": Json | null,"callback_done_at": string | null,"callback_done_by": string | null,"callback_needed": boolean,"callback_number": string | null,"callback_reason": string | null,"callback_urgent": boolean,"caller_number": string | null,"category": string | null,"checked_email": string | null,"conversation_id": string,"cost_cents": number | null,"created_at": string,"customer_id": string | null,"customer_site_id": string | null,"duration_seconds": number | null,"ended_at": string | null,"forwarded": boolean,"id": string,"in_service_hours": boolean | null,"is_demo": boolean,"request_id": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"] | null,"sentiment": string | null,"started_at": string,"summary": string | null,"transcript": string | null,"transcript_deleted_at": string | null,"updated_at": string,"urgency": Database["public"]['Enums']["customer_urgency"] | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"checked_email"?: string | null,"conversation_id": string,"cost_cents"?: number | null,"created_at"?: string,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"checked_email"?: string | null,"conversation_id": string,"cost_cents"?: number | null,"created_at"?: string,"customer_id"?: string | null,"customer_site_id"?: string | null,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
                   }
                   Update: {
-                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"checked_email"?: string | null,"conversation_id"?: string,"cost_cents"?: number | null,"created_at"?: string,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis"?: Json | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"checked_email"?: string | null,"conversation_id"?: string,"cost_cents"?: number | null,"created_at"?: string,"customer_id"?: string | null,"customer_site_id"?: string | null,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
                   }
                   Relationships: [
                     {
@@ -389,6 +423,18 @@ isOneToOne: false
       columns: ["callback_done_by"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "phone_calls_customer_id_fkey"
+      columns: ["customer_id"]
+isOneToOne: false
+      referencedRelation: "customers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "phone_calls_customer_site_id_fkey"
+      columns: ["customer_site_id"]
+isOneToOne: false
+      referencedRelation: "customer_sites"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "phone_calls_request_id_fkey"
@@ -472,17 +518,29 @@ isOneToOne: false
                   ]
                 },"requests": {
                   Row: {
-                    "business_email": string,"cancellation_reason": string | null,"cancelled_at": string | null,"city": string,"company_name": string,"completed_at": string | null,"completion_summary": string | null,"contact_name": string,"created_at": string,"customer_number": string | null,"customer_urgency": Database["public"]['Enums']["customer_urgency"],"description": string,"dispatcher_id": string | null,"emergency_sla_claimed": boolean | null,"equipment_kind": Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at": string | null,"human_review_required": boolean,"id": string,"intake_completed_at": string | null,"intake_mode": Database["public"]['Enums']["intake_mode"] | null,"intake_status": Database["public"]['Enums']["intake_status"],"is_demo": boolean,"machine_number": string | null,"manual_minutes_baseline": number | null,"manufacturer": string | null,"model_type": string | null,"phone_number": string,"postal_code": string,"priority": Database["public"]['Enums']["request_priority"] | null,"raw_payload": NonNullable<Json>,"rejection_reason": string | null,"request_number": string,"requested_visit_date": string,"response_due_at": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"],"service_due_at": string | null,"service_kind": Database["public"]['Enums']["service_kind"],"site_label": string | null,"sla_contract_number": string | null,"sla_verified": boolean,"source": string,"source_event_key": string,"street_house_number": string,"technician_id": string | null,"updated_at": string,"version": number,"work_status": Database["public"]['Enums']["work_status"]
+                    "business_email": string,"cancellation_reason": string | null,"cancelled_at": string | null,"city": string,"company_name": string,"completed_at": string | null,"completion_summary": string | null,"contact_name": string,"created_at": string,"customer_id": string | null,"customer_number": string | null,"customer_site_id": string | null,"customer_urgency": Database["public"]['Enums']["customer_urgency"],"description": string,"dispatcher_id": string | null,"emergency_sla_claimed": boolean | null,"equipment_kind": Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at": string | null,"human_review_required": boolean,"id": string,"intake_completed_at": string | null,"intake_mode": Database["public"]['Enums']["intake_mode"] | null,"intake_status": Database["public"]['Enums']["intake_status"],"is_demo": boolean,"machine_number": string | null,"manual_minutes_baseline": number | null,"manufacturer": string | null,"model_type": string | null,"phone_number": string,"postal_code": string,"priority": Database["public"]['Enums']["request_priority"] | null,"raw_payload": NonNullable<Json>,"rejection_reason": string | null,"request_number": string,"requested_visit_date": string,"response_due_at": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"],"service_due_at": string | null,"service_kind": Database["public"]['Enums']["service_kind"],"site_label": string | null,"sla_contract_number": string | null,"sla_verified": boolean,"source": string,"source_event_key": string,"street_house_number": string,"technician_id": string | null,"updated_at": string,"version": number,"work_status": Database["public"]['Enums']["work_status"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "business_email": string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"city": string,"company_name": string,"completed_at"?: string | null,"completion_summary"?: string | null,"contact_name": string,"created_at"?: string,"customer_number"?: string | null,"customer_urgency": Database["public"]['Enums']["customer_urgency"],"description": string,"dispatcher_id"?: string | null,"emergency_sla_claimed"?: boolean | null,"equipment_kind": Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at"?: string | null,"human_review_required"?: boolean,"id"?: string,"intake_completed_at"?: string | null,"intake_mode"?: Database["public"]['Enums']["intake_mode"] | null,"intake_status"?: Database["public"]['Enums']["intake_status"],"is_demo"?: boolean,"machine_number"?: string | null,"manual_minutes_baseline"?: number | null,"manufacturer"?: string | null,"model_type"?: string | null,"phone_number": string,"postal_code": string,"priority"?: Database["public"]['Enums']["request_priority"] | null,"raw_payload": NonNullable<Json>,"rejection_reason"?: string | null,"request_number": string,"requested_visit_date": string,"response_due_at"?: string | null,"safety_risk": Database["public"]['Enums']["safety_risk"],"service_due_at"?: string | null,"service_kind": Database["public"]['Enums']["service_kind"],"site_label"?: string | null,"sla_contract_number"?: string | null,"sla_verified"?: boolean,"source": string,"source_event_key": string,"street_house_number": string,"technician_id"?: string | null,"updated_at"?: string,"version"?: number,"work_status"?: Database["public"]['Enums']["work_status"]
+                    "business_email": string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"city": string,"company_name": string,"completed_at"?: string | null,"completion_summary"?: string | null,"contact_name": string,"created_at"?: string,"customer_id"?: string | null,"customer_number"?: string | null,"customer_site_id"?: string | null,"customer_urgency": Database["public"]['Enums']["customer_urgency"],"description": string,"dispatcher_id"?: string | null,"emergency_sla_claimed"?: boolean | null,"equipment_kind": Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at"?: string | null,"human_review_required"?: boolean,"id"?: string,"intake_completed_at"?: string | null,"intake_mode"?: Database["public"]['Enums']["intake_mode"] | null,"intake_status"?: Database["public"]['Enums']["intake_status"],"is_demo"?: boolean,"machine_number"?: string | null,"manual_minutes_baseline"?: number | null,"manufacturer"?: string | null,"model_type"?: string | null,"phone_number": string,"postal_code": string,"priority"?: Database["public"]['Enums']["request_priority"] | null,"raw_payload": NonNullable<Json>,"rejection_reason"?: string | null,"request_number": string,"requested_visit_date": string,"response_due_at"?: string | null,"safety_risk": Database["public"]['Enums']["safety_risk"],"service_due_at"?: string | null,"service_kind": Database["public"]['Enums']["service_kind"],"site_label"?: string | null,"sla_contract_number"?: string | null,"sla_verified"?: boolean,"source": string,"source_event_key": string,"street_house_number": string,"technician_id"?: string | null,"updated_at"?: string,"version"?: number,"work_status"?: Database["public"]['Enums']["work_status"]
                   }
                   Update: {
-                    "business_email"?: string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"city"?: string,"company_name"?: string,"completed_at"?: string | null,"completion_summary"?: string | null,"contact_name"?: string,"created_at"?: string,"customer_number"?: string | null,"customer_urgency"?: Database["public"]['Enums']["customer_urgency"],"description"?: string,"dispatcher_id"?: string | null,"emergency_sla_claimed"?: boolean | null,"equipment_kind"?: Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at"?: string | null,"human_review_required"?: boolean,"id"?: string,"intake_completed_at"?: string | null,"intake_mode"?: Database["public"]['Enums']["intake_mode"] | null,"intake_status"?: Database["public"]['Enums']["intake_status"],"is_demo"?: boolean,"machine_number"?: string | null,"manual_minutes_baseline"?: number | null,"manufacturer"?: string | null,"model_type"?: string | null,"phone_number"?: string,"postal_code"?: string,"priority"?: Database["public"]['Enums']["request_priority"] | null,"raw_payload"?: NonNullable<Json>,"rejection_reason"?: string | null,"request_number"?: string,"requested_visit_date"?: string,"response_due_at"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"],"service_due_at"?: string | null,"service_kind"?: Database["public"]['Enums']["service_kind"],"site_label"?: string | null,"sla_contract_number"?: string | null,"sla_verified"?: boolean,"source"?: string,"source_event_key"?: string,"street_house_number"?: string,"technician_id"?: string | null,"updated_at"?: string,"version"?: number,"work_status"?: Database["public"]['Enums']["work_status"]
+                    "business_email"?: string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"city"?: string,"company_name"?: string,"completed_at"?: string | null,"completion_summary"?: string | null,"contact_name"?: string,"created_at"?: string,"customer_id"?: string | null,"customer_number"?: string | null,"customer_site_id"?: string | null,"customer_urgency"?: Database["public"]['Enums']["customer_urgency"],"description"?: string,"dispatcher_id"?: string | null,"emergency_sla_claimed"?: boolean | null,"equipment_kind"?: Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at"?: string | null,"human_review_required"?: boolean,"id"?: string,"intake_completed_at"?: string | null,"intake_mode"?: Database["public"]['Enums']["intake_mode"] | null,"intake_status"?: Database["public"]['Enums']["intake_status"],"is_demo"?: boolean,"machine_number"?: string | null,"manual_minutes_baseline"?: number | null,"manufacturer"?: string | null,"model_type"?: string | null,"phone_number"?: string,"postal_code"?: string,"priority"?: Database["public"]['Enums']["request_priority"] | null,"raw_payload"?: NonNullable<Json>,"rejection_reason"?: string | null,"request_number"?: string,"requested_visit_date"?: string,"response_due_at"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"],"service_due_at"?: string | null,"service_kind"?: Database["public"]['Enums']["service_kind"],"site_label"?: string | null,"sla_contract_number"?: string | null,"sla_verified"?: boolean,"source"?: string,"source_event_key"?: string,"street_house_number"?: string,"technician_id"?: string | null,"updated_at"?: string,"version"?: number,"work_status"?: Database["public"]['Enums']["work_status"]
                   }
                   Relationships: [
                     {
+      foreignKeyName: "requests_customer_id_fkey"
+      columns: ["customer_id"]
+isOneToOne: false
+      referencedRelation: "customers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "requests_customer_site_id_fkey"
+      columns: ["customer_site_id"]
+isOneToOne: false
+      referencedRelation: "customer_sites"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "requests_dispatcher_id_fkey"
       columns: ["dispatcher_id"]
 isOneToOne: false
@@ -730,6 +788,26 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"add_customer_site":
+{ Args: { "city": string,"customer_id": string,"label"?: string,"postal_code": string,"street_house_number": string }; Returns: {
+              "city": string,
+"created_at": string,
+"customer_id": string,
+"id": string,
+"is_active": boolean,
+"is_demo": boolean,
+"label": string | null,
+"postal_code": string,
+"street_house_number": string,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "customer_sites"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "add_visit_photo":
 { Args: { "expected_version": number,"file_name": string,"mime_type": string,"size_bytes": number,"storage_path": string,"visit_id": string }; Returns: {
               "bucket": string,
@@ -938,6 +1016,9 @@ isOneToOne: false
 "agent_create_request":
 { Args: { "call_id": string,"fields": Json,"termin_beginn"?: string }; Returns: Json
                            },
+"agent_find_customer":
+{ Args: { "call_id": string,"kundennummer": string,"plz": string }; Returns: Json
+                           },
 "agent_find_request":
 { Args: { "call_id": string,"firma"?: string,"nummer"?: string,"plz"?: string,"strasse"?: string }; Returns: Json
                            },
@@ -994,7 +1075,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1090,7 +1173,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1146,7 +1231,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1226,7 +1313,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1285,7 +1374,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1344,7 +1435,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1528,7 +1621,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1570,6 +1665,27 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"create_customer":
+{ Args: { "business_email"?: string,"city": string,"company_name": string,"contact_name"?: string,"customer_number"?: string,"notes"?: string,"phone_number"?: string,"postal_code": string,"site_label"?: string,"street_house_number": string }; Returns: {
+              "business_email": string | null,
+"company_name": string,
+"contact_name": string | null,
+"created_at": string,
+"customer_number": string,
+"id": string,
+"is_active": boolean,
+"is_demo": boolean,
+"notes": string | null,
+"phone_number": string | null,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "customers"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -1656,7 +1772,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1712,7 +1830,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1759,6 +1879,9 @@ isOneToOne: false
       } },
 "demo_seed_apply":
 { Args: { "payload": Json }; Returns: Json
+                           },
+"demo_seed_customers":
+{ Args: { "customers": Json }; Returns: Json
                            },
 "demo_seed_purge":
 { Args: Record<PropertyKey, never>; Returns: Json
@@ -1815,7 +1938,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -1932,6 +2057,64 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"link_request_customer":
+{ Args: { "copy_data"?: boolean,"customer_number": string,"expected_version": number,"request_id": string,"site_id"?: string }; Returns: {
+              "business_email": string,
+"cancellation_reason": string | null,
+"cancelled_at": string | null,
+"city": string,
+"company_name": string,
+"completed_at": string | null,
+"completion_summary": string | null,
+"contact_name": string,
+"created_at": string,
+"customer_id": string | null,
+"customer_number": string | null,
+"customer_site_id": string | null,
+"customer_urgency": Database["public"]['Enums']["customer_urgency"],
+"description": string,
+"dispatcher_id": string | null,
+"emergency_sla_claimed": boolean | null,
+"equipment_kind": Database["public"]['Enums']["equipment_kind"],
+"first_substantive_response_at": string | null,
+"human_review_required": boolean,
+"id": string,
+"intake_completed_at": string | null,
+"intake_mode": Database["public"]['Enums']["intake_mode"] | null,
+"intake_status": Database["public"]['Enums']["intake_status"],
+"is_demo": boolean,
+"machine_number": string | null,
+"manual_minutes_baseline": number | null,
+"manufacturer": string | null,
+"model_type": string | null,
+"phone_number": string,
+"postal_code": string,
+"priority": Database["public"]['Enums']["request_priority"] | null,
+"raw_payload": NonNullable<Json>,
+"rejection_reason": string | null,
+"request_number": string,
+"requested_visit_date": string,
+"response_due_at": string | null,
+"safety_risk": Database["public"]['Enums']["safety_risk"],
+"service_due_at": string | null,
+"service_kind": Database["public"]['Enums']["service_kind"],
+"site_label": string | null,
+"sla_contract_number": string | null,
+"sla_verified": boolean,
+"source": string,
+"source_event_key": string,
+"street_house_number": string,
+"technician_id": string | null,
+"updated_at": string,
+"version": number,
+"work_status": Database["public"]['Enums']["work_status"]
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "list_incomplete_incoming":
 { Args: { "batch_limit"?: number }; Returns: Json[]
                            },
@@ -1961,7 +2144,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -2057,7 +2242,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -2245,7 +2432,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -2325,7 +2514,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -2485,7 +2676,9 @@ isOneToOne: false
 "completion_summary": string | null,
 "contact_name": string,
 "created_at": string,
+"customer_id": string | null,
 "customer_number": string | null,
+"customer_site_id": string | null,
 "customer_urgency": Database["public"]['Enums']["customer_urgency"],
 "description": string,
 "dispatcher_id": string | null,
@@ -2697,6 +2890,47 @@ isOneToOne: false
               "ends_at": string,"starts_at": string,"technician_id": string
             }[]
                            },
+"update_customer":
+{ Args: { "business_email"?: string,"company_name": string,"contact_name"?: string,"customer_id": string,"expected_version": number,"is_active"?: boolean,"notes"?: string,"phone_number"?: string }; Returns: {
+              "business_email": string | null,
+"company_name": string,
+"contact_name": string | null,
+"created_at": string,
+"customer_number": string,
+"id": string,
+"is_active": boolean,
+"is_demo": boolean,
+"notes": string | null,
+"phone_number": string | null,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "customers"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"update_customer_site":
+{ Args: { "city": string,"expected_version": number,"is_active"?: boolean,"label"?: string,"postal_code": string,"site_id": string,"street_house_number": string }; Returns: {
+              "city": string,
+"created_at": string,
+"customer_id": string,
+"id": string,
+"is_active": boolean,
+"is_demo": boolean,
+"label": string | null,
+"postal_code": string,
+"street_house_number": string,
+"updated_at": string,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "customer_sites"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "update_message_draft":
 { Args: { "body_text"?: string,"expected_version": number,"message_id": string,"subject"?: string,"to_address"?: string }; Returns: {
               "approved_at": string | null,

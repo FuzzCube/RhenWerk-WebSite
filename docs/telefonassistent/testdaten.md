@@ -21,6 +21,18 @@ Feste Demo-Daten für Tests des Telefonassistenten. Die Verträge und ihre Kunde
 | SLA-2020-433 | Viernheimer Metallverarbeitung GmbH | Max-Planck-Ring 6, 68519 Viernheim | ja | abgelaufen am 30.06.2026 | `abgelaufen` |
 | SLA-2026-990 | Lampertheimer Recycling GmbH | Kanalstraße 40, 68623 Lampertheim | ja | erst ab 01.01.2027 | `noch_nicht_gueltig` |
 
+## Bestandskunden (task-13-10)
+
+Die Vertragskunden haben feste Kundennummern (`K-10000` + 7 × Position in `SERVICE_CONTRACTS`); weitere Demo-Kunden mit Nummer stehen unter `/dashboard/kunden`. `kunde_finden` braucht die Kundennummer und die PLZ eines aktiven Standorts.
+
+| Kundennummer | Firma | Standort | Erwartung |
+| --- | --- | --- | --- |
+| K-10000 | Neckartal Brauerei GmbH | Bergheimer Straße 120, 69115 Heidelberg | Treffer mit PLZ 69115 |
+| K-10007 | Kurpfalz Präzisionsteile KG | Rhenaniastraße 30, 68219 Mannheim | Treffer mit PLZ 68219 |
+| K-10014 | Rheinhafen Logistikzentrum GmbH & Co. KG | Hafenstraße 12, 68159 Mannheim | Treffer mit PLZ 68159 |
+| K-10000 mit PLZ 68159 | – | – | kein Treffer (PLZ passt nicht) |
+| K-99999 | – | – | kein Treffer |
+
 ## Negativfälle
 
 | Eingabe | Erwartete Prüfung |

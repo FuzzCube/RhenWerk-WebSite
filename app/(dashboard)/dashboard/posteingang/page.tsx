@@ -3,6 +3,7 @@ import Link from "next/link";
 import { archiveMessage, createRequestFromMessage, linkMessage, replyToMessage, restoreMessage } from "@/app/(dashboard)/dashboard/posteingang/actions";
 import { RequestFields } from "@/components/dashboard/request-fields";
 import { SaveForm, SelectField, HiddenField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
+import { SearchSuggest } from "@/components/dashboard/ui/search-suggest";
 import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { Icon } from "@/components/ui";
@@ -50,6 +51,8 @@ export default async function InboxPage({ searchParams }: Props) {
   const selectedId = view === "zugeordnet" ? undefined : UUID.test(requested) ? requested : list.rows[0]?.id;
   const selected = selectedId ? await getInboxMessage(selectedId) : null;
   const term = one(params.suche);
+  // Request chosen from the search suggestions (task-12-4): an explicit choice, so it is preselected
+  const chosen = UUID.test(one(params.auswahl)) ? one(params.auswahl) : null;
   const candidates = selected && !selected.request && !selected.archived ? await linkCandidates(selected.from_address, term) : [];
   // Just archived (undo offered once on the next page)
   const justSent = view === "offen" && one(params.gesendet) === "1" && !!selected && !selected.request;
@@ -143,7 +146,7 @@ export default async function InboxPage({ searchParams }: Props) {
                       ))}
                     </ul>
                   </div>
-                  {selected ? <MessageView message={selected} candidates={candidates} term={term} names={names} senderName={employee.displayName} justSent={justSent} owner={allInboxes && selected.inbox_dispatcher_id ? names.get(selected.inbox_dispatcher_id) ?? null : null} /> : (
+                  {selected ? <MessageView message={selected} candidates={candidates} term={term} chosen={chosen} names={names} senderName={employee.displayName} justSent={justSent} owner={allInboxes && selected.inbox_dispatcher_id ? names.get(selected.inbox_dispatcher_id) ?? null : null} /> : (
                     <div className="side-page__list"><EmptyState title="E-Mail nicht gefunden oder bereits zugeordnet." action={<Link className="rw-button-secondary" href={BASE}>Zum Posteingang</Link>} /></div>
                   )}
                 </div>
@@ -195,7 +198,7 @@ function Conversation({ entries }: { entries: ConversationEntry[] }) {
   );
 }
 
-function MessageView({ message, candidates, term, owner, names, senderName, justSent }: { message: InboxMessage; candidates: Awaited<ReturnType<typeof linkCandidates>>; term: string; owner: string | null; names: Map<string, string>; senderName: string; justSent: boolean }) {
+function MessageView({ message, candidates, term, chosen, owner, names, senderName, justSent }: { message: InboxMessage; candidates: Awaited<ReturnType<typeof linkCandidates>>; term: string; chosen: string | null; owner: string | null; names: Map<string, string>; senderName: string; justSent: boolean }) {
   const today = berlinDayKey(new Date());
   // Rule-based prefill (task-10-10); recognised fields carry a hint so they are checked before saving
   const found = message.request || message.archived ? {} : extractRequestFields({ subject: message.subject, body: message.body_text, fromAddress: message.from_address, today });
@@ -205,7 +208,8 @@ function MessageView({ message, candidates, term, owner, names, senderName, just
   // Preselect only the single request of the same sender address; a domain or search hit is never preselected
   // (task-12-2), and the empty first entry undoes a choice
   const senderMatches = candidates.filter((row) => row.match === "sender");
-  const preselected = senderMatches.length === 1 ? senderMatches[0] : null;
+  const picked = chosen ? candidates.find((row) => row.id === chosen) ?? null : null;
+  const preselected = picked ?? (senderMatches.length === 1 ? senderMatches[0] : null);
   return (
     <article className="rw-card rw-card--list rw-card--flush rw-card--neutral inbox-mail" id="nachricht" aria-labelledby="mail-title">
       <header className="rw-card__header inbox-mail__head">
@@ -249,7 +253,7 @@ function MessageView({ message, candidates, term, owner, names, senderName, just
                 <form className="inbox-search" method="get" action="/dashboard/posteingang" role="search" aria-label="Anfrage suchen">
                   <input type="hidden" name="nachricht" value={message.id} />
                   <label className="sr-only" htmlFor="inbox-suche">Anfrage suchen</label>
-                  <input id="inbox-suche" className="rw-input" name="suche" type="search" defaultValue={search} placeholder="Anfragenummer, Firma, Ort oder E-Mail" />
+                  <SearchSuggest area="posteingang" message={message.id} id="inbox-suche" className="rw-input" name="suche" defaultValue={search} placeholder="Anfragenummer, Firma, Ort oder E-Mail" />
                   <button className="rw-button-secondary" type="submit">Suchen</button>
                 </form>
                 {candidates.length === 0 ? (
@@ -262,7 +266,7 @@ function MessageView({ message, candidates, term, owner, names, senderName, just
                       label="Anfrage"
                       required
                       placeholder="Anfrage wählen …"
-                      hint={preselected ? "Vorgeschlagen: Anfrage derselben Absenderadresse – bitte prüfen." : "Nichts vorausgewählt – nur zuordnen, wenn die Anfrage sicher passt."}
+                      hint={picked ? "Aus der Suche gewählt – bitte prüfen." : preselected ? "Vorgeschlagen: Anfrage derselben Absenderadresse – bitte prüfen." : "Nichts vorausgewählt – nur zuordnen, wenn die Anfrage sicher passt."}
                       defaultValue={preselected ? `${preselected.id}:${preselected.version}` : undefined}
                       options={candidates.map((row) => ({ value: `${row.id}:${row.version}`, label: `${row.request_number ?? "ohne Nummer"} · ${row.company_name} · ${row.city} · ${formatDateTime(row.created_at).slice(0, 10)} · ${MATCH_LABEL[row.match]}` }))}
                     />

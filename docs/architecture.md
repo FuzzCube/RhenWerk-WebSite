@@ -240,6 +240,14 @@ Daten: `lib/dashboard/admin.ts` (Profile, Tarife, Verfügbarkeiten, Einstellunge
 
 `/dashboard/anfragen/neu` (Dispatcher, Manager, Admin), verlinkt als „Telefonische Anfrage“ im Kopf von Anfragen (auf dem Telefon nur das Symbol) und Erstbearbeitung. Dieselben Felder wie im Posteingang plus Standort (gemeinsamer Baustein `components/dashboard/request-fields.tsx`, Prüfung `lib/request-fields.ts`, beides auch im Posteingang genutzt). Manager und Admin wählen optional den Dispatcher („Automatisch (geringste Auslastung)“ als Standard), Dispatcher erhalten die Anfrage selbst. „Eingangsbestätigung … senden“ ist vorausgewählt. Die Seite erzeugt beim Laden eine `submission_id`; `create_phone_request` legt die Anfrage damit idempotent an (Doppelklick, Wiederholung), danach Weiterleitung auf die Anfrageseite. Die E-Mail-Adresse bleibt Pflicht (Bestätigung, Rückfragen, Rechnungen); eine optionale Adresse wäre eine eigene Änderung an Versand und Rechnungen.
 
+## Kunden (task-13-10)
+
+Bereich `/dashboard/kunden` für Dispatcher, Manager und Admin (`lib/auth/roles.ts`): Liste mit Ansichten aktiv/inaktiv/alle und Suche (Nummer, Firma, Kontakt, E-Mail, Straße, PLZ, Ort; `lib/dashboard/customers.ts`), Anlegen (Nummer automatisch ab K-20000), Kundenseite mit Stammdaten, Standorten und verknüpften Anfragen (`app/(dashboard)/dashboard/kunden/`). Änderungen über `create_customer`, `update_customer`, `add_customer_site`, `update_customer_site` mit Versionsprüfung; deaktivieren statt löschen. Die Anfrageseite zeigt im Abschnitt Kontakt den Block „Kundenstamm“ (`link_request_customer`: verknüpfen, Standort wählen, entfernen, Daten übernehmen), etwa um Fehler des Telefonassistenten zu korrigieren. Anzahl und Liste der Anfragen folgen den Anfrage-Rechten (ein Dispatcher sieht nur eigene).
+
+## Autovervollständigung (task-12-4)
+
+Baustein `components/dashboard/ui/search-suggest.tsx` (ARIA-Combobox: ab 2 Zeichen, 200 ms Verzögerung, bis 8 Vorschläge, Pfeiltasten/Enter/Esc, Statusansage für Screenreader) in den Suchen von Anfragen, Kunden, Rechnungen und Posteingang sowie als `SuggestField` im Feld Kundennummer des Blocks Kundenstamm. Enter ohne markierten Vorschlag sendet die Suche wie bisher (funktioniert ohne JavaScript). Vorschläge kommen von `GET /dashboard/suche/vorschlaege?bereich=…&q=…` (`lib/dashboard/suggestions.ts`): Rolle des Bereichs geprüft (sonst 403), Zeilen mit den Rechten des Nutzers (RLS) und denselben Suchspalten wie die Listen, also nie mehr als die Liste. Auswahl öffnet Anfrage, Kunde oder Rechnung (Anfrage `#rechnung`); im Posteingang wählt sie die Anfrage zum Zuordnen vor (`auswahl`), im Feld Kundennummer trägt sie die Nummer ein.
+
 ## Design-Überarbeitung (task-10-3)
 
 Vorlage ist der Claude-Design-Canvas „RheinWerk Übersicht Redesign“ (Spezifikation und Zustände als Regelwerk). Farben, Schrift und Abstände kommen ausschließlich aus den RheinWerk-Tokens (`_ds/…/tokens`).

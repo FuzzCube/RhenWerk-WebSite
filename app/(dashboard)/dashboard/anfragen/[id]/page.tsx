@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { confirmHold, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
+import { confirmHold, linkCustomer, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
 import { availableActions, DraftActions, RequestActions } from "@/components/dashboard/request-actions";
-import { HiddenField, SaveForm, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
+import { CheckboxField, HiddenField, SaveForm, SelectField, SuggestField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
@@ -46,7 +46,7 @@ export default async function RequestPage({ params }: Props) {
   const heroVisit = technician ? ownNextVisit(detail.visits, employee.id) : undefined;
   const render: Record<SectionId, () => ReactNode> = {
     zusammenfassung: () => <Summary detail={detail} />,
-    kontakt: () => <Contact detail={detail} dispatcher={technician ? person(request.dispatcher_id, "nicht zugewiesen") : undefined} />,
+    kontakt: () => <><Contact detail={detail} dispatcher={technician ? person(request.dispatcher_id, "nicht zugewiesen") : undefined} />{!technician && <CustomerLink detail={detail} />}</>,
     anlage: () => <Equipment detail={detail} technical={technician} />,
     erstbearbeitung: () => <Intake detail={detail} person={person} />,
     korrespondenz: () => <Correspondence detail={detail} person={person} editable={employee.role !== "technician"} />,
@@ -350,6 +350,42 @@ function Contact({ detail, dispatcher }: { detail: RequestDetail; dispatcher?: s
       <p className="rw-card__note">{r.business_email}</p>
       {dispatcher && <p className="request-contact__internal">Intern: <strong>{dispatcher}</strong> (Dispatcher)</p>}
     </>
+  );
+}
+
+// Link to the customer master data (task-13-10): shows the linked customer and lets staff link, change or remove it
+function CustomerLink({ detail }: { detail: RequestDetail }) {
+  const r = detail.request;
+  const customer = detail.customer;
+  const differs = customer && (customer.company_name !== r.company_name || (customer.site && (customer.site.street_house_number !== r.street_house_number || customer.site.postal_code !== r.postal_code)));
+  return (
+    <div className="request-customer">
+      <h3 className="request-customer__title">Kundenstamm</h3>
+      {customer ? (
+        <p className="rw-card__note">
+          Verknüpft mit <Link href={`/dashboard/kunden/${customer.id}`}><span className="mono">{customer.customer_number}</span> {customer.company_name}</Link>
+          {customer.site ? <>, Standort {customer.site.street_house_number}, {customer.site.city}</> : ", ohne Standort"}.
+          {differs && <> Die Angaben der Anfrage weichen vom Kundenstamm ab.</>}
+        </p>
+      ) : (
+        <p className="rw-card__note">Nicht mit dem Kundenstamm verknüpft.{r.customer_number && <> Angegebene Kundennummer: <span className="mono">{r.customer_number}</span>.</>}</p>
+      )}
+      <details className="action">
+        <summary>{customer ? "Verknüpfung ändern" : "Mit Kunden verknüpfen"}</summary>
+        <SaveForm action={linkCustomer} submitLabel={customer ? "Speichern" : "Verknüpfen"}>
+          <HiddenField name="request_id" value={r.id} />
+          <HiddenField name="version" value={r.version} />
+          <div className="form-grid">
+            <SuggestField area="kundennummer" name="customer_number" label="Kundennummer" defaultValue={customer?.customer_number ?? r.customer_number ?? ""} hint="Firma, Nummer oder Ort tippen und Vorschlag wählen. Leer lassen, um die Verknüpfung zu entfernen." />
+            {customer && customer.sites.length > 1 && (
+              <SelectField name="site_id" label="Standort" defaultValue={customer.site?.id ?? ""} emptyLabel="Automatisch (Adresse der Anfrage)"
+                options={customer.sites.map((site) => ({ value: site.id, label: `${site.street_house_number}, ${site.postal_code} ${site.city}${site.label ? ` (${site.label})` : ""}` }))} />
+            )}
+          </div>
+          <CheckboxField name="copy_data" label="Firma, Adresse und E-Mail aus dem Kundenstamm in die Anfrage übernehmen" />
+        </SaveForm>
+      </details>
+    </div>
   );
 }
 

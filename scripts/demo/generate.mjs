@@ -160,6 +160,14 @@ export function generateDemoData({ anchor, now, staff, liveVisits = [] }) {
     };
   });
 
+  // Customer master data (task-13-10): customers with a number, one site each; requests are linked by number in
+  // demo_seed_customers. Built from the generated customers only, so the random sequence stays the same.
+  out.customers = customers.filter((c) => c.customer_number).map((c) => ({
+    customer_number: c.customer_number, company_name: c.company_name, contact_name: c.contact_name,
+    business_email: c.business_email, phone_number: c.phone_number,
+    sites: [{ label: c.site_label, street_house_number: c.street_house_number, postal_code: c.postal_code, city: c.city }],
+  }));
+
   let requestIndex = 0;
   let dispatcherCursor = 0;
 

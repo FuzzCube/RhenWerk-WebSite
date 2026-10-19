@@ -22,6 +22,8 @@ export const EVENT_LABELS: Record<string, string> = {
   request_created_from_message: "Anfrage aus E-Mail angelegt",
   request_created_by_phone: "Telefonische Anfrage angelegt",
   request_created_by_agent: "Anfrage vom Telefonassistenten angelegt",
+  customer_linked: "Mit dem Kundenstamm verknüpft",
+  customer_unlinked: "Verknüpfung mit dem Kundenstamm entfernt",
   visit_hold_created: "Termin vom Telefonassistenten vorgemerkt",
   visit_hold_confirmed: "Vorgemerkter Termin bestätigt",
   visit_hold_rejected: "Vorgemerkten Termin abgelehnt",

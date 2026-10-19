@@ -54,6 +54,9 @@ const TOOLS = [
   ["anlage_pruefen", "Prüft, ob RheinWerk die Anlage betreut (Katalogabgleich). Antwort: status, satz für den Anrufer und ggf. rueckfrage (ähnliche Baureihe, einmal stellen).", {
     anlagenart: str("Pumpe, Kompressor, Lüftung oder die genannte andere Anlagenart"), hersteller: str("Hersteller, falls genannt"), typ: str("Typ vom Typenschild, falls genannt"),
   }, []],
+  ["kunde_finden", "Findet einen Bestandskunden nach Kundennummer; die Postleitzahl des Standorts ist die Prüfung. Antwort: treffer, firma, standorte (standort_id, ansage). Nennt nie E-Mail oder Telefon.", {
+    kundennummer: str("Kundennummer wie genannt, z. B. K 10021"), plz: str("Fünfstellige Postleitzahl des Standorts"),
+  }, ["kundennummer", "plz"]],
   ["email_pruefen", "Setzt die vom Anrufer buchstabierte E-Mail-Adresse zusammen und merkt sie für das Gespräch. Antwort: email und ansage (so vorlesen). Bei fehler email_ungueltig erneut buchstabieren lassen.", {
     buchstaben: str("Buchstaben und Wörter genau wie gehört, durch Kommas getrennt, z. B. „A, N, N, A, Punkt, M, at gmail Punkt com“; nichts weglassen oder ergänzen"),
   }, ["buchstaben"]],
@@ -66,17 +69,20 @@ const TOOLS = [
     leistung: str("inspection (Inspektion), scheduled_maintenance (Wartung) oder diagnosis_repair (Störung/Reparatur)"), plz: str("Postleitzahl des Standorts"),
   }, ["leistung"]],
   ["anfrage_anlegen", "Legt die Serviceanfrage an und merkt den gewählten Termin vor. Erst nach Zusammenfassung und Bestätigung aufrufen. Fehlen Angaben, kommt fehlende_felder zurück.", {
-    company_name: str("Firma"), contact_name: str("Ansprechperson"), business_email: str("email aus email_pruefen, unverändert"),
+    company_name: str("Firma (entfällt bei Bestandskunden aus kunde_finden)"), contact_name: str("Ansprechperson"), business_email: str("email aus email_pruefen, unverändert"),
     phone_number: str("Rückrufnummer in Ziffern, z. B. 0621 5550123"), customer_number: str("Kundennummer, falls vorhanden"),
     street_house_number: str("Straße und Hausnummer des Standorts"), postal_code: str("Postleitzahl des Standorts"), city: str("Ort"),
     site_label: str("Halle, Gebäude oder Linie, falls genannt"),
+    standort_id: str("standort_id aus kunde_finden, wenn der Kunde mehrere Standorte hat und einer bestätigt ist"),
     equipment_kind: str("pump, compressor, ventilation oder other"), manufacturer: str("Hersteller"), model_type: str("Typ vom Typenschild"),
     service_kind: str("inspection, scheduled_maintenance oder diagnosis_repair"),
     description: str("Anliegen in eigenen Worten, mindestens ein Satz; bei Störung Symptom oder Fehlercode"),
     customer_urgency: str("planbar, zeitnah, erheblich oder production_stop"), safety_risk: str("none_known, known oder unclear"),
     requested_visit_date: str("Wunschtag JJJJ-MM-TT, optional"), termin_beginn: str("Beginn des gewählten Fensters genau wie von freie_termine (beginn), optional"),
     sla_contract_number: str("Notfall-SLA-Vertragsnummer, falls genannt"),
-  }, ["company_name", "contact_name", "business_email", "phone_number", "street_house_number", "postal_code", "city", "equipment_kind", "service_kind", "description", "customer_urgency", "safety_risk"]],
+  // Company, address and e-mail are optional here: with a customer from kunde_finden the database takes them from the
+  // master data; otherwise it answers fehlende_felder
+  }, ["contact_name", "phone_number", "equipment_kind", "service_kind", "description", "customer_urgency", "safety_risk"]],
   ["anfrage_finden", "Findet eine bestehende Anfrage. PLZ des Standorts ist Pflicht, dazu Anfragenummer oder Firma.", {
     nummer: str("Anfragenummer wie genannt, z. B. RIS 2026 123"), firma: str("Firma, wenn keine Nummer"), plz: str("Postleitzahl des Standorts"), strasse: str("Straße, falls mehrere Treffer"),
   }, ["plz"]],

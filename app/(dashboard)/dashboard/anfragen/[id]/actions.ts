@@ -254,3 +254,18 @@ export async function rejectHold(_previous: FormState, formData: FormData): Prom
   return run(values, "Vormerkung abgelehnt. Die Nachricht an den Kunden steht in der Warteschlange.", () =>
     supabase.rpc("reject_visit_hold", { hold_id: values.hold_id, reason, alternative: (values.alternative ?? "").trim() || undefined }));
 }
+
+// Link to the customer master data (task-13-10), e.g. to correct the phone assistant; empty number removes the link.
+// copy_data takes company, customer number, address of the site and the stored e-mail into the request.
+export async function linkCustomer(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const input = context(formData);
+  if (!input) return invalid(formValues(formData));
+  const { values } = input;
+  const number = values.customer_number?.trim() ?? "";
+  if (number && !/^K?[-\s]?\d{4,}$/i.test(number)) return formError("Bitte die markierten Felder prüfen.", values, { customer_number: "Format K-12345." });
+  if (values.site_id && !UUID.test(values.site_id)) return invalid(values);
+  const supabase = await createClient();
+  return run(values, number ? "Mit dem Kunden verknüpft." : "Verknüpfung entfernt.", () =>
+    supabase.rpc("link_request_customer", { request_id: input.id, expected_version: input.version, customer_number: number, site_id: values.site_id || undefined, copy_data: values.copy_data === "on" }));
+}

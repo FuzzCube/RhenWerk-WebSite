@@ -46,7 +46,13 @@ try {
   const { data: demo } = await admin.from("requests").select("id, request_number, postal_code").eq("is_demo", true)
     .eq("work_status", "completed").order("created_at", { ascending: false }).limit(1).single();
 
+  const { data: customer } = await admin.from("customers").select("customer_number, company_name, customer_sites(postal_code)").eq("is_demo", true)
+    .order("customer_number").limit(1).single();
+  const customerPlz = customer.customer_sites[0].postal_code;
+
   const cases = [
+    ["kunde-finden", { call_id: callId, kundennummer: customer.customer_number.replace("-", " "), plz: customerPlz }, (j) => j.treffer === true && j.firma === customer.company_name && j.standorte.length >= 1 && !("email" in j)],
+    ["kunde-finden", { call_id: callId, kundennummer: customer.customer_number, plz: customerPlz === "68159" ? "69115" : "68159" }, (j) => j.treffer === false && !("firma" in j)],
     ["einsatzgebiet-pruefen", { call_id: callId, plz: "68159" }, (j) => j.ergebnis === "in_gebiet" && j.ort === "Mannheim"],
     ["einsatzgebiet-pruefen", { call_id: callId, plz: "10115" }, (j) => j.ergebnis === "nur_mit_vertrag"],
     ["anlage-pruefen", { anlagenart: "Kompressor", hersteller: "Kaeser", typ: "SM 13" }, (j) => j.status === "listed_model" && j.satz === "Diese Anlage betreuen wir."],

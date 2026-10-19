@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
+import { SearchSuggest } from "@/components/dashboard/ui/search-suggest";
 import { SideMenu } from "@/components/dashboard/ui/side-menu";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { HazardFlag, PriorityText, RequestStatusChip } from "@/components/dashboard/ui/status-chip";
@@ -93,7 +94,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           <form className="req2__search" method="get" role="search" aria-label="Anfragen durchsuchen">
             <label className="sr-only" htmlFor="filter-suche">Suche</label>
             <Icon name="search" size={18} />
-            <input id="filter-suche" name="suche" type="search" defaultValue={filters.q} placeholder="Nummer, Firma, Kontakt oder Ort suchen" />
+            <SearchSuggest area="anfragen" id="filter-suche" name="suche" defaultValue={filters.q} placeholder="Nummer, Firma, Kontakt oder Ort suchen" />
             <HiddenFilters filters={filters} skip="suche" />
             <button className="rw-button-secondary req2__search-btn" type="submit">Suchen</button>
           </form>
