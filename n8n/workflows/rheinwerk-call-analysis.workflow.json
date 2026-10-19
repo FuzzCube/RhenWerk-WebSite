@@ -1,0 +1,352 @@
+{
+  "id": "rwCallAnalysis26",
+  "name": "RheinWerk · Telefonassistent Auswertung",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "172e9e19-6787-5f42-955d-443a90713468",
+      "name": "Alle 2 Minuten",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.elevenlabs.io/v1/convai/conversations?agent_id=agent_5101m504vtn2f80thr39rbtqv6ws&page_size=30",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "a655b117-9fc6-5c7d-898d-57c8f50aa7e0",
+      "name": "Gespräche abrufen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rwElevenLabs0001",
+          "name": "RheinWerk ElevenLabs"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const list=$input.first().json.conversations??[];\nconst ids=list.filter(c=>c.status==='done'||c.status==='failed').map(c=>c.conversation_id);\nreturn ids.length?[{json:{conversation_ids:ids}}]:[];"
+      },
+      "id": "ac3b5c17-1f64-5de2-a233-24fb05da032b",
+      "name": "Beendete Gespräche",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/agent_calls_pending",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversation_ids: $json.conversation_ids } }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "d9878aac-a70d-56c7-8ee4-3723859f58b1",
+      "name": "Noch nicht ausgewertet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const ids=$input.first().json.ids??[];\nreturn ids.slice(0,10).map(id=>({json:{id}}));"
+      },
+      "id": "237c6867-479a-500e-822c-728d11346ba0",
+      "name": "Einzeln (höchstens 10)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.elevenlabs.io/v1/convai/conversations/' + $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "4b9390a0-82d6-5902-af4e-ae53729de7b8",
+      "name": "Gespräch laden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1100,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rwElevenLabs0001",
+          "name": "RheinWerk ElevenLabs"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const c=$json;const m=c.metadata??{};\nconst lines=[];\nfor(const t of c.transcript??[]){\n  for(const call of t.tool_calls??[]) if(call.tool_name) lines.push(`[Werkzeug ${call.tool_name}: ${String(call.params_as_json??'').slice(0,300)}]`);\n  for(const r of t.tool_results??[]) if(r.tool_name) lines.push(`[Ergebnis ${r.tool_name}: ${String(r.result_value??'').slice(0,300)}]`);\n  if(t.message) lines.push(`${t.role==='agent'?'Mira':'Anrufer'}: ${t.message}`);\n}\nconst transcript=lines.join('\\n');\nlet price=0;\nfor(const u of Object.values(m.charging?.llm_usage?.irreversible_generation?.model_usage??{})) for(const part of Object.values(u)) price+=Number(part?.price??0);\nreturn {json:{call_id:c.conversation_id,started_at:m.start_time_unix_secs?new Date(m.start_time_unix_secs*1000).toISOString():null,\n  duration_seconds:m.call_duration_secs??0,credits:Number.isFinite(m.cost)?m.cost:null,cost_cents:Math.round(price*100),\n  transcript,prompt:transcript.slice(0,30000)||'(leeres Gespräch)'}};"
+      },
+      "id": "32ed9ea0-5a1e-5d12-a3a3-af59e524bbab",
+      "name": "Transkript aufbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "user",
+              "content": "={{ $json.prompt }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {
+          "codeInterpreter": false
+        },
+        "options": {
+          "instructions": "Du wertest ein beendetes Gespräch des KI-Telefonassistenten Mira der RheinWerk Industrieservice GmbH aus\n(Kompressoren, Pumpen, industrielle Lüftung; Region Rhein-Neckar). Antworte nur mit dem JSON-Schema.\n- kategorie: Hauptanliegen. neue_anfrage = neue Service-Anfrage aufgenommen oder gewünscht; termin = Terminfrage zu\n  bestehender Anfrage; status = Stand einer Anfrage; verspaetung = Techniker kommt zu spät; frage = allgemeine Frage\n  (Leistungen, Preise, Zeiten); notfall = Gefahr für Personen oder Stillstand mit sofortigem Handlungsbedarf;\n  beschwerde; ausserhalb_gebiet = Standort außerhalb des Einsatzgebiets; spam = Werbung, kein Anliegen;\n  sonstiges = alles andere, auch abgebrochene Gespräche.\n- dringlichkeit: wie der Anrufer es schildert; ohne Angabe planbar. production_stop nur bei stehender Produktion.\n- sicherheitsgefahr: known nur bei genannter Gefahr (Brand, Gas, austretende Stoffe, Verletzte), unclear bei\n  Unsicherheit, sonst none_known.\n- firma, kontakt, rueckrufnummer, anfrage_nummer: nur wenn im Gespräch genannt oder bestätigt, sonst null.\n  anfrage_nummer im Format RIS-JJJJ-NNNNN, z. B. aus der Antwort eines Werkzeugs.\n- zusammenfassung: 1–2 sachliche deutsche Sätze für den Service Desk (was wollte der Anrufer, was ist passiert,\n  was bleibt offen). Keine E-Mail-Adressen.\n- rueckruf_noetig: true, wenn ein Mensch zurückrufen muss (ausdrücklicher Wunsch, Werkzeugstörung, Beschwerde,\n  Anliegen offen geblieben). false, wenn eine Anfrage angelegt wurde und der Service Desk sie wie üblich bearbeitet.\n- stimmung: Stimmung des Anrufers am Ende.",
+          "maxTokens": 800,
+          "temperature": 0.1,
+          "store": false,
+          "serviceTier": "default",
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "name": "rheinwerk_call",
+              "schema": "{\"type\": \"object\", \"properties\": {\"kategorie\": {\"type\": \"string\", \"enum\": [\"neue_anfrage\", \"termin\", \"status\", \"verspaetung\", \"frage\", \"notfall\", \"beschwerde\", \"ausserhalb_gebiet\", \"spam\", \"sonstiges\"]}, \"dringlichkeit\": {\"type\": \"string\", \"enum\": [\"planbar\", \"zeitnah\", \"erheblich\", \"production_stop\"]}, \"sicherheitsgefahr\": {\"type\": \"string\", \"enum\": [\"none_known\", \"known\", \"unclear\"]}, \"firma\": {\"type\": [\"string\", \"null\"]}, \"kontakt\": {\"type\": [\"string\", \"null\"]}, \"rueckrufnummer\": {\"type\": [\"string\", \"null\"]}, \"anfrage_nummer\": {\"type\": [\"string\", \"null\"]}, \"zusammenfassung\": {\"type\": \"string\"}, \"rueckruf_noetig\": {\"type\": \"boolean\"}, \"stimmung\": {\"type\": \"string\", \"enum\": [\"positiv\", \"neutral\", \"negativ\"]}}, \"required\": [\"kategorie\", \"dringlichkeit\", \"sicherheitsgefahr\", \"firma\", \"kontakt\", \"rueckrufnummer\", \"anfrage_nummer\", \"zusammenfassung\", \"rueckruf_noetig\", \"stimmung\"], \"additionalProperties\": false}",
+              "strict": true
+            }
+          }
+        }
+      },
+      "id": "a2f23f11-dad0-58be-994d-8dec062c662a",
+      "name": "Auswerten (OpenAI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1540,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "qK86QY5Bm6EfR9Zz",
+          "name": "OpenAI account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw=$json;const parts=Array.isArray(raw.output)?raw.output.flatMap(o=>o.content??[]):Array.isArray(raw.content)?raw.content:[];\nconst resultParts=parts.filter(p=>p.type==='output_text');\nconst responseObject=resultParts.find(p=>p.text&&typeof p.text==='object')?.text;\nconst responseText=resultParts.filter(p=>typeof p.text==='string').map(p=>p.text).join('');\nconst text=responseObject??(responseText||raw.output_text||raw.choices?.[0]?.message?.content||raw.content?.parts?.map(x=>x.text??'').join('')||raw.text||(typeof raw.output==='string'?raw.output:'')||'');\nlet analysis=null;try{analysis=typeof text==='object'?text:JSON.parse(String(text).replace(/^```(?:json)?\\s*/,'').replace(/\\s*```$/,''));}catch{analysis=null;}\n// Without a valid evaluation nothing is stored: the conversation stays pending for the next run\nif(!analysis||!analysis.kategorie) return null;\nconst call=$('Transkript aufbereiten').item.json;\nreturn {json:{call_id:call.call_id,started_at:call.started_at,duration_seconds:call.duration_seconds,transcript:call.transcript,analysis,credits:call.credits,cost_cents:call.cost_cents}};"
+      },
+      "id": "262358af-5405-5d78-a07a-5834515c62a3",
+      "name": "Ergebnis zusammenführen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/agent_record_call",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "10d8320b-5195-55bf-8851-7c17c9e464ff",
+      "name": "Speichern",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1980,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Alle 2 Minuten": {
+      "main": [
+        [
+          {
+            "node": "Gespräche abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gespräche abrufen": {
+      "main": [
+        [
+          {
+            "node": "Beendete Gespräche",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beendete Gespräche": {
+      "main": [
+        [
+          {
+            "node": "Noch nicht ausgewertet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Noch nicht ausgewertet": {
+      "main": [
+        [
+          {
+            "node": "Einzeln (höchstens 10)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Einzeln (höchstens 10)": {
+      "main": [
+        [
+          {
+            "node": "Gespräch laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gespräch laden": {
+      "main": [
+        [
+          {
+            "node": "Transkript aufbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transkript aufbereiten": {
+      "main": [
+        [
+          {
+            "node": "Auswerten (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auswerten (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Ergebnis zusammenführen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ergebnis zusammenführen": {
+      "main": [
+        [
+          {
+            "node": "Speichern",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "description": "Auswertung beendeter Gespräche von Mira (task-13-6): ElevenLabs-API alle 2 Minuten, OpenAI nach festem Schema, agent_record_call."
+}

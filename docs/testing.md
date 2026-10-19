@@ -14,6 +14,8 @@ Alle Prüfungen laufen gegen den lokalen Supabase-Stack. Voraussetzungen: Docker
 | `npm run test:api` | Direkte REST-, RPC- und Storage-Aufrufe mit echten Logins, gleichzeitige Buchungen über HTTP (`scripts/test-api.mjs`) | ca. 10 s |
 | `npm run test:auth` | Anmeldung, Rollen-Startseiten, Navigation, Bereichsschutz, Abmelden und Cache-Header über HTTP (`scripts/test-auth.mjs`); laufende App nötig | ca. 10 s |
 | `npm run test:ui` | Headless Chrome: kein horizontales Scrollen bei 390/768/1440 px, Eingaben bleiben bei fehlgeschlagenem Speichern erhalten (`scripts/test-ui.mjs`); laufende App nötig | ca. 30 s |
+| `npm run test:agent` | Webhooks des Telefonassistenten in n8n: Geheimnis, Antworten, Zeit (`scripts/test-agent.mjs`); lokal oder mit `AGENT_BASE_URL` durch den Tunnel | ca. 5 s |
+| `npm run test:calls` | Gesprächsauswertung: alle beendeten Gespräche bei ElevenLabs ausgewertet, Wiederholung ohne Wirkung (`scripts/test-calls.mjs`); aktiver Workflow nötig | Sekunden |
 | `npm run supabase:check` | Verbindung zum Supabase-Projekt | Sekunden |
 | `npm run demo:verify` | Konsistenz des Demo-Seeds (`scripts/demo/verify-seed.sql`) | Sekunden |
 | `supabase db lint` | Schema-Linter (plpgsql_check) | Sekunden |

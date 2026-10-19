@@ -14,3 +14,12 @@ export async function acknowledgeCallback(callbackId: string): Promise<{ ok: tru
   const { error } = await supabase.rpc("acknowledge_callback", { callback_id: callbackId });
   return error ? { ok: false, message: databaseErrorMessage(error) } : { ok: true };
 }
+
+// "Rückruf erledigt" for an urgent call (task-13-6), dispatcher, manager and admin
+export async function acknowledgeCallCallback(callId: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  await requireRole(["dispatcher", "manager", "admin"]);
+  if (!UUID.test(callId)) return { ok: false, message: "Ungültige Eingabe. Bitte die Seite neu laden." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("acknowledge_call_callback", { call_id: callId });
+  return error ? { ok: false, message: databaseErrorMessage(error) } : { ok: true };
+}

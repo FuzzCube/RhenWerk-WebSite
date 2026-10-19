@@ -583,7 +583,7 @@ try {
     const { error: visitError } = await admin.from("visits").insert({ request_id: req.id, technician_id: techId, scheduled_start: new Date(Date.now() - 20 * 60000).toISOString(), scheduled_end: new Date(Date.now() + 100 * 60000).toISOString(), created_by: dispoId });
     if (visitError) throw new Error(`Einsatz: ${visitError.message}`);
     const ask = async (n) => (await admin.rpc("agent_request_callback", { call_id: `ui-callback-${runId}-${n}`, anfrage_id: req.id, rueckrufnummer: "0621 4455667" })).data;
-    const banner = () => page.eval(`(() => { const b = document.querySelector(".callback-alert"); return b ? { text: b.textContent, tel: b.querySelector("a[href^='tel:']")?.getAttribute("href"), title: document.title, scroll: document.documentElement.scrollWidth, width: window.innerWidth } : null; })()`);
+    const banner = () => page.eval(`(() => { const b = document.querySelector(".callback-alert[data-callback-id]"); return b ? { text: b.textContent, tel: b.querySelector("a[href^='tel:']")?.getAttribute("href"), title: document.title, scroll: document.documentElement.scrollWidth, width: window.innerWidth } : null; })()`);
     const clickAck = () => page.eval(`[...document.querySelectorAll(".callback-alert button")].find((b) => b.textContent.includes("Kunde angerufen"))?.click()`);
     try {
       await page.send("Network.clearBrowserCookies");
@@ -624,6 +624,19 @@ try {
       await clickAck();
       const closed = await waitFor(async () => (await admin.from("callback_requests").select("status, closed_by").eq("id", second.rueckrufbitte_id).single()).data?.closed_by === dispoId);
       check("  Dispatcher quittiert die Eskalation", closed);
+
+      // Urgent call of the phone assistant (task-13-6): banner for dispatchers until "Rückruf erledigt"
+      const { data: call, error: callError } = await admin.from("phone_calls").insert({ conversation_id: `ui-call-${runId}`, callback_needed: true, callback_urgent: true,
+        callback_reason: `UI-Test Gasgeruch ${runId}`, callback_number: "0621 778899", analysis: { firma: `UI-Test Anrufer ${runId}` } }).select().single();
+      if (callError) throw new Error(`Anruf: ${callError.message}`);
+      await page.open(`${BASE}/dashboard/anfragen`);
+      const callBanner = await page.eval(`(() => { const b = document.querySelector('.callback-alert[data-call-id="${call.id}"]'); return b ? { text: b.textContent, tel: b.querySelector("a[href^='tel:']")?.getAttribute("href") } : null; })()`);
+      check("Dispatcher: dringender Anruf als Banner mit Grund, Firma und Rückrufnummer", !!callBanner && callBanner.text.includes(`UI-Test Gasgeruch ${runId}`)
+        && callBanner.text.includes(`UI-Test Anrufer ${runId}`) && callBanner.tel === "tel:0621778899", JSON.stringify(callBanner));
+      await page.eval(`[...document.querySelectorAll('.callback-alert[data-call-id="${call.id}"] button')].find((b) => b.textContent.includes("Rückruf erledigt"))?.click()`);
+      check("  „Rückruf erledigt“ quittiert, Banner verschwindet", await waitFor(async () => (await admin.from("phone_calls").select("callback_done_by").eq("id", call.id).single()).data?.callback_done_by === dispoId)
+        && await waitFor(async () => !(await page.eval(`!!document.querySelector('.callback-alert[data-call-id="${call.id}"]')`))));
+      await admin.from("phone_calls").delete().eq("id", call.id);
     } finally {
       await admin.from("visits").update({ status: "cancelled", cancellation_reason: "UI-Test" }).eq("request_id", req.id).eq("status", "scheduled");
       await admin.rpc("escalate_callbacks");

@@ -2098,10 +2098,10 @@
         {
           "id": "task-13-6",
           "title": "Telefonassistent: Gesprächsauswertung",
-          "description": "Post-Call-Webhook → JSON-Zusammenfassung per LLM (feste Schema) → phone_calls → Verknüpfung mit Anfrage → dringende Benachrichtigung bei Notfall.",
+          "description": "Post-Call-Webhook → JSON-Zusammenfassung per LLM (feste Schema) → phone_calls → Verknüpfung mit Anfrage → dringende Benachrichtigung bei Notfall. Umsetzung (Nutzerentscheidung 19.10.2026): Abholung beendeter Gespräche per Abfrage der ElevenLabs-API alle 2 Minuten statt Post-Call-Webhook (kein weiterer öffentlicher Pfad); dringende Anrufe als Banner für Dispatcher mit „Rückruf erledigt“.",
           "order": 7,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-13-5"
           ],
@@ -2109,7 +2109,29 @@
             "Workflow mit Schema und Wiederholungsschutz",
             "Verknüpfung und Benachrichtigung geprüft",
             "Integrationstest"
-          ]
+          ],
+          "startedAt": "2026-10-19T16:55:55Z",
+          "completedAt": "2026-10-19T17:19:37Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261019130000_call_analysis.sql: phone_calls.analyzed_at/credits, agent_calls_pending, agent_record_call (einmal je Gespräch, Fakten aus der Datenbank: Anfrage, Vormerkung, Servicezeit, Werkzeug-Rückruf, Kunde; Dringlichkeit aus der Auswertung nur für Gespräche der letzten 12 Stunden; Platzhalter-Rufnummern verworfen), acknowledge_call_callback. n8n-Workflow rwCallAnalysis26 (n8n/generate_call_analysis.py): alle 2 Minuten ElevenLabs-API (Credential rwElevenLabs0001 über n8n/bootstrap_elevenlabs.py), höchstens 10 Gespräche je Lauf, Transkript mit Werkzeugaufrufen, OpenAI gpt-4.1-mini mit strengem Schema, agent_record_call; Fehler lassen das Gespräch offen. Dashboard: dringende Anrufe als Banner für Dispatcher (Grund, Firma, tel:-Link, „Rückruf erledigt“), auch sofort bei dringendem rueckruf_service_desk. agent:simulate räumt seinen Vorab-Anruf auf; Szenario neu als Neukunde. Geprüft: test:db 880 (call_analysis 19), Integrationstest test:calls mit 7 echten Gesprächen (alle ausgewertet, keine offenen, Wiederholung ohne Wirkung; zwei weitere Läufe ohne erneute Auswertung beobachtet), test:ui alle bestanden (neu: Banner dringender Anruf und Quittung), test:agent, agent:simulate 5/5, test:unit 85, lint, typecheck, build, demo:verify 19/19; Sichtprüfung Banner 1440 px. Nicht geprüft: Auswertung eines neuen Live-Anrufs (ElevenLabs-Guthaben), test:api, test:auth.",
+            "commands": [
+              "supabase migration up",
+              "supabase test db",
+              "python3 n8n/bootstrap_elevenlabs.py",
+              "python3 n8n/generate_call_analysis.py",
+              "n8n import:workflow / publish:workflow",
+              "npm run test:calls",
+              "APP_URL=http://localhost:3201 npm run test:ui",
+              "npm run test:agent",
+              "npm run agent:simulate",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run demo:verify"
+            ]
+          }
         },
         {
           "id": "task-13-7",
@@ -2117,7 +2139,7 @@
           "description": "Bereich „Anrufe“ (Liste, Zusammenfassung, Transkript 30 Tage, „Rückruf erledigt“), Block „Telefonat“ in der Anfrage, Quelle „Telefon (KI)“, Kennzahlen „Telefon“ in der Auswertung (Anrufe, ohne Mensch gelöst, Anfragen, außerhalb Servicezeit, Notfälle, Dauer, Kosten), Demo-Anrufe.",
           "order": 8,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-13-6"
           ],

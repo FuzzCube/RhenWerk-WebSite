@@ -48,6 +48,7 @@ Dieser Vertrag beschreibt, wie die lokale n8n-Integration mit der Datenbank zusa
 | `agent_request_service_callback(call_id, grund, rueckrufnummer, dringend?, anfrage_id?)` | **vorhanden**, nur `service_role` | Telefonassistent: Rückruf durch den Service Desk (Abschnitt 6) |
 | `agent_check_email(call_id, buchstaben)` | **vorhanden**, nur `service_role` | Telefonassistent: buchstabierte E-Mail-Adresse (Abschnitt 6) |
 | `agent_find_customer(call_id, kundennummer, plz)` | **vorhanden**, nur `service_role` | Telefonassistent: Bestandskunde (Abschnitt 6) |
+| `agent_calls_pending(conversation_ids)`, `agent_record_call(call_id, started_at, duration_seconds, transcript, analysis, credits?, cost_cents?)` | **vorhanden**, nur `service_role` | Gesprächsauswertung (Abschnitt 6) |
 
 Die vorhandenen Tabellen enthalten bereits alle Felder für diese Funktionen (`requests.source_event_key`, `automation_runs.operation_key`/`input_version`/`workflow_execution_id`, `messages.mailbox_key`/`gmail_message_id`/`gmail_thread_id`/`mime_message_id`/`in_reply_to`/`references_header`, `attachments.bucket`/`storage_path`).
 
@@ -166,6 +167,7 @@ Der Sprachagent „Mira“ (ElevenLabs) ruft n8n-Webhooks auf; n8n ruft diese Fu
 - `agent_request_callback(call_id, anfrage_id, rueckrufnummer)` (task-13-4) – nur bei Lage `ueberfaellig`; siehe Datenbank „Rückrufbitte an den Techniker“.
 - `agent_service_hours(call_id)` (task-13-5) – `in_servicezeit` (Mo–Fr 07:00–18:00 Europe/Berlin ohne Feiertage Baden-Württemberg, `private.is_bw_holiday`), `jetzt`, `heute` und `kalender` (21 Tage, `private.agent_calendar`) für den Agenten, außerhalb `naechste_servicezeit`; setzt `phone_calls.in_service_hours`.
 - `agent_check_email(call_id, buchstaben)` (task-13-5) – setzt die buchstabierte E-Mail-Adresse zusammen, antwortet `email` und `ansage` (zum Vorlesen) oder `email_ungueltig` und merkt sie in `phone_calls.checked_email`; `agent_create_request` verwendet für dieses Gespräch nur diese Adresse.
+- `agent_calls_pending(conversation_ids)` (task-13-6) – `{ids: [...]}` der Gespräche ohne Auswertung. `agent_record_call(...)` – speichert die Auswertung einmal je Gespräch (`wiederholt` bei Wiederholung), ergänzt Fakten aus der Datenbank, setzt Rückruf und Dringlichkeit (Regeln in `docs/telefonassistent/regeln.md`, Abschnitt Gesprächsauswertung); Antwort `dringend`, `anfrage_nummer`.
 - `agent_find_customer(call_id, kundennummer, plz)` (task-13-10) – Bestandskunde nach Kundennummer, nur mit der PLZ eines aktiven Standorts; Antwort `treffer`, `firma`, `standorte[]` (`standort_id`, `ansage`), `email_hinterlegt`, nie E-Mail oder Telefon. Merkt Kunde und (bei einem Standort) Standort im Gespräch; `agent_create_request` nimmt dann Firma, Kundennummer, Adresse und E-Mail aus dem Kundenstamm.
 - `agent_request_service_callback(call_id, grund, rueckrufnummer, dringend?, anfrage_id?)` (task-13-5) – Ersatz der Weiterleitung im Web-Widget: markiert das Gespräch für einen Rückruf durch den Service Desk (`callback_needed`, `callback_reason`, `callback_number`, `callback_urgent`).
 - Webhooks, Geheimnis und Agent: `docs/telefonassistent/setup.md`.

@@ -78,4 +78,12 @@ Pflichtfelder von `anfrage_anlegen` entsprechen `private.validate_request_fields
 
 ## Gesprächsauswertung (task-13-6)
 
-Nach jedem Gespräch: Transkript → JSON nach Schema in [../telefonassistent-plan.md](../telefonassistent-plan.md) (Abschnitt 4) → `phone_calls`. Dringend gemeldet werden Gefahr für Personen, Stillstand und Sicherheitsgefahr außerhalb der Servicezeit sowie nicht erreichte Weiterleitungen.
+Umsetzung (Nutzerentscheidung 19.10.2026): kein Post-Call-Webhook, sondern der n8n-Workflow „RheinWerk · Telefonassistent Auswertung“ (`rwCallAnalysis26`, `n8n/generate_call_analysis.py`) fragt alle 2 Minuten die letzten 30 Gespräche des Agenten bei ElevenLabs ab. Kein weiterer öffentlicher Pfad; Gespräche aus Zeiten, in denen n8n aus war, werden nachgeholt.
+
+1. `agent_calls_pending(ids)` liefert die beendeten Gespräche ohne Auswertung; je Lauf höchstens 10.
+2. Gespräch laden, Transkript als Text („Mira: …“, „Anrufer: …“, Werkzeugaufrufe und -ergebnisse in eckigen Klammern).
+3. OpenAI (`gpt-4.1-mini`, strenges JSON-Schema) füllt `kategorie`, `dringlichkeit`, `sicherheitsgefahr`, `firma`, `kontakt`, `rueckrufnummer`, `anfrage_nummer`, `zusammenfassung`, `rueckruf_noetig`, `stimmung` (Schema in [../telefonassistent-plan.md](../telefonassistent-plan.md), Abschnitt 4).
+4. `agent_record_call` speichert einmal je Gespräch (Wiederholung ändert nichts): Zeiten, Dauer, Transkript (30 Tage), Credits, LLM-Kosten in Cent, Ergebnis. Fakten kommen aus der Datenbank, nicht vom Sprachmodell: verknüpfte Anfrage (sonst über eine genannte Anfragenummer), offene Terminvormerkung, außerhalb der Servicezeit, Rückruf über Werkzeug, Kunde erkannt.
+5. Dringend: Notfall, Sicherheitsgefahr bekannt/unklar oder Produktionsstillstand – nur für Gespräche der letzten 12 Stunden (ältere werden normale Rückrufe) – sowie jeder dringende Rückruf, den Mira während des Gesprächs mit `rueckruf_service_desk` angelegt hat (sofort, ohne Auswertung). Dringende Anrufe erscheinen allen Dispatchern als Banner über jeder Dashboard-Seite (Abfrage alle 20 s, `tel:`-Link, optional Browser-Benachrichtigung) bis „Rückruf erledigt“ (`acknowledge_call_callback`). Platzhalter wie „unbekannt 000000“ gelten nicht als Rückrufnummer.
+
+Schlägt ein Schritt fehl (ElevenLabs, OpenAI, Datenbank), bleibt das Gespräch offen und wird im nächsten Lauf erneut versucht. Prüfung: `npm run test:calls`.

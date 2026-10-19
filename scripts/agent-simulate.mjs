@@ -3,6 +3,7 @@
 // local n8n); anfrage_anlegen gets a fixed answer, so no request and no e-mail is created. Checks which tools Mira
 // calls and which she must not call. Usage: npm run agent:simulate [-- <szenario>]
 import { readFile } from "node:fs/promises";
+import { createClient } from "@supabase/supabase-js";
 
 const key = process.env.ELEVENLABS_API_KEY;
 const secret = process.env.AGENT_WEBHOOK_SECRET;
@@ -31,9 +32,9 @@ const SCENARIOS = {
     must: [], never: ["anfrage_anlegen", "freie_termine", "einsatzgebiet_pruefen"],
   },
   neu: {
-    caller: "Du bist Anna Schulz von der Neckar Pumpenwerk GmbH, Industriestraße 5, 68219 Mannheim, Telefon 0621 5550123, E-Mail a.schulz@npw.de (buchstabiere sie, wenn du gefragt wirst: A, Punkt, S, C, H, U, L, Z, at N, P, W, Punkt, D, E). Deine Grundfos-Pumpe CR 32 leckt an der Gleitringdichtung, kein Stillstand, keine Gefahr, zeitnah. Du möchtest einen Termin in den nächsten Tagen und nimmst den ersten Vorschlag. Antworte kurz und bestätige Zusammenfassungen.",
+    caller: "Du bist Anna Schulz von der Neckar Pumpenwerk GmbH, Industriestraße 5, 68219 Mannheim, Telefon 0621 5550123, E-Mail a.schulz@npw.de (buchstabiere sie, wenn du gefragt wirst: A, Punkt, S, C, H, U, L, Z, at N, P, W, Punkt, D, E). Deine Grundfos-Pumpe CR 32 leckt an der Gleitringdichtung, kein Stillstand, keine Gefahr, zeitnah. Ihr seid Neukunden ohne Kundennummer. Du möchtest einen Termin in den nächsten Tagen und nimmst den ersten Vorschlag. Antworte kurz und bestätige Zusammenfassungen.",
     tools: { anlage_pruefen: { anlagenart: "Pumpe", hersteller: "Grundfos", typ: "CR 32" }, einsatzgebiet_pruefen: { plz: "68219" }, freie_termine: { leistung: "diagnosis_repair", plz: "68219" },
-      email_pruefen: { buchstaben: "A, Punkt, S, C, H, U, L, Z, at N, P, W, Punkt, D, E" }, anfrage_anlegen: null },
+      email_pruefen: { buchstaben: "A, Punkt, S, C, H, U, L, Z, at N, P, W, Punkt, D, E" }, kunde_finden: { kundennummer: "K-99999", plz: "68219" }, anfrage_anlegen: null },
     must: ["anlage_pruefen", "einsatzgebiet_pruefen", "email_pruefen", "freie_termine", "anfrage_anlegen"], never: ["rueckruf_service_desk"],
     // Street asked, e-mail taken from email_pruefen
     params: { anfrage_anlegen: (p) => /Industriestra(ß|ss)e 5/.test(p.street_house_number ?? "") && p.business_email === "a.schulz@npw.de" },
@@ -55,6 +56,9 @@ const SCENARIOS = {
 };
 
 const always = { servicezeit: await real("servicezeit", {}), einsatzgebiet_pruefen: await real("einsatzgebiet_pruefen", { plz: "68159" }) };
+// The real webhooks record the preparation as call "sim-vorab" (e.g. an urgent service desk callback): removed at the
+// end, so it never shows up as a dashboard notification
+const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
 for (const [name, scenario] of Object.entries(SCENARIOS)) {
   if (only && only !== name) continue;
   const mocks = { ...always, ...scenario.fixed };
@@ -92,5 +96,6 @@ for (const [name, scenario] of Object.entries(SCENARIOS)) {
   if (!ok) failures += 1;
   console.log(`${ok ? "✓" : "✗"} ${name}: Werkzeuge ${[...called].join(", ")}${missing.length ? ` · fehlt: ${missing.join(", ")}` : ""}${wrong.length ? ` · unerwartet: ${wrong.join(", ")}` : ""}${badParams.length ? ` · Parameter falsch: ${badParams.join(", ")}` : ""}`);
 }
+await admin.from("phone_calls").delete().eq("conversation_id", "sim-vorab");
 console.log(`\n${failures === 0 ? "Alle Szenarien wie erwartet." : `${failures} Szenario(s) mit Abweichung.`}`);
 process.exit(failures === 0 ? 0 : 1);

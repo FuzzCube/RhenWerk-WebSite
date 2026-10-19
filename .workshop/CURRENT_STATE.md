@@ -2,7 +2,7 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v12 mit 14 Phasen und 62 Tasks. Fortschritt 96,11 % (Gewicht 173 von 180, 59 von 62 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v12 mit 14 Phasen und 62 Tasks. Fortschritt 97,22 % (Gewicht 175 von 180, 60 von 62 Tasks).
 
 ## Aktive Phase
 
@@ -10,13 +10,15 @@ Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/tele
 
 ## Aktive Aufgabe
 
-Keine Aufgabe in Arbeit. Bereit: `task-13-6`.
+Keine Aufgabe in Arbeit. Bereit: `task-13-7` „Telefonassistent: Dashboard“.
 
 Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-13-6` (19.10.2026): Gesprächsauswertung – n8n-Workflow `rwCallAnalysis26` holt beendete Gespräche alle 2 Minuten über die ElevenLabs-API (statt Webhook), OpenAI füllt das feste Schema, `agent_record_call` speichert einmal je Gespräch mit Fakten aus der Datenbank; dringende Anrufe als Banner für Dispatcher mit „Rückruf erledigt“. test:db 880, test:calls (7 echte Gespräche), test:ui, test:agent, agent:simulate 5/5, test:unit 85, lint, typecheck, build. Regeln in `docs/telefonassistent/regeln.md` (Gesprächsauswertung).
 
 `task-12-4` (19.10.2026): Autovervollständigung in den Suchen von Anfragen, Kunden, Rechnungen, Posteingang und im Feld Kundennummer – Baustein `SearchSuggest`, Endpunkt `/dashboard/suche/vorschlaege` mit Rollenprüfung und RLS. test:ui (12 neue Prüfungen), test:unit 85, lint, typecheck, build. Details in `docs/architecture.md` (Autovervollständigung).
 
@@ -78,7 +80,7 @@ Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen de
 
 ## Bereite nächste Aufgaben
 
-`task-13-6` „Telefonassistent: Gesprächsauswertung“; danach `task-13-7`, `task-13-8`. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
+`task-13-7` „Telefonassistent: Dashboard“ (Bereich Anrufe, Block Telefonat in der Anfrage, Kennzahlen Telefon, Demo-Anrufe); danach `task-13-8`. Offene Ideen nur nach Rücksprache als neue Tasks: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen, SMTP für echte Passwort-Mails, öffentliche Website auf n8n umstellen.
 
 ## Blockiert
 
@@ -141,4 +143,4 @@ Echte OpenAI-Textanalyse, Gmail-Rückfrage und Kundenantwort mit historischer Zu
 
 ## Empfohlener nächster Schritt
 
-`task-13-6` (Gesprächsauswertung). Browsertest von Mira nach den letzten Änderungen nachholen, sobald wieder ElevenLabs-Guthaben vorhanden ist. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); öffentliche Demonstration nicht automatisch deployen.
+`task-13-7` (Dashboard für Anrufe). Browsertest von Mira nach den letzten Änderungen nachholen, sobald wieder ElevenLabs-Guthaben vorhanden ist. Für echte Passwort-Mails SMTP einrichten (`docs/setup.md`); öffentliche Demonstration nicht automatisch deployen.

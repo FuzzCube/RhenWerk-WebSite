@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { acknowledgeCallback } from "@/app/(dashboard)/dashboard/rueckrufe/actions";
+import { acknowledgeCallback, acknowledgeCallCallback } from "@/app/(dashboard)/dashboard/rueckrufe/actions";
 import { Icon } from "@/components/ui";
-import type { CallbackAlert } from "@/lib/dashboard/callbacks";
+import type { CallAlert, CallbackAlert } from "@/lib/dashboard/callbacks";
 import { telHref } from "@/lib/contact-links";
 import { formatTime } from "@/lib/format";
 
@@ -52,16 +52,19 @@ export function CallbackAlerts({ initial, role }: { initial: CallbackAlert[]; ro
 
   if (alerts.length === 0) return null;
 
-  const acknowledge = (id: string) => startTransition(async () => {
+  const acknowledge = (alert: CallbackAlert) => startTransition(async () => {
     setError(null);
-    const result = await acknowledgeCallback(id);
+    const id = alert.id;
+    const result = alert.kind === "call" ? await acknowledgeCallCallback(id) : await acknowledgeCallback(id);
     if (!result.ok) setError(result.message);
     else setAlerts((current) => current.filter((alert) => alert.id !== id));
   });
 
   return (
     <section className="callback-alerts" aria-label="Rückrufbitten" aria-live="polite">
-      {alerts.map((alert) => (
+      {alerts.map((alert) => alert.kind === "call" ? (
+        <CallAlertCard key={alert.id} alert={alert} pending={pending} onDone={() => acknowledge(alert)} />
+      ) : (
         <article key={alert.id} className="rw-banner rw-banner--danger callback-alert" data-callback-id={alert.id}>
           <Icon name="phone" size={20} />
           <div className="callback-alert__text">
@@ -83,7 +86,7 @@ export function CallbackAlerts({ initial, role }: { initial: CallbackAlert[]; ro
             <a className="button button--primary callback-alert__call" href={telHref(alert.callback_number)}>
               <Icon name="phone" size={18} /><span className="mono">{alert.callback_number}</span>
             </a>
-            <button className="rw-button-secondary" type="button" disabled={pending} onClick={() => acknowledge(alert.id)}>
+            <button className="rw-button-secondary" type="button" disabled={pending} onClick={() => acknowledge(alert)}>
               <Icon name="check" size={18} />Kunde angerufen
             </button>
           </div>
@@ -100,6 +103,30 @@ export function CallbackAlerts({ initial, role }: { initial: CallbackAlert[]; ro
   );
 }
 
+// Urgent call (task-13-6): emergency, danger, production stop or an urgent callback asked for by the assistant
+function CallAlertCard({ alert, pending, onDone }: { alert: CallAlert; pending: boolean; onDone: () => void }) {
+  return (
+    <article className="rw-banner rw-banner--danger callback-alert" data-call-id={alert.id}>
+      <Icon name="phone" size={20} />
+      <div className="callback-alert__text">
+        <p className="callback-alert__title"><strong>Dringender Anruf: bitte zurückrufen</strong></p>
+        <p>{alert.request_id ? <Link href={`/dashboard/anfragen/${alert.request_id}`}>{alert.company_name}</Link> : alert.company_name} · {alert.reason}</p>
+        <p className="tech-meta">Telefonassistent · Anruf <span className="mono">{formatTime(alert.created_at)}</span></p>
+      </div>
+      <div className="callback-alert__actions">
+        {alert.callback_number && (
+          <a className="button button--primary callback-alert__call" href={telHref(alert.callback_number)}>
+            <Icon name="phone" size={18} /><span className="mono">{alert.callback_number}</span>
+          </a>
+        )}
+        <button className="rw-button-secondary" type="button" disabled={pending} onClick={onDone}>
+          <Icon name="check" size={18} />Rückruf erledigt
+        </button>
+      </div>
+    </article>
+  );
+}
+
 const noSubscription = () => () => {};
 const readPermission = (): NotificationPermission | "unsupported" => (typeof Notification === "undefined" ? "unsupported" : Notification.permission);
 
@@ -107,8 +134,8 @@ function notify(fresh: CallbackAlert[], role: "technician" | "dispatcher") {
   navigator.vibrate?.([200, 100, 200]);
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
   for (const alert of fresh) {
-    new Notification(role === "dispatcher" ? "Dringend: Rückruf nicht bestätigt" : "Rückrufbitte: Kunde wartet", {
-      body: `${alert.company_name} · ${alert.site} · ${alert.callback_number}`,
+    new Notification(alert.kind === "call" ? "Dringender Anruf" : role === "dispatcher" ? "Dringend: Rückruf nicht bestätigt" : "Rückrufbitte: Kunde wartet", {
+      body: alert.kind === "call" ? `${alert.company_name} · ${alert.reason}${alert.callback_number ? ` · ${alert.callback_number}` : ""}` : `${alert.company_name} · ${alert.site} · ${alert.callback_number}`,
       tag: `callback-${alert.id}`,
     });
   }

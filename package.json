@@ -20,7 +20,8 @@
     "agent:simulate": "node --env-file=.env.local scripts/agent-simulate.mjs",
     "demo:users": "node --env-file=.env.local scripts/bootstrap-demo-users.mjs",
     "demo:seed": "node --env-file=.env.local scripts/seed-demo.mjs",
-    "demo:verify": "docker exec -i supabase_db_A.Sadkovojs_Project psql -U postgres -qAt < scripts/demo/verify-seed.sql"
+    "demo:verify": "docker exec -i supabase_db_A.Sadkovojs_Project psql -U postgres -qAt < scripts/demo/verify-seed.sql",
+    "test:calls": "node --env-file=.env.local scripts/test-calls.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "1.1.1",

@@ -19,6 +19,7 @@ flowchart LR
 | --- | --- | --- |
 | Workflow „RheinWerk · Telefonassistent Werkzeuge“ (`rwAgentTools2026`), elf Webhooks `/webhook/agent-<werkzeug>` | n8n | `n8n/generate_agent_tools.py` → `n8n/workflows/rheinwerk-agent-tools.workflow.json` |
 | Header-Auth `x-agent-secret` (Credential `rwAgentSecret001`) | n8n, `.env.local` `AGENT_WEBHOOK_SECRET` | `n8n/bootstrap_agent_secret.py` |
+| Workflow „RheinWerk · Telefonassistent Auswertung“ (`rwCallAnalysis26`), alle 2 Minuten, ElevenLabs-API → OpenAI → `agent_record_call` | n8n, Credential „RheinWerk ElevenLabs“ (`rwElevenLabs0001`, Header `xi-api-key`) | `n8n/generate_call_analysis.py`, `n8n/bootstrap_elevenlabs.py` |
 | Datenbankfunktionen | Supabase | Migrationen task-13-2 bis 13-5, `docs/n8n-contract.md` Abschnitt 6 |
 | Access-Anwendung für den Pfad `webhook/agent-*` mit Policy „Service Auth“ (Service Token „ElevenLabs Mira“) | Cloudflare Zero Trust | `.env.local` `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` |
 | Agent, elf Webhook-Werkzeuge, Aussprache-Wörterbuch, Workspace-Secrets | ElevenLabs | `scripts/elevenlabs-agent.mjs`, IDs in `elevenlabs.json` |
@@ -62,6 +63,12 @@ npm run test:agent                             # lokal: Geheimnis, Antworten, Ze
 AGENT_BASE_URL=https://n8n.rheinwerk-service.online npm run test:agent   # durch Tunnel und Access
 npm run agent:sync                             # Prompt, Werkzeuge, Stimme, Wörterbuch nach ElevenLabs
 npm run agent:simulate                         # Textsimulation: Status, Anlage, neue Anfrage, Bestandskunde, Notfall
+python3 n8n/bootstrap_elevenlabs.py            # API-Schlüssel als n8n-Credential (Auswertung), einmalig
+python3 n8n/generate_call_analysis.py          # Workflow Gesprächsauswertung erzeugen
+docker cp n8n/workflows/rheinwerk-call-analysis.workflow.json n8n:/tmp/call-analysis.json
+docker exec n8n n8n import:workflow --input=/tmp/call-analysis.json --projectId=tNNYO9peZDHcZ20n
+docker exec n8n n8n publish:workflow --id=rwCallAnalysis26 && docker restart n8n
+npm run test:calls                             # nach einem Lauf: alle Gespräche ausgewertet, Wiederholung ohne Wirkung
 ```
 
 `agent:simulate` nutzt als Werkzeugantworten die echten Antworten der lokalen Webhooks (die Simulation von ElevenLabs ruft keine Webhooks auf); `anfrage_anlegen` ist dort fest vorgegeben, damit keine Anfrage und keine E-Mail entsteht. Den vollständigen Weg mit echter Anfrage prüft ein Test im Browser (ElevenLabs → Agents → „RheinWerk Mira“ → Test AI agent) mit eigener E-Mail-Adresse, denn die Eingangsbestätigung wird wirklich versendet.
