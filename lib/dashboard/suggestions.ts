@@ -1,6 +1,7 @@
 import "server-only";
 import { rolesFor, type EmployeeRole } from "@/lib/auth/roles";
-import { berlinDayKey, formatCurrency } from "@/lib/format";
+import { berlinDayKey, formatCurrency, formatDateTime } from "@/lib/format";
+import { label } from "@/lib/status";
 import { invoiceDisplayStatus, requestDisplayStatus } from "@/lib/display-status";
 import { createClient } from "@/lib/supabase/server";
 
@@ -8,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 // lists, so a suggestion never shows more than the list would. "value" is what a fill field takes over.
 export type Suggestion = { id: string; title: string; meta: string; value: string; href: string | null };
 
-export const SUGGEST_AREAS = ["anfragen", "kunden", "rechnungen", "posteingang", "kundennummer"] as const;
+export const SUGGEST_AREAS = ["anfragen", "kunden", "rechnungen", "posteingang", "kundennummer", "anrufe"] as const;
 export type SuggestArea = (typeof SUGGEST_AREAS)[number];
 
 export const SUGGEST_LIMIT = 8;
@@ -20,6 +21,7 @@ const AREA_ROLES: Record<SuggestArea, readonly EmployeeRole[]> = {
   rechnungen: rolesFor("/dashboard/rechnungen"),
   posteingang: rolesFor("/dashboard/posteingang"),
   kundennummer: ["dispatcher", "manager", "admin"],
+  anrufe: rolesFor("/dashboard/anrufe"),
 };
 
 export function mayUseArea(area: SuggestArea, role: EmployeeRole): boolean {
@@ -85,6 +87,28 @@ async function invoiceSuggestions(term: string): Promise<Suggestion[]> {
   });
 }
 
+// Calls (task-13-7): same columns as the call list; the value is the company, so the search finds all its calls
+async function callSuggestions(term: string): Promise<Suggestion[]> {
+  const supabase = await createClient();
+  const { data: requests } = await supabase.from("requests").select("id").or(`request_number.ilike.*${term}*,company_name.ilike.*${term}*`).limit(200);
+  const ors = ["analysis->>firma", "analysis->>kontakt", "summary", "callback_number", "caller_number"].map((column) => `${column}.ilike.*${term}*`);
+  const ids = (requests ?? []).map((row) => row.id);
+  if (ids.length > 0) ors.push(`request_id.in.(${ids.join(",")})`);
+  const { data } = await supabase.from("phone_calls").select("id, started_at, category, analysis, requests(company_name, request_number)")
+    .or("analyzed_at.not.is.null,callback_needed.eq.true").or(ors.join(",")).order("started_at", { ascending: false }).limit(SUGGEST_LIMIT);
+  return (data ?? []).map((row) => {
+    const named = row.analysis && typeof row.analysis === "object" && !Array.isArray(row.analysis) && typeof row.analysis.firma === "string" ? row.analysis.firma : null;
+    const company = row.requests?.company_name ?? named ?? "Ohne Firmenangabe";
+    return {
+      id: row.id,
+      title: company,
+      meta: [formatDateTime(row.started_at), row.category && label("call_category", row.category), row.requests?.request_number].filter(Boolean).join(" · "),
+      value: company,
+      href: `/dashboard/anrufe/${row.id}`,
+    };
+  });
+}
+
 // message: the inbox e-mail the chosen request is offered for (posteingang)
 export async function suggest(area: SuggestArea, q: string, message: string | null): Promise<Suggestion[]> {
   const term = suggestTerm(q);
@@ -101,5 +125,7 @@ export async function suggest(area: SuggestArea, q: string, message: string | nu
       return customerSuggestions(term, true);
     case "rechnungen":
       return invoiceSuggestions(term);
+    case "anrufe":
+      return callSuggestions(term);
   }
 }

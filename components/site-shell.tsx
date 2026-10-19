@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Assistant } from "./assistant";
+import { DemoCall } from "./demo-call";
 import { ButtonLink, Icon, Logo } from "./ui";
 
 const nav = [
@@ -55,6 +56,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       </footer>
       <div className="mobile-action"><ButtonLink href="/serviceanfrage">Anfrage senden</ButtonLink><a href="tel:+4962100000" aria-label="Service Desk anrufen"><Icon name="phone" /></a></div>
       <Assistant />
+      <DemoCall />
     </div>
   );
 }

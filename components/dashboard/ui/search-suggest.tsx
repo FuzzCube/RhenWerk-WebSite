@@ -24,7 +24,7 @@ export function SearchSuggest({
   invalid,
   describedBy,
 }: {
-  area: "anfragen" | "kunden" | "rechnungen" | "posteingang" | "kundennummer";
+  area: "anfragen" | "kunden" | "rechnungen" | "posteingang" | "kundennummer" | "anrufe";
   name: string;
   id: string;
   defaultValue?: string;

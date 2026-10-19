@@ -94,6 +94,36 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .panel--navy { border-left-color: var(--rw-color-navy-950); }
 .panel--blue { border-left-color: var(--rw-color-blue-700); }
 .panel--lime { border-left-color: var(--rw-color-lime-500); }
+/* Demo call with the phone assistant Mira (task-13-11): opened by every link to the service desk number */
+.demo-call-hint { margin-top: 12px; font-size: 14px; color: var(--rw-text-secondary); }
+.demo-call { margin: auto; width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 0; border-radius: var(--rw-radius-md); color: #fff; background: var(--rw-color-navy-950); overflow-y: auto; }
+.demo-call::backdrop { background: rgb(5 15 30 / 0.6); }
+.demo-call__close { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; color: #fff; background: transparent; cursor: pointer; }
+.demo-call__close:hover, .demo-call__close:focus-visible { background: rgb(255 255 255 / 0.12); }
+.demo-call__screen { display: grid; justify-items: center; gap: 4px; padding: 40px 24px 16px; text-align: center; }
+.demo-call__screen h2 { margin: 12px 0 0; color: #fff; font-size: 22px; }
+.demo-call__number { color: rgb(255 255 255 / 0.75); }
+.demo-call__status { min-height: 1.6em; color: var(--rw-color-lime-500); font-weight: 600; }
+.demo-call__limit { font-size: 13px; color: rgb(255 255 255 / 0.6); }
+.demo-call__avatar { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 50%; font-family: var(--rw-font-display); font-size: 40px; font-weight: 700; color: var(--rw-color-navy-950); background: var(--rw-color-lime-500); }
+.demo-call__avatar--ringing, .demo-call__avatar--speaking { animation: demo-call-pulse 1.2s ease-in-out infinite; }
+.demo-call__avatar--listening { box-shadow: 0 0 0 6px rgb(255 255 255 / 0.15); }
+@keyframes demo-call-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rw-color-lime-500) 55%, transparent); } 50% { box-shadow: 0 0 0 16px color-mix(in srgb, var(--rw-color-lime-500) 0%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .demo-call__avatar--ringing, .demo-call__avatar--speaking { animation: none; box-shadow: 0 0 0 8px color-mix(in srgb, var(--rw-color-lime-500) 40%, transparent); } }
+.demo-call__body { display: grid; gap: 14px; padding: 8px 24px 24px; }
+.demo-call__lead { color: rgb(255 255 255 / 0.85); font-size: 15px; }
+.demo-call__notice { margin: 0; padding-left: 18px; list-style: disc; display: grid; gap: 6px; font-size: 14px; color: rgb(255 255 255 / 0.75); }
+.demo-call a:not(.button) { color: var(--rw-color-lime-500); }
+.demo-call .button--secondary { color: #fff; border-color: rgb(255 255 255 / 0.5); background: transparent; }
+.demo-call__actions { display: flex; justify-content: center; gap: 40px; padding: 8px 24px 28px; }
+.demo-call__body .demo-call__actions { padding: 8px 0 0; }
+.demo-call__round { display: grid; justify-items: center; gap: 8px; padding: 0; border: 0; color: #fff; background: none; font: inherit; font-size: 13px; cursor: pointer; }
+.demo-call__round > svg { box-sizing: content-box; padding: 19px; border-radius: 50%; background: rgb(255 255 255 / 0.14); }
+.demo-call__round--accept > svg { color: var(--rw-color-navy-950); background: var(--rw-color-lime-500); }
+.demo-call__round--hangup > svg { background: var(--rw-color-danger-700); }
+.demo-call__round[aria-pressed="true"] > svg { color: var(--rw-color-navy-950); background: #fff; }
+.demo-call__round:disabled { cursor: not-allowed; opacity: 0.45; }
+.demo-call__round:focus-visible > svg { outline: 2px solid var(--rw-color-lime-500); outline-offset: 3px; }
 .panel > p:not(.eyebrow), .panel > div > p { margin-top: 8px; color: var(--rw-text-secondary); }
 .service-card { min-height: 230px; padding: 24px; display: flex; flex-direction: column; color: var(--rw-text-primary); text-decoration: none; background: var(--rw-surface-default); border: 1px solid var(--rw-border-subtle); border-left: 2px solid var(--rw-color-blue-700); border-radius: var(--rw-radius-md); transition: box-shadow var(--rw-duration-fast), border-color var(--rw-duration-fast); }
 .service-card--lime { border-left-color: var(--rw-color-lime-500); }
@@ -1030,6 +1060,18 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .request-contact__internal { padding-top: var(--rw-space-12); border-top: 1px solid var(--rw-border-subtle); font-size: 14px; color: var(--rw-text-secondary); }
 .request-customer { display: grid; gap: var(--rw-space-8); padding-top: var(--rw-space-12); border-top: 1px solid var(--rw-border-subtle); }
 .request-customer__title { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; color: var(--rw-text-secondary); }
+/* Calls of the phone assistant (task-13-7) */
+.call-summary { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 46ch; }
+.call-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.call-transcript { display: grid; gap: 6px; margin: 0; padding: 12px 14px; list-style: none; background: var(--rw-surface-default); border: 1px solid var(--rw-border-subtle); max-height: 560px; overflow-y: auto; }
+.call-transcript__turn { font-size: 15px; overflow-wrap: anywhere; }
+.call-transcript__turn strong { display: inline-block; min-width: 4.5em; font-size: 13px; color: var(--rw-text-secondary); }
+.call-transcript__turn--agent strong { color: var(--rw-color-info-800); }
+.call-transcript__tool { font-family: var(--rw-font-mono, ui-monospace, monospace); font-size: 12px; color: var(--rw-text-secondary); overflow-wrap: anywhere; }
+.request-calls { display: grid; gap: var(--rw-space-8); padding-top: var(--rw-space-12); border-top: 1px solid var(--rw-border-subtle); }
+.request-calls__title { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; color: var(--rw-text-secondary); }
+.request-calls ul { display: grid; gap: var(--rw-space-8); margin: 0; padding: 0; list-style: none; }
+.request-calls li { display: grid; gap: 2px; }
 .request-next__eyebrow { font-family: var(--rw-font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rw-text-secondary); }
 .request-next .action-list { display: flex; flex-direction: column; gap: var(--rw-space-12); }
 .request-next .action { border: 0; padding: 0; background: transparent; }

@@ -2,21 +2,27 @@
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v12 mit 14 Phasen und 62 Tasks. Fortschritt 97,22 % (Gewicht 175 von 180, 60 von 62 Tasks).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website mit Supabase. Roadmap v13 mit 14 Phasen und 63 Tasks. Fortschritt 100 % (Gewicht 182 von 182, 63 von 63 Tasks). Roadmap v13.
 
 ## Aktive Phase
 
-Phasen 0–12 abgeschlossen. Phase 13 „KI-Telefonassistent“ (Plan `docs/telefonassistent-plan.md`) ist angelegt: ElevenLabs-Agent „Mira“ (nur Deutsch), Werkzeuge über n8n hinter benanntem Cloudflare-Tunnel, Terminvormerkung mit Bestätigung durch den Dispatcher, Rückrufbitte an den Techniker bei Verspätung (Benachrichtigung im Dashboard, kein Telegram), Web-Widget statt Telefonnummer.
+Alle Phasen 0–13 abgeschlossen (19.10.2026). Phase 13 „KI-Telefonassistent“ (Plan `docs/telefonassistent-plan.md`): ElevenLabs-Agent „Mira“ (nur Deutsch), Werkzeuge über n8n hinter benanntem Cloudflare-Tunnel, Terminvormerkung mit Bestätigung durch den Dispatcher, Rückrufbitte an den Techniker bei Verspätung (Benachrichtigung im Dashboard, kein Telegram), Web-Widget statt Telefonnummer.
 
 ## Aktive Aufgabe
 
-Keine Aufgabe in Arbeit. Bereit: `task-13-7` „Telefonassistent: Dashboard“.
+Keine Aufgabe in Arbeit. Alle Tasks der Roadmap v13 sind abgeschlossen; offen sind nur die Sprachtests des Telefonassistenten nach neuem ElevenLabs-Guthaben (siehe Bekannte Probleme).
 
 Hinweis: Nach `npm run test:ui` meldet `demo:verify` Chronologie-Abweichungen der vom Test angelegten Demo-Anfragen (UI-Test …); `npm run demo:seed` räumt sie ab.
 
 `task-10-4` ist lokal abgeschlossen: sechs veröffentlichte n8n-Workflows, lokaler Formularpfad zu n8n, echte Blob→Supabase→OpenAI-Dateiverarbeitung und Gmail-Antwortgedächtnis geprüft. Öffentliche Website nicht umgestellt.
 
 ## Zuletzt abgeschlossen
+
+`task-13-11` (19.10.2026): Demo-Anruf und Demo-Weiterleitung – Portfolio ohne Telefonleitung (Nutzerentscheidung): jeder Link auf die Service-Desk-Nummer öffnet einen simulierten Anruf bei Mira (`components/demo-call.tsx`, ersetzt die Widget-Karte der Kontaktseite; Limits wie task-13-8). Werkzeug `weiterleiten` (`agent_forward`, Migration `20261019160000_agent_forward.sql`): Mira sagt, dass es ein Demo-Projekt ist und hier verbunden würde, und nimmt dann einen Rückruf auf; „weitergeleitet (Demo)“ im Bereich Anrufe. test:db 920, test:agent, test:ui, agent:simulate (zwei Volläufe), lint, typecheck, build. Nicht geprüft: Anruf mit Stimme (Guthaben).
+
+`task-13-8` (19.10.2026): Test und Demo des Telefonassistenten – Web-Widget „Mit Mira sprechen“ auf der Kontaktseite (signierte Adresse über `app/api/mira`, Budget in `widget_sessions`: 3 Minuten je Gespräch, 10 Minuten je Tag, 3 Gespräche je Anschluss und Stunde; Hinweis KI/Datenschutz vor dem Start; Agent nur noch mit signierter Adresse, Ende nach 30 s Stille), Testprotokoll `docs/telefonassistent/testprotokoll.md` (14 Szenarien per Textsimulation, `agent:simulate` mit 16 Fällen; drei Prompt-Nachbesserungen), Latenz `npm run agent:latency` (Antwortzeit p50 1,2 s). test:db 911, test:ui 352, test:unit 85, lint, build. Nicht geprüft: Sprachdurchläufe und Widget-Gespräch (Guthaben).
+
+`task-13-7` (19.10.2026): Telefonassistent-Dashboard – Bereich „Anrufe“ (`/dashboard/anrufe`, Dispatcher, Manager, Admin: Liste mit Ansichten Alle/Rückruf offen/Notfälle und Dringendes/Mit neuer Anfrage, Suche mit Vorschlägen, Anrufseite mit Zusammenfassung, Anfrage und Kunde, „Rückruf erledigt“, Transkript 30 Tage), Quelle „über Telefon (KI)“ im Kopf der Anfrage und Block „Telefonat“, Auswertung „Telefon“ (Migration `20261019140000_phone_dashboard.sql`: `analytics_phone`, `analytics_phone_categories`, `analytics_phone_days`), Demo-Anrufe (`scripts/demo/calls.mjs`, rund 340, etwa 40 % der Demo-Anfragen der letzten 150 Tage über das Telefon). test:db 897, test:ui 347, test:unit, lint, typecheck, build, demo:verify 19/19, Sichtprüfung 390/1440 px. test:auth: 5 Cache-Control-Prüfungen schlagen unter `next dev` fehl, auch ohne diese Änderungen.
 
 `task-13-6` (19.10.2026): Gesprächsauswertung – n8n-Workflow `rwCallAnalysis26` holt beendete Gespräche alle 2 Minuten über die ElevenLabs-API (statt Webhook), OpenAI füllt das feste Schema, `agent_record_call` speichert einmal je Gespräch mit Fakten aus der Datenbank; dringende Anrufe als Banner für Dispatcher mit „Rückruf erledigt“. test:db 880, test:calls (7 echte Gespräche), test:ui, test:agent, agent:simulate 5/5, test:unit 85, lint, typecheck, build. Regeln in `docs/telefonassistent/regeln.md` (Gesprächsauswertung).
 
@@ -101,6 +107,8 @@ Keine Blockierung. Lokale Integration task-10-4 nach den tatsächlich geprüften
 - Gestaltung des PDFs folgt der Maßtabelle in `docs/design/RheinWerk Rechnungsvorlage.html`; Schriften unter `assets/fonts/` (OFL), eingebettet mit festen Namen für byte-identische Ausgabe.
 - Website-Code wird aus `05_Export/RheinWerk Industrieservice Website` übernommen; das Dashboard entsteht im selben Next.js-Projekt.
 - Quelle der Website: `FuzzCube/rheinwerk-industrieservice`, Commit `39d9936`, ohne Git-Historie übernommen.
+- Nutzerentscheidung 19.10.2026: Repository vom Organisationsrepo `Futureway-Akademie/A.Sadkovojs_Project` auf das eigene `github.com/FuzzCube/RhenWerk-WebSite` umgezogen (`origin`); weitergearbeitet wird nur dort. Commits auf `main`, Push durch den Nutzer.
+- Nutzerentscheidungen 19.10.2026 zum Telefonassistenten: LLM `claude-sonnet-4-5` statt Haiku (verknüpft Buchstabiertes besser, etwas mehr Verzögerung akzeptiert), TTS `eleven_v3_conversational` mit Expressive Mode; E-Mail-Adressen und Kalenderdaten bestimmt die Datenbank, nicht das Sprachmodell; Bestandskunden über Kundennummer + PLZ; Gesprächsauswertung per API-Abfrage statt Webhook.
 - Markenname RheinWerk statt „Rheinberg“ aus der Spezifikation.
 - Nutzerentscheidung 08.10.2026: Make durch lokales n8n ersetzen; Supabase ebenfalls lokal auf dem Mac. Gmail: rheinwerk.industrieservice@gmail.com. Unbekannte Modelle gehen an Menschen, keine automatische Ablehnung. Katalog: docs/equipment/RheinWerk_Anlagenkatalog_DE.md.
 - Entwicklung gegen lokales Supabase (`supabase start`); Schemaänderungen nur als Migrationen unter `supabase/migrations/`, spätere Übernahme in die Cloud per `supabase db push`.
@@ -134,6 +142,13 @@ Keine Blockierung. Lokale Integration task-10-4 nach den tatsächlich geprüften
 - `npm run test:api` und `npm run test:ui` legen Testnutzer und Testanfragen an. Die Anfragen (`is_demo`) entfernt `npm run demo:seed`; die Testnutzer erscheinen lokal in Namenslisten, bis `supabase db reset` sie entfernt.
 - Port 3000 kann lokal von einem anderen Projekt belegt sein; App dann z. B. mit `npx next start -p 3100` starten. Für `test:ui` `APP_URL=http://localhost:3100` verwenden: der Link aus der Passwort-Mail leitet über `request.nextUrl` auf `localhost` weiter, mit `127.0.0.1` gehen dabei die Sitzungs-Cookies verloren (Prüfung „Link öffnet Neues Passwort festlegen“ schlägt fehl).
 - Lokale Entwicklung setzt laufendes Docker und `supabase start` voraus; `.env.local` mit Werten aus `supabase status`.
+- `next dev` liefert Client-Skripte nur an `localhost`/`127.0.0.1` (`allowedDevOrigins` in `next.config.ts`). Über die LAN-Adresse (z. B. `http://192.168.2.33:3000`) erscheint die Seite, aber nichts Interaktives funktioniert (Vorschläge, Plantafel, Banner). Lokal immer `http://localhost:3000` öffnen; für Tests von Tablet/Smartphone die Adresse in `allowedDevOrigins` ergänzen und `next dev` neu starten.
+- `supabase db reset` löscht alle lokalen Daten (Demo-Nutzer, Demodaten, Testanfragen); danach `npm run demo:users` und `npm run demo:seed`. Geänderte Funktionen einer bereits angewandten Migration besser einzeln per `psql` einspielen (am 19.10.2026 einmal versehentlich zurückgesetzt).
+- ElevenLabs-Guthaben des Nutzers am 19.10.2026 aufgebraucht: keine Live-Anrufe; offen ist ein Browsertest von Mira mit den letzten Änderungen (Sonnet, Kalender, ASR-Schlüsselwörter, Bestandskunde). API-Lesen (Gesprächsauswertung, `test:calls`) und `agent:sync` funktionieren weiter; `agent:simulate` lief ebenfalls.
+
+- Zusammenfassungen von Anrufen ohne Anfrage sollen laut `docs/telefonassistent/datenschutz.md` nach 12 Monaten gelöscht werden; noch nicht umgesetzt.
+- Nach `npm install` liefert ein laufendes `next dev` teils HTTP 500 („module factory is not available“); `next dev` neu starten (läuft im Terminal des Nutzers).
+- Demo-Anruf funktioniert nur lokal (Budget in Supabase, `/api/mira`); die öffentliche Website ist nicht an Supabase angebunden, dort meldete der Dialog „Anruf nicht möglich“, bis Supabase und `ELEVENLABS_API_KEY` im Deployment eingerichtet sind.
 
 ## Prüfung der n8n-Integration
 

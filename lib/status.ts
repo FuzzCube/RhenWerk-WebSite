@@ -86,6 +86,10 @@ export const LABELS = {
   visibility_level: { operational: "Technik", dispatch: "Disposition", management: "Leitung" },
   automation_step: { intake_analysis: "Analyse der Anfrage", reply_analysis: "Analyse der Kundenantwort", email_matching: "E-Mail-Zuordnung", email_send: "E-Mail-Versand" },
   automation_decision: { ready_for_planning: "Bereit zur Planung", ask_customer: "Rückfrage an Kunden", human_review: "Menschliche Prüfung", matched: "Zugeordnet", unmatched: "Nicht zugeordnet", sent: "Versendet" },
+  // Channel of a request; demo requests stand for the website form
+  request_source: { website_form: "Website-Formular", demo_seed: "Website-Formular", email: "E-Mail", phone: "Telefon", phone_agent: "Telefon (KI)" },
+  call_category: { neue_anfrage: "Neue Anfrage", termin: "Termin", status: "Status", verspaetung: "Verspätung", frage: "Frage", notfall: "Notfall", beschwerde: "Beschwerde", ausserhalb_gebiet: "Außerhalb des Gebiets", spam: "Spam", sonstiges: "Sonstiges" },
+  call_sentiment: { positiv: "Positiv", neutral: "Neutral", negativ: "Negativ" },
 } as const satisfies Record<string, Record<string, string>>;
 
 export function label(kind: keyof typeof LABELS, value: string | null | undefined): string {

@@ -18,6 +18,7 @@ Mo–Fr 07:00–18:00, ohne gesetzliche Feiertage in Baden-Württemberg. `in_ser
 
 - SLA (task-13-9): Mira fragt nach Vertragsnummer und PLZ des Standorts und ruft `sla_pruefen` auf (Vertragsbestand `service_contracts`). Nur `gueltig_24_7` führt nachts zur Bereitschaft. `gueltig_ohne_24_7`: „Ihr Vertrag umfasst keinen 24/7-Notdienst“; `abgelaufen`/`noch_nicht_gueltig`: Hinweis auf den Vertragsstand; `passt_nicht`/`unbekannt`: „Den Vertrag kann ich nicht bestätigen“ – jeweils dringende Anfrage. Mira nennt nie die Firma zu einer Nummer. `sla_verified` an der Anfrage setzt weiterhin ein Mensch; die Anfrage zeigt dazu „Vertragsbestand“. Testnummern: [testdaten.md](testdaten.md).
 - Nicht erreicht (Besetzt, keine Annahme): Anfrage bzw. Rückrufwunsch als dringend, Text „Weiterleitung nicht erreicht“.
+- Umsetzung als Demo (task-13-11, Nutzerentscheidung 19.10.2026: Portfolio-Projekt ohne Telefonleitung): Werkzeug `weiterleiten(ziel, grund)` → `agent_forward` markiert den Anruf (`forwarded`, `forward_target`, `forward_reason`, `forwarded_at`) und liefert die Ansage „Dies ist ein Demo-Projekt. In einem echten Betrieb würde ich Sie jetzt mit unserem Service Desk (bzw. Bereitschaftsdienst) verbinden. Hier ist niemand erreichbar, deshalb nehme ich gern einen Rückruf für Sie auf.“; danach `rueckruf_service_desk`. `service_desk` außerhalb der Servicezeit antwortet `fehler: ausserhalb_servicezeit`. Mit echter Nummer würde an dieser Stelle die Systemfunktion `transfer_to_number` der Plattform stehen (Twilio oder SIP-Trunk).
 - Ziele (Telefonnummern) stehen in n8n, nicht im Prompt.
 
 ## Auskünfte zu einer Anfrage
@@ -71,7 +72,7 @@ Alle Werkzeuge sind POST-Webhooks in n8n (`/webhook/agent-<name>`, Bindestriche 
 | `anfrage_anlegen` | `call_id`, Felder wie Telefonanfrage (Firma, Kontakt, Telefon, E-Mail, Kundennummer, Straße, PLZ, Ort, Anlagenart, Hersteller, Typ, Leistung, Beschreibung, Dringlichkeit, Sicherheitsgefahr, Wunschtermin), `termin_beginn?`, `sla_vertragsnummer?` | `anfrage_nummer`, `termin_vorgemerkt` (bool), `termin_ansage?`; gleicher `call_id` liefert dieselbe Anfrage |
 | `anfrage_finden` | `nummer?`, `firma?`, `plz`, `strasse?` | `treffer` (0, 1, mehrere), bei 1: `anfrage_id`, `anfrage_nummer`, `standort` („Pumpe, Hafenstraße 12, Mannheim“), `lage`, `termin_ansage?` |
 | `rueckrufbitte_techniker` | `call_id`, `anfrage_id`, `rueckrufnummer` | `ok`, `bereits_offen` (bool) |
-| `weiterleiten` | `ziel` (`service_desk`, `bereitschaft`) | Systemfunktion der Plattform; Nummer aus n8n-Konfiguration |
+| `weiterleiten` | `call_id`, `ziel` (`service_desk`, `bereitschaft`), `grund` | Demo (task-13-11): `ok`, `demo: true`, `verbunden: false`, `ansage`; RPC `agent_forward`. Im echten Betrieb Systemfunktion der Plattform, Nummer aus der Konfiguration |
 | `gespraech_beenden` | – | Systemfunktion der Plattform |
 
 Pflichtfelder von `anfrage_anlegen` entsprechen `private.validate_request_fields` (wie Telefonanfrage, task-11-4); fehlt etwas, antwortet das Werkzeug mit `fehlende_felder[]`, Mira fragt nach.

@@ -71,6 +71,9 @@ try {
     ["servicezeit", { call_id: callId }, (j) => j.ok === true && typeof j.in_servicezeit === "boolean" && /Uhr$/.test(j.jetzt)],
     ["rueckruf-service-desk", { call_id: callId, grund: "Test", rueckrufnummer: "12" }, (j) => j.ok === false && j.fehler === "rueckrufnummer_ungueltig"],
     ["rueckruf-service-desk", { call_id: callId, grund: "Test: Rückruf gewünscht", rueckrufnummer: "0621 123456", dringend: false }, (j) => j.ok === true && typeof j.in_servicezeit === "boolean"],
+    // Demo transfer (task-13-11): marks the call, fixed sentence for the caller
+    ["weiterleiten", { call_id: callId, ziel: "bereitschaft", grund: "Test: Stillstand" }, (j) => j.ok === true && j.demo === true && j.verbunden === false && /^Dies ist ein Demo-Projekt\./.test(j.ansage)],
+    ["weiterleiten", { call_id: callId, ziel: "zentrale", grund: "Test" }, (j) => j.ok === false && j.fehler === "ziel_ungueltig"],
     ["rueckrufbitte-techniker", { call_id: callId, anfrage_id: demo.id, rueckrufnummer: "0621 123456" }, (j) => j.ok === false && j.fehler === "nicht_ueberfaellig"],
   ];
   const tools = [...new Set(cases.map(([tool]) => tool))];

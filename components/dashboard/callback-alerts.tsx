@@ -110,7 +110,7 @@ function CallAlertCard({ alert, pending, onDone }: { alert: CallAlert; pending: 
       <Icon name="phone" size={20} />
       <div className="callback-alert__text">
         <p className="callback-alert__title"><strong>Dringender Anruf: bitte zurückrufen</strong></p>
-        <p>{alert.request_id ? <Link href={`/dashboard/anfragen/${alert.request_id}`}>{alert.company_name}</Link> : alert.company_name} · {alert.reason}</p>
+        <p><Link href={`/dashboard/anrufe/${alert.id}`}>{alert.company_name}</Link> · {alert.reason}</p>
         <p className="tech-meta">Telefonassistent · Anruf <span className="mono">{formatTime(alert.created_at)}</span></p>
       </div>
       <div className="callback-alert__actions">

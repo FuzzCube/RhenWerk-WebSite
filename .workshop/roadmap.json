@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 12,
-  "status": "active",
+  "roadmapVersion": 13,
+  "status": "completed",
   "phases": [
     {
       "id": "phase-0",
@@ -1894,7 +1894,7 @@
       "description": "Deutschsprachiger Voice Agent (ElevenLabs, n8n, Supabase) für den Service Desk: Anfragen mit vorgemerktem Termin, Statusauskunft mit Rückrufbitte an den Techniker, Notfallweiterleitung, Gesprächsauswertung im Dashboard. Plan: docs/telefonassistent-plan.md.",
       "order": 14,
       "weight": 3,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-13-1",
@@ -2139,7 +2139,7 @@
           "description": "Bereich „Anrufe“ (Liste, Zusammenfassung, Transkript 30 Tage, „Rückruf erledigt“), Block „Telefonat“ in der Anfrage, Quelle „Telefon (KI)“, Kennzahlen „Telefon“ in der Auswertung (Anrufe, ohne Mensch gelöst, Anfragen, außerhalb Servicezeit, Notfälle, Dauer, Kosten), Demo-Anrufe.",
           "order": 8,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-13-6"
           ],
@@ -2147,7 +2147,26 @@
             "Oberfläche mit Rechten nach Rolle",
             "Kennzahlen und Demo-Daten",
             "test:ui, Sichtprüfung 390/1440 px"
-          ]
+          ],
+          "startedAt": "2026-10-19T17:40:39Z",
+          "completedAt": "2026-10-19T18:06:42Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261019140000_phone_dashboard.sql: analytics_phone (Anrufe, ohne Rückruf, im Gespräch angelegte Anfragen, außerhalb Servicezeit, Notfälle, Rückrufe/offen, Dauer, Kosten, Credits, Vorzeitraum), analytics_phone_categories, analytics_phone_days. Bereich /dashboard/anrufe (Dispatcher, Manager, Admin): Liste mit vier Ansichten, Suche und Vorschlägen, Anrufseite mit Zusammenfassung, Fakten, Anfrage und Kunde, Rückruf erledigt, Transkript (30 Tage). Anfrage: Quelle im Kopf (Telefon (KI)), Block Telefonat. Auswertung Telefon mit 8 Kennzahlen, Anrufe je Tag, Anliegen. Demo: 337 Anrufe der letzten 150 Tage (scripts/demo/calls.mjs), etwa 40 % der Demo-Anfragen dieser Zeit über das Telefon. Geprüft: test:db 897 (phone_dashboard 17), test:ui 347 bestanden (neu: Anrufe, Telefon), test:unit, lint, typecheck, build, demo:verify 19/19; Sichtprüfung 390/1440 px. test:auth: 5 Cache-Control-Prüfungen unter next dev schlagen fehl, ebenso ohne diese Änderungen (keine Regression).",
+            "commands": [
+              "psql: Migration 20261019140000_phone_dashboard.sql",
+              "supabase test db",
+              "npm run db:types",
+              "npm run demo:seed",
+              "demo:verify (scripts/demo/verify-seed.sql)",
+              "UI_SCREENSHOTS=… npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:auth (5 Cache-Control-Prüfungen unter next dev, auch ohne Änderungen)"
+            ]
+          }
         },
         {
           "id": "task-13-8",
@@ -2155,7 +2174,7 @@
           "description": "Testprotokoll mit 14 Szenarien, Latenzmessung, Web-Widget „Mit Mira sprechen“ auf der Kontaktseite mit Minutenlimit, Dokumentation.",
           "order": 9,
           "weight": 2,
-          "status": "planned",
+          "status": "completed",
           "dependsOn": [
             "task-13-7"
           ],
@@ -2163,7 +2182,26 @@
             "Protokoll mit Ergebnissen und Latenz",
             "Widget mit Limit",
             "Dokumentation aktualisiert"
-          ]
+          ],
+          "startedAt": "2026-10-19T18:17:36Z",
+          "completedAt": "2026-10-19T19:11:53Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Web-Widget „Mit Mira sprechen“ auf der Kontaktseite (components/mira-widget.tsx, app/api/mira: Budget, signierte Adresse, Bindung der Gesprächs-ID; Migration 20261019150000_widget_sessions.sql: 3 Minuten je Gespräch, 10 Minuten je Tag, 3 Gespräche je Anschluss und Stunde; Agent nur mit signierter Adresse, max_duration 180 s, Stille: Nachfrage 7 s, Ende 30 s). Testprotokoll docs/telefonassistent/testprotokoll.md mit 14 Szenarien (+Anlage): agent:simulate um 11 Fälle erweitert, drei Volläufe und Wiederholungen; Nachbesserungen im Prompt (leere Terminliste keine Störung, Notfälle ohne Termin, nachts ohne SLA kein Sofortrückruf). Latenz (agent:latency): Antwortzeit p50 1,2 s, p95 3,9 s; Werkzeuge über die Plattform ca. 0,6 s, Webhooks durch den Tunnel p50 162 ms. Datenschutz- und Cookie-Text ergänzt. Geprüft: test:db 911 (widget_sessions 14), test:ui 352, test:unit 85, lint, build, agent:simulate. Nicht geprüft: Sprachtests nach den Änderungen und ein Gespräch über das Widget (ElevenLabs-Guthaben aufgebraucht).",
+            "commands": [
+              "psql: Migration 20261019150000_widget_sessions.sql",
+              "supabase test db",
+              "npm run db:types",
+              "npm run agent:sync",
+              "npm run agent:simulate (3 Volläufe, Wiederholungen)",
+              "npm run agent:latency -- --runs 10 --markdown",
+              "UI_SCREENSHOTS=… npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         },
         {
           "id": "task-13-10",
@@ -2205,8 +2243,45 @@
               "npm run test:unit"
             ]
           }
+        },
+        {
+          "id": "task-13-11",
+          "title": "Telefonassistent: Demo-Anruf und Weiterleitung",
+          "description": "Nutzerwunsch 19.10.2026 (Portfolio, keine echte Telefonnummer): statt der Widget-Karte öffnet die Service-Desk-Nummer der Website einen simulierten Anruf (Hinweis, Freizeichen, Verbunden mit Zeit, Stumm, Auflegen; Limits wie task-13-8). Neues Werkzeug weiterleiten (service_desk, bereitschaft) nach den Regeln: Mira sagt, dass es ein Demo-Projekt ist und hier verbunden würde, und bietet einen Rückruf an; Anruf als weitergeleitet (Demo) mit Ziel gespeichert und im Dashboard gezeigt.",
+          "order": 11,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-13-8"
+          ],
+          "startedAt": "2026-10-19T19:40:17Z",
+          "definitionOfDone": [
+            "Simulierter Anruf statt Karte, 390/1440 px, test:ui",
+            "Werkzeug weiterleiten mit Datenbankfunktion, test:db, test:agent",
+            "Prompt und Simulationen angepasst, Dokumentation"
+          ],
+          "completedAt": "2026-10-19T20:11:40Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Demo-Anruf statt Widget-Karte: components/demo-call.tsx (Dialog über jeden Link tel:+4962100000, Hinweis Demo/KI/Datenschutz, Freizeichen, Verbunden mit Zeit, Stumm, Auflegen; Limits von task-13-8). Werkzeug weiterleiten (Migration 20261019160000_agent_forward.sql: phone_calls.forward_target/forward_reason/forwarded_at, agent_forward mit Demo-Ansage; n8n-Webhook agent-weiterleiten; agent:sync) und Prompt: in der Servicezeit Notfall, Beschwerde, Mensch → weiterleiten(service_desk), nachts mit SLA 24/7 → bereitschaft, danach Rückruf; Notfallregel im Schritt Terminwunsch. Dashboard: „weitergeleitet (Demo)“ in Liste und Anruf; 19 Demo-Anrufe mit Weiterleitung. Geprüft: test:db 920 (agent_forward 9), test:agent (weiterleiten), test:ui alle bestanden (neu: Demo-Anruf 6 Prüfungen, Weiterleitung im Anruf), agent:simulate zwei Volläufe 16/16 bzw. 15/16 (Abweichung Simulationsantwort, korrigiert, danach 3/3), lint, typecheck, build; Sichtprüfung Dialog 390/1440 px. Nicht geprüft: Anruf mit Stimme (ElevenLabs-Guthaben).",
+            "commands": [
+              "psql: Migration 20261019160000_agent_forward.sql",
+              "supabase test db",
+              "npm run db:types",
+              "python3 n8n/generate_agent_tools.py, n8n import:workflow / publish:workflow",
+              "npm run test:agent",
+              "npm run agent:sync",
+              "npm run agent:simulate (2 Volläufe, Wiederholungen)",
+              "npm run demo:seed",
+              "UI_SCREENSHOTS=… npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         }
-      ]
+      ],
+      "completedAt": "2026-10-19T20:11:40Z"
     }
   ]
 }

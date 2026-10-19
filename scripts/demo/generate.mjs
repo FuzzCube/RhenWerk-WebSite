@@ -5,6 +5,7 @@
 // are not applied, so the final status always matches the chronology and no actual data lies in the future.
 // Only planned visits may be future-dated. Required demo cases are added as explicit fixtures (raw_payload.demo_case).
 import * as C from "./catalog.mjs";
+import { generateDemoCalls } from "./calls.mjs";
 import { createRandom } from "./random.mjs";
 import { addHours, addMinutes, berlinDay, berlinParts, berlinTime, HOUR, isoDate, MINUTE, nextBusinessTime } from "./time.mjs";
 
@@ -170,6 +171,11 @@ export function generateDemoData({ anchor, now, staff, liveVisits = [] }) {
 
   let requestIndex = 0;
   let dispatcherCursor = 0;
+  // Phone assistant (task-13-7): about 40 % of the requests of the last five months came in by phone. Own random
+  // sequence, so the other demo data does not change with it.
+  const phoneRnd = createRandom(`rheinwerk-demo-calls:${anchorKey}`);
+  const phoneStart = berlinDay(cutoff, -150);
+  const phoneRequests = [];
 
   function simulate(spec) {
     requestIndex += 1;
@@ -204,6 +210,7 @@ export function generateDemoData({ anchor, now, staff, liveVisits = [] }) {
     const emergencyClaimed = rnd.weighted(customer.emergency_24_7 ? [[null, 0.3], [false, 0.3], [true, 0.4]] : [[null, 0.45], [false, 0.45], [true, 0.1]]);
     const description = rnd.pick(C.DESCRIPTIONS[serviceKind][equipmentKind]);
 
+    const byPhone = !spec.demoCase && t0 >= phoneStart && phoneRnd.chance(0.4);
     const req = {
       id: rnd.uuid(),
       request_number: "wird-vergeben",
@@ -267,6 +274,13 @@ export function generateDemoData({ anchor, now, staff, liveVisits = [] }) {
       demo: true,
       demo_case: spec.demoCase ?? undefined,
     };
+    if (byPhone) {
+      const conversationId = `demo-conv-r${String(requestIndex).padStart(4, "0")}`;
+      req.source = "phone_agent";
+      req.source_event_key = `phone_agent:${conversationId}`;
+      req.raw_payload = { channel: "phone_agent", conversation_id: conversationId, termin_beginn: null, email_buchstabiert: false, kunde_erkannt: Boolean(customer.customer_number), demo: true };
+      phoneRequests.push({ req, customer, conversationId });
+    }
     out.requests.push(req);
 
     // Step control: actions after the cutoff are not applied
@@ -391,7 +405,8 @@ export function generateDemoData({ anchor, now, staff, liveVisits = [] }) {
     };
 
     // Submission, dispatcher assignment, receipt
-    event(t0, "submission_received", { data: { source: "website_form", submission_id: req.source_event_key } });
+    if (byPhone) event(t0, "request_created_by_agent", { actorType: "automation", visibility: "dispatch", data: { conversation_id: req.raw_payload.conversation_id } });
+    else event(t0, "submission_received", { data: { source: "website_form", submission_id: req.source_event_key } });
     const tAssign = addMinutes(t0, 1);
     if (!spec.unassigned && ok(tAssign)) {
       req.dispatcher_id = dispatcherId;
@@ -845,6 +860,8 @@ export function generateDemoData({ anchor, now, staff, liveVisits = [] }) {
     error_code: null, error_text: null, corrected_by: null, corrected_at: null, correction_reason: null,
     started_at: iso(addMinutes(unmatchedAt, 1)), finished_at: iso(addMinutes(unmatchedAt, 2)), created_at: iso(addMinutes(unmatchedAt, 1)), updated_at: iso(addMinutes(unmatchedAt, 2)),
   });
+
+  out.phone_calls = generateDemoCalls({ rnd: phoneRnd, phoneRequests, requests: out.requests, from: phoneStart, cutoff, staff, customers });
 
   return { payload: out, cutoff, rateChange };
 }

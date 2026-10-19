@@ -148,9 +148,9 @@ try {
     { name: "1440", width: 1440, height: 900, mobile: false },
   ];
   const roles = [
-    { email: "admin.demo@example.com", pages: ["/dashboard/bausteine", "/dashboard/verwaltung", "detail:/dashboard/verwaltung", "detail:/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/tarife", "/dashboard/verwaltung/einstellungen", "/dashboard/uebersicht", "/dashboard/anfragen", "/dashboard/posteingang", "/dashboard/kunden"] },
-    { email: "manager.demo@example.com", pages: ["/dashboard/uebersicht", "/dashboard/uebersicht?zeitraum=jahr", "/dashboard/rechnungen", "/dashboard/auswertung", "/dashboard/auswertung?bereich=warteschlangen", "/dashboard/auswertung?bereich=automatisierung", "/dashboard/planung", "/dashboard/anfragen", "detail:/dashboard/anfragen?arbeit=completed", "detail:/dashboard/anfragen?erstbearbeitung=needs_review", "/dashboard/posteingang", "/dashboard/posteingang?ansicht=zugeordnet", "/dashboard/kunden", "detail:/dashboard/kunden"] },
-    { email: "dispo3.demo@example.com", pages: ["/dashboard/erstbearbeitung", "/dashboard/erstbearbeitung?tab=planung", "/dashboard/erstbearbeitung?tab=alle", "/dashboard/posteingang", "/dashboard/kunden"] },
+    { email: "admin.demo@example.com", pages: ["/dashboard/bausteine", "/dashboard/verwaltung", "detail:/dashboard/verwaltung", "detail:/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/tarife", "/dashboard/verwaltung/einstellungen", "/dashboard/uebersicht", "/dashboard/anfragen", "/dashboard/posteingang", "/dashboard/kunden", "/dashboard/anrufe"] },
+    { email: "manager.demo@example.com", pages: ["/dashboard/uebersicht", "/dashboard/uebersicht?zeitraum=jahr", "/dashboard/rechnungen", "/dashboard/auswertung", "/dashboard/auswertung?bereich=warteschlangen", "/dashboard/auswertung?bereich=automatisierung", "/dashboard/planung", "/dashboard/anfragen", "detail:/dashboard/anfragen?arbeit=completed", "detail:/dashboard/anfragen?erstbearbeitung=needs_review", "/dashboard/posteingang", "/dashboard/posteingang?ansicht=zugeordnet", "/dashboard/kunden", "detail:/dashboard/kunden", "/dashboard/auswertung?bereich=telefon", "/dashboard/anrufe", "detail:/dashboard/anrufe"] },
+    { email: "dispo3.demo@example.com", pages: ["/dashboard/erstbearbeitung", "/dashboard/erstbearbeitung?tab=planung", "/dashboard/erstbearbeitung?tab=alle", "/dashboard/posteingang", "/dashboard/kunden", "/dashboard/anrufe", "detail:/dashboard/anrufe?ansicht=anfrage"] },
     { email: "technik1.demo@example.com", pages: ["/dashboard/heute", "/dashboard/kalender", "/dashboard/anfragen", "detail:/dashboard/anfragen", "einsatz:/dashboard/heute"] },
   ];
 
@@ -234,7 +234,7 @@ try {
     await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     // One tab per area; only the selected area is rendered
     const figures = [];
-    const tabs = { durchsatz: 3, warteschlangen: 4, finanzen: 1, automatisierung: 2 };
+    const tabs = { durchsatz: 3, warteschlangen: 4, finanzen: 1, automatisierung: 2, telefon: 1 };
     for (const [area, expected] of Object.entries(tabs)) {
       await page.open(`${BASE}/dashboard/auswertung?bereich=${area}`);
       await page.until(`document.querySelectorAll(".figure .recharts-surface").length >= ${expected}`, 10000);
@@ -242,7 +242,7 @@ try {
       check(`  Reiter ${area}: nur ${expected} Diagramm(e) dieses Bereichs`, shown.figures.length === expected && shown.current?.toLowerCase() === area, JSON.stringify(shown));
       figures.push(...shown.figures);
     }
-    check("10 Diagramme (4 Warteschlangen als Einzeldiagramme) mit Datentabelle gezeichnet", figures.length === 10 && figures.every((f) => f.svg && f.marks > 0 && f.table > 0), JSON.stringify(figures));
+    check("11 Diagramme (4 Warteschlangen als Einzeldiagramme) mit Datentabelle gezeichnet", figures.length === 11 && figures.every((f) => f.svg && f.marks > 0 && f.table > 0), JSON.stringify(figures));
     await page.open(`${BASE}/dashboard/auswertung`);
     await page.until(`document.querySelectorAll(".figure .recharts-surface").length >= 3`, 10000);
     // Current month in the flow table equals a direct count in the database (Europe/Berlin)
@@ -261,6 +261,12 @@ try {
     if (target) await page.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: target.x, y: target.y });
     const tip = target && await page.until(`!!document.querySelector("#savings-chart [data-savings-detail]")`, 3000) ? await page.eval(`document.querySelector("#savings-chart [data-savings-detail]").textContent`) : "";
     check("  Tooltip Zeitersparnis zeigt Anzahl und Basiswert", /\d+ Anfragen × Basiswert 15 min/.test(tip), `${tip} ${box ?? ""}`);
+    // Telefon (task-13-7): figure "Anrufe" equals the evaluated calls of the running month in the database
+    await page.open(`${BASE}/dashboard/auswertung?bereich=telefon`);
+    await page.until(`!!document.querySelector('[data-phone-figure="calls"]')`, 10000);
+    const { count: callCount } = await admin.from("phone_calls").select("id", { count: "exact", head: true }).not("analyzed_at", "is", null).gte("started_at", monthStart);
+    const phone = await page.eval(`({ figures: document.querySelectorAll("[data-phone-figure]").length, calls: document.querySelector('[data-phone-figure="calls"] .rw-glance__value')?.textContent.replace(/\\D/g, ""), categories: document.querySelectorAll("#phone-categories tbody tr").length })`);
+    check(`  Telefon: 8 Kennzahlen, Anrufe ${phone.calls} = Datenbank ${callCount}, Tabelle der Anliegen`, phone.figures === 8 && Number(phone.calls) === callCount && phone.categories > 0, JSON.stringify(phone));
   }
 
   console.log("\nAnfrage aus Sicht des Technikers: eigener Einsatz oben, nur technische Angaben");
@@ -640,6 +646,8 @@ try {
     } finally {
       await admin.from("visits").update({ status: "cancelled", cancellation_reason: "UI-Test" }).eq("request_id", req.id).eq("status", "scheduled");
       await admin.rpc("escalate_callbacks");
+      // Call rows the tool created for this test (task-13-7: otherwise listed under Anrufe)
+      await admin.from("phone_calls").delete().like("conversation_id", `ui-callback-${runId}-%`);
     }
   }
 
@@ -781,6 +789,123 @@ try {
     if (SHOTS) {
       const image = await page.send("Page.captureScreenshot", { format: "png" });
       await writeFile(path.join(SHOTS, "vorschlaege-1440.png"), Buffer.from(image.data, "base64"));
+    }
+  }
+
+  console.log("\nAnrufe: Liste, Anruf, Rückruf erledigt, Telefonat in der Anfrage (task-13-7)");
+  {
+    const company = `UI-Anruf ${runId}`;
+    const req = await newRequest("anruf", { company_name: company, source: "phone_agent", source_event_key: `phone_agent:ui-anruf-${runId}` });
+    const noScroll = () => page.eval(`document.documentElement.scrollWidth <= window.innerWidth`);
+    const asCookie = async (email) => (await loginCookies(email)).map((c) => `${c.name}=${c.value}`).join("; ");
+    const { data: call, error: callError } = await admin.from("phone_calls").insert({
+      conversation_id: `ui-anruf-${runId}`, started_at: new Date(Date.now() - 600_000).toISOString(), ended_at: new Date(Date.now() - 400_000).toISOString(),
+      duration_seconds: 200, in_service_hours: false, category: "neue_anfrage", urgency: "zeitnah", safety_risk: "none_known",
+      summary: `UI-Test Zusammenfassung ${runId}`, transcript: `Mira: Guten Tag, hier spricht Mira.\n[Werkzeug anfrage_anlegen: {}]\nAnrufer: Unsere Pumpe ${runId} leckt.`,
+      callback_needed: true, callback_reason: "Kunde möchte Rückruf", callback_number: "0621 5566778", sentiment: "neutral", request_id: req.id,
+      cost_cents: 5, credits: 1500, analysis: { firma: company, kontakt: "Erika Muster" }, analyzed_at: new Date(Date.now() - 300_000).toISOString(),
+      forwarded: true, forward_target: "service_desk", forward_reason: "Kunde möchte einen Menschen", forwarded_at: new Date(Date.now() - 500_000).toISOString(),
+    }).select().single();
+    if (callError) throw new Error(`Anruf: ${callError.message}`);
+    try {
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await page.open(`${BASE}/dashboard/anrufe?ansicht=rueckruf&suche=${encodeURIComponent(company)}`);
+      const listed = await page.eval(`({ nav: !!document.querySelector('.dash-nav a[href="/dashboard/anrufe"]'), rows: [...document.querySelectorAll(".data-table tbody tr")].map((r) => r.textContent) })`);
+      check("Dispatcher: „Anrufe“ in der Navigation, Rückruf offen und Suche nach Firma finden den Anruf", listed.nav && listed.rows.length === 1 && listed.rows[0].includes("Rückruf offen") && listed.rows[0].includes(`UI-Test Zusammenfassung ${runId}`), JSON.stringify(listed));
+      const suggested = await (await fetch(`${BASE}/dashboard/suche/vorschlaege?bereich=anrufe&q=${encodeURIComponent(company)}`, { headers: { cookie: await asCookie(dispoEmail) } })).json();
+      check("  Vorschlag in der Suche führt zum Anruf", suggested.items?.[0]?.href === `/dashboard/anrufe/${call.id}`, JSON.stringify(suggested));
+
+      await page.open(`${BASE}/dashboard/anrufe/${call.id}`);
+      const detail = await page.eval(`({ text: document.querySelector(".side-page__main").textContent, turns: document.querySelectorAll(".call-transcript__turn").length, tools: document.querySelectorAll(".call-transcript__tool").length, request: document.querySelector('a[href="/dashboard/anfragen/${req.id}"]')?.textContent ?? null, tel: document.querySelector('.side-page__main a[href^="tel:"]')?.getAttribute("href") })`);
+      check("  Anruf: Zusammenfassung, Transkript mit Werkzeug, Anfrage „im Gespräch angelegt“, Demo-Weiterleitung, Rückrufnummer", detail.text.includes(`UI-Test Zusammenfassung ${runId}`) && detail.turns === 2 && detail.tools === 1
+        && detail.request !== null && detail.text.includes("im Gespräch angelegt") && detail.text.includes("Außerhalb") && detail.text.includes("An Service Desk (Demo, nicht verbunden)") && detail.tel === "tel:06215566778", JSON.stringify({ ...detail, text: detail.text.slice(0, 200) }));
+      if (SHOTS) {
+        const image = await page.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
+        await writeFile(path.join(SHOTS, "anruf-1440.png"), Buffer.from(image.data, "base64"));
+      }
+      await page.eval(`[...document.querySelectorAll(".side-page__main button")].find((b) => b.textContent.includes("Rückruf erledigt"))?.click()`);
+      check("  „Rückruf erledigt“ vermerkt den Dispatcher", await waitFor(async () => (await admin.from("phone_calls").select("callback_done_by").eq("id", call.id).single()).data?.callback_done_by === dispoId));
+      await page.open(`${BASE}/dashboard/anrufe/${call.id}`);
+      check("  Stand danach „Zurückgerufen“", (await page.eval(`document.querySelector(".side-page__main .rw-chip")?.textContent ?? ""`)).includes("Zurückgerufen"));
+
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+      check("  Anruf bei 390 px ohne horizontales Scrollen", await noScroll());
+      if (SHOTS) {
+        const image = await page.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
+        await writeFile(path.join(SHOTS, "anruf-390.png"), Buffer.from(image.data, "base64"));
+      }
+      await page.open(`${BASE}/dashboard/anfragen/${req.id}`);
+      const block = await page.eval(`({ head: document.querySelector(".request-head__meta")?.textContent ?? "", block: document.querySelector(".request-calls")?.textContent ?? "", link: !!document.querySelector('.request-calls a[href="/dashboard/anrufe/${call.id}"]') })`);
+      check("  Anfrage: Quelle „Telefon (KI)“, Block Telefonat mit Link zum Anruf, 390 px ohne Scrollen", block.head.includes("über Telefon (KI)") && block.link
+        && block.block.includes("Anfrage im Gespräch angelegt") && block.block.includes("Rückruf erledigt") && await noScroll(), JSON.stringify(block));
+      await page.open(`${BASE}/dashboard/anrufe`);
+      check("  Anrufliste bei 390 px ohne horizontales Scrollen", await noScroll());
+
+      // Technicians have no call area (navigation, page, suggestions)
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies("technik1.demo@example.com") });
+      await page.open(`${BASE}/dashboard/anrufe/${call.id}`);
+      const tech = await page.eval(`({ path: location.pathname, nav: !!document.querySelector('.dash-nav a[href="/dashboard/anrufe"]'), text: document.body.textContent.includes("UI-Test Zusammenfassung") })`);
+      const techSuggest = await fetch(`${BASE}/dashboard/suche/vorschlaege?bereich=anrufe&q=${encodeURIComponent(company)}`, { headers: { cookie: await asCookie("technik1.demo@example.com") } });
+      check("Techniker: kein Bereich Anrufe, keine Vorschläge", !tech.path.startsWith("/dashboard/anrufe") && !tech.nav && !tech.text && techSuggest.status === 403, JSON.stringify({ ...tech, status: techSuggest.status }));
+    } finally {
+      await admin.from("phone_calls").delete().eq("id", call.id);
+      // The following sections run as the test dispatcher at 1440 px
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    }
+  }
+
+  console.log("\nDemo-Anruf bei Mira über die Service-Desk-Nummer mit Minutenbudget (task-13-8, task-13-11)");
+  {
+    const filler = [];
+    const call = () => page.eval(`(() => { const d = document.querySelector("dialog.demo-call"); return d ? { open: d.open, phase: d.dataset.callPhase, text: d.textContent, accept: d.querySelector(".demo-call__round--accept")?.disabled ?? null, privacy: !!d.querySelector('a[href="/datenschutz"]'), scroll: document.documentElement.scrollWidth <= window.innerWidth } : null; })()`);
+    const ready = `(document.querySelector("dialog.demo-call")?.textContent ?? "").match(/Heute noch|aufgebraucht/)`;
+    try {
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await page.open(`${BASE}/kontakt`);
+      check("Kontaktseite: Hinweis auf den Demo-Anruf, keine Widget-Karte", await page.eval(`document.querySelector(".demo-call-hint")?.textContent.includes("KI-Assistentin Mira") && !document.querySelector(".mira")`));
+      await page.eval(`document.querySelector('.panel a.button[href="tel:+4962100000"]').click()`);
+      await page.until(ready, 8000);
+      const shown = await call();
+      check("  Klick auf die Nummer öffnet den Demo-Anruf: Hinweis Demo/KI, Datenschutz-Link, Restminuten", shown?.open === true && shown.phase === "notice" && shown.text.includes("Demo-Projekt")
+        && shown.text.includes("mit einer KI") && shown.privacy && shown.text.includes("Heute noch"), JSON.stringify(shown));
+      if (SHOTS) {
+        const image = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, "demo-anruf-1440.png"), Buffer.from(image.data, "base64"));
+      }
+      await page.eval(`document.querySelector(".demo-call__close").click()`);
+      check("  Schließen beendet den Dialog", await waitFor(async () => (await call())?.open === false));
+
+      // Phone: the call button of the bottom bar opens the same dialog
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+      await page.open(`${BASE}/leistungen`);
+      await page.eval(`document.querySelector('.mobile-action a[href="tel:+4962100000"]').click()`);
+      await page.until(ready, 8000);
+      const phone = await call();
+      check("  390 px: Anruf-Schaltfläche der unteren Leiste öffnet den Demo-Anruf, kein horizontales Scrollen", phone?.open === true && phone.scroll, JSON.stringify(phone));
+      if (SHOTS) {
+        const image = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, "demo-anruf-390.png"), Buffer.from(image.data, "base64"));
+      }
+
+      // Day budget used up: "anrufen" is disabled
+      const used = await admin.from("widget_sessions").insert(Array.from({ length: 4 }, () => ({ client_key: "f".repeat(64), reserved_seconds: 180 }))).select("id");
+      filler.push(...(used.data ?? []).map((row) => row.id));
+      await page.open(`${BASE}/kontakt`);
+      await page.eval(`document.querySelector('.panel a.button[href="tel:+4962100000"]').click()`);
+      await page.until(`(document.querySelector("dialog.demo-call")?.textContent ?? "").includes("aufgebraucht")`, 8000);
+      const blocked = await call();
+      check("  Tagesbudget verbraucht: „Einverstanden, anrufen“ gesperrt, Hinweis", blocked?.accept === true && blocked.text.includes("aufgebraucht"), JSON.stringify(blocked));
+      const foreign = await fetch(`${BASE}/api/mira`, { method: "POST", headers: { Origin: "https://fremd.example" } });
+      const limited = await fetch(`${BASE}/api/mira`, { method: "POST", headers: { Origin: BASE } });
+      check("  API: fremde Herkunft 403, ohne Budget 429 ohne signierte Adresse", foreign.status === 403 && limited.status === 429 && !(await limited.text()).includes("wss://"), `${foreign.status}/${limited.status}`);
+    } finally {
+      if (filler.length) await admin.from("widget_sessions").delete().in("id", filler);
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     }
   }
 

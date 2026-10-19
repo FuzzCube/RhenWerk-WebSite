@@ -40,6 +40,8 @@ TOOLS = [
     ("rueckruf-service-desk", "agent_request_service_callback", f"{{{{ {{call_id:{B}.call_id, grund:{B}.grund ?? null, rueckrufnummer:{B}.rueckrufnummer ?? null, dringend:{B}.dringend === true, anfrage_id:{B}.anfrage_id || null}} }}}}"),
     ("kunde-finden", "agent_find_customer", f"{{{{ {{call_id:{B}.call_id, kundennummer:{B}.kundennummer ?? null, plz:{B}.plz ?? null}} }}}}"),
     ("email-pruefen", "agent_check_email", f"{{{{ {{call_id:{B}.call_id, buchstaben:{B}.buchstaben ?? null}} }}}}"),
+    # Demo transfer (task-13-11): no phone line, the database marks the call and returns the sentence for the caller
+    ("weiterleiten", "agent_forward", f"{{{{ {{call_id:{B}.call_id, ziel:{B}.ziel ?? null, grund:{B}.grund ?? null}} }}}}"),
     ("anlage-pruefen", None, None),
 ]
 

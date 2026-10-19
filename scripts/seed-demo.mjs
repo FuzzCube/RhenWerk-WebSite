@@ -84,11 +84,33 @@ async function replaceDemoCustomers(customers) {
   return data;
 }
 
+// Demo calls of the phone assistant (task-13-7): replaced as a whole after the customers; the customer number of a
+// recognized caller becomes customer_id (main site). Live calls (is_demo false) stay.
+async function replaceDemoCalls(calls) {
+  const { error: deleteError } = await admin.from("phone_calls").delete().eq("is_demo", true);
+  if (deleteError) throw new Error(`Anrufe: ${deleteError.message}`);
+  if (calls.length === 0) return 0;
+  const { data: known, error: customerError } = await admin.from("customers").select("id, customer_number, customer_sites(id, is_active, created_at)").eq("is_demo", true);
+  if (customerError) throw new Error(`Anrufe: ${customerError.message}`);
+  const byNumber = new Map((known ?? []).map((c) => [c.customer_number, c]));
+  const rows = calls.map(({ customer_number: number, ...call }) => {
+    const customer = number ? byNumber.get(number) : null;
+    const site = customer?.customer_sites.filter((item) => item.is_active).sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
+    return { ...call, customer_id: customer?.id ?? null, customer_site_id: site?.id ?? null };
+  });
+  for (let i = 0; i < rows.length; i += 200) {
+    const { error } = await admin.from("phone_calls").insert(rows.slice(i, i + 200));
+    if (error) throw new Error(`Anrufe: ${error.message}`);
+  }
+  return rows.length;
+}
+
 if (process.argv.includes("--purge")) {
   const files = await removeDemoFiles();
   const { data, error } = await admin.rpc("demo_seed_purge");
   if (error) throw new Error(error.message);
   await replaceDemoContracts([]);
+  await replaceDemoCalls([]);
   await replaceDemoCustomers([]);
   console.log("Demodaten entfernt:", { ...data, storage_files: files });
   console.log("Testkonten:", await cleanupTestAccounts(admin));
@@ -137,14 +159,14 @@ const { payload, cutoff, rateChange } = generateDemoData({ anchor, now: new Date
 console.log(`Seed-Anker ${isoDate(anchor)}, Stichzeitpunkt ${cutoff.toISOString()}, Tarifwechsel ${isoDate(rateChange)}`);
 
 const removedFiles = await removeDemoFiles();
-const { customers, ...seedPayload } = payload;
+const { customers, phone_calls: phoneCalls, ...seedPayload } = payload;
 const { data, error } = await admin.rpc("demo_seed_apply", { payload: seedPayload });
 if (error) {
   console.error("Seed fehlgeschlagen:", error.message, error.details ?? "", error.hint ?? "");
   process.exit(1);
 }
 console.log("Entfernt:", { ...data.purged, storage_files: removedFiles });
-console.log("Eingefügt:", { ...data.inserted, service_contracts: await replaceDemoContracts(payload.service_contracts), kunden: await replaceDemoCustomers(customers) });
+console.log("Eingefügt:", { ...data.inserted, service_contracts: await replaceDemoContracts(payload.service_contracts), kunden: await replaceDemoCustomers(customers), anrufe: await replaceDemoCalls(phoneCalls) });
 
 // Safe demo files (scripts/demo/files) attached to selected demo cases
 const caseRequest = (demoCase) => payload.requests.find((r) => r.raw_payload.demo_case === demoCase);

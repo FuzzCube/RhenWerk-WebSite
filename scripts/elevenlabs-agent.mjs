@@ -92,6 +92,10 @@ const TOOLS = [
   ["rueckruf_service_desk", "Rückruf durch einen Menschen (statt Weiterleitung): Notfall, Beschwerde, Wunsch nach einem Menschen oder Werkzeugstörung.", {
     grund: str("Anliegen in einem Satz"), rueckrufnummer: str("Bestätigte Rückrufnummer in Ziffern, z. B. 0621 5550123"), dringend: bool("true bei Notfall, Stillstand oder Sicherheitsgefahr"), anfrage_id: str("anfrage_id, falls bekannt"),
   }, ["grund", "rueckrufnummer"]],
+  // task-13-11: demo transfer (portfolio project without a phone line); the answer field "ansage" is read out verbatim
+  ["weiterleiten", "Mit einem Menschen verbinden: service_desk in der Servicezeit (Notfall, Stillstand, Sicherheitsgefahr, Beschwerde, Wunsch nach einem Menschen), bereitschaft außerhalb nur bei sla_pruefen gueltig_24_7. Liest danach das Feld ansage vor.", {
+    ziel: { type: "string", enum: ["service_desk", "bereitschaft"], description: "service_desk oder bereitschaft" }, grund: str("Anliegen in einem Satz"),
+  }, ["ziel", "grund"]],
 ];
 
 for (const [name, description, properties, required] of TOOLS) {
@@ -172,12 +176,16 @@ const agent = {
     },
     asr: { keywords },
     // Waits longer during "äh" pauses before answering (test call 19.10.2026: Mira interrupted the caller)
-    turn: { turn_eagerness: "patient" },
-    conversation: { max_duration_seconds: 600 },
+    // Silence (test scenario 13, task-13-8): Mira asks again after 7 s and ends the call after 30 s without speech
+    turn: { turn_eagerness: "patient", turn_timeout: 7, silence_end_call_timeout: 30 },
+    // Web widget (task-13-8, user decision 19.10.2026): at most 3 minutes per conversation (lib/mira-widget.ts)
+    conversation: { max_duration_seconds: 180 },
   },
   platform_settings: {
     call_limits: { agent_concurrency_limit: 2, daily_limit: 30 },
     privacy: { record_voice: false, retention_days: 30 },
+    // Only signed URLs from the website server (app/api/mira) may start a conversation, so the minute budget holds
+    auth: { enable_auth: true },
   },
 };
 if (state.agent_id) await api("PATCH", `/v1/convai/agents/${state.agent_id}`, agent);

@@ -408,14 +408,14 @@ isOneToOne: false
                   ]
                 },"phone_calls": {
                   Row: {
-                    "analysis": Json | null,"analyzed_at": string | null,"callback_done_at": string | null,"callback_done_by": string | null,"callback_needed": boolean,"callback_number": string | null,"callback_reason": string | null,"callback_urgent": boolean,"caller_number": string | null,"category": string | null,"checked_email": string | null,"conversation_id": string,"cost_cents": number | null,"created_at": string,"credits": number | null,"customer_id": string | null,"customer_site_id": string | null,"duration_seconds": number | null,"ended_at": string | null,"forwarded": boolean,"id": string,"in_service_hours": boolean | null,"is_demo": boolean,"request_id": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"] | null,"sentiment": string | null,"started_at": string,"summary": string | null,"transcript": string | null,"transcript_deleted_at": string | null,"updated_at": string,"urgency": Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis": Json | null,"analyzed_at": string | null,"callback_done_at": string | null,"callback_done_by": string | null,"callback_needed": boolean,"callback_number": string | null,"callback_reason": string | null,"callback_urgent": boolean,"caller_number": string | null,"category": string | null,"checked_email": string | null,"conversation_id": string,"cost_cents": number | null,"created_at": string,"credits": number | null,"customer_id": string | null,"customer_site_id": string | null,"duration_seconds": number | null,"ended_at": string | null,"forward_reason": string | null,"forward_target": string | null,"forwarded": boolean,"forwarded_at": string | null,"id": string,"in_service_hours": boolean | null,"is_demo": boolean,"request_id": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"] | null,"sentiment": string | null,"started_at": string,"summary": string | null,"transcript": string | null,"transcript_deleted_at": string | null,"updated_at": string,"urgency": Database["public"]['Enums']["customer_urgency"] | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "analysis"?: Json | null,"analyzed_at"?: string | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"checked_email"?: string | null,"conversation_id": string,"cost_cents"?: number | null,"created_at"?: string,"credits"?: number | null,"customer_id"?: string | null,"customer_site_id"?: string | null,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis"?: Json | null,"analyzed_at"?: string | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"checked_email"?: string | null,"conversation_id": string,"cost_cents"?: number | null,"created_at"?: string,"credits"?: number | null,"customer_id"?: string | null,"customer_site_id"?: string | null,"duration_seconds"?: number | null,"ended_at"?: string | null,"forward_reason"?: string | null,"forward_target"?: string | null,"forwarded"?: boolean,"forwarded_at"?: string | null,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
                   }
                   Update: {
-                    "analysis"?: Json | null,"analyzed_at"?: string | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"checked_email"?: string | null,"conversation_id"?: string,"cost_cents"?: number | null,"created_at"?: string,"credits"?: number | null,"customer_id"?: string | null,"customer_site_id"?: string | null,"duration_seconds"?: number | null,"ended_at"?: string | null,"forwarded"?: boolean,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
+                    "analysis"?: Json | null,"analyzed_at"?: string | null,"callback_done_at"?: string | null,"callback_done_by"?: string | null,"callback_needed"?: boolean,"callback_number"?: string | null,"callback_reason"?: string | null,"callback_urgent"?: boolean,"caller_number"?: string | null,"category"?: string | null,"checked_email"?: string | null,"conversation_id"?: string,"cost_cents"?: number | null,"created_at"?: string,"credits"?: number | null,"customer_id"?: string | null,"customer_site_id"?: string | null,"duration_seconds"?: number | null,"ended_at"?: string | null,"forward_reason"?: string | null,"forward_target"?: string | null,"forwarded"?: boolean,"forwarded_at"?: string | null,"id"?: string,"in_service_hours"?: boolean | null,"is_demo"?: boolean,"request_id"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"] | null,"sentiment"?: string | null,"started_at"?: string,"summary"?: string | null,"transcript"?: string | null,"transcript_deleted_at"?: string | null,"updated_at"?: string,"urgency"?: Database["public"]['Enums']["customer_urgency"] | null
                   }
                   Relationships: [
                     {
@@ -684,6 +684,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"widget_sessions": {
+                  Row: {
+                    "client_key": string,"conversation_id": string | null,"created_at": string,"id": string,"reserved_seconds": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "client_key": string,"conversation_id"?: string | null,"created_at"?: string,"id"?: string,"reserved_seconds": number
+                  }
+                  Update: {
+                    "client_key"?: string,"conversation_id"?: string | null,"created_at"?: string,"id"?: string,"reserved_seconds"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"work_entries": {
                   Row: {
                     "author_id": string,"billable": boolean,"created_at": string,"description": string,"id": string,"item_status": Database["public"]['Enums']["work_item_status"],"kind": Database["public"]['Enums']["work_entry_kind"],"ordered_at": string | null,"performed_at": string | null,"quantity": number,"request_id": string,"service_rate_id": string | null,"tax_rate": number,"unit": Database["public"]['Enums']["work_unit"],"unit_price": number,"updated_at": string,"visit_id": string | null
@@ -783,7 +797,10 @@ isOneToOne: false
 "customer_site_id": string | null,
 "duration_seconds": number | null,
 "ended_at": string | null,
+"forward_reason": string | null,
+"forward_target": string | null,
 "forwarded": boolean,
+"forwarded_at": string | null,
 "id": string,
 "in_service_hours": boolean | null,
 "is_demo": boolean,
@@ -1066,6 +1083,9 @@ isOneToOne: false
 "agent_find_request":
 { Args: { "call_id": string,"firma"?: string,"nummer"?: string,"plz"?: string,"strasse"?: string }; Returns: Json
                            },
+"agent_forward":
+{ Args: { "call_id": string,"grund"?: string,"ziel": string }; Returns: Json
+                           },
 "agent_free_slots":
 { Args: { "bis_tag"?: string,"call_id": string,"leistung"?: string,"plz"?: string,"von_tag"?: string }; Returns: Json
                            },
@@ -1089,6 +1109,21 @@ isOneToOne: false
 "analytics_kpis":
 { Args: { "anchor"?: string,"as_of"?: string,"kind"?: string }; Returns: {
               "change_percent": number,"current_value": number,"detail": Json,"difference": number,"key": string,"label": string,"measure": string,"previous_value": number,"unit": string
+            }[]
+                           },
+"analytics_phone":
+{ Args: { "anchor"?: string,"as_of"?: string,"kind"?: string }; Returns: {
+              "avg_seconds": number,"callbacks": number,"callbacks_open": number,"calls": number,"cost_cents": number,"credits": number,"emergencies": number,"outside_hours": number,"period": string,"requests": number,"resolved": number,"total_seconds": number
+            }[]
+                           },
+"analytics_phone_categories":
+{ Args: { "anchor"?: string,"as_of"?: string,"kind"?: string }; Returns: {
+              "callbacks": number,"calls": number,"category": string
+            }[]
+                           },
+"analytics_phone_days":
+{ Args: { "from_date": string,"to_date": string }; Returns: {
+              "calls": number,"day": string,"requests": number,"resolved": number
             }[]
                            },
 "analytics_queue_history":
@@ -3067,7 +3102,16 @@ isOneToOne: false
         to: "visits"
         isOneToOne: true
         isSetofReturn: false
-      } }
+      } },
+"widget_budget":
+{ Args: { "daily_seconds"?: number,"max_seconds"?: number }; Returns: Json
+                           },
+"widget_session_bind":
+{ Args: { "conversation_id": string,"session_id": string }; Returns: boolean
+                           },
+"widget_session_start":
+{ Args: { "client_key": string,"daily_seconds"?: number,"max_seconds"?: number,"per_client_hour"?: number }; Returns: Json
+                           }
           }
           Enums: {
             "actor_type": "user"|"automation"|"system","automation_decision": "ready_for_planning"|"ask_customer"|"human_review"|"matched"|"unmatched"|"sent","automation_status": "running"|"succeeded"|"failed","automation_step": "intake_analysis"|"reply_analysis"|"email_matching"|"email_send","availability_kind": "working_hours"|"absence","billing_model": "fixed"|"hourly","customer_urgency": "planbar"|"zeitnah"|"erheblich"|"production_stop","employee_role": "admin"|"manager"|"dispatcher"|"technician","equipment_kind": "pump"|"compressor"|"ventilation"|"other","intake_mode": "automatic"|"manual"|"human_review","intake_status": "new"|"analyzing"|"needs_review"|"awaiting_customer"|"processed"|"rejected"|"cancelled","invoice_status": "draft"|"issued"|"sent"|"paid","message_direction": "incoming"|"outgoing","message_kind": "receipt"|"clarification"|"customer_reply"|"invoice"|"other"|"payment_reminder","message_status": "draft"|"queued"|"sent"|"received"|"failed","request_priority": "low"|"normal"|"high"|"critical","safety_risk": "none_known"|"known"|"unclear","service_kind": "inspection"|"scheduled_maintenance"|"diagnosis_repair","visibility_level": "operational"|"dispatch"|"management","visit_status": "scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_entry_kind": "labor"|"part"|"fixed_service","work_item_status": "planned"|"ordered"|"performed"|"used"|"cancelled","work_status": "not_planned"|"scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_unit": "hour"|"piece"|"service"

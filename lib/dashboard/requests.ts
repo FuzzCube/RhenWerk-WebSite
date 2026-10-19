@@ -240,6 +240,8 @@ export type RequestDetail = {
   customer: (Tables["customers"]["Row"] & { site: Tables["customer_sites"]["Row"] | null; sites: Tables["customer_sites"]["Row"][] }) | null;
   // Window holds of the phone assistant (task-13-3), newest first; staff only
   holds: Tables["visit_holds"]["Row"][];
+  // Calls of the phone assistant about this request (task-13-7); staff only
+  calls: Array<Pick<Tables["phone_calls"]["Row"], "id" | "conversation_id" | "started_at" | "duration_seconds" | "category" | "summary" | "callback_needed" | "callback_done_at" | "in_service_hours" | "analyzed_at">>;
   failed: string[];
 };
 
@@ -253,7 +255,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
 
   const staff = role !== "technician";
   const contractNumber = staff ? normalizeContractNumber(request.sla_contract_number) : null;
-  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds, customer] = await Promise.all([
+  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds, customer, calls] = await Promise.all([
     staff ? supabase.from("messages").select("*").eq("request_id", id).order("created_at") : null,
     staff ? supabase.from("automation_runs").select("*").eq("request_id", id).order("started_at") : null,
     supabase.from("visits").select("*").eq("request_id", id).order("scheduled_start"),
@@ -264,6 +266,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     contractNumber ? supabase.from("service_contracts").select("*").eq("contract_number", contractNumber).maybeSingle() : null,
     staff ? supabase.from("visit_holds").select("*").eq("request_id", id).order("created_at", { ascending: false }) : null,
     staff && request.customer_id ? supabase.from("customers").select("*, customer_sites(*)").eq("id", request.customer_id).maybeSingle() : null,
+    staff ? supabase.from("phone_calls").select("id, conversation_id, started_at, duration_seconds, category, summary, callback_needed, callback_done_at, in_service_hours, analyzed_at").eq("request_id", id).order("started_at") : null,
   ]);
   const invoiceId = invoice?.data && invoice.data.status !== "draft" ? invoice.data.id : null;
   const [invoiceItems, reminderState, reminders] = invoice?.data
@@ -301,6 +304,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
       ? (({ customer_sites: sites, ...row }) => ({ ...row, sites, site: sites.find((site) => site.id === request.customer_site_id) ?? null }))(customer.data)
       : null,
     holds: holds ? pick("einsaetze", holds, []) : [],
+    calls: calls?.data ?? [],
     failed,
   };
 });

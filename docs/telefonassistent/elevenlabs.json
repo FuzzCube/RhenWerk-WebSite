@@ -10,7 +10,8 @@
     "anlage_pruefen": "tool_1401m504g0rnfyqb0h06z9rgfa2g",
     "servicezeit": "tool_6401m504fzh6f8qbvsdhdbnm0sdq",
     "email_pruefen": "tool_0201m59t5gfpfy6a9nbd93r623yf",
-    "kunde_finden": "tool_1701m5a6snm4e3kav28cy7xrq7t0"
+    "kunde_finden": "tool_1701m5a6snm4e3kav28cy7xrq7t0",
+    "weiterleiten": "tool_7401m5av068mfh281bm9jmtqyt05"
   },
   "secrets": {
     "agent": "duie5fSItbcakQC2CUQw",
@@ -20,7 +21,7 @@
   "voice_id": "LB5G0Z4EP98YaEgL654m",
   "dictionary": {
     "id": "Mt1IIJzpIMgllpK8QY6F",
-    "version_id": "ZJUBKz0MtqTC97TuuEjx"
+    "version_id": "7mjThN19yK7sIzyGgy5n"
   },
   "agent_id": "agent_5101m504vtn2f80thr39rbtqv6ws",
   "llm": "claude-sonnet-4-5",

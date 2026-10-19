@@ -15,6 +15,7 @@ import { Icon } from "@/components/ui";
 import { invoiceDisplayStatus, requestDisplayStatus, requestProgress } from "@/lib/display-status";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
+import { formatCallDuration } from "@/lib/dashboard/calls";
 import { getEmployeeNames, getRequestDetail, sectionsFor, type RequestDetail, type SectionId } from "@/lib/dashboard/requests";
 import { describeEvent } from "@/lib/events";
 import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange } from "@/lib/format";
@@ -127,7 +128,7 @@ export default async function RequestPage({ params }: Props) {
           <p className="mono request-head__number">{request.request_number}{request.is_demo && <span className="demo-tag">Demodaten</span>}</p>
           <h1>{request.company_name}</h1>
           <p className="request-head__meta">
-            {label("service_kind", request.service_kind)} · {label("equipment_kind", request.equipment_kind)} · <span className="mono">{request.postal_code}</span> {request.city} · eingegangen <span className="mono">{formatDateTime(request.created_at)}</span>
+            {label("service_kind", request.service_kind)} · {label("equipment_kind", request.equipment_kind)} · <span className="mono">{request.postal_code}</span> {request.city} · eingegangen <span className="mono">{formatDateTime(request.created_at)}</span> über {label("request_source", request.source)}
           </p>
         </div>
         <div className="badge-row">
@@ -316,7 +317,35 @@ function Summary({ detail }: { detail: RequestDetail }) {
         ...(r.cancelled_at ? [["Storniert", `${formatDateTime(r.cancelled_at)}${r.cancellation_reason ? ` – ${r.cancellation_reason}` : ""}`] as [string, ReactNode]] : []),
         ...(r.rejection_reason ? [["Ablehnungsgrund", r.rejection_reason] as [string, ReactNode]] : []),
       ]} />
+      {detail.calls.length > 0 && <PhoneCalls detail={detail} />}
     </>
+  );
+}
+
+// Block "Telefonat" (task-13-7): calls of the phone assistant about this request with summary and link to the call
+function PhoneCalls({ detail }: { detail: RequestDetail }) {
+  const r = detail.request;
+  return (
+    <div className="request-calls">
+      <h3 className="request-calls__title">{detail.calls.length === 1 ? "Telefonat" : "Telefonate"}</h3>
+      <ul>
+        {detail.calls.map((call) => (
+          <li key={call.id}>
+            <span>
+              <Link href={`/dashboard/anrufe/${call.id}`}><span className="mono">{formatDateTime(call.started_at)}</span></Link>
+              {" · "}{formatCallDuration(call.duration_seconds)}
+              {call.category && <> · {label("call_category", call.category)}</>}
+              {r.source_event_key === `phone_agent:${call.conversation_id}` && <> · Anfrage im Gespräch angelegt</>}
+              {call.in_service_hours === false && <> · außerhalb der Servicezeit</>}
+            </span>
+            <span className="cell-sub">
+              {call.summary ?? (call.analyzed_at ? "Keine Zusammenfassung." : "Auswertung folgt.")}
+              {call.callback_needed && (call.callback_done_at ? " Rückruf erledigt." : " Rückruf offen.")}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

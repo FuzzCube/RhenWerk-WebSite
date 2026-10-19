@@ -15,7 +15,7 @@ import { requireRole } from "@/lib/auth/session";
 import { CHART_COLORS } from "@/lib/chart-colors";
 import { getInsights, type Insights } from "@/lib/dashboard/insights";
 import { formatCurrency, formatMinutes, formatNumber, formatPercent } from "@/lib/format";
-import { automationSeries, cumulativeComparison, monthLabel, QUEUE_LABELS, queueSeries, seasonality, sum } from "@/lib/insights";
+import { automationSeries, cumulativeComparison, dayLabel, monthLabel, QUEUE_LABELS, queueSeries, seasonality, sum } from "@/lib/insights";
 import { label, statusInfo } from "@/lib/status";
 
 export const metadata: Metadata = { title: "Auswertung" };
@@ -28,6 +28,7 @@ const AREAS = [
   { key: "warteschlangen", label: "Warteschlangen", group: "Betrieb", description: "Anfragen je Warteschlange am Tagesende, rekonstruiert aus dem Verlauf." },
   { key: "finanzen", label: "Finanzen", group: "Geschäft", description: "Ausgestellt ist nicht eingenommen. Musterrechnungen mit Demodaten." },
   { key: "automatisierung", label: "Automatisierung", group: "Geschäft", description: "Anteil automatischer Erstbearbeitung, geschätzte Zeitersparnis und Läufe im Zeitraum." },
+  { key: "telefon", label: "Telefon", group: "Geschäft", description: "Telefonassistent Mira: ausgewertete Anrufe im Zeitraum, verglichen mit dem Vorzeitraum." },
 ] as const;
 const GROUPS = ["Betrieb", "Geschäft"] as const;
 type Area = (typeof AREAS)[number]["key"];
@@ -64,9 +65,9 @@ export default async function InsightsPage({ searchParams }: Props) {
           <h1 id="area-title" className="side-page__title">{current.label}</h1>
           <p className="side-page__desc">{current.description}</p>
         </div>
-        {(area === "durchsatz" || area === "automatisierung") && (
+        {(area === "durchsatz" || area === "automatisierung" || area === "telefon") && (
           <div className="insights__period">
-            <span>{area === "durchsatz" ? "Vergleichszeitraum" : "Zeitraum der Läufe"}</span>
+            <span>{area === "durchsatz" ? "Vergleichszeitraum" : area === "telefon" ? "Zeitraum der Anrufe" : "Zeitraum der Läufe"}</span>
             {/* The window comes with the data; the control itself only needs its bounds, loaded in the content */}
             <Suspense fallback={null}><PeriodSlot period={period} area={area} /></Suspense>
           </div>
@@ -100,7 +101,7 @@ const insightsFor = (period: PeriodParams) => loadInsights(JSON.stringify({ kind
 async function PeriodSlot({ period, area }: { period: PeriodParams; area: Area }) {
   const data = await insightsFor(period).catch(() => null);
   if (!data) return null;
-  return <PeriodControl basePath={BASE} period={period} window={data.window} extraQuery={area === "automatisierung" ? "&bereich=automatisierung" : ""} />;
+  return <PeriodControl basePath={BASE} period={period} window={data.window} extraQuery={area === "automatisierung" || area === "telefon" ? `&bereich=${area}` : ""} />;
 }
 
 const slot = (index: number) => CHART_COLORS[index];
@@ -307,7 +308,92 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
           />
         </section>
       </div>}
+
+      {area === "telefon" && <PhoneArea data={data} period={period} />}
     </>
+  );
+}
+
+// Phone assistant (task-13-7): figures of analytics_phone for the period, calls per day, categories
+function PhoneArea({ data, period }: { data: Insights; period: PeriodParams }) {
+  const { current, previous, categories, days } = data.phone;
+  const title = periodTitle(period.kind, data.window.startDay);
+  if (!current || current.calls === 0) {
+    return <EmptyState title={`Keine ausgewerteten Anrufe ${title}`}>Anrufe erscheinen hier, sobald der Telefonassistent sie ausgewertet hat.</EmptyState>;
+  }
+  const share = (part: number, whole: number) => (whole > 0 ? (part / whole) * 100 : null);
+  const minutes = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} Min.`;
+  const before = (value: string | null) => (previous && previous.calls > 0 && value !== null ? `Vorzeitraum ${value}` : "Vorzeitraum ohne Anrufe");
+  const resolvedShare = share(current.resolved, current.calls);
+  const figures = [
+    { key: "calls", label: "Anrufe", value: formatNumber(current.calls), note: before(previous ? formatNumber(previous.calls) : null) },
+    { key: "resolved", label: "Ohne Mitarbeiter gelöst", value: resolvedShare === null ? "–" : formatPercent(resolvedShare, 0), note: `${formatNumber(current.resolved)} ohne Rückruf · ${before(previous && previous.calls > 0 ? formatPercent(share(previous.resolved, previous.calls), 0) : null)}` },
+    { key: "requests", label: "Anfragen angelegt", value: formatNumber(current.requests), note: before(previous ? formatNumber(previous.requests) : null) },
+    { key: "outside", label: "Außerhalb der Servicezeit", value: formatNumber(current.outside_hours), note: `${formatPercent(share(current.outside_hours, current.calls), 0)} der Anrufe` },
+    { key: "emergencies", label: "Notfälle und Dringendes", value: formatNumber(current.emergencies), note: before(previous ? formatNumber(previous.emergencies) : null), warn: current.emergencies > 0 },
+    { key: "callbacks", label: "Rückrufe", value: formatNumber(current.callbacks), note: current.callbacks_open > 0 ? `davon ${formatNumber(current.callbacks_open)} offen` : "alle erledigt", warn: current.callbacks_open > 0 },
+    { key: "duration", label: "Ø Gesprächsdauer", value: minutes(current.avg_seconds), note: `zusammen ${formatMinutes(Math.round(current.total_seconds / 60))}` },
+    { key: "cost", label: "Kosten Sprachmodell", value: formatCurrency(current.cost_cents / 100), note: `${formatCurrency(current.cost_cents / 100 / current.calls)} je Anruf · ${formatNumber(current.credits)} Credits` },
+  ];
+  const dayRows = days.map((row) => ({ ...row, label: dayLabel(row.day) }));
+  const daySeries: ChartSeries[] = [
+    { key: "calls", label: "Anrufe", color: slot(0) },
+    { key: "resolved", label: "Ohne Mitarbeiter gelöst", color: slot(1) },
+    { key: "requests", label: "Anfragen angelegt", color: slot(2) },
+  ];
+  const dayColumns: Column<(typeof dayRows)[number]>[] = [
+    { key: "x", header: "Tag", cell: (row) => row.label, mobile: "title" },
+    ...daySeries.map((entry) => ({ key: entry.key, header: entry.label, cell: (row: (typeof dayRows)[number]) => formatNumber(Number(row[entry.key as "calls"])), align: "end" as const })),
+  ];
+  return (
+    <div className="insights-grid">
+      <section className="insights-grid__full" aria-labelledby="phone-figures">
+        <h2 id="phone-figures" className="sr-only">Kennzahlen {title}</h2>
+        <div className="insights-grid insights-grid--glance">
+          {figures.map((item) => (
+            <div key={item.key} className={`rw-card ${item.warn ? "rw-card--attention" : "rw-card--neutral"} rw-glance`} data-phone-figure={item.key}>
+              <span className="rw-stage__step">{item.label}</span>
+              <span className="rw-glance__value mono">{item.value}</span>
+              <span className="rw-card__note">{item.note}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+      <Figure
+        className="insights-grid__full"
+        id="phone-chart"
+        title={`Anrufe je Tag ${title}`}
+        chip={`${days.length} Tage`}
+        summary={`${formatNumber(current.calls)} Anrufe, davon ${formatNumber(current.resolved)} ohne Rückruf durch einen Mitarbeiter; ${formatNumber(current.requests)} neue Anfragen. Gezählt werden ausgewertete Gespräche nach ihrem Beginn.`}
+        legend={<Legend items={daySeries.map((entry) => ({ label: entry.label, color: entry.color }))} />}
+        table={<DataTable caption="Anrufe je Tag" columns={dayColumns} rows={dayRows} rowKey={(row) => row.day} empty={<EmptyState title="Keine Daten." />} />}
+      >
+        <TimeChart kind="line" data={dayRows} xKey="label" series={daySeries} format="count" height={220} label="Liniendiagramm: Anrufe, ohne Mitarbeiter gelöste Anrufe und angelegte Anfragen je Tag" />
+      </Figure>
+      <section className="rw-card rw-card--list rw-card--flush rw-card--meta insights-grid__full" id="phone-categories" aria-labelledby="phone-categories-title">
+        <header className="rw-card__header">
+          <div className="rw-card__heading">
+            <div>
+              <h3 id="phone-categories-title" className="rw-card__title">Anliegen {title}</h3>
+              <p className="rw-card__description rw-card__note">Kategorie aus der automatischen Gesprächsauswertung. <Link href="/dashboard/anrufe">Alle Anrufe</Link></p>
+            </div>
+          </div>
+          <PeriodChip>Zeitraum</PeriodChip>
+        </header>
+        <DataTable
+          caption="Anrufe je Anliegen"
+          columns={[
+            { key: "category", header: "Anliegen", cell: (row) => label("call_category", row.category), mobile: "title" },
+            { key: "calls", header: "Anrufe", cell: (row) => formatNumber(row.calls), align: "end" },
+            { key: "share", header: "Anteil", cell: (row) => formatPercent(share(row.calls, current.calls), 0), align: "end" },
+            { key: "callbacks", header: "Mit Rückruf", cell: (row) => formatNumber(row.callbacks), align: "end" },
+          ]}
+          rows={categories}
+          rowKey={(row) => row.category}
+          empty={<EmptyState title="Keine Anrufe im Zeitraum" />}
+        />
+      </section>
+    </div>
   );
 }
 

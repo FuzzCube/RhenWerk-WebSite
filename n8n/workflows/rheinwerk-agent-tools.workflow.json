@@ -766,6 +766,82 @@
     {
       "parameters": {
         "httpMethod": "POST",
+        "path": "agent-weiterleiten",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "81bf2c31-4ac3-53dc-a86d-ce71657bb5e8",
+      "name": "Werkzeug Weiterleiten",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        2000
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rwAgentSecret001",
+          "name": "RheinWerk Agent-Secret"
+        }
+      },
+      "webhookId": "b1ac74ce-439c-5370-b24f-2e62fbecada1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/agent_forward",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {call_id:($json.body ?? {}).call_id, ziel:($json.body ?? {}).ziel ?? null, grund:($json.body ?? {}).grund ?? null} }}",
+        "options": {
+          "timeout": 5000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "3bd31753-04b8-55bf-a144-1b8bde3ec55d",
+      "name": "Weiterleiten: Datenbank",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        260,
+        2000
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.error || $json.code || $json.message ? {ok:false,fehler:'werkzeug_gestoert'} : $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "081af489-e9d3-51ac-b348-fdaf1f4fcf82",
+      "name": "Weiterleiten: Antwort",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        520,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
         "path": "agent-anlage-pruefen",
         "authentication": "headerAuth",
         "responseMode": "responseNode",
@@ -777,7 +853,7 @@
       "typeVersion": 2.1,
       "position": [
         0,
-        2000
+        2200
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -798,7 +874,7 @@
       "typeVersion": 2,
       "position": [
         260,
-        2000
+        2200
       ],
       "onError": "continueRegularOutput"
     },
@@ -816,7 +892,7 @@
       "typeVersion": 1.5,
       "position": [
         520,
-        2000
+        2200
       ]
     }
   ],
@@ -1035,6 +1111,28 @@
         [
           {
             "node": "Email pruefen: Antwort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Werkzeug Weiterleiten": {
+      "main": [
+        [
+          {
+            "node": "Weiterleiten: Datenbank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weiterleiten: Datenbank": {
+      "main": [
+        [
+          {
+            "node": "Weiterleiten: Antwort",
             "type": "main",
             "index": 0
           }
