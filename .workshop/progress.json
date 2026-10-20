@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "overall": 100,
+  "overall": 97.5,
   "completedWeight": 197,
-  "totalWeight": 197,
-  "currentPhaseId": "phase-14",
+  "totalWeight": 202,
+  "currentPhaseId": "phase-15",
   "currentTaskId": null,
   "completedTasks": 75,
-  "totalTasks": 75,
+  "totalTasks": 78,
   "blockedTasks": 0,
-  "updatedAt": "2026-10-20T19:25:32Z"
+  "updatedAt": "2026-10-20T20:09:44Z"
 }

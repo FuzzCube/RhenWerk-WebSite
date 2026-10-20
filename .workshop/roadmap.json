@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 15,
+  "roadmapVersion": 16,
   "status": "active",
   "phases": [
     {
@@ -2673,6 +2673,86 @@
             "Warnung bei ähnlichem Kunden mit Link, Anlegen trotzdem möglich",
             "Herkunft (automatisch aus Anfrage / manuell) in Liste oder Kundenseite",
             "test:ui, Sichtprüfung 390/768/1440, Dokumentation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-15",
+      "title": "Kundennummer sichtbar",
+      "description": "Nutzerentscheidung 20.10.2026 nach einem Testanruf: Die Kundennummer ist im Dashboard kaum zu sehen (nur Untertitel der Kundenseite, Kundenliste, Anfrageseite) und erscheint in keiner E-Mail; der Kunde kennt sie daher nicht und kann sie Mira nicht nennen. Wie im papierbasierten Ablauf soll die Kundennummer überall dort stehen, wo Kunde, Anfrage und Rechnung zusammenkommen. Identifikation am Telefon bleibt bei Kundennummer + PLZ (Firma allein reicht aus Sicherheitsgründen nicht). Eine eigene Rechnungsanschrift je Kunde ist bewusst nicht Teil dieser Phase.",
+      "order": 16,
+      "weight": 5,
+      "status": "ready",
+      "tasks": [
+        {
+          "weight": 1,
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          },
+          "id": "task-15-1",
+          "title": "Kundenseite: Kundennummer und Hauptanschrift in den Stammdaten",
+          "order": 1,
+          "status": "ready",
+          "dependsOn": [],
+          "description": "Im Block Stammdaten der Kundenseite steht die Kundennummer als erste Zeile, gut lesbar (mono) mit Kopieren-Schaltfläche, darunter die Hauptanschrift (erster aktiver Standort: Straße, PLZ, Ort; ohne Standort Hinweis). Der Untertitel bleibt knapp. In der Kundenliste bleibt die Nummer unter der Firma.",
+          "definitionOfDone": [
+            "Kundennummer erste Zeile in Stammdaten mit Kopieren",
+            "Hauptanschrift aus erstem aktiven Standort, leerer Fall abgedeckt",
+            "test:ui und Sichtprüfung 390/768/1440",
+            "lint, typecheck, build"
+          ]
+        },
+        {
+          "weight": 2,
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          },
+          "id": "task-15-2",
+          "title": "Kundennummer in Anfragenliste, Rechnungen, Einsatz und Rechnungs-PDF",
+          "order": 2,
+          "status": "ready",
+          "dependsOn": [],
+          "description": "Kundennummer (aus dem verknüpften Kunden) in der Anfragenliste unter der Firma, in Rechnungsliste und Rechnungsdetail, in der Einsatzansicht des Technikers und in der Suche. Das Rechnungs-PDF nimmt die Kundennummer aus dem verknüpften Kunden statt nur aus der Kopie in der Anfrage (bisher fehlt sie, wenn die Anfrage keine customer_number trägt). Ohne Verknüpfung: nichts anzeigen bzw. angegebene Nummer der Anfrage.",
+          "definitionOfDone": [
+            "Anfragenliste, Rechnungsliste, Rechnungsdetail, Einsatzansicht und Suche zeigen die Kundennummer",
+            "Rechnungs-PDF nutzt den verknüpften Kunden, Fallback Anfrage",
+            "Technikerseiten zuerst 390/768 geprüft",
+            "test:unit, test:ui, lint, typecheck, build"
+          ]
+        },
+        {
+          "weight": 2,
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          },
+          "id": "task-15-3",
+          "title": "Kundennummer in E-Mails an Kunden",
+          "order": 3,
+          "status": "ready",
+          "dependsOn": [],
+          "description": "Terminbestätigung, Rückfrage, Rechnung und Zahlungserinnerung nennen die Kundennummer („Ihre Kundennummer: K-2xxxx – bitte bei Rückfragen und Anrufen angeben“), sofern die Anfrage mit einem Kunden verknüpft ist. Die Eingangsbestätigung geht beim Eingang raus, bevor ein Neukunde entsteht (Kunde erst beim Abschluss der Erstbearbeitung); sie nennt die Nummer nur bei bereits verknüpften Anfragen (z. B. Bestandskunde über Mira). Textbausteine (Klartext und HTML) in den Datenbankfunktionen anpassen, geänderte Funktionen per psql einspielen.",
+          "definitionOfDone": [
+            "Kundennummer in Terminbestätigung, Rückfrage, Rechnung und Zahlungserinnerung bei verknüpftem Kunden",
+            "Eingangsbestätigung nur bei bereits verknüpfter Anfrage",
+            "pgTAP-Tests für mit und ohne Kunde",
+            "docs/database.md bzw. betroffene Doku aktualisiert",
+            "test:db, lint, typecheck"
           ]
         }
       ]

@@ -333,3 +333,7 @@
 {"timestamp": "2026-10-20T18:58:55Z", "type": "task_completed", "taskId": "task-14-3", "summary": "Nachzuordnung ausgeführt: 1 Kunde angelegt (RIS-2026-01948 → K-20181), 0 verknüpft, 0 Vorschläge."}
 {"timestamp": "2026-10-20T19:25:32Z", "type": "task_completed", "taskId": "task-14-4", "summary": "„Kunde anlegen“ mit Erklärtext und Warnung bei ähnlichem Kunden, Herkunft je Kunde; alle Prüfungen bestanden."}
 {"timestamp": "2026-10-20T19:25:32Z", "type": "phase_completed", "taskId": "task-14-4", "summary": "Phase 14 Kundenstamm aus Anfragen abgeschlossen; alle Tasks der Roadmap v15 abgeschlossen."}
+{"timestamp":"2026-10-20T20:09:44Z","type":"roadmap_updated","summary":"Roadmap v16: neue Phase 15 „Kundennummer sichtbar“ (task-15-1 bis 15-3) nach Nutzerentscheidung – Kundennummer in Stammdaten, Listen, Rechnungen, Einsatz, Rechnungs-PDF und E-Mails an Kunden; Rechnungsanschrift bewusst später."}
+{"timestamp":"2026-10-20T20:09:44Z","type":"task_ready","taskId":"task-15-1","summary":"Startbar (keine offenen Abhängigkeiten)."}
+{"timestamp":"2026-10-20T20:09:44Z","type":"task_ready","taskId":"task-15-2","summary":"Startbar (keine offenen Abhängigkeiten)."}
+{"timestamp":"2026-10-20T20:09:44Z","type":"task_ready","taskId":"task-15-3","summary":"Startbar (keine offenen Abhängigkeiten)."}
