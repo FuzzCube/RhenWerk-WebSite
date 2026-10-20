@@ -913,6 +913,8 @@ try {
       await shot("kunden-1440.png");
 
       await page.open(`${BASE}/dashboard/kunden`);
+      check("  Kunde anlegen: kein Eingabefeld für die Kundennummer, Hinweis „Wird beim Anlegen vergeben“ (task-15-2)",
+        await page.eval(`!document.querySelector('form [name="customer_number"]') && document.querySelector("[data-number-auto]")?.textContent.includes("Wird beim Anlegen vergeben")`));
       await fillIn(`[...document.querySelectorAll("details.action")].find((d) => d.querySelector("summary").textContent.includes("Kunde anlegen"))`,
         { company_name: company, business_email: `kunde-${runId}@example.com`, street_house_number: "Testweg 7", postal_code: "68159", city: "Mannheim" });
       const created = await waitFor(async () => Boolean((await admin.from("customers").select("id").eq("company_name", company).maybeSingle()).data));
@@ -920,6 +922,7 @@ try {
       customerId = customer?.id ?? null;
       check("  Kunde anlegen: Kundennummer automatisch, Weiterleitung zur Kundenseite", created && /^K-2\d{4}$/.test(customer.customer_number)
         && await waitFor(async () => (await page.eval("location.pathname")) === `/dashboard/kunden/${customer.id}`), JSON.stringify(customer));
+      check("  Hinweis nennt die vergebene Kundennummer", await waitFor(async () => (await page.eval(`document.querySelector(".notice")?.textContent ?? ""`)) === `Kunde ${customer.customer_number} angelegt.`));
       check("  Herkunft „Manuell angelegt“", await waitFor(async () => (await page.eval(`document.querySelector("[data-origin]")?.textContent ?? ""`)) === "Manuell angelegt"));
 
       // Master data read-only first, the form behind „Stammdaten ändern“ (task-12-8)
@@ -955,6 +958,12 @@ try {
       check("  Anfrageseite zeigt die Verknüpfung, kein horizontales Scrollen bei 390 px",
         (await page.eval(`document.querySelector(".request-customer")?.textContent ?? ""`)).includes(customer.customer_number) && await noScroll());
       await shot("anfrage-kunde-390.png");
+      // Request list: customer number under the company, search by customer number (task-15-2)
+      const { data: linkedReq } = await admin.from("requests").select("request_number, customer_number").eq("id", req.id).single();
+      await page.open(`${BASE}/dashboard/anfragen?ansicht=alle&suche=${encodeURIComponent(customer.customer_number)}`);
+      const listRow = await page.eval(`[...document.querySelectorAll("a[href='/dashboard/anfragen/${req.id}']")].map((a) => a.closest("tr, li, article")?.textContent ?? a.textContent).join(" ")`);
+      check("  Anfragenliste: Suche nach Kundennummer findet die Anfrage, Kundennummer unter der Firma, kein horizontales Scrollen bei 390 px",
+        linkedReq.customer_number === customer.customer_number && listRow.includes(customer.customer_number) && await noScroll(), JSON.stringify({ linkedReq, listRow: listRow.slice(0, 200) }));
     } finally {
       if (customerId) await admin.from("customers").delete().eq("id", customerId);
     }
@@ -1000,6 +1009,39 @@ try {
         && await waitFor(async () => (await page.eval("location.pathname")) === `/dashboard/kunden/${duplicateId}`));
     } finally {
       if (duplicateId) await admin.from("customers").delete().eq("id", duplicateId);
+    }
+  }
+
+  console.log("\nKundennummer in Rechnungen und beim Techniker (task-15-2)");
+  {
+    // Demo data: an invoice of a linked request, and a visit of technician 1 on a linked request
+    const { data: billed } = await admin.from("invoices").select("invoice_number, requests!inner(company_name, customer_number)").not("invoice_number", "is", null)
+      .not("requests.customer_number", "is", null).limit(1).single();
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("manager.demo@example.com") });
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.open(`${BASE}/dashboard/rechnungen?status=alle&suche=${encodeURIComponent(billed.requests.customer_number)}`);
+    const invoiceRows = await page.eval(`[...document.querySelectorAll("tbody tr")].map((tr) => tr.textContent)`);
+    check("Rechnungsliste: Suche nach Kundennummer, Kundennummer unter der Firma", invoiceRows.length > 0 && invoiceRows.every((t) => t.includes(billed.requests.customer_number))
+      && invoiceRows.some((t) => t.includes(billed.invoice_number)), JSON.stringify(invoiceRows.slice(0, 3)).slice(0, 300));
+
+    // A visit of a demo technician (known password) on a linked request
+    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    const demoTechs = new Map(users.filter((u) => /^technik\d+\.demo@example\.com$/.test(u.email ?? "")).map((u) => [u.id, u.email]));
+    const { data: visits } = await admin.from("visits").select("id, technician_id, requests!inner(customer_number)").not("requests.customer_number", "is", null)
+      .in("status", ["scheduled", "in_progress", "waiting_parts"]).in("technician_id", [...demoTechs.keys()]).limit(1);
+    const visit = visits[0];
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies(demoTechs.get(visit.technician_id)) });
+    for (const width of [390, 768, 1440]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/einsatz/${visit.id}`);
+      const head = await page.eval(`({ number: document.querySelector(".tech-visit-head [data-customer-number]")?.textContent, scroll: document.documentElement.scrollWidth, width: innerWidth })`);
+      check(`  Einsatz: Kundennummer im Kopf, kein horizontales Scrollen @${width}`, head.number === visit.requests.customer_number && head.scroll <= head.width, JSON.stringify(head));
+      if (SHOTS) {
+        const image = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, `einsatz-kundennummer-${width}.png`), Buffer.from(image.data, "base64"));
+      }
     }
   }
 

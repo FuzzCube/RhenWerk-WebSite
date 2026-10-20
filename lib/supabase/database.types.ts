@@ -562,14 +562,14 @@ isOneToOne: false
                   ]
                 },"requests": {
                   Row: {
-                    "business_email": string,"cancellation_reason": string | null,"cancelled_at": string | null,"city": string,"company_name": string,"completed_at": string | null,"completion_summary": string | null,"contact_name": string,"created_at": string,"customer_id": string | null,"customer_number": string | null,"customer_site_id": string | null,"customer_urgency": Database["public"]['Enums']["customer_urgency"],"description": string,"dispatcher_id": string | null,"emergency_sla_claimed": boolean | null,"equipment_kind": Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at": string | null,"human_review_required": boolean,"id": string,"intake_completed_at": string | null,"intake_mode": Database["public"]['Enums']["intake_mode"] | null,"intake_status": Database["public"]['Enums']["intake_status"],"is_demo": boolean,"machine_number": string | null,"manual_minutes_baseline": number | null,"manufacturer": string | null,"model_type": string | null,"phone_number": string,"postal_code": string,"priority": Database["public"]['Enums']["request_priority"] | null,"raw_payload": NonNullable<Json>,"rejection_reason": string | null,"request_number": string,"requested_visit_date": string,"response_due_at": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"],"service_due_at": string | null,"service_kind": Database["public"]['Enums']["service_kind"],"site_label": string | null,"sla_contract_number": string | null,"sla_verified": boolean,"source": string,"source_event_key": string,"street_house_number": string,"technician_id": string | null,"updated_at": string,"version": number,"work_status": Database["public"]['Enums']["work_status"]
+                    "business_email": string,"cancellation_reason": string | null,"cancelled_at": string | null,"city": string,"company_name": string,"completed_at": string | null,"completion_summary": string | null,"contact_name": string,"created_at": string,"customer_id": string | null,"customer_number": string | null,"customer_site_id": string | null,"customer_urgency": Database["public"]['Enums']["customer_urgency"],"description": string,"dispatcher_id": string | null,"emergency_sla_claimed": boolean | null,"equipment_kind": Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at": string | null,"human_review_required": boolean,"id": string,"intake_completed_at": string | null,"intake_mode": Database["public"]['Enums']["intake_mode"] | null,"intake_status": Database["public"]['Enums']["intake_status"],"is_demo": boolean,"machine_number": string | null,"manual_minutes_baseline": number | null,"manufacturer": string | null,"model_type": string | null,"phone_number": string,"postal_code": string,"priority": Database["public"]['Enums']["request_priority"] | null,"raw_payload": NonNullable<Json>,"rejection_reason": string | null,"request_number": string,"requested_visit_date": string,"response_due_at": string | null,"safety_risk": Database["public"]['Enums']["safety_risk"],"service_due_at": string | null,"service_kind": Database["public"]['Enums']["service_kind"],"site_label": string | null,"sla_contract_number": string | null,"sla_verified": boolean,"source": string,"source_event_key": string,"stated_customer_number": string | null,"street_house_number": string,"technician_id": string | null,"updated_at": string,"version": number,"work_status": Database["public"]['Enums']["work_status"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "business_email": string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"city": string,"company_name": string,"completed_at"?: string | null,"completion_summary"?: string | null,"contact_name": string,"created_at"?: string,"customer_id"?: string | null,"customer_number"?: string | null,"customer_site_id"?: string | null,"customer_urgency": Database["public"]['Enums']["customer_urgency"],"description": string,"dispatcher_id"?: string | null,"emergency_sla_claimed"?: boolean | null,"equipment_kind": Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at"?: string | null,"human_review_required"?: boolean,"id"?: string,"intake_completed_at"?: string | null,"intake_mode"?: Database["public"]['Enums']["intake_mode"] | null,"intake_status"?: Database["public"]['Enums']["intake_status"],"is_demo"?: boolean,"machine_number"?: string | null,"manual_minutes_baseline"?: number | null,"manufacturer"?: string | null,"model_type"?: string | null,"phone_number": string,"postal_code": string,"priority"?: Database["public"]['Enums']["request_priority"] | null,"raw_payload": NonNullable<Json>,"rejection_reason"?: string | null,"request_number": string,"requested_visit_date": string,"response_due_at"?: string | null,"safety_risk": Database["public"]['Enums']["safety_risk"],"service_due_at"?: string | null,"service_kind": Database["public"]['Enums']["service_kind"],"site_label"?: string | null,"sla_contract_number"?: string | null,"sla_verified"?: boolean,"source": string,"source_event_key": string,"street_house_number": string,"technician_id"?: string | null,"updated_at"?: string,"version"?: number,"work_status"?: Database["public"]['Enums']["work_status"]
+                    "business_email": string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"city": string,"company_name": string,"completed_at"?: string | null,"completion_summary"?: string | null,"contact_name": string,"created_at"?: string,"customer_id"?: string | null,"customer_number"?: string | null,"customer_site_id"?: string | null,"customer_urgency": Database["public"]['Enums']["customer_urgency"],"description": string,"dispatcher_id"?: string | null,"emergency_sla_claimed"?: boolean | null,"equipment_kind": Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at"?: string | null,"human_review_required"?: boolean,"id"?: string,"intake_completed_at"?: string | null,"intake_mode"?: Database["public"]['Enums']["intake_mode"] | null,"intake_status"?: Database["public"]['Enums']["intake_status"],"is_demo"?: boolean,"machine_number"?: string | null,"manual_minutes_baseline"?: number | null,"manufacturer"?: string | null,"model_type"?: string | null,"phone_number": string,"postal_code": string,"priority"?: Database["public"]['Enums']["request_priority"] | null,"raw_payload": NonNullable<Json>,"rejection_reason"?: string | null,"request_number": string,"requested_visit_date": string,"response_due_at"?: string | null,"safety_risk": Database["public"]['Enums']["safety_risk"],"service_due_at"?: string | null,"service_kind": Database["public"]['Enums']["service_kind"],"site_label"?: string | null,"sla_contract_number"?: string | null,"sla_verified"?: boolean,"source": string,"source_event_key": string,"stated_customer_number"?: string | null,"street_house_number": string,"technician_id"?: string | null,"updated_at"?: string,"version"?: number,"work_status"?: Database["public"]['Enums']["work_status"]
                   }
                   Update: {
-                    "business_email"?: string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"city"?: string,"company_name"?: string,"completed_at"?: string | null,"completion_summary"?: string | null,"contact_name"?: string,"created_at"?: string,"customer_id"?: string | null,"customer_number"?: string | null,"customer_site_id"?: string | null,"customer_urgency"?: Database["public"]['Enums']["customer_urgency"],"description"?: string,"dispatcher_id"?: string | null,"emergency_sla_claimed"?: boolean | null,"equipment_kind"?: Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at"?: string | null,"human_review_required"?: boolean,"id"?: string,"intake_completed_at"?: string | null,"intake_mode"?: Database["public"]['Enums']["intake_mode"] | null,"intake_status"?: Database["public"]['Enums']["intake_status"],"is_demo"?: boolean,"machine_number"?: string | null,"manual_minutes_baseline"?: number | null,"manufacturer"?: string | null,"model_type"?: string | null,"phone_number"?: string,"postal_code"?: string,"priority"?: Database["public"]['Enums']["request_priority"] | null,"raw_payload"?: NonNullable<Json>,"rejection_reason"?: string | null,"request_number"?: string,"requested_visit_date"?: string,"response_due_at"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"],"service_due_at"?: string | null,"service_kind"?: Database["public"]['Enums']["service_kind"],"site_label"?: string | null,"sla_contract_number"?: string | null,"sla_verified"?: boolean,"source"?: string,"source_event_key"?: string,"street_house_number"?: string,"technician_id"?: string | null,"updated_at"?: string,"version"?: number,"work_status"?: Database["public"]['Enums']["work_status"]
+                    "business_email"?: string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"city"?: string,"company_name"?: string,"completed_at"?: string | null,"completion_summary"?: string | null,"contact_name"?: string,"created_at"?: string,"customer_id"?: string | null,"customer_number"?: string | null,"customer_site_id"?: string | null,"customer_urgency"?: Database["public"]['Enums']["customer_urgency"],"description"?: string,"dispatcher_id"?: string | null,"emergency_sla_claimed"?: boolean | null,"equipment_kind"?: Database["public"]['Enums']["equipment_kind"],"first_substantive_response_at"?: string | null,"human_review_required"?: boolean,"id"?: string,"intake_completed_at"?: string | null,"intake_mode"?: Database["public"]['Enums']["intake_mode"] | null,"intake_status"?: Database["public"]['Enums']["intake_status"],"is_demo"?: boolean,"machine_number"?: string | null,"manual_minutes_baseline"?: number | null,"manufacturer"?: string | null,"model_type"?: string | null,"phone_number"?: string,"postal_code"?: string,"priority"?: Database["public"]['Enums']["request_priority"] | null,"raw_payload"?: NonNullable<Json>,"rejection_reason"?: string | null,"request_number"?: string,"requested_visit_date"?: string,"response_due_at"?: string | null,"safety_risk"?: Database["public"]['Enums']["safety_risk"],"service_due_at"?: string | null,"service_kind"?: Database["public"]['Enums']["service_kind"],"site_label"?: string | null,"sla_contract_number"?: string | null,"sla_verified"?: boolean,"source"?: string,"source_event_key"?: string,"stated_customer_number"?: string | null,"street_house_number"?: string,"technician_id"?: string | null,"updated_at"?: string,"version"?: number,"work_status"?: Database["public"]['Enums']["work_status"]
                   }
                   Relationships: [
                     {
@@ -1236,6 +1236,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -1334,6 +1335,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -1392,6 +1394,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -1474,6 +1477,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -1535,6 +1539,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -1596,6 +1601,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -1782,6 +1788,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -1795,7 +1802,7 @@ isOneToOne: false
         isSetofReturn: false
       } },
 "create_customer":
-{ Args: { "business_email"?: string,"city": string,"company_name": string,"contact_name"?: string,"customer_number"?: string,"notes"?: string,"phone_number"?: string,"postal_code": string,"site_label"?: string,"street_house_number": string }; Returns: {
+{ Args: { "business_email"?: string,"city": string,"company_name": string,"contact_name"?: string,"notes"?: string,"phone_number"?: string,"postal_code": string,"site_label"?: string,"street_house_number": string }; Returns: {
               "business_email": string | null,
 "company_name": string,
 "contact_name": string | null,
@@ -1862,6 +1869,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -1992,6 +2000,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -2050,6 +2059,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -2163,6 +2173,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -2293,6 +2304,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -2369,6 +2381,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -2467,6 +2480,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -2657,6 +2671,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -2739,6 +2754,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,
@@ -2901,6 +2917,7 @@ isOneToOne: false
 "sla_verified": boolean,
 "source": string,
 "source_event_key": string,
+"stated_customer_number": string | null,
 "street_house_number": string,
 "technician_id": string | null,
 "updated_at": string,

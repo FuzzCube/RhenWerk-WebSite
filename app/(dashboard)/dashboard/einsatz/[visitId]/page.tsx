@@ -58,7 +58,7 @@ export default async function VisitPage({ params }: Props) {
           <StatusChip status={{ ...status, label: `${status.label}${elapsed}` }} />
         </p>
         <h1>{request.company_name}</h1>
-        <p className="tech-meta"><Link href={`/dashboard/anfragen/${request.id}`} className="mono">{request.request_number}</Link> · {label("service_kind", request.service_kind)} · {label("equipment_kind", request.equipment_kind)}</p>
+        <p className="tech-meta">{request.customer_number && <>Kunde <span className="mono" data-customer-number>{request.customer_number}</span> · </>}<Link href={`/dashboard/anfragen/${request.id}`} className="mono">{request.request_number}</Link> · {label("service_kind", request.service_kind)} · {label("equipment_kind", request.equipment_kind)}</p>
       </header>
       {request.safety_risk !== "none_known" && (
         <div className="rw-banner rw-banner--danger" role="alert"><Icon name="hazard" size={20} /><p><strong>Sicherheitsgefahr: {label("safety_risk", request.safety_risk)}.</strong> Vor Arbeitsbeginn Sicherheitslage klären.</p></div>

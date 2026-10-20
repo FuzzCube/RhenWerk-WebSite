@@ -74,19 +74,29 @@ export function invoiceQuery(filters: InvoiceFilters, overrides: Partial<Invoice
 
 export type InvoiceListItem = Pick<Invoice, "id" | "request_id" | "invoice_number" | "status" | "issue_date" | "payment_due_date" | "paid_at" | "subtotal" | "total" | "currency"> & {
   company_name: string;
+  customer_number: string | null;
   request_number: string;
   request_version: number;
   overdue: boolean;
   reminder: ReminderState | null;
 };
 
-const COLUMNS = "id, request_id, invoice_number, status, issue_date, payment_due_date, paid_at, subtotal, total, currency, requests(request_number, company_name, version)";
+const COLUMNS = "id, request_id, invoice_number, status, issue_date, payment_due_date, paid_at, subtotal, total, currency, requests(request_number, company_name, customer_number, version)";
+
+// Requests whose customer number contains the search term (task-15-2); only for terms with digits
+async function requestsByCustomerNumber(supabase: Awaited<ReturnType<typeof createClient>>, q: string): Promise<string[]> {
+  const digits = q.replace(/\D/g, "");
+  if (digits.length < 3) return [];
+  const { data } = await supabase.from("requests").select("id").ilike("customer_number", `%${digits}%`).limit(500);
+  return (data ?? []).map((row) => row.id);
+}
 
 export async function listInvoices(filters: InvoiceFilters): Promise<{ rows: InvoiceListItem[]; total: number; sumGross: number; sumNet: number; error: boolean }> {
   const supabase = await createClient();
   const today = berlinDayKey(new Date());
+  const customerRequests = await requestsByCustomerNumber(supabase, filters.q);
   // Same filter for the page and for the totals over all matching invoices
-  const apply = <Q extends { eq: (c: string, v: string) => Q; in: (c: string, v: string[]) => Q; is: (c: string, v: null) => Q; not: (c: string, o: string, v: null) => Q; lt: (c: string, v: string) => Q; lte: (c: string, v: string) => Q; gte: (c: string, v: string) => Q; ilike: (c: string, v: string) => Q }>(query: Q): Q => {
+  const apply = <Q extends { or: (f: string) => Q; eq: (c: string, v: string) => Q; in: (c: string, v: string[]) => Q; is: (c: string, v: null) => Q; not: (c: string, o: string, v: null) => Q; lt: (c: string, v: string) => Q; lte: (c: string, v: string) => Q; gte: (c: string, v: string) => Q; ilike: (c: string, v: string) => Q }>(query: Q): Q => {
     let result = query;
     if (filters.field) result = result.gte(INVOICE_DATE_FIELDS[filters.field].column, filters.from).lt(INVOICE_DATE_FIELDS[filters.field].column, filters.to);
     if (filters.state === "offen") result = result.in("status", ["issued", "sent"]).is("paid_at", null);
@@ -97,7 +107,8 @@ export async function listInvoices(filters: InvoiceFilters): Promise<{ rows: Inv
     if (filters.state === "bald") result = result.in("status", ["issued", "sent"]).is("paid_at", null).gte("payment_due_date", today).lte("payment_due_date", addDays(today, 7));
     if (filters.q) {
       const term = filters.q.replace(/[,()*%_\\:"']/g, " ").replace(/\s+/g, " ").trim();
-      if (term) result = result.ilike("invoice_number", `%${term}%`);
+      // Invoice number, or the customer number of the request (task-15-2)
+      if (term) result = result.or([`invoice_number.ilike.*${term}*`, ...(customerRequests.length ? [`request_id.in.(${customerRequests.join(",")})`] : [])].join(","));
     }
     return result;
   };
@@ -118,6 +129,7 @@ export async function listInvoices(filters: InvoiceFilters): Promise<{ rows: Inv
     return {
       ...row,
       company_name: request?.company_name ?? "–",
+      customer_number: request?.customer_number ?? null,
       request_number: request?.request_number ?? "–",
       request_version: request?.version ?? 0,
       overdue: (row.status === "issued" || row.status === "sent") && !row.paid_at && !!row.payment_due_date && row.payment_due_date < today,
@@ -149,7 +161,7 @@ export async function invoiceSummary(): Promise<{ counts: Partial<Record<(typeof
     open: (openRows.data ?? []).map((row) => ({ ...row, total: Number(row.total) })),
     todo: (todoRows.data ?? []).map((row) => {
       const request = Array.isArray(row.requests) ? row.requests[0] : row.requests;
-      return { ...row, company_name: request?.company_name ?? "–", request_number: request?.request_number ?? "–", request_version: request?.version ?? 0, overdue: false, reminder: null };
+      return { ...row, company_name: request?.company_name ?? "–", customer_number: request?.customer_number ?? null, request_number: request?.request_number ?? "–", request_version: request?.version ?? 0, overdue: false, reminder: null };
     }),
     error: results.some((result) => result.error),
   };

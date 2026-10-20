@@ -77,7 +77,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
     .flatMap((key) => [REQUEST_SORTS[key].first, REQUEST_SORTS[key].first === "ab" ? "auf" : "ab"].map((dir) => ({ key, dir: dir as "auf" | "ab" })));
   const columns: Column<RequestListItem>[] = [
     { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} />{holds.has(row.id) && <span className="rw-flag rw-flag--hold" title={`Vorgemerkt: ${formatDateTime(holds.get(row.id)!)}`}>Terminwunsch</span>}{customerChecks.has(row.id) && <span className="rw-flag rw-flag--customer" title="Möglicher Bestandskunde: Zuordnung auf der Anfrageseite prüfen">Kunde prüfen</span>}</>, mobile: "title", sort: sortable("anfrage") },
-    { key: "company", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub">{row.city}</span></>, sort: sortable("kunde") },
+    { key: "company", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub">{row.customer_number && <><span className="mono">{row.customer_number}</span> · </>}{row.city}</span></>, sort: sortable("kunde") },
     { key: "service", header: "Leistung", cell: (row) => <>{label("service_kind", row.service_kind)}<span className="cell-sub">{label("equipment_kind", row.equipment_kind)}</span></>, mobile: "hide", tablet: "hide", sort: sortable("leistung") },
     { key: "status", header: "Status", cell: (row) => <RequestStatusChip intakeStatus={row.intake_status} workStatus={row.work_status} /> },
     { key: "priority", header: "Priorität", cell: (row) => <PriorityText priority={row.priority} />, sort: sortable("prioritaet") },
@@ -114,7 +114,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           <form className="req2__search" method="get" role="search" aria-label="Anfragen durchsuchen">
             <label className="sr-only" htmlFor="filter-suche">Suche</label>
             <Icon name="search" size={18} />
-            <SearchSuggest area="anfragen" id="filter-suche" name="suche" defaultValue={filters.q} placeholder="Nummer, Firma, Kontakt oder Ort suchen" />
+            <SearchSuggest area="anfragen" id="filter-suche" name="suche" defaultValue={filters.q} placeholder="Nummer, Firma, Kundennummer, Kontakt oder Ort" />
             <HiddenFilters filters={filters} skip="suche" />
             <button className="rw-button-secondary req2__search-btn" type="submit">Suchen</button>
           </form>

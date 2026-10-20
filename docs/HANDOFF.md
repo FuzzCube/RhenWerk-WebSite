@@ -1,6 +1,6 @@
 # Übergabe: nächste Schritte (Stand 20.10.2026)
 
-Roadmap v16: Phasen 0–14 abgeschlossen, Phase 15 „Kundennummer sichtbar“ in Arbeit (`task-15-1` abgeschlossen, startbar `task-15-2`, `15-3`); Stand und bekannte Probleme in `.workshop/CURRENT_STATE.md`, Übersicht mit `npm run workshop:status`. Jeder Schritt wird erst nach Rücksprache ein neuer Task.
+Roadmap v16: Phasen 0–14 abgeschlossen, Phase 15 „Kundennummer sichtbar“ in Arbeit (`task-15-1`, `15-2` abgeschlossen, startbar `task-15-3`); Stand und bekannte Probleme in `.workshop/CURRENT_STATE.md`, Übersicht mit `npm run workshop:status`. Jeder Schritt wird erst nach Rücksprache ein neuer Task.
 
 0. Phase 15 umsetzen: Kundennummer in Stammdaten, Listen, Rechnungen, Einsatz, PDF und E-Mails (`task-15-1` … `15-3`, Begründung in `docs/decisions.md`). Danach optional eigene Rechnungsanschrift je Kunde.
 1. Sprachtest von Mira, sobald ElevenLabs-Guthaben da ist: Szenarien aus `docs/telefonassistent/testprotokoll.md` per Demo-Anruf (`localhost:3000`, Klick auf die Service-Desk-Nummer), Ergebnisse dort eintragen.

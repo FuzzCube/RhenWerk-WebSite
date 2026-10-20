@@ -6,11 +6,11 @@ import type { Database } from "@/lib/supabase/database.types";
 // Data of the technician pages. Every query is restricted to the signed-in technician (technician_id = own id)
 // in addition to RLS, which would also show other technicians' visits of the technician's current requests.
 type Tables = Database["public"]["Tables"];
-type RequestInfo = Pick<Tables["requests"]["Row"], "id" | "request_number" | "company_name" | "contact_name" | "phone_number" | "street_house_number" | "postal_code" | "city" | "site_label" | "equipment_kind" | "service_kind" | "description" | "safety_risk" | "priority" | "work_status">;
+type RequestInfo = Pick<Tables["requests"]["Row"], "id" | "request_number" | "company_name" | "customer_number" | "contact_name" | "phone_number" | "street_house_number" | "postal_code" | "city" | "site_label" | "equipment_kind" | "service_kind" | "description" | "safety_risk" | "priority" | "work_status">;
 export type TechnicianVisit = Pick<Tables["visits"]["Row"], "id" | "request_id" | "status" | "scheduled_start" | "scheduled_end" | "actual_start" | "waiting_reason" | "summary"> & { request: RequestInfo };
 export type PendingParts = { request: RequestInfo; parts: Array<Pick<Tables["work_entries"]["Row"], "id" | "description" | "quantity" | "ordered_at">>; waitingReason: string | null };
 
-const REQUEST_COLUMNS = "id, request_number, company_name, contact_name, phone_number, street_house_number, postal_code, city, site_label, equipment_kind, service_kind, description, safety_risk, priority, work_status";
+const REQUEST_COLUMNS = "id, request_number, company_name, customer_number, contact_name, phone_number, street_house_number, postal_code, city, site_label, equipment_kind, service_kind, description, safety_risk, priority, work_status";
 const VISIT_COLUMNS = `id, request_id, status, scheduled_start, scheduled_end, actual_start, waiting_reason, summary, request:requests!inner(${REQUEST_COLUMNS})`;
 
 export async function loadToday(technicianId: string) {

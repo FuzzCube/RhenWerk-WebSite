@@ -17,7 +17,7 @@ insert into public.requests (id, source_event_key, source, company_name, contact
 values ('00000000-0000-0000-0000-000000000001', 'load-r1', 'website_form', 'ACME', 'Erika', 'e@acme.test', '1', 'Str. 1', '40210',
   'Düsseldorf', 'pump', 'diagnosis_repair', date '2031-03-01', 'Test', 'planbar', 'none_known', '{}',
   '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000b1');
--- One visit per status in March 2031 (far from demo data)
+-- One visit per status in March 2031; counts only for this technician, local demo data may have visits then too
 insert into public.visits (request_id, technician_id, status, scheduled_start, scheduled_end, actual_start, actual_end, waiting_reason, cancellation_reason, created_by)
 select '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000b1', s.status::public.visit_status,
   s.starts, s.starts + interval '2 hours',
@@ -38,11 +38,11 @@ set local role anon;
 select throws_ok($$select * from public.technician_load_intervals('2031-03-01', '2031-04-01')$$, '42501', null, 'anon has no access');
 set local role authenticated;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000d1');
-select is((select count(*)::int from public.technician_load_intervals('2031-03-01', '2031-04-01')), 4,
+select is((select count(*)::int from public.technician_load_intervals('2031-03-01', '2031-04-01') i where i.technician_id = '00000000-0000-0000-0000-0000000000b1'), 4,
   'scheduled, in progress, waiting for parts and completed count; cancelled does not');
 -- A dispatcher of other requests sees the times as well (only technician and time, like the busy intervals)
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000d2');
-select is((select count(*)::int from public.technician_load_intervals('2031-03-01', '2031-04-01')), 4, 'other dispatcher sees the intervals');
+select is((select count(*)::int from public.technician_load_intervals('2031-03-01', '2031-04-01') i where i.technician_id = '00000000-0000-0000-0000-0000000000b1'), 4, 'other dispatcher sees the intervals');
 select is((select count(*)::int from public.technician_load_intervals('2031-03-04', '2031-03-05')), 1, 'only the requested range');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000000b1');
 select is((select count(*)::int from public.technician_load_intervals('2031-03-01', '2031-04-01')), 0, 'technicians get nothing');

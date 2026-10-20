@@ -51,7 +51,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   const columns: Column<InvoiceListItem>[] = [
     // Issue date under the number and net under gross keep the table within the list card next to the side menu
     { key: "number", header: "Rechnung", cell: (row) => <><span className="mono rw-nowrap">{row.invoice_number ?? "Entwurf"}</span>{row.issue_date && <span className="cell-sub rw-nowrap">ausgestellt <span className="mono">{formatCalendarDate(row.issue_date)}</span></span>}</>, mobile: "title" },
-    { key: "customer", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub mono">{row.request_number}</span></> },
+    { key: "customer", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub mono">{row.customer_number && <>{row.customer_number} · </>}{row.request_number}</span></> },
     {
       key: "status",
       header: "Status",
@@ -103,9 +103,9 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
         </div>
         <div className="req2__toolbar">
           <form className="req2__search" method="get" role="search" aria-label="Rechnungen durchsuchen">
-            <label className="sr-only" htmlFor="filter-suche">Rechnungsnummer</label>
+            <label className="sr-only" htmlFor="filter-suche">Rechnungs- oder Kundennummer</label>
             <Icon name="search" size={18} />
-            <SearchSuggest area="rechnungen" id="filter-suche" name="suche" defaultValue={filters.q} placeholder="Rechnungsnummer, z. B. RE-2026-…" />
+            <SearchSuggest area="rechnungen" id="filter-suche" name="suche" defaultValue={filters.q} placeholder="Rechnungs- oder Kundennummer" />
             <input type="hidden" name="status" value={tab} />
             <button className="rw-button-secondary req2__search-btn" type="submit">Suchen</button>
           </form>

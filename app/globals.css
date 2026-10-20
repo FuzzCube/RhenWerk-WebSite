@@ -265,6 +265,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .field small, .radio-field small { font-family: var(--rw-font-mono); font-size: 10px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--rw-text-secondary); }
 .field input, .field select, .field textarea { width: 100%; min-height: 48px; padding: 10px 12px; color: var(--rw-text-primary); background: white; border: 1px solid var(--rw-border-default); border-radius: var(--rw-radius-sm); }
 .field textarea { min-height: 150px; resize: vertical; }
+.field__static { display: flex; align-items: center; min-height: 48px; margin: 0; padding: 10px 12px; border: 1px dashed var(--rw-border-default); border-radius: var(--rw-radius-sm); color: var(--rw-text-secondary); font-weight: 500; }
 .field input[aria-invalid="true"], .field select[aria-invalid="true"], .field textarea[aria-invalid="true"] { border: 1.5px solid var(--rw-color-danger-700); background: var(--rw-color-danger-surface); }
 .field em { color: var(--rw-text-secondary); font-size: 12px; font-style: normal; font-weight: 400; }
 .field > strong, .radio-field > strong, .field-error { color: var(--rw-color-danger-800); font-size: 13px; font-weight: 600; }

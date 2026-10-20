@@ -46,7 +46,7 @@ export default async function CustomerPage({ params, searchParams }: Props) {
       description={<>{customer.is_active ? "aktiv" : "deaktiviert"} · zuletzt geändert <span className="mono">{formatDateTime(customer.updated_at)}</span>{customer.is_demo && <> <span className="demo-tag">Demodaten</span></>}</>}
     >
       <p><Link href="/dashboard/kunden">← Alle Kunden</Link></p>
-      {query.angelegt === "1" && <p className="notice" role="status">Kunde angelegt.</p>}
+      {query.angelegt === "1" && <p className="notice" role="status">Kunde <span className="mono">{customer.customer_number}</span> angelegt.</p>}
 
       <section className="request-section" aria-labelledby="stammdaten-title">
         <h2 id="stammdaten-title">Stammdaten</h2>

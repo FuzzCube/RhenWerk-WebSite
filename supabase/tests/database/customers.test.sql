@@ -28,14 +28,20 @@ select ok((select customer_number ~ '^K-2[0-9]{4}$' from public.create_customer(
   'customer number assigned automatically');
 select is((select business_email from public.customers where company_name = 'Neu Kunde GmbH'), 'einkauf@neu.test', 'e-mail stored in lower case');
 select is((select count(*) from public.customer_sites s join public.customers c on c.id = s.customer_id where c.company_name = 'Neu Kunde GmbH')::int, 1, 'first site created');
-select lives_ok($$select public.create_customer('Fest GmbH', 'Ring 5', '69115', 'Heidelberg', customer_number => 'k 30001')$$, 'given number normalized');
-select is((select customer_number from public.customers where company_name = 'Fest GmbH'), 'K-30001', 'number K-30001');
-select throws_ok($$select public.create_customer('Doppelt GmbH', 'Ring 5', '69115', 'Heidelberg', customer_number => 'K-30001')$$, 'RW422', null, 'duplicate number rejected');
+select lives_ok($$select public.create_customer('Fest GmbH', 'Ring 5', '69115', 'Heidelberg')$$, 'second customer created');
+select ok((select max(customer_number) filter (where company_name = 'Fest GmbH') > max(customer_number) filter (where company_name = 'Neu Kunde GmbH') from public.customers),
+  'numbers ascend from the sequence');
+select throws_ok($$select public.create_customer('Doppelt GmbH', 'Ring 5', '69115', 'Heidelberg', customer_number => 'K-30001')$$, '42883', null, 'number cannot be chosen (task-15-2)');
+-- Fixed number for the following steps (test fixture only)
+reset role;
+update public.customers set customer_number = 'K-30001' where company_name = 'Fest GmbH';
+set local role authenticated;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000c0d1');
 select throws_ok($$select public.create_customer('PLZ GmbH', 'Ring 5', '6911', 'Heidelberg')$$, 'RW422', null, 'invalid postal code rejected');
 select throws_ok($$select public.create_customer('Mail GmbH', 'Ring 5', '69115', 'Heidelberg', business_email => 'kein-at')$$, 'RW422', null, 'invalid e-mail rejected');
 
 select throws_ok($$select public.update_customer((select id from public.customers where customer_number = 'K-30001'), 99, 'Fest GmbH')$$, 'RW409', null, 'version conflict');
-select is((select (public.update_customer(id, version, 'Fest Werke GmbH', phone_number => '06221 1')).version from public.customers where customer_number = 'K-30001'), 2, 'update raises version');
+select is((select (public.update_customer(id, version, 'Fest Werke GmbH', phone_number => '06221 1')).version from public.customers where customer_number = 'K-30001'), 3, 'update raises version (fixture number set before: version 2)');
 select is((select (public.add_customer_site(id, 'Halle 3, Ring 7', '69115', 'Heidelberg', 'Lager')).label from public.customers where customer_number = 'K-30001'), 'Lager', 'second site');
 select is((select (public.update_customer_site(s.id, s.version, 'Ring 9', '69115', 'Heidelberg', 'Lager Nord')).street_house_number
   from public.customer_sites s where s.label = 'Lager'), 'Ring 9', 'site updated');
@@ -91,7 +97,7 @@ reset role;
 select is((select count(*) from public.customers where customer_number = 'K-40001')::int, 0, 'old demo customer removed');
 select ok((select customer_id is null from public.requests where source_event_key = 'phone_agent:kd-call-1'), 'link to the removed customer cleared');
 select ok((select customer_id is not null and customer_site_id is not null from public.requests where source_event_key = 'kunden-test-2'), 'request linked by number and site');
-select is((select count(*) from public.customers where not is_demo)::int, 2, 'customers created by staff stay');
+select is((select count(*) from public.customers where not is_demo and company_name in ('Neu Kunde GmbH', 'Fest Werke GmbH'))::int, 2, 'customers created by staff stay');
 
 select * from finish();
 rollback;

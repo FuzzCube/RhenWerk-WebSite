@@ -2680,9 +2680,9 @@
     {
       "id": "phase-15",
       "title": "Kundennummer sichtbar",
-      "description": "Nutzerentscheidung 20.10.2026 nach einem Testanruf: Die Kundennummer ist im Dashboard kaum zu sehen (nur Untertitel der Kundenseite, Kundenliste, Anfrageseite) und erscheint in keiner E-Mail; der Kunde kennt sie daher nicht und kann sie Mira nicht nennen. Wie im papierbasierten Ablauf soll die Kundennummer überall dort stehen, wo Kunde, Anfrage und Rechnung zusammenkommen. Identifikation am Telefon bleibt bei Kundennummer + PLZ (Firma allein reicht aus Sicherheitsgründen nicht). Eine eigene Rechnungsanschrift je Kunde ist bewusst nicht Teil dieser Phase.",
+      "description": "Nutzerentscheidung 20.10.2026 nach einem Testanruf: Die Kundennummer ist im Dashboard kaum zu sehen (nur Untertitel der Kundenseite, Kundenliste, Anfrageseite) und erscheint in keiner E-Mail; der Kunde kennt sie daher nicht und kann sie Mira nicht nennen. Wie im papierbasierten Ablauf soll die Kundennummer überall dort stehen, wo Kunde, Anfrage und Rechnung zusammenkommen. Identifikation am Telefon bleibt bei Kundennummer + PLZ (Firma allein reicht aus Sicherheitsgründen nicht). Eine eigene Rechnungsanschrift je Kunde ist bewusst nicht Teil dieser Phase. Erweiterung 20.10.2026 (Nutzerentscheidung bei task-15-2): Die Kundennummer vergibt ausschließlich die Datenbank und sie ist der feste fachliche Schlüssel des Kunden; eine von Kunden genannte Nummer wird nur als „angegebene Kundennummer“ gespeichert und geprüft.",
       "order": 16,
-      "weight": 5,
+      "weight": 6,
       "status": "in_progress",
       "tasks": [
         {
@@ -2714,26 +2714,38 @@
           ]
         },
         {
-          "weight": 2,
-          "startedAt": null,
-          "completedAt": null,
+          "weight": 3,
+          "startedAt": "2026-10-20T20:55:04Z",
+          "completedAt": "2026-10-20T21:16:03Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Migration 20261020170000_customer_number_key.sql (per psql eingespielt): requests.stated_customer_number, Trigger requests_sync_customer_number (customer_number nur aus verknüpftem Kunden), Prüfung der angegebenen Nummer in assign_request_customer (passt → verknüpfen, passt nicht → Vorschlag nummer_passt_nicht, unbekannt → Ereignis), create_customer ohne frei wählbare Nummer, demo_seed_customers über stated_customer_number; Bestandsdaten: 29 angegebene Nummern verschoben, 0 Abweichungen. UI: „Kunde anlegen“ ohne Nummernfeld, Hinweis mit vergebener Nummer; Kundennummer in Anfragenliste, Rechnungsliste (Suche/Vorschläge), Einsatzkopf und Einsatzkarten; Anfrageseite zeigt angegebene Nummer getrennt. test:db bestanden (neu customer_number_key.test.sql, 24 Prüfungen; customers/technician_experience angepasst; customers und technician_load_intervals von lokalen Live-/Demodaten unabhängig gemacht). test:unit, test:ui (neue Prüfungen inkl. Einsatz @390/768/1440), typecheck, lint, build bestanden; Screenshots geprüft. Ausgestellte Rechnungen ohne Nummer bleiben unverändert (festgeschrieben).",
+            "commands": [
+              "npm run test:db",
+              "npm run test:unit",
+              "npm run test:ui",
+              "npm run typecheck",
+              "npm run lint",
+              "npm run build",
+              "npm run db:types"
+            ],
+            "checkedAt": "2026-10-20T21:16:03Z"
           },
           "id": "task-15-2",
-          "title": "Kundennummer in Anfragenliste, Rechnungen, Einsatz und Rechnungs-PDF",
+          "title": "Kundennummer nur aus dem Kundenstamm, angegebene Nummer prüfen, Anzeige in Listen, Rechnungen und Einsatz",
           "order": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
-          "description": "Kundennummer (aus dem verknüpften Kunden) in der Anfragenliste unter der Firma, in Rechnungsliste und Rechnungsdetail, in der Einsatzansicht des Technikers und in der Suche. Das Rechnungs-PDF nimmt die Kundennummer aus dem verknüpften Kunden statt nur aus der Kopie in der Anfrage (bisher fehlt sie, wenn die Anfrage keine customer_number trägt). Ohne Verknüpfung: nichts anzeigen bzw. angegebene Nummer der Anfrage.",
+          "description": "Nutzerentscheidung 20.10.2026: (1) „Kunde anlegen“ ohne Feld Kundennummer, create_customer vergibt immer die nächste Nummer der Sequenz; nach dem Anlegen Hinweis mit der Nummer. (2) requests.customer_number ist nur noch die Nummer des verknüpften Kunden (Trigger, leer ohne Verknüpfung); was Kunde, Formular, E-Mail oder Telefon nennen, steht in requests.stated_customer_number. (3) Beim Abschluss der Erstbearbeitung wird die angegebene Nummer geprüft: existiert sie und passt PLZ eines aktiven Standorts oder die E-Mail → verknüpfen; existiert sie, aber Daten passen nicht → nichts automatisch, Vorschlag „Kundennummer angegeben, Daten passen nicht“; unbekannt → Ereignis im Verlauf, normale Zuordnung. Bestehende abweichende Nummern werden in stated_customer_number verschoben. (4) Kundennummer in Anfragenliste (mit Suche), Rechnungsliste (mit Suche und Vorschlägen), Einsatzansicht und Heute-Karten des Technikers. Rechnungs-PDF: neue Rechnungen erhalten die Nummer über die Anfrage; ausgestellte Rechnungen bleiben unverändert (festgeschrieben).",
           "definitionOfDone": [
-            "Anfragenliste, Rechnungsliste, Rechnungsdetail, Einsatzansicht und Suche zeigen die Kundennummer",
-            "Rechnungs-PDF nutzt den verknüpften Kunden, Fallback Anfrage",
+            "create_customer ohne frei wählbare Nummer, Formular ohne Feld, Hinweis mit vergebener Nummer",
+            "Trigger: requests.customer_number nur aus verknüpftem Kunden; angegebene Nummer in stated_customer_number; Bestandsdaten bereinigt",
+            "Prüfung der angegebenen Nummer bei der automatischen Zuordnung (passt / passt nicht / unbekannt) mit Ereignissen und Vorschlag",
+            "pgTAP-Tests für Trigger, Prüfung und create_customer",
+            "Kundennummer in Anfragenliste, Rechnungsliste, Einsatzansicht und Heute-Karten; Suche nach Kundennummer",
             "Technikerseiten zuerst 390/768 geprüft",
-            "test:unit, test:ui, lint, typecheck, build"
+            "docs/database.md, docs/decisions.md, docs/architecture.md aktualisiert",
+            "test:db, test:unit, test:ui, lint, typecheck, build"
           ]
         },
         {

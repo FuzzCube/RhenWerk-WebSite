@@ -82,11 +82,12 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       <details className="action">
         <summary>Kunde anlegen</summary>
         <p className="section-note">Kunden entstehen normalerweise automatisch, sobald eine Anfrage bearbeitet ist. Manuell anlegen nur ohne Anfrage: Wartungs- oder SLA-Vertrag vor dem ersten Auftrag (der Telefonassistent erkennt den Kunden dann schon beim ersten Anruf), Übernahme von Bestandskunden oder mehrere Standorte vorab erfassen.</p>
-        <p className="section-note">Ohne Angabe vergibt das System die nächste freie Kundennummer. Der erste Standort ist Pflicht; weitere lassen sich danach hinzufügen. Vor dem Anlegen wird auf ähnliche Kunden geprüft.</p>
+        <p className="section-note">Die Kundennummer vergibt das System beim Anlegen (fortlaufend, danach fest). Der erste Standort ist Pflicht; weitere lassen sich danach hinzufügen. Vor dem Anlegen wird auf ähnliche Kunden geprüft.</p>
         <SaveForm action={createCustomer} submitLabel="Kunde anlegen">
           <div className="form-grid">
             <TextField name="company_name" label="Firma" required />
-            <TextField name="customer_number" label="Kundennummer" hint="Leer lassen für automatische Vergabe." />
+            {/* Not editable (task-15-2): the database assigns the number, it is shown on the customer page afterwards */}
+            <div className="field" data-number-auto><span>Kundennummer<small>Automatisch</small></span><p className="field__static">Wird beim Anlegen vergeben</p></div>
             <TextField name="contact_name" label="Ansprechperson" />
             <TextField name="business_email" label="E-Mail" type="email" hint="Für Eingangsbestätigungen an Bestandskunden." />
             <TextField name="phone_number" label="Telefon" type="tel" />

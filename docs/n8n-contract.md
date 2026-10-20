@@ -72,7 +72,7 @@ Die vorhandenen Tabellen enthalten bereits alle Felder für diese Funktionen (`r
 
 | Formular | Datenbank |
 | --- | --- |
-| `contact.company_name`, `contact_name`, `business_email`, `phone`, `customer_number` | `company_name`, `contact_name`, `business_email`, `phone_number`, `customer_number` |
+| `contact.company_name`, `contact_name`, `business_email`, `phone`, `customer_number` | `company_name`, `contact_name`, `business_email`, `phone_number`, `stated_customer_number` (ungeprüft; `customer_number` setzt nur die Verknüpfung mit dem Kundenstamm, task-15-2) |
 | `site_and_equipment.site_name`, `street_and_number`, `postal_code`, `city` | `site_label`, `street_house_number`, `postal_code`, `city` |
 | `site_and_equipment.equipment_type` `pump`/`compressor`/`ventilation`/`other` | `equipment_kind` (gleiche Werte) |
 | `request.service_type` `inspection`/`maintenance`/`repair` | `service_kind` `inspection`/`scheduled_maintenance`/`diagnosis_repair` |

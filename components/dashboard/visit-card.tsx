@@ -57,7 +57,7 @@ export function NowCard({ visit, now }: { visit: TechnicianVisit; now: number })
         <StatusChip status={running ? { ...visitStatus("in_progress"), label: `Läuft · ${formatElapsed((now - new Date(visit.actual_start!).getTime()) / 60000)}` } : visitStatus(visit.status)} />
       </p>
       <h3 className="tech-now__title"><Link href={`/dashboard/anfragen/${r.id}`}>{r.company_name}</Link></h3>
-      <p className="tech-meta"><span className="mono">{r.request_number}</span> · {label("service_kind", r.service_kind)} · {label("equipment_kind", r.equipment_kind)}</p>
+      <p className="tech-meta">{r.customer_number && <>Kunde <span className="mono" data-customer-number>{r.customer_number}</span> · </>}<span className="mono">{r.request_number}</span> · {label("service_kind", r.service_kind)} · {label("equipment_kind", r.equipment_kind)}</p>
       {r.safety_risk !== "none_known" && <p className="rw-hazard"><Icon name="hazard" size={16} />Sicherheitsgefahr: {label("safety_risk", r.safety_risk)} – vor Arbeitsbeginn klären</p>}
       {visit.status === "waiting_parts" && visit.waiting_reason && <p className="rw-blocked">Wartet auf Teile: {visit.waiting_reason}</p>}
       <OrderFacts request={r} />
@@ -76,7 +76,7 @@ export function VisitRow({ visit, showDate = false }: { visit: TechnicianVisit; 
       <span className="tech-row__time mono">{showDate && <span className="tech-row__date">{formatWeekdayDate(visit.scheduled_start).replace(/\d{4}$/, "")}</span>}{formatTime(visit.scheduled_start)}</span>
       <Link className="tech-row__body visit-card__open" href={`/dashboard/einsatz/${visit.id}`}>
         <span className="tech-row__head"><strong>{r.company_name}</strong><StatusChip status={visitStatus(visit.status)} /></span>
-        <span className="tech-meta">{label("service_kind", r.service_kind)} · {label("equipment_kind", r.equipment_kind)} · {r.city}</span>
+        <span className="tech-meta">{r.customer_number && <><span className="mono" data-customer-number>{r.customer_number}</span> · </>}{label("service_kind", r.service_kind)} · {label("equipment_kind", r.equipment_kind)} · {r.city}</span>
       </Link>
     </li>
   );

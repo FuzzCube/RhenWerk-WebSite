@@ -41,9 +41,6 @@ async function run(values: Record<string, string>, success: string, call: () => 
 export async function createCustomer(_previous: FormState, formData: FormData): Promise<FormState> {
   await requireRole(STAFF);
   const values = formValues(formData);
-  if (values.customer_number?.trim() && !/^K?[-\s]?\d{4,}$/i.test(values.customer_number.trim())) {
-    return formError("Bitte die markierten Felder prüfen.", values, { customer_number: "Format K-12345, oder leer lassen." });
-  }
   const errors = { ...customerErrors(values), ...siteErrors(values) };
   if (Object.keys(errors).length > 0) return formError("Bitte die markierten Felder prüfen.", values, errors);
   const supabase = await createClient();
@@ -59,7 +56,7 @@ export async function createCustomer(_previous: FormState, formData: FormData): 
   const { data, error } = await supabase.rpc("create_customer", {
     company_name: values.company_name.trim(), street_house_number: values.street_house_number.trim(), postal_code: values.postal_code.trim(), city: values.city.trim(),
     contact_name: text(values.contact_name), business_email: text(values.business_email), phone_number: text(values.phone_number), notes: text(values.notes),
-    site_label: text(values.site_label), customer_number: text(values.customer_number),
+    site_label: text(values.site_label),
   });
   if (error || !data) return formError(databaseErrorMessage(error), values);
   redirect(`/dashboard/kunden/${data.id}?angelegt=1`);

@@ -35,13 +35,13 @@ export function suggestTerm(q: string): string {
 
 async function requestSuggestions(term: string, href: (row: { id: string; request_number: string | null }) => string): Promise<Suggestion[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("requests").select("id, request_number, company_name, city, intake_status, work_status")
-    .or(["request_number", "company_name", "contact_name", "city"].map((column) => `${column}.ilike.*${term}*`).join(","))
+  const { data } = await supabase.from("requests").select("id, request_number, company_name, customer_number, city, intake_status, work_status")
+    .or(["request_number", "company_name", "customer_number", "contact_name", "city"].map((column) => `${column}.ilike.*${term}*`).join(","))
     .order("created_at", { ascending: false }).limit(SUGGEST_LIMIT);
   return (data ?? []).map((row) => ({
     id: row.id,
     title: `${row.request_number ?? "ohne Nummer"} · ${row.company_name}`,
-    meta: `${row.city} · ${requestDisplayStatus(row.intake_status, row.work_status).label}`,
+    meta: `${row.customer_number ? `${row.customer_number} · ` : ""}${row.city} · ${requestDisplayStatus(row.intake_status, row.work_status).label}`,
     value: row.request_number ?? "",
     href: href(row),
   }));
@@ -73,14 +73,18 @@ async function customerSuggestions(term: string, fill: boolean): Promise<Suggest
 
 async function invoiceSuggestions(term: string): Promise<Suggestion[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("invoices").select("id, request_id, invoice_number, status, payment_due_date, total, requests(company_name)")
-    .ilike("invoice_number", `%${term}%`).order("issued_at", { ascending: false, nullsFirst: true }).limit(SUGGEST_LIMIT);
+  // Invoice number or customer number of the request (task-15-2)
+  const digits = term.replace(/\D/g, "");
+  const { data: byCustomer } = digits.length >= 3 ? await supabase.from("requests").select("id").ilike("customer_number", `%${digits}%`).limit(50) : { data: [] };
+  const ids = (byCustomer ?? []).map((row) => row.id);
+  const { data } = await supabase.from("invoices").select("id, request_id, invoice_number, status, payment_due_date, total, requests(company_name, customer_number)")
+    .or([`invoice_number.ilike.*${term}*`, ...(ids.length ? [`request_id.in.(${ids.join(",")})`] : [])].join(",")).order("issued_at", { ascending: false, nullsFirst: true }).limit(SUGGEST_LIMIT);
   const today = berlinDayKey(new Date());
   return (data ?? []).map((row) => {
     const request = Array.isArray(row.requests) ? row.requests[0] : row.requests;
     return {
       id: row.id,
-      title: `${row.invoice_number ?? "Entwurf"} · ${request?.company_name ?? "–"}`,
+      title: `${row.invoice_number ?? "Entwurf"} · ${request?.company_name ?? "–"}${request?.customer_number ? ` (${request.customer_number})` : ""}`,
       meta: `${invoiceDisplayStatus(row.status, row.payment_due_date, today).label} · ${formatCurrency(row.total)}`,
       value: row.invoice_number ?? "",
       href: `/dashboard/anfragen/${row.request_id}#rechnung`,

@@ -150,8 +150,8 @@ export function filterQuery(filters: RequestFilters, overrides: Partial<RequestF
 }
 
 // The dispatcher name is embedded only so the list can be sorted by it (task-12-12)
-const LIST_COLUMNS = "id, request_number, company_name, city, service_kind, equipment_kind, intake_status, work_status, priority, created_at, dispatcher_id, technician_id, is_demo, safety_risk, dispatcher:profiles!requests_dispatcher_id_fkey(display_name)";
-export type RequestListItem = Pick<RequestRow, "id" | "request_number" | "company_name" | "city" | "service_kind" | "equipment_kind" | "intake_status" | "work_status" | "priority" | "created_at" | "dispatcher_id" | "technician_id" | "is_demo" | "safety_risk">;
+const LIST_COLUMNS = "id, request_number, company_name, customer_number, city, service_kind, equipment_kind, intake_status, work_status, priority, created_at, dispatcher_id, technician_id, is_demo, safety_risk, dispatcher:profiles!requests_dispatcher_id_fkey(display_name)";
+export type RequestListItem = Pick<RequestRow, "id" | "request_number" | "company_name" | "customer_number" | "city" | "service_kind" | "equipment_kind" | "intake_status" | "work_status" | "priority" | "created_at" | "dispatcher_id" | "technician_id" | "is_demo" | "safety_risk">;
 
 // Requests with open customer suggestions (task-14-2): flag „Kunde prüfen“ in lists
 export async function customerCheckIds(requestIds: string[]): Promise<Set<string>> {
@@ -193,7 +193,7 @@ export async function listRequests(filters: RequestFilters, userId: string): Pro
   if (filters.q) {
     // Characters with meaning in PostgREST filter syntax or LIKE patterns are removed
     const term = filters.q.replace(/[,()*%_\\:"']/g, " ").replace(/\s+/g, " ").trim();
-    if (term) query = query.or(["request_number", "company_name", "contact_name", "city"].map((column) => `${column}.ilike.*${term}*`).join(","));
+    if (term) query = query.or(["request_number", "company_name", "customer_number", "contact_name", "city"].map((column) => `${column}.ilike.*${term}*`).join(","));
   }
   const { data, count, error } = await query;
   // A page beyond the end (e.g. after narrowing a filter) is answered with 416 by PostgREST
@@ -269,7 +269,7 @@ export type RequestDetail = {
 };
 
 export type CustomerSuggestion = {
-  reason: "mehrere_treffer" | "gleiche_firma" | "gleiche_domain" | "kunde_inaktiv";
+  reason: "mehrere_treffer" | "gleiche_firma" | "gleiche_domain" | "kunde_inaktiv" | "nummer_passt_nicht";
   customer: Pick<Tables["customers"]["Row"], "id" | "customer_number" | "company_name" | "is_active"> & { sites: Array<Pick<Tables["customer_sites"]["Row"], "street_house_number" | "postal_code" | "city" | "is_active">> };
 };
 

@@ -24,11 +24,17 @@ create function pg_temp.act_as(user_id uuid) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', user_id, 'role', 'authenticated')::text, true);
 $$;
 
+-- Customer numbers count only through the link to the customer master data (task-15-2)
+insert into public.customers (id, customer_number, company_name) values
+  ('00000000-0000-0000-0000-0000000007c1', 'K-70001', 'Ziel GmbH'),
+  ('00000000-0000-0000-0000-0000000007c9', 'K-70009', 'Andere AG');
+
 insert into public.requests (
-  id, source_event_key, request_number, source, company_name, customer_number, contact_name, business_email, phone_number,
+  id, source_event_key, request_number, source, company_name, customer_id, contact_name, business_email, phone_number,
   street_house_number, postal_code, city, equipment_kind, manufacturer, service_kind, requested_visit_date, description,
   customer_urgency, safety_risk, raw_payload, dispatcher_id, created_at, intake_status, work_status)
-select pg_temp.r(n), 'exp:' || n, 'x', 'demo_seed', company, customer, 'Erika', 'e@x.test', '1', 'Str. 1', '40210', 'Düsseldorf',
+select pg_temp.r(n), 'exp:' || n, 'x', 'demo_seed', company,
+  case customer when 'K-1' then '00000000-0000-0000-0000-0000000007c1'::uuid when 'K-9' then '00000000-0000-0000-0000-0000000007c9'::uuid end, 'Erika', 'e@x.test', '1', 'Str. 1', '40210', 'Düsseldorf',
   equipment::public.equipment_kind, manufacturer, 'diagnosis_repair', date '2031-02-01', 'Test', 'planbar', 'none_known', '{}',
   '00000000-0000-0000-0000-0000000007d1', timestamptz '2031-01-01 08:00+01', 'processed', 'not_planned'
 from (values

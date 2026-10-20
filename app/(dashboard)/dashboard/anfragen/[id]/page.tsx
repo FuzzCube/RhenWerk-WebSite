@@ -395,9 +395,10 @@ function CustomerLink({ detail }: { detail: RequestDetail }) {
           Verknüpft mit <Link href={`/dashboard/kunden/${customer.id}`}><span className="mono">{customer.customer_number}</span> {customer.company_name}</Link>
           {customer.site ? <>, Standort {customer.site.street_house_number}, {customer.site.city}</> : ", ohne Standort"}.
           {differs && <> Die Angaben der Anfrage weichen vom Kundenstamm ab.</>}
+          {r.stated_customer_number && r.stated_customer_number !== customer.customer_number && <> Angegeben war <span className="mono">{r.stated_customer_number}</span>.</>}
         </p>
       ) : (
-        <p className="rw-card__note">Nicht mit dem Kundenstamm verknüpft.{r.customer_number && <> Angegebene Kundennummer: <span className="mono">{r.customer_number}</span>.</>}</p>
+        <p className="rw-card__note">Nicht mit dem Kundenstamm verknüpft.{r.stated_customer_number && <> Angegebene Kundennummer (ungeprüft): <span className="mono">{r.stated_customer_number}</span>.</>}</p>
       )}
       {!customer && detail.customerSuggestions.length > 0 && <CustomerSuggestions request={r} suggestions={detail.customerSuggestions} />}
       {!customer && detail.customerSuggestions.length === 0 && r.intake_status !== "rejected" && r.intake_status !== "cancelled" && (
@@ -412,7 +413,7 @@ function CustomerLink({ detail }: { detail: RequestDetail }) {
           <HiddenField name="request_id" value={r.id} />
           <HiddenField name="version" value={r.version} />
           <div className="form-grid">
-            <SuggestField area="kundennummer" name="customer_number" label="Kundennummer" defaultValue={customer?.customer_number ?? r.customer_number ?? ""} hint="Firma, Nummer oder Ort tippen und Vorschlag wählen. Leer lassen, um die Verknüpfung zu entfernen." />
+            <SuggestField area="kundennummer" name="customer_number" label="Kundennummer" defaultValue={customer?.customer_number ?? r.stated_customer_number ?? ""} hint="Firma, Nummer oder Ort tippen und Vorschlag wählen. Leer lassen, um die Verknüpfung zu entfernen." />
             {customer && customer.sites.length > 1 && (
               <SelectField name="site_id" label="Standort" defaultValue={customer.site?.id ?? ""} emptyLabel="Automatisch (Adresse der Anfrage)"
                 options={customer.sites.map((site) => ({ value: site.id, label: `${site.street_house_number}, ${site.postal_code} ${site.city}${site.label ? ` (${site.label})` : ""}` }))} />
@@ -430,6 +431,7 @@ const SUGGESTION_REASON: Record<CustomerSuggestion["reason"], string> = {
   gleiche_firma: "Gleiche Firma an anderem Standort",
   gleiche_domain: "Gleiche E-Mail-Domain",
   kunde_inaktiv: "Kunde ist deaktiviert",
+  nummer_passt_nicht: "Kundennummer angegeben, Daten passen nicht",
 };
 
 // Uncertain automatic match (task-14-2): staff link one of the suggested customers or create a new one

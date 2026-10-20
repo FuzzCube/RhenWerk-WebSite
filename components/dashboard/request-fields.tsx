@@ -26,7 +26,7 @@ export function RequestFields({ values, hints = {}, site = false, descriptionRow
         <TextField name="postal_code" label="PLZ" inputMode="numeric" required defaultValue={values.postal_code} hint={hints.postal_code} />
         <TextField name="city" label="Ort" required defaultValue={values.city} hint={hints.city} />
         {site && <TextField name="site_label" label="Standort (Halle, Gebäude)" defaultValue={values.site_label} hint={hints.site_label} />}
-        <TextField name="customer_number" label="Kundennummer" defaultValue={values.customer_number} hint={hints.customer_number} />
+        <TextField name="customer_number" label="Kundennummer (vom Kunden genannt)" defaultValue={values.customer_number} hint={hints.customer_number ?? "Wird beim Abschluss der Erstbearbeitung mit dem Kundenstamm abgeglichen."} />
         <SelectField name="equipment_kind" label="Anlagenart" required defaultValue={values.equipment_kind} hint={hints.equipment_kind} options={options("equipment_kind")} />
         <TextField name="manufacturer" label="Hersteller" defaultValue={values.manufacturer} hint={hints.manufacturer} />
         <TextField name="model_type" label="Modell / Typ" defaultValue={values.model_type} hint={hints.model_type} />
