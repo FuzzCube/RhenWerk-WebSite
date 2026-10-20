@@ -8,6 +8,7 @@ Für den Einstieg genügen `.workshop/CURRENT_STATE.md` und `npm run workshop:st
 
 | Datei | Inhalt | Lesen, wenn … |
 | --- | --- | --- |
+| [docs/HANDOFF.md](docs/HANDOFF.md) | Nächste Schritte nach Roadmap v14 | eine neue Arbeit auswählen |
 | [docs/setup.md](docs/setup.md) | Lokale Einrichtung, Umgebungsvariablen, Start, SMTP, Sicherheitsupdates | Umgebung einrichten oder starten |
 | [docs/architecture.md](docs/architecture.md) | Aufbau der App: Routen, Rollen, Bereiche, UI-Bausteine, Diagramme, Posteingang, Einsatzplanung, Anrufe | Dashboard-Code ändern |
 | [docs/database.md](docs/database.md) | Tabellen, RLS, RPCs mit Fehlercodes, Warteschlangen, Cron-Jobs, Agent-Funktionen | Schema, Migrationen oder RPCs ändern |
