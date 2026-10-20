@@ -28,6 +28,7 @@ export const EVENT_LABELS: Record<string, string> = {
   customer_auto_created: "Kunde automatisch angelegt",
   customer_auto_linked: "Automatisch dem Kundenstamm zugeordnet",
   customer_suggested: "Möglicher Bestandskunde – bitte prüfen",
+  customer_created_from_request: "Kunde aus der Anfrage angelegt",
   visit_hold_created: "Termin vom Telefonassistenten vorgemerkt",
   visit_hold_confirmed: "Vorgemerkter Termin bestätigt",
   visit_hold_rejected: "Vorgemerkten Termin abgelehnt",

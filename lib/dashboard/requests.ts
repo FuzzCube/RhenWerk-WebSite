@@ -153,6 +153,14 @@ export function filterQuery(filters: RequestFilters, overrides: Partial<RequestF
 const LIST_COLUMNS = "id, request_number, company_name, city, service_kind, equipment_kind, intake_status, work_status, priority, created_at, dispatcher_id, technician_id, is_demo, safety_risk, dispatcher:profiles!requests_dispatcher_id_fkey(display_name)";
 export type RequestListItem = Pick<RequestRow, "id" | "request_number" | "company_name" | "city" | "service_kind" | "equipment_kind" | "intake_status" | "work_status" | "priority" | "created_at" | "dispatcher_id" | "technician_id" | "is_demo" | "safety_risk">;
 
+// Requests with open customer suggestions (task-14-2): flag „Kunde prüfen“ in lists
+export async function customerCheckIds(requestIds: string[]): Promise<Set<string>> {
+  if (requestIds.length === 0) return new Set();
+  const supabase = await createClient();
+  const { data } = await supabase.from("request_customer_suggestions").select("request_id").in("request_id", requestIds);
+  return new Set((data ?? []).map((row) => row.request_id));
+}
+
 // Requests with an open window hold of the phone assistant (task-13-3) → start of the held window
 export async function openHoldStarts(requestIds: string[]): Promise<Map<string, string>> {
   if (requestIds.length === 0) return new Map();
@@ -251,11 +259,18 @@ export type RequestDetail = {
   contract: Tables["service_contracts"]["Row"] | null;
   // Linked customer of the master data with the linked site (task-13-10); staff only
   customer: (Tables["customers"]["Row"] & { site: Tables["customer_sites"]["Row"] | null; sites: Tables["customer_sites"]["Row"][] }) | null;
+  // Possible existing customers when the automatic match was uncertain (task-14-2); staff only, empty once linked
+  customerSuggestions: CustomerSuggestion[];
   // Window holds of the phone assistant (task-13-3), newest first; staff only
   holds: Tables["visit_holds"]["Row"][];
   // Calls of the phone assistant about this request (task-13-7); staff only
   calls: Array<Pick<Tables["phone_calls"]["Row"], "id" | "conversation_id" | "started_at" | "duration_seconds" | "category" | "summary" | "callback_needed" | "callback_done_at" | "in_service_hours" | "analyzed_at">>;
   failed: string[];
+};
+
+export type CustomerSuggestion = {
+  reason: "mehrere_treffer" | "gleiche_firma" | "gleiche_domain" | "kunde_inaktiv";
+  customer: Pick<Tables["customers"]["Row"], "id" | "customer_number" | "company_name" | "is_active"> & { sites: Array<Pick<Tables["customer_sites"]["Row"], "street_house_number" | "postal_code" | "city" | "is_active">> };
 };
 
 // null = not found or no access (deliberately indistinguishable). Memoized per request (metadata and page).
@@ -268,7 +283,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
 
   const staff = role !== "technician";
   const contractNumber = staff ? normalizeContractNumber(request.sla_contract_number) : null;
-  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds, customer, calls] = await Promise.all([
+  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds, customer, calls, suggestions] = await Promise.all([
     staff ? supabase.from("messages").select("*").eq("request_id", id).order("created_at") : null,
     staff ? supabase.from("automation_runs").select("*").eq("request_id", id).order("started_at") : null,
     supabase.from("visits").select("*").eq("request_id", id).order("scheduled_start"),
@@ -280,6 +295,9 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     staff ? supabase.from("visit_holds").select("*").eq("request_id", id).order("created_at", { ascending: false }) : null,
     staff && request.customer_id ? supabase.from("customers").select("*, customer_sites(*)").eq("id", request.customer_id).maybeSingle() : null,
     staff ? supabase.from("phone_calls").select("id, conversation_id, started_at, duration_seconds, category, summary, callback_needed, callback_done_at, in_service_hours, analyzed_at").eq("request_id", id).order("started_at") : null,
+    staff && !request.customer_id
+      ? supabase.from("request_customer_suggestions").select("reason, customers(id, customer_number, company_name, is_active, customer_sites(street_house_number, postal_code, city, is_active))").eq("request_id", id).order("created_at")
+      : null,
   ]);
   const invoiceId = invoice?.data && invoice.data.status !== "draft" ? invoice.data.id : null;
   const [invoiceItems, reminderState, reminders] = invoice?.data
@@ -316,6 +334,9 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     customer: customer?.data
       ? (({ customer_sites: sites, ...row }) => ({ ...row, sites, site: sites.find((site) => site.id === request.customer_site_id) ?? null }))(customer.data)
       : null,
+    customerSuggestions: (suggestions?.data ?? []).flatMap((row) => row.customers
+      ? [{ reason: row.reason as CustomerSuggestion["reason"], customer: (({ customer_sites: sites, ...rest }) => ({ ...rest, sites }))(row.customers) }]
+      : []),
     holds: holds ? pick("einsaetze", holds, []) : [],
     calls: calls?.data ?? [],
     failed,

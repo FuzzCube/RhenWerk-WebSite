@@ -621,6 +621,56 @@ try {
     while (Date.now() < end) { if (await condition()) return true; await sleep(150); }
     return false;
   };
+  // Possible existing customer (task-14-2): suggestion card, "Zuordnen", "Neuen Kunden anlegen", flags in list and queue.
+  // Demo requests and a demo customer, so nothing reaches the live master data.
+  {
+    console.log("\nMöglicher Bestandskunde auf der Anfrageseite (task-14-2)");
+    const { data: suggested } = await admin.from("customers").select("id, customer_number, company_name").eq("is_demo", true).eq("is_active", true).order("customer_number").limit(1).single();
+    const linkReq = await newRequest("kunde-zuordnen", { company_name: `UI-Kundenvorschlag ${runId}` });
+    const createReq = await newRequest("kunde-neu", { company_name: `UI-Neukunde ${runId}` });
+    for (const req of [linkReq, createReq]) {
+      const { error } = await admin.from("request_customer_suggestions").insert({ request_id: req.id, customer_id: suggested.id, reason: "gleiche_firma" });
+      if (error) throw new Error(`Vorschlag: ${error.message}`);
+    }
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.open(`${BASE}/dashboard/anfragen?ansicht=alle&suche=${encodeURIComponent(`UI-Kundenvorschlag ${runId}`)}`);
+    check("Anfragenliste: Kennzeichen „Kunde prüfen“", await page.eval(`!!document.querySelector(".rw-flag--customer")`));
+    await page.open(`${BASE}/dashboard/erstbearbeitung?tab=pruefung`);
+    check("  Erstbearbeitung: Hinweis „Kunde prüfen“", await page.eval(`[...document.querySelectorAll(".hint")].some((h) => h.textContent.startsWith("Kunde prüfen"))`));
+    for (const width of [1440, 768, 390]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/anfragen/${linkReq.id}`);
+      const card = await page.eval(`(() => { const el = document.querySelector(".customer-suggest"); return el ? { text: el.textContent, item: el.querySelector("[data-suggestion]")?.dataset.suggestion, buttons: [...el.querySelectorAll("button")].map((b) => b.textContent), scroll: document.documentElement.scrollWidth, width: innerWidth } : null; })()`);
+      check(`  Karte mit Kunde, Grund, Zuordnen und Neuen Kunden anlegen, kein horizontales Scrollen @${width}`, !!card && card.item === suggested.customer_number && card.text.includes("Gleiche Firma an anderem Standort")
+        && card.buttons.includes("Zuordnen") && card.buttons.includes("Neuen Kunden anlegen") && card.scroll <= card.width, JSON.stringify(card).slice(0, 300));
+      if (SHOTS) {
+        // Sticky side column: scroll instantly, then cut the card out of the visible area
+        const clip = await page.eval(`(() => { document.documentElement.style.scrollBehavior = "auto"; const el = document.querySelector(".customer-suggest"); el.scrollIntoView({ block: "center" });
+          const r = el.getBoundingClientRect(); return { x: Math.max(0, r.left - 16), y: Math.max(0, r.top + scrollY - 16), width: Math.min(innerWidth, r.width + 32), height: r.height + 32, scale: 1 }; })()`);
+        const shot = await page.send("Page.captureScreenshot", { format: "png", clip });
+        await writeFile(path.join(SHOTS, `kundenvorschlag-${width}.png`), Buffer.from(shot.data, "base64"));
+      }
+    }
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.eval(`document.querySelector(".customer-suggest__action button").click()`);
+    const linked = await waitFor(async () => (await admin.from("requests").select("customer_id").eq("id", linkReq.id).single()).data?.customer_id === suggested.id);
+    const { count: leftLink } = await admin.from("request_customer_suggestions").select("request_id", { count: "exact", head: true }).eq("request_id", linkReq.id);
+    check("  „Zuordnen“ verknüpft die Anfrage, Vorschläge erledigt", linked && leftLink === 0);
+    check("  Seite zeigt danach „Verknüpft mit“ statt der Karte", await waitFor(async () => page.eval(`!document.querySelector(".customer-suggest") && document.querySelector(".request-customer").textContent.includes("Verknüpft mit")`)));
+
+    await page.open(`${BASE}/dashboard/anfragen/${createReq.id}`);
+    await page.eval(`document.querySelector(".customer-suggest__create button").click()`);
+    const created = await waitFor(async () => !!(await admin.from("requests").select("customer_id").eq("id", createReq.id).single()).data?.customer_id);
+    const { data: newCustomer } = await admin.from("requests").select("customers!requests_customer_id_fkey(company_name, is_demo)").eq("id", createReq.id).single();
+    check("  „Neuen Kunden anlegen“ legt den Kunden aus der Anfrage an (Demo) und verknüpft", created && newCustomer?.customers?.company_name === `UI-Neukunde ${runId}` && newCustomer?.customers?.is_demo === true, JSON.stringify(newCustomer));
+
+    const plainReq = await newRequest("kunde-ohne-vorschlag");
+    await page.open(`${BASE}/dashboard/anfragen/${plainReq.id}`);
+    check("  Ohne Vorschlag: Schaltfläche „Neuen Kunden aus der Anfrage anlegen“", await page.eval(`[...document.querySelectorAll(".request-customer__create button")].some((b) => b.textContent === "Neuen Kunden aus der Anfrage anlegen")`));
+  }
+
   const actionForm = (summary) => `[...document.querySelectorAll("details.action")].find((d) => d.querySelector("summary").textContent.trim() === ${JSON.stringify(summary)})`;
   const fillIn = (formExpr, values) => page.eval(`(() => {
     const host = ${formExpr};

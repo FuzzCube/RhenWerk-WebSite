@@ -2579,18 +2579,26 @@
         },
         {
           "weight": 2,
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-20T16:23:33Z",
+          "completedAt": "2026-10-20T16:48:54Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-20T16:48:54Z",
+            "commands": [
+              "npx supabase test db",
+              "npm run db:types",
+              "npm run test:unit",
+              "npm run test:ui",
+              "npm run lint",
+              "npx tsc --noEmit",
+              "npm run build"
+            ],
+            "summary": "Migration 20261020140000_customer_from_request.sql: private.new_customer_from_request (gemeinsam für Trigger und Schaltfläche, Demo-Anfrage ergibt Demo-Kunden), RPC public.create_customer_from_request(request_id, expected_version) – Rolle Dispatcher/Manager/Admin, Versionsprüfung, RW422 bei bereits verknüpfter, abgelehnter oder stornierter Anfrage, Kunde + erster Standort, Ereignis customer_created_from_request; Trigger requests_clear_customer_suggestions räumt Vorschläge bei jeder Verknüpfung ab. Anfrageseite: Karte „Möglicher Bestandskunde“ im Block Kundenstamm mit Kunde, Standorten, Grund, „Zuordnen“ (link_request_customer) und „Neuen Kunden anlegen“; ohne Vorschlag Schaltfläche „Neuen Kunden aus der Anfrage anlegen“. Hinweise: Kennzeichen „Kunde prüfen“ in der Anfragenliste, Hinweis in der Erstbearbeitung (customerCheckIds). Geprüft: customer_from_request.test.sql 13/13, test:db sonst unverändert (technician_load_intervals scheitert weiter an lokalen Daten), test:unit 92/92, test:ui alle bestanden inkl. neuem Block (Liste, Erstbearbeitung, Karte 1440/768/390 ohne horizontales Scrollen, Zuordnen, Neu anlegen als Demo, Schaltfläche ohne Vorschlag), Sichtprüfung der Kartenausschnitte, lint, typecheck, build."
           },
           "id": "task-14-2",
           "title": "Hinweis „Möglicher Bestandskunde“ auf der Anfrageseite",
           "order": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-14-1"
           ],

@@ -327,3 +327,5 @@
 {"timestamp":"2026-10-20T16:17:07Z","type":"issue_resolved","summary":"n8n hing ab 16:04 an seiner SQLite-Schreibsperre, nachdem npm run backup die Live-Datenbank vom Mac aus geöffnet hatte; Neustart, gestaute E-Mail versendet, Sicherung kopiert die n8n-Datenbank jetzt bei pausiertem Container."}
 {"timestamp":"2026-10-20T16:17:07Z","type":"task_completed","taskId":"task-14-1","summary":"Kunden werden beim Abschluss der Erstbearbeitung automatisch zugeordnet oder angelegt, unsichere Treffer als Vorschlag; test:db, Integrationstest, test:unit, test:ui, lint, typecheck, build bestanden."}
 {"timestamp":"2026-10-20T16:17:07Z","type":"task_ready","taskId":"task-14-2","summary":"Abhängigkeit task-14-1 erfüllt."}
+{"timestamp":"2026-10-20T16:23:33Z","type":"task_started","taskId":"task-14-2","summary":"Hinweis „Möglicher Bestandskunde“ nach bestätigtem Plan begonnen."}
+{"timestamp": "2026-10-20T16:48:54Z", "type": "task_completed", "taskId": "task-14-2", "summary": "Karte „Möglicher Bestandskunde“ mit Zuordnen/Neuen Kunden anlegen, RPC create_customer_from_request, Hinweise in Liste und Erstbearbeitung; alle Prüfungen bestanden."}

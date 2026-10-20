@@ -1066,6 +1066,17 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .request-contact__internal { padding-top: var(--rw-space-12); border-top: 1px solid var(--rw-border-subtle); font-size: 14px; color: var(--rw-text-secondary); }
 .request-customer { display: grid; gap: var(--rw-space-8); padding-top: var(--rw-space-12); border-top: 1px solid var(--rw-border-subtle); }
 .request-customer__title { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; color: var(--rw-text-secondary); }
+/* Possible existing customer (task-14-2): uncertain automatic match, decided by staff */
+.customer-suggest { display: grid; gap: var(--rw-space-8); padding: var(--rw-space-12) var(--rw-space-16); background: var(--rw-color-blue-050); border: 1px solid var(--rw-border-subtle); border-left: 3px solid var(--rw-color-blue-700); border-radius: var(--rw-radius-md); }
+.customer-suggest__title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--rw-text-primary); }
+.customer-suggest__list { display: grid; gap: var(--rw-space-8); margin: 0; padding: 0; list-style: none; }
+.customer-suggest__item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--rw-space-8) var(--rw-space-12); padding: var(--rw-space-8) var(--rw-space-12); background: var(--rw-surface-raised); border: 1px solid var(--rw-border-subtle); border-radius: var(--rw-radius-sm); }
+.customer-suggest__text { display: grid; gap: 2px; min-width: 0; flex: 1 1 220px; overflow-wrap: anywhere; }
+.customer-suggest__text a { font-weight: 600; }
+.customer-suggest__reason { font-size: 13px; font-weight: 600; color: var(--rw-color-warning-900); }
+.customer-suggest__action, .customer-suggest__create, .request-customer__create { margin: 0; padding: 0; border: 0; background: transparent; }
+@media (min-width: 768px) { .customer-suggest__action, .customer-suggest__create, .request-customer__create { padding: 0; } }
+.customer-suggest__action .save-form__footer, .customer-suggest__create .save-form__footer, .request-customer__create .save-form__footer { margin: 0; padding: 0; border: 0; }
 /* Calls of the phone assistant (task-13-7) */
 .call-summary { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 46ch; }
 .call-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
@@ -1816,6 +1827,7 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .request-hold__hint { color: var(--rw-color-warning-900); }
 .request-hold .save-form { padding: 0; border: 0; background: transparent; }
 .rw-flag--hold { margin: 0 0 0 6px; color: var(--rw-color-info-800); background: var(--rw-color-info-surface); border-color: var(--rw-color-info-border); }
+.rw-flag--customer { margin: 0 0 0 6px; color: var(--rw-color-warning-900); background: var(--rw-color-warning-surface); border-color: var(--rw-color-warning-border); }
 /* Window held by the phone assistant on the planning board (task-13-3): shown, not blocking */
 .plan3__key--hold, .plan3__blk--hold { background: repeating-linear-gradient(135deg, var(--rw-color-info-border) 0 3px, var(--rw-color-info-surface) 3px 7px); border: 1px dashed var(--rw-color-info-800); }
 .plan3__blk--hold { z-index: 2; color: var(--rw-color-info-800); }

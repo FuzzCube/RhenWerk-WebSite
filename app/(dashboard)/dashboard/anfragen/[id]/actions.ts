@@ -255,6 +255,16 @@ export async function rejectHold(_previous: FormState, formData: FormData): Prom
     supabase.rpc("reject_visit_hold", { hold_id: values.hold_id, reason, alternative: (values.alternative ?? "").trim() || undefined }));
 }
 
+// "Neuen Kunden anlegen" (task-14-2): customer from the request data, linked in the same step
+export async function createCustomerFromRequest(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const input = context(formData);
+  if (!input) return invalid(formValues(formData));
+  const supabase = await createClient();
+  return run(input.values, "Kunde angelegt und verknüpft.", () =>
+    supabase.rpc("create_customer_from_request", { request_id: input.id, expected_version: input.version }));
+}
+
 // Link to the customer master data (task-13-10), e.g. to correct the phone assistant; empty number removes the link.
 // copy_data takes company, customer number, address of the site and the stored e-mail into the request.
 export async function linkCustomer(_previous: FormState, formData: FormData): Promise<FormState> {

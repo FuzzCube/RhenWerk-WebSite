@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { confirmHold, linkCustomer, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
+import { confirmHold, createCustomerFromRequest, linkCustomer, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
 import { availableActions, DraftActions, RequestActions } from "@/components/dashboard/request-actions";
 import { CheckboxField, HiddenField, SaveForm, SelectField, SuggestField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
@@ -16,7 +16,7 @@ import { invoiceDisplayStatus, requestDisplayStatus, requestProgress } from "@/l
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { formatCallDuration } from "@/lib/dashboard/calls";
-import { getEmployeeNames, getRequestDetail, sectionsFor, type RequestDetail, type SectionId } from "@/lib/dashboard/requests";
+import { getEmployeeNames, getRequestDetail, sectionsFor, type CustomerSuggestion, type RequestDetail, type SectionId } from "@/lib/dashboard/requests";
 import { describeEvent } from "@/lib/events";
 import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange } from "@/lib/format";
 import { nextReminderText, stageLabel } from "@/lib/reminders";
@@ -399,6 +399,13 @@ function CustomerLink({ detail }: { detail: RequestDetail }) {
       ) : (
         <p className="rw-card__note">Nicht mit dem Kundenstamm verknüpft.{r.customer_number && <> Angegebene Kundennummer: <span className="mono">{r.customer_number}</span>.</>}</p>
       )}
+      {!customer && detail.customerSuggestions.length > 0 && <CustomerSuggestions request={r} suggestions={detail.customerSuggestions} />}
+      {!customer && detail.customerSuggestions.length === 0 && r.intake_status !== "rejected" && r.intake_status !== "cancelled" && (
+        <SaveForm action={createCustomerFromRequest} submitLabel="Neuen Kunden aus der Anfrage anlegen" submitVariant="secondary" className="request-customer__create">
+          <HiddenField name="request_id" value={r.id} />
+          <HiddenField name="version" value={r.version} />
+        </SaveForm>
+      )}
       <details className="action">
         <summary>{customer ? "Verknüpfung ändern" : "Mit Kunden verknüpfen"}</summary>
         <SaveForm action={linkCustomer} submitLabel={customer ? "Speichern" : "Verknüpfen"}>
@@ -415,6 +422,48 @@ function CustomerLink({ detail }: { detail: RequestDetail }) {
         </SaveForm>
       </details>
     </div>
+  );
+}
+
+const SUGGESTION_REASON: Record<CustomerSuggestion["reason"], string> = {
+  mehrere_treffer: "Mehrere passende Kunden",
+  gleiche_firma: "Gleiche Firma an anderem Standort",
+  gleiche_domain: "Gleiche E-Mail-Domain",
+  kunde_inaktiv: "Kunde ist deaktiviert",
+};
+
+// Uncertain automatic match (task-14-2): staff link one of the suggested customers or create a new one
+function CustomerSuggestions({ request, suggestions }: { request: RequestDetail["request"]; suggestions: CustomerSuggestion[] }) {
+  return (
+    <section className="customer-suggest" aria-labelledby="customer-suggest-title">
+      <h4 id="customer-suggest-title" className="customer-suggest__title"><Icon name="info" size={18} />Möglicher Bestandskunde</h4>
+      <p className="rw-card__note">Die automatische Zuordnung war nicht eindeutig. Bitte einen Kunden zuordnen oder einen neuen anlegen.</p>
+      <ul className="customer-suggest__list">
+        {suggestions.map(({ reason, customer }) => {
+          const sites = customer.sites.filter((site) => site.is_active);
+          return (
+            <li key={customer.id} className="customer-suggest__item" data-suggestion={customer.customer_number}>
+              <div className="customer-suggest__text">
+                <Link href={`/dashboard/kunden/${customer.id}`}><span className="mono">{customer.customer_number}</span> {customer.company_name}</Link>
+                <span className="customer-suggest__reason">{SUGGESTION_REASON[reason]}</span>
+                {sites.length > 0 && (
+                  <span className="cell-sub">{sites.slice(0, 3).map((site) => `${site.street_house_number}, ${site.postal_code} ${site.city}`).join(" · ")}{sites.length > 3 && ` · +${sites.length - 3}`}</span>
+                )}
+              </div>
+              <SaveForm action={linkCustomer} submitLabel="Zuordnen" submitVariant="secondary" className="customer-suggest__action">
+                <HiddenField name="request_id" value={request.id} />
+                <HiddenField name="version" value={request.version} />
+                <HiddenField name="customer_number" value={customer.customer_number} />
+              </SaveForm>
+            </li>
+          );
+        })}
+      </ul>
+      <SaveForm action={createCustomerFromRequest} submitLabel="Neuen Kunden anlegen" submitVariant="secondary" className="customer-suggest__create">
+        <HiddenField name="request_id" value={request.id} />
+        <HiddenField name="version" value={request.version} />
+      </SaveForm>
+    </section>
   );
 }
 

@@ -704,6 +704,8 @@ Migration `20261019120000_customers.sql` (task-13-10): Kundenstamm `public.custo
 
 Ein Fehler in der Zuordnung blockiert die Erstbearbeitung nie: Er wird als Warnung protokolliert, die Anfrage bleibt ohne Kunde. Wiederholtes Abschließen (`reopen_intake`) legt keinen zweiten Kunden an. Tests: `auto_customers.test.sql`.
 
+Entscheidung durch Mitarbeitende (task-14-2, Migration `20261020140000_customer_from_request.sql`): `create_customer_from_request(request_id, expected_version)` (Dispatcher mit Zugriff, Manager, Admin; `RW409` bei veralteter Version, `RW422` wenn schon verknüpft, abgelehnt oder storniert) legt den Kunden aus den Anfragedaten an und verknüpft ihn in einem Schritt (Ereignis `customer_created_from_request` des Nutzers); eine Demo-Anfrage ergibt einen Demo-Kunden. Anlage im Trigger und hier über dieselbe Funktion `private.new_customer_from_request`. Trigger `requests_clear_customer_suggestions` (`after update of customer_id`) löscht die Vorschläge, sobald die Anfrage auf irgendeinem Weg verknüpft wird (auch `link_request_customer`). Tests: `customer_from_request.test.sql`.
+
 Migration `20261019130000_call_analysis.sql` (task-13-6): `phone_calls.analyzed_at` (gesetzt = ausgewertet) und `credits` (ElevenLabs), Index für offene dringende Rückrufe. Für n8n: `agent_calls_pending(conversation_ids)` und `agent_record_call(call_id, started_at, duration_seconds, transcript, analysis, credits?, cost_cents?)` (einmal je Gespräch, Fakten aus der Datenbank, Dringlichkeit aus der Auswertung nur für Gespräche der letzten 12 Stunden). Für Dispatcher, Manager, Admin: `acknowledge_call_callback(call_id)` („Rückruf erledigt“, erste Quittung bleibt). Tests: `call_analysis.test.sql`.
 
 Migration `20261019140000_phone_dashboard.sql` (task-13-7): Kennzahlen `analytics_phone`, `analytics_phone_categories`, `analytics_phone_days` (siehe Analytik). Demo-Anrufe (`is_demo`) legt `npm run demo:seed` außerhalb von `demo_seed_apply` an und ersetzt sie als Ganzes; echte Anrufe bleiben. Tests: `phone_dashboard.test.sql`.
@@ -715,3 +717,5 @@ Migration `20261019160000_agent_forward.sql` (task-13-11): `phone_calls.forward_
 Migration `20261020120000_send_backlog.sql` (task-12-9): `send_backlog(min_minutes)` – Anzahl und ältester Zeitpunkt versandfähiger E-Mails, die länger warten (siehe Integration). Tests: `send_backlog.test.sql`.
 
 Migration `20261020130000_auto_customers.sql` (task-14-1): automatische Kundenzuordnung beim Abschluss der Erstbearbeitung (Trigger `requests_link_customer`, Tabelle `request_customer_suggestions`; siehe Kundenstamm). Tests: `auto_customers.test.sql`.
+
+Migration `20261020140000_customer_from_request.sql` (task-14-2): `create_customer_from_request`, gemeinsame Anlage `private.new_customer_from_request`, Trigger `requests_clear_customer_suggestions`. Tests: `customer_from_request.test.sql`.
