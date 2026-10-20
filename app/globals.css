@@ -736,7 +736,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .rw-zone__titles { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--rw-space-12); }
 .rw-zone__titles h2 { font-size: 24px; line-height: 1.28; }
 .rw-zone__note { font-size: 14px; color: var(--rw-text-secondary); }
-.rw-zone__controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--rw-space-8); }
+.rw-zone__controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--rw-space-8); margin-left: auto; }
 
 /* Card: 2px state stripe on top */
 .rw-card { display: flex; flex-direction: column; gap: var(--rw-space-12); min-width: 0; padding: 20px 24px; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-subtle); border-top: 2px solid var(--rw-color-navy-950); border-radius: var(--rw-radius-md); }
@@ -857,6 +857,9 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .rw-period__step { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-default); border-radius: var(--rw-radius-sm); color: var(--rw-text-brand); }
 .rw-period__step:hover { background: var(--rw-action-secondary-bg-hover); }
 .rw-period__step--disabled, .rw-period__step--disabled:hover { background: var(--rw-surface-disabled); border-color: var(--rw-action-disabled-border); color: var(--rw-text-disabled); }
+/* Period controls stay right-aligned even when wrapped below the title, so "Aktueller Zeitraum" (left of them) never moves the buttons;
+   on phones they span the width and the link moves to its own row below them */
+@media (max-width: 639px) { .rw-period__current { order: 1; flex-basis: 100%; } }
 
 /* Overview (task-10-3) */
 /* Narrow screens: table rows become two-column blocks (header row hidden, cells keep their order);
@@ -1592,7 +1595,7 @@ details.tech-step[open] { padding-bottom: 20px; }
 
 /* Analysis as a side page (task-10-3, user feedback 13.10.2026): areas in the side menu, glance cards and
    charts on one grid (4 columns wide, 2 on medium widths, 1 on phones) so all card edges line up */
-.insights__period { display: flex; flex-wrap: wrap; align-items: center; gap: var(--rw-space-8) var(--rw-space-12); font-size: 13px; color: var(--rw-text-secondary); }
+.insights__period { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--rw-space-8) var(--rw-space-12); margin-left: auto; font-size: 13px; color: var(--rw-text-secondary); }
 .insights-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--rw-space-24); align-items: stretch; }
 .insights-grid > * { min-width: 0; }
 @container (min-width: 640px) {
@@ -1608,6 +1611,16 @@ details.tech-step[open] { padding-bottom: 20px; }
 .insights .figure .rw-card__title { font-size: 15px; }
 .figure__body { flex: 1; }
 .figure__body > .figure__table { margin-top: auto; }
+/* Collapsible list card (task-12-6): the header bar is the summary; no divider while closed */
+.insights-fold > summary { flex-wrap: nowrap; list-style: none; cursor: pointer; }
+.insights-fold > summary .rw-card__heading { flex: 1 1 auto; }
+.insights-fold > summary::-webkit-details-marker { display: none; }
+.insights-fold > summary:hover { background: var(--rw-action-secondary-bg-hover); }
+.insights-fold:not([open]) > summary { border-bottom: 0; }
+.insights-fold__end { display: inline-flex; align-items: center; gap: var(--rw-space-8); flex: none; color: var(--rw-text-brand); }
+.insights-fold__end svg { transition: transform var(--rw-duration-fast) var(--rw-ease-standard); }
+.insights-fold[open] .insights-fold__end svg { transform: rotate(180deg); }
+.insights-fold > .rw-card--list__pad { margin: 0; padding-bottom: 0; }
 .rw-glance[aria-current="page"] { border-color: var(--rw-color-lime-600); box-shadow: inset 0 0 0 1px var(--rw-color-lime-600); }
 /* Phones: glance cards two by two and the period control in one row */
 @container (max-width: 639px) {
@@ -1615,12 +1628,12 @@ details.tech-step[open] { padding-bottom: 20px; }
   .insights-grid--glance .rw-glance { padding: 12px 14px; gap: 4px; }
   .insights-grid--glance .rw-glance__value { font-size: 20px; }
   .insights-grid--glance .rw-card__note { font-size: 13px; }
-  .insights__period { width: 100%; }
+  .insights__period { width: 100%; justify-content: flex-start; }
   .insights__period .rw-period { width: 100%; }
   .insights__period .rw-period__kinds { flex: 1 1 0; min-width: 0; }
   .insights__period .rw-period__kinds li { flex: 1; }
   .insights__period .rw-period__kinds a { justify-content: center; padding: 0 6px; }
-  .insights__period .rw-link-btn { flex-basis: 100%; }
+  .insights__period .rw-period__current { order: 1; flex-basis: 100%; }
 }
 
 /* Invoices as a side page (task-10-3, user feedback 13.10.2026): open receivables in one row above the list */

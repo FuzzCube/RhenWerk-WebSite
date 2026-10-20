@@ -4,18 +4,18 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v14, 14 Phasen, 64 Tasks, Fortschritt 100 % (Gewicht 183 von 183).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v14, 14 Phasen, 65 Tasks, Fortschritt 100 % (Gewicht 184 von 184).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Alle Phasen 0–13 abgeschlossen (19.10.2026). Keine Aufgabe in Arbeit, keine Blockierung. Neue Arbeit entsteht nur nach Rücksprache als neuer Task (Roadmap-Version erhöhen).
+Alle Phasen 0–13 abgeschlossen (zuletzt Nachbesserung `task-12-6` am 20.10.2026). Keine Aufgabe in Arbeit, keine Blockierung. Neue Arbeit entsteht nur nach Rücksprache als neuer Task (Roadmap-Version erhöhen).
 
 ## Zuletzt abgeschlossen
 
+- `task-12-6` (20.10.2026): Auswertung Telefon – nur acht Telefon-Kennzahlen (allgemeine Karten nur dort ausgeblendet), „Aktueller Zeitraum“ links der Zeitraumtasten, damit sie beim Blättern nicht springen (`components/dashboard/period-bar.tsx`), Anliegen einklappbar.
 - `task-12-5` (19.10.2026): Legende der Diagramme als Schalter – Reihen ein- und ausblenden, y-Achse und Tooltip folgen, letzte Reihe bleibt, Datentabelle vollständig (`components/dashboard/charts.tsx`).
-- `task-13-11` (19.10.2026): Demo-Anruf über jeden Link auf die Service-Desk-Nummer (`components/demo-call.tsx`) und Demo-Weiterleitung `weiterleiten` (`agent_forward`). Nicht geprüft: Anruf mit Stimme (ElevenLabs-Guthaben).
 - `task-13-8` (19.10.2026): Budget des Demo-Anrufs (`app/api/mira`, `widget_sessions`), Testprotokoll `docs/telefonassistent/testprotokoll.md`, `agent:simulate`, `agent:latency`.
 
 ## Wo was dokumentiert ist (Telefonassistent)

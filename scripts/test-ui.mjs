@@ -296,6 +296,20 @@ try {
     const { count: callCount } = await admin.from("phone_calls").select("id", { count: "exact", head: true }).not("analyzed_at", "is", null).gte("started_at", monthStart);
     const phone = await page.eval(`({ figures: document.querySelectorAll("[data-phone-figure]").length, calls: document.querySelector('[data-phone-figure="calls"] .rw-glance__value')?.textContent.replace(/\\D/g, ""), categories: document.querySelectorAll("#phone-categories tbody tr").length })`);
     check(`  Telefon: 8 Kennzahlen, Anrufe ${phone.calls} = Datenbank ${callCount}, Tabelle der Anliegen`, phone.figures === 8 && Number(phone.calls) === callCount && phone.categories > 0, JSON.stringify(phone));
+    // task-12-6: only the phone figures, concerns collapsed, period buttons keep their place when paging back
+    const layout = await page.eval(`({ glance: document.querySelectorAll(".rw-glance:not([data-phone-figure])").length, closed: document.querySelector("details#phone-categories")?.open === false })`);
+    check("  Telefon: keine allgemeinen Karten, Anliegen eingeklappt", layout.glance === 0 && layout.closed, JSON.stringify(layout));
+    const buttons = `[...document.querySelectorAll(".insights__period .rw-period__step, .insights__period .rw-period__kinds a")].map((el) => { const r = el.getBoundingClientRect(); return Math.round(r.x) + ":" + Math.round(r.y); }).join(",")`;
+    for (const width of [1440, 768, 390]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/auswertung?bereich=telefon`);
+      const now = await page.eval(buttons);
+      const previous = await page.eval(`document.querySelector(".insights__period .rw-period__step").getAttribute("href")`);
+      await page.open(`${BASE}${previous}`);
+      const back = await page.eval(`({ at: ${buttons}, current: !!document.querySelector(".insights__period .rw-period__current") })`);
+      check(`  Zeitraumtasten bleiben beim Zurückblättern an ihrer Position @${width}`, back.current && back.at === now, JSON.stringify({ now, back }));
+    }
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   }
 
   console.log("\nAnfrage aus Sicht des Technikers: eigener Einsatz oben, nur technische Angaben");

@@ -1911,6 +1911,34 @@
               "npm run build"
             ]
           }
+        },
+        {
+          "id": "task-12-6",
+          "title": "Auswertung Telefon: Kennzahlen, Zeitraumsteuerung, Anliegen",
+          "description": "Nutzerwunsch 20.10.2026: im Bereich Telefon entfallen die vier allgemeinen Karten „Auf einen Blick“ (andere Bereiche unverändert), es bleiben acht Telefon-Kennzahlen (2 × 4); „Aktueller Zeitraum“ steht in der Zeitraumsteuerung links von „←“, damit die Tasten nicht springen; die Tabelle „Anliegen“ ist einklappbar (standardmäßig zu) mit Kurzfassung, statt des Chips „Zeitraum“ die Zahl der Anliegen.",
+          "order": 6,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "startedAt": "2026-10-20T09:51:56Z",
+          "definitionOfDone": [
+            "Telefon zeigt nur acht Kennzahlenkarten, andere Bereiche unverändert",
+            "Zeitraumtasten bleiben beim Blättern an ihrer Position (390/768/1440 px)",
+            "Anliegen einklappbar mit Kurzfassung",
+            "test:ui, lint, typecheck, build"
+          ],
+          "completedAt": "2026-10-20T10:18:20Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Auswertung Telefon: die vier allgemeinen Karten „Auf einen Blick“ entfallen nur im Bereich Telefon, es bleiben acht Telefon-Kennzahlen (2 × 4). PeriodControl (components/dashboard/period-bar.tsx): „Aktueller Zeitraum“ steht links von „←“; Zeitraumsteuerung in Auswertung und Übersicht bleibt rechtsbündig, auch umbrochen; auf Telefonen eigene Zeile unter den Tasten. Anliegen als einklappbare Karte (standardmäßig zu) mit Kurzfassung „am häufigsten: …“ und Chip „N Anliegen“ statt „Zeitraum“. Geprüft: test:ui alle bestanden (neu: keine allgemeinen Karten und Anliegen eingeklappt im Bereich Telefon; Tastenposition beim Zurückblättern gleich @1440/768/390), Sichtprüfung 390/768/1440 px, test:unit 85/85, lint, typecheck, build.",
+            "commands": [
+              "UI_SCREENSHOTS=… npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         }
       ]
     },

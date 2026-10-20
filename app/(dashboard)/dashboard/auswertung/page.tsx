@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Icon } from "@/components/ui";
 import { cache, Suspense, type ReactNode } from "react";
 import { TimeChart, type ChartFormat, type ChartSeries } from "@/components/dashboard/charts";
 import { PeriodControl } from "@/components/dashboard/period-bar";
@@ -196,7 +197,8 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
 
   return (
     <>
-      <section aria-labelledby="glance">
+      {/* Telefon shows only its own figures (task-12-6): the general cards do not concern calls */}
+      {area !== "telefon" && <section aria-labelledby="glance">
         <h2 id="glance" className="sr-only">Auf einen Blick</h2>
         <div className="insights-grid insights-grid--glance">
           {glance.map((item) => (
@@ -207,7 +209,7 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
             </Link>
           ))}
         </div>
-      </section>
+      </section>}
 
       {area === "durchsatz" && <div className="insights-grid">
         <Figure className="insights-grid__full" id="flow-chart" title="Eingang, Erstbearbeitung und Abschluss je Monat" chip="24 Monate" summary={`${last12Note} Jede Reihe zählt nach ihrem eigenen Zeitpunkt. ${running}`} table={table(months, "month", "Monat", flowSeries, "count")}>
@@ -334,6 +336,7 @@ function PhoneArea({ data, period }: { data: Insights; period: PeriodParams }) {
     { key: "duration", label: "Ø Gesprächsdauer", value: minutes(current.avg_seconds), note: `zusammen ${formatMinutes(Math.round(current.total_seconds / 60))}` },
     { key: "cost", label: "Kosten Sprachmodell", value: formatCurrency(current.cost_cents / 100), note: `${formatCurrency(current.cost_cents / 100 / current.calls)} je Anruf · ${formatNumber(current.credits)} Credits` },
   ];
+  const top = categories.reduce<(typeof categories)[number] | null>((best, row) => (!best || row.calls > best.calls ? row : best), null);
   const dayRows = days.map((row) => ({ ...row, label: dayLabel(row.day) }));
   const daySeries: ChartSeries[] = [
     { key: "calls", label: "Anrufe", color: slot(0) },
@@ -368,16 +371,21 @@ function PhoneArea({ data, period }: { data: Insights; period: PeriodParams }) {
       >
         <TimeChart kind="line" data={dayRows} xKey="label" series={daySeries} format="count" height={220} label="Liniendiagramm: Anrufe, ohne Mitarbeiter gelöste Anrufe und angelegte Anfragen je Tag" />
       </Figure>
-      <section className="rw-card rw-card--list rw-card--flush rw-card--meta insights-grid__full" id="phone-categories" aria-labelledby="phone-categories-title">
-        <header className="rw-card__header">
+      {/* Collapsed by default (task-12-6): the summary names the most frequent concern */}
+      <details className="rw-card rw-card--list rw-card--flush rw-card--meta insights-grid__full insights-fold" id="phone-categories">
+        <summary className="rw-card__header">
           <div className="rw-card__heading">
             <div>
               <h3 id="phone-categories-title" className="rw-card__title">Anliegen {title}</h3>
-              <p className="rw-card__description rw-card__note">Kategorie aus der automatischen Gesprächsauswertung. <Link href="/dashboard/anrufe">Alle Anrufe</Link></p>
+              {top && <p className="rw-card__description rw-card__note">am häufigsten: {label("call_category", top.category)} ({formatPercent(share(top.calls, current.calls), 0)})</p>}
             </div>
           </div>
-          <PeriodChip>Zeitraum</PeriodChip>
-        </header>
+          <span className="insights-fold__end">
+            <PeriodChip>{`${categories.length} Anliegen`}</PeriodChip>
+            <Icon name="chevron-down" size={18} />
+          </span>
+        </summary>
+        <p className="rw-card--list__pad rw-card__note">Kategorie aus der automatischen Gesprächsauswertung. <Link href="/dashboard/anrufe">Alle Anrufe</Link></p>
         <DataTable
           caption="Anrufe je Anliegen"
           columns={[
@@ -390,7 +398,7 @@ function PhoneArea({ data, period }: { data: Insights; period: PeriodParams }) {
           rowKey={(row) => row.category}
           empty={<EmptyState title="Keine Anrufe im Zeitraum" />}
         />
-      </section>
+      </details>
     </div>
   );
 }
