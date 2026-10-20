@@ -1,5 +1,7 @@
 # План: KI-Telefonassistent для RheinWerk Industrieservice
 
+> Historisch: ursprünglicher Plan der Phase 13 (15.10.2026), vor der Umsetzung. Abweichungen danach: Demo-Anruf über die Service-Desk-Nummer statt Web-Widget-Karte, Weiterleitung nur als Demo, Gesprächsauswertung per API-Abfrage statt Webhook, Kundenstamm mit Kundennummer + PLZ ([decisions.md](decisions.md)). Gültig ist der Stand in [telefonassistent/](telefonassistent/), Einstieg [setup.md](telefonassistent/setup.md).
+
 Адаптация «Проекта 1» (Haustechnik Becker) под наш кейс. Задачи — фаза 13 в `.workshop/roadmap.json`. Агент говорит только по-немецки.
 
 Концепция (task-13-1, на немецком): [leitfaden.md](telefonassistent/leitfaden.md), [systemprompt.md](telefonassistent/systemprompt.md), [wissensbasis.md](telefonassistent/wissensbasis.md) с перечнем оборудования, [regeln.md](telefonassistent/regeln.md) с правилами и контрактами инструментов, [einsatzgebiet.json](telefonassistent/einsatzgebiet.json), [datenschutz.md](telefonassistent/datenschutz.md).

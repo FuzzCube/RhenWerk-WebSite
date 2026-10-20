@@ -42,6 +42,8 @@ Der bestehende Pfad bleibt unverändert. Der n8n-Ein-/Ausgabevertrag wird nur do
 
 Vorgabe der Spezifikation; die Umstellung gehört zu einer späteren Stufe.
 
+Abgelöst am 08.10.2026 durch „Lokale n8n-Integration ausdrücklich beauftragt“: lokal läuft das Formular über `N8N_WEBHOOK_URL` zu n8n; die öffentliche Website nutzt weiterhin Make.
+
 ## 2026-10-07 – Entwicklung gegen lokales Supabase
 
 ### Kontext
@@ -255,6 +257,10 @@ Ein Schritt statt „erst manuell umplanen, dann deaktivieren“ verhindert Zwis
 
 Konten entstehen nur über die Verwaltung (Auth-Admin-API mit Secret Key, bestätigte Adresse, kein E-Mail-Versand). Lokal ist `[auth] enable_signup = false` gesetzt; `[auth.email] enable_signup` bleibt `true`, weil die lokale CLI sonst die E-Mail-Anmeldung insgesamt abschaltet (`email_provider_disabled`). Im Cloud-Projekt ist die Registrierung im Supabase-Dashboard abzuschalten.
 
+## 2026-10-08 – Offene Punkte der Design-Spezifikation
+
+Nutzerentscheidungen: Kennzahl-Richtungen wie in `KPI_INFO` (Automatisierungsanteil und Zeitersparnis „besser“ bei Anstieg; Warteschlangen, offene und überfällige Forderungen: niedriger ist besser). Ein einheitlicher Anzeigestatus aus Erstbearbeitung × Arbeit; nicht vorgesehene Kombinationen fallen auf die Erstbearbeitung zurück. „Zahlung erfassen“ (`record_payment`) in der Rechnungsliste und auf der Anfrageseite. Ein Foto beim Einsatzabschluss ist nicht Pflicht. Einsatzvorschläge: zuerst Techniker mit abgeschlossenen Einsätzen bei derselben Firma (Kundennummer, sonst Firmenname); bei Neukunden Erfahrung mit Anlagentyp und Hersteller, dann geringere Auslastung, dann frühestes Fenster.
+
 ## 2026-10-08: Lokale n8n-Integration ausdrücklich beauftragt
 
 Der Nutzer ersetzt die frühere Beschränkung auf einen dokumentierten Vertrag: lokales n8n und Supabase auf dem Mac, eigenes Supabase-Credential, Gmail `rheinwerk.industrieservice@gmail.com`, Analyse von Formular und PDF/Fotos, Modellabgleich mit `docs/equipment/RheinWerk_Anlagenkatalog_DE.md`. Unbekannte Modelle und Serienübereinstimmungen gehen an Menschen; nie automatisch ablehnen. Nodes werden nicht gruppiert. Rückfragen bleiben Entwürfe zur Dispatcher-Freigabe.
@@ -280,3 +286,47 @@ Nutzerentscheidung: Kunden erhalten nach dem Absenden des Website-Formulars auto
 ## 2026-10-12: Zahlungserinnerungen automatisch, täglicher Lauf in der Datenbank
 
 Nutzerentscheidungen zu task-10-2: Erinnerungen und Mahnungen werden ohne manuelle Freigabe versendet (Systemfreigabe wie bei der Eingangsbestätigung); Manager und Admins können je Rechnung aussetzen oder die nächste Stufe sofort auslösen. Der tägliche Lauf ist ein pg_cron-Job in Supabase statt eines n8n-Workflows (testbar in SQL, kein Import in n8n nötig); der Versand nutzt den bestehenden Gmail-Workflow. Die E-Mail verwendet das Design der Eingangsbestätigung mit eigenen Texten je Stufe; die 2. Mahnung weist auf den Zahlungsverzug hin. Demo-Rechnungen erhalten eine erzeugte Historie, aber nie echte E-Mails.
+
+## 2026-10-13: Posteingang regelbasiert vorbelegen, ohne KI
+
+task-10-10: Beim Anlegen einer Anfrage aus einer E-Mail belegt `lib/inbox-extract.ts` Firma, Kontakt, Telefon, Adresse, Anlage, Leistung und Dringlichkeit mit festen Regeln vor und markiert erkannte Felder. Keine KI im Dashboard: nachvollziehbar, ohne Kosten und testbar; eine KI-Vorbelegung über n8n bleibt eine mögliche Ergänzung nach Rücksprache.
+
+## 2026-10-15: Verzögerung statt Kontosperre bei falschen Passwörtern
+
+task-11-6: Ab dem 5. Fehlversuch je Adresse wächst die Pause (30 s bis höchstens 15 min), es gibt keine harte Sperre und keine Auskunft, ob ein Konto existiert. Eine harte Sperre würde es Dritten erlauben, Mitarbeitende auszusperren.
+
+## 2026-10-15: Telefonassistent mit ElevenLabs, Werkzeuge über n8n hinter Cloudflare-Tunnel
+
+Phase 13 (Plan `docs/telefonassistent-plan.md`, Umsetzung `docs/telefonassistent/`): Sprachagent „Mira“ in ElevenLabs, nur Deutsch. Die Werkzeuge sind n8n-Webhooks hinter einem benannten Cloudflare-Tunnel (feste Adresse, nur `/webhook/agent-*` öffentlich, gemeinsames Geheimnis und Access-Service-Token); n8n ruft eigene `agent_*`-Funktionen mit `service_role` auf, keine direkten Tabellenzugriffe. Termine merkt Mira nur vor, ein Dispatcher bestätigt oder lehnt ab. Kein Audio wird gespeichert, Transkripte 30 Tage. Begründung: alles läuft lokal wie die übrige Integration; ein Server für 24/7-Betrieb wäre ein eigener späterer Schritt.
+
+## 2026-10-15: Demo-Region Rhein-Neckar und SLA-Verträge als Stammdaten
+
+task-13-9: Demo-Kunden und -Anfragen liegen um Mannheim, passend zu Website und Einsatzgebiet des Agenten. Die Tabelle `service_contracts` hält Demo-Verträge (mit/ohne 24/7, abgelaufen), damit Mira die Berechtigung für den Bereitschaftsdienst prüfen kann (`agent_check_contract`); die Auskunft nennt keine Firmendaten.
+
+## 2026-10-15: Rückrufbitte an Techniker im Dashboard statt Telegram
+
+Nutzerentscheidung zu task-13-4: Fragt ein Kunde nach einem verspäteten Techniker, erscheint die Rückrufbitte als Banner auf jeder Dashboard-Seite des Technikers (Abfrage alle 20 s, Browser-Benachrichtigung optional); nach 15 Minuten ohne Quittung geht sie dringend an den Dispatcher. Kein Telegram (im ursprünglichen Plan vorgesehen). Eine eigene Techniker-App mit Push ist eine spätere Möglichkeit.
+
+## 2026-10-19: Sprachmodell, E-Mail aus der Buchstabierung, Kalender aus der Datenbank
+
+Nutzerentscheidungen zu task-13-5 nach Browsertests: LLM `claude-sonnet-4-5` statt Haiku (verbindet Buchstabiertes zuverlässiger, etwas mehr Verzögerung akzeptiert), TTS `eleven_v3_conversational` mit Expressive Mode, `turn_eagerness: patient`. E-Mail-Adressen setzt die Datenbank deterministisch aus der Buchstabierung zusammen (`agent_check_email`), Wochentage und Daten liefert das Werkzeug `servicezeit`; das Sprachmodell rechnet weder Adressen noch Kalender selbst.
+
+## 2026-10-19: Eigener Kundenstamm, Bestandskunden über Kundennummer und PLZ
+
+task-13-10: Tabellen `customers` und `customer_sites`; Anfragen verweisen auf Kunde und Standort. Am Telefon identifiziert Mira einen Bestandskunden mit Kundennummer und PLZ als Prüfung (`kunde_finden`), liest die E-Mail-Adresse nicht vor und fragt Ansprechperson und Rückrufnummer weiterhin ab. Ein Treffer setzt voraus, dass die PLZ zu einem aktiven Standort passt; unbekannte Nummer und falsche PLZ sind für den Anrufer nicht unterscheidbar.
+
+## 2026-10-19: Gesprächsauswertung per API-Abfrage statt Post-Call-Webhook
+
+Nutzerentscheidung zu task-13-6: Der n8n-Workflow `rwCallAnalysis26` fragt alle 2 Minuten die letzten Gespräche bei ElevenLabs ab, OpenAI füllt ein festes Schema, `agent_record_call` speichert einmal je Gespräch; Fakten wie „Anfrage angelegt“ kommen aus der Datenbank, nicht vom Modell. Kein weiterer öffentlicher Pfad, und Gespräche aus Zeiten, in denen n8n aus war, werden nachgeholt.
+
+## 2026-10-19: Demo-Anruf statt Telefonnummer, Weiterleitung als Demo
+
+Nutzerentscheidungen zu task-13-8 und task-13-11: RheinWerk ist ein Portfolio-Projekt ohne Telefonleitung. Jeder Link auf die Service-Desk-Nummer öffnet einen simulierten Anruf bei Mira im Browser (`components/demo-call.tsx`); die signierte Adresse holt der Server (`app/api/mira`), das Budget liegt in `widget_sessions`: höchstens 3 Minuten je Gespräch, 10 Minuten je Tag, 3 Gespräche je Anschluss und Stunde. Das Werkzeug `weiterleiten` verbindet nicht, sondern sagt an, dass hier in einem echten Betrieb verbunden würde, und nimmt einen Rückruf auf. Eine echte Nummer (Twilio oder SIP-Trunk) ließe sich ohne Änderung am Agenten ergänzen; dann stünde dort `transfer_to_number`.
+
+## 2026-10-19: Repository auf github.com/FuzzCube/RhenWerk-WebSite
+
+Nutzerentscheidung: Weitergearbeitet wird nur im eigenen Repository (`origin`), nicht mehr im Organisationsrepo `Futureway-Akademie/A.Sadkovojs_Project`. Commits auf `main`; gepusht wird nur auf Wunsch des Nutzers.
+
+## 2026-10-19: Diagrammlegende als Schalter
+
+Nutzerwunsch, task-12-5: Bei zwei oder mehr Reihen ist die Legende eine Reihe von Schaltern (`aria-pressed`); ein Klick blendet eine Reihe aus, y-Achse und Tooltip folgen, die letzte sichtbare Reihe bleibt. Die Datentabelle zeigt immer alle Reihen, die Auswahl wird nicht gespeichert.

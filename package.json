@@ -22,7 +22,8 @@
     "demo:users": "node --env-file=.env.local scripts/bootstrap-demo-users.mjs",
     "demo:seed": "node --env-file=.env.local scripts/seed-demo.mjs",
     "demo:verify": "docker exec -i supabase_db_A.Sadkovojs_Project psql -U postgres -qAt < scripts/demo/verify-seed.sql",
-    "test:calls": "node --env-file=.env.local scripts/test-calls.mjs"
+    "test:calls": "node --env-file=.env.local scripts/test-calls.mjs",
+    "workshop:status": "node scripts/workshop-status.mjs"
   },
   "dependencies": {
     "@elevenlabs/client": "1.26.0",

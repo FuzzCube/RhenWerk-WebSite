@@ -24,11 +24,12 @@ Lies in dieser Reihenfolge:
 
 1. `.workshop/config.json`
 2. `.workshop/project.json`
-3. `.workshop/roadmap.json`
-4. `.workshop/progress.json`
-5. `.workshop/CURRENT_STATE.md`
-6. alle Dateien unter `.workshop/specialization/`
-7. die für die aktuelle Arbeit relevante Dokumentation
+3. `.workshop/roadmap.json` und `.workshop/progress.json` über die Zusammenfassung `npm run workshop:status` (Phasen, offene und zuletzt abgeschlossene Tasks, aus der Roadmap neu berechneter Fortschritt mit Abgleich gegen `progress.json`)
+4. `.workshop/CURRENT_STATE.md`
+5. alle Dateien unter `.workshop/specialization/`
+6. die für die aktuelle Arbeit relevante Dokumentation; welche Datei was enthält, steht in der Dokumentenkarte in `README.md`
+
+Token sparen: `roadmap.json` (groß, mit allen `verification`-Objekten) wird nicht vollständig gelesen, solange die Zusammenfassung genügt. Einzelne Tasks liest `npm run workshop:status -- <task-id>`; Änderungen an der Roadmap erfolgen gezielt per Skript oder Edit am betroffenen Task. `activity.jsonl` wird nur ergänzt, nicht vollständig gelesen (bei Bedarf die letzten Zeilen). Ohne Node gilt das vollständige Lesen von `roadmap.json` und `progress.json`.
 
 Wenn `project.status` den Wert `not_initialized` hat und noch keine Projektidee vom Nutzer vorliegt, darf keine Anwendung programmiert, technisch eingerichtet oder selbstständig erdacht werden. Nach der stillen Prüfung der genannten Dateien lautet die gesamte sichtbare Antwort EXAKT:
 
@@ -131,7 +132,7 @@ Womit möchtest du weitermachen?
 
 Der Teilnehmer darf jederzeit den Coding-Agenten wechseln. Der neue Agent besitzt keine Chat-Historie. Deshalb darf keine wichtige Projektinformation ausschließlich im Chat verbleiben. Aktualisiere nach wesentlichen Entscheidungen und Aufgaben die zentralen Repository-Dateien. Erstelle niemals getrennte Roadmaps, Fortschrittsstände oder Projektdokumentationen für einzelne Agenten.
 
-Beim Öffnen eines initialisierten Projekts liest ein neuer Agent mindestens `project.json`, `roadmap.json`, `progress.json`, `CURRENT_STATE.md` und die relevanten Spezialisierungsdateien, bevor er arbeitet. Anschließend folgt die kurze Zustandsbestätigung aus Abschnitt A.
+Beim Öffnen eines initialisierten Projekts liest ein neuer Agent mindestens `project.json`, den Stand von `roadmap.json` und `progress.json` (über `npm run workshop:status`, siehe Abschnitt A), `CURRENT_STATE.md` und die relevanten Spezialisierungsdateien, bevor er arbeitet. Anschließend folgt die kurze Zustandsbestätigung aus Abschnitt A.
 
 ## H. Task-Lifecycle
 
@@ -176,7 +177,7 @@ Verlange keinen automatischen Push, wenn Tool oder Workshop-Repository anders ko
 - `roadmap.json` ist die einzige fachliche Quelle für Tasks und deren Status.
 - `progress.json` ist nur ein aus `roadmap.json` berechneter Cache/Aggregatzustand für Dashboard, schnelle Anzeige und Agentenorientierung. Bei Widerspruch gewinnt `roadmap.json`; berechne `progress.json` daraus neu und führe keinen unabhängigen Fortschritt.
 - `CURRENT_STATE.md` ist die menschenlesbare Zusammenfassung und darf den JSON-Dateien nicht widersprechen.
-- `CURRENT_STATE.md` wird nach jedem wesentlichen Statuswechsel aktualisiert.
+- `CURRENT_STATE.md` wird nach jedem wesentlichen Statuswechsel aktualisiert und bleibt kurz (Ziel unter 10 KB): Stand, die letzten drei abgeschlossenen Tasks, offene Punkte, nächster Schritt. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`.
 - `activity.jsonl` enthält sachliche Ereigniszusammenfassungen, keine vollständigen Chat-Prompts, Chain-of-Thought oder internen Denkprozesse.
 - Das Format richtet sich nach `.workshop/DASHBOARD_CONTRACT.md` und den Schemas.
 
