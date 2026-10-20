@@ -1,6 +1,6 @@
 # Setup und Start
 
-Lokale Einrichtung von Website und Mitarbeiterbereich (`/dashboard`) mit lokalem Supabase-Stack und Demodaten. Alle Schritte laufen auf einem Rechner; es werden keine echten E-Mails versendet, solange n8n nicht eingerichtet ist.
+Lokale Einrichtung von Website und Mitarbeiterbereich (`/dashboard`) mit lokalem Supabase-Stack und Demodaten. Ausführlich: Datenbank in [supabase-lokal.md](supabase-lokal.md), n8n in [n8n-workflows.md](n8n-workflows.md), Betrieb und Sicherung in [betrieb.md](betrieb.md). Alle Schritte laufen auf einem Rechner; es werden keine echten E-Mails versendet, solange n8n nicht eingerichtet ist.
 
 ## Voraussetzungen
 
@@ -100,7 +100,7 @@ Neue Schemaänderungen nur als Migration unter `supabase/migrations/`; eine einz
 ## Optional: Website-Formular und Automatisierung
 
 - **Website-Formular:** Upload über Vercel Blob (`BLOB_READ_WRITE_TOKEN`) und Spam-Schutz über Turnstile; Details in [website.md](website.md).
-- **n8n (lokal, `http://localhost:5678`):** sechs Workflows für Eingang, Analyse, Anhänge und Gmail. Importierbare Graphen unter `n8n/workflows/*.workflow.json`, Vertrag und Prüfungen in [n8n-contract.md](n8n-contract.md). Danach `N8N_WEBHOOK_URL` in `.env.local` setzen. Ohne diese Variable leitet das Formular an `MAKE_WEBHOOK_URL` weiter; ist keine der beiden gesetzt, antwortet `/api/service-request` mit 503 (`not_configured`).
+- **n8n (lokal, `http://localhost:5678`):** sechs Workflows für Eingang, Analyse, Anhänge und Gmail, zwei für den Telefonassistenten; Aufbau und Einrichtung in [n8n-workflows.md](n8n-workflows.md). Importierbare Graphen unter `n8n/workflows/*.workflow.json`, Vertrag und Prüfungen in [n8n-contract.md](n8n-contract.md). Danach `N8N_WEBHOOK_URL` in `.env.local` setzen. Ohne diese Variable leitet das Formular an `MAKE_WEBHOOK_URL` weiter; ist keine der beiden gesetzt, antwortet `/api/service-request` mit 503 (`not_configured`).
 - **Zahlungserinnerungen:** pg_cron-Job `payment-reminders` täglich 06:00 UTC, wird von den Migrationen angelegt; Versand nur über den n8n-Gmail-Workflow.
 
 ## Passwort-E-Mails (Supabase Auth)

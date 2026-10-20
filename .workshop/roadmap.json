@@ -2023,6 +2023,49 @@
               "npm run build"
             ]
           }
+        },
+        {
+          "id": "task-12-10",
+          "title": "Dokumentation: lokales Supabase, n8n-Workflows und ihre Verbindungen",
+          "description": "Rückmeldung des Dozenten 20.10.2026: verständliche, ausführliche Dokumentation zur Einrichtung des lokalen Supabase, der n8n-Workflows und der Verbindungen zwischen ihnen. Neu docs/supabase-lokal.md und docs/n8n-workflows.md (Gesamtbild, Steckbrief je Workflow, Abläufe als Sequenzdiagramme, Einrichtung von Grund auf).",
+          "order": 10,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "startedAt": "2026-10-20T13:37:14Z",
+          "definitionOfDone": [
+            "docs/supabase-lokal.md: Installation, Dienste und Ports, Schlüssel, Migrationen, Demodaten, Studio/Mailpit, Tests, Fehlerbehebung",
+            "docs/n8n-workflows.md: Gesamtbild, Steckbrief aller RheinWerk-Workflows (Auslöser, Funktionen, Zugänge, Fehlerverhalten, Prüfung), Sequenzdiagramme, Einrichtung",
+            "Angaben gegen laufendes n8n und Code geprüft",
+            "README-Dokumentenkarte verweist darauf"
+          ],
+          "completedAt": "2026-10-20T13:43:10Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Neu docs/supabase-lokal.md (Dienste und Ports mit Diagramm, Voraussetzungen, Erststart, Schlüssel, Demodaten, Werkzeuge, pg_cron-Aufträge, Schemaänderungen und Warnung vor db reset, Verbindung zu n8n über host.docker.internal, Prüfliste, Fehlerbehebung) und docs/n8n-workflows.md (Grundidee, acht Workflows: sechs Kern plus zwei Telefon, Gesamtbild nach Kanälen, Übergaben über Datenbankzustände, Credentials, RPCs je Workflow, Netzwerk, Steckbrief je Workflow mit Auslöser/Schritten/Ergebnis/Fehlerverhalten, drei Sequenzdiagramme, Einrichtung von Grund auf, Störungen). Geprüft gegen das laufende n8n 2.40.7 (Knoten, Auslöser, RPC-URLs, Credentials, Verbindungen aus der n8n-Datenbank), supabase status/cron.job/storage.buckets und die Exporte in n8n/workflows. Alle fünf Mermaid-Diagramme mit mermaid-cli 11.4.2 gerendert; README-Dokumentenkarte und setup.md verweisen darauf. test:unit 88/88.",
+            "commands": [
+              "mmdc -i <diagramm>.mmd",
+              "npm run test:unit"
+            ]
+          }
+        },
+        {
+          "id": "task-12-11",
+          "title": "Betriebskonzept: Betrieb, Datensicherung, Wartung",
+          "description": "Rückmeldung des Dozenten 20.10.2026: künftigen Betrieb, Datensicherung und technische Wartung konkretisieren. Nutzerentscheidung: Stufe 1 ohne Kosten – Website unter rheinwerk-service.online, n8n und Supabase auf dem eigenen Rechner über Cloudflare Tunnel; Stufe 2 später ein echter Server. Neu docs/betrieb.md sowie npm run backup und npm run backup:check (Wiederherstellung in eine Prüfdatenbank).",
+          "order": 11,
+          "weight": 1,
+          "status": "in_progress",
+          "dependsOn": [
+            "task-12-10"
+          ],
+          "definitionOfDone": [
+            "docs/betrieb.md: Stufe 1 und 2, Deployment, Sicherung mit RPO/RTO, Überwachung, Wartungsplan, Notfallanleitungen",
+            "npm run backup sichert Postgres, Storage, n8n-Datenbank und Schlüssel",
+            "npm run backup:check stellt eine Sicherung in eine getrennte Datenbank wieder her und vergleicht Zeilenzahlen",
+            "Sicherung und Prüfung einmal ausgeführt"
+          ],
+          "startedAt": "2026-10-20T13:43:10Z"
         }
       ]
     },
