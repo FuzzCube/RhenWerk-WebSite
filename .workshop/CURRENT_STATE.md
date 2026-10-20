@@ -4,19 +4,21 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v15, 15 Phasen, 75 Tasks, Fortschritt 96 % (Gewicht 190 von 197).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v15, 15 Phasen, 75 Tasks, Fortschritt 97 % (Gewicht 192 von 197).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Phasen 0–13 abgeschlossen. Aktiv: **Phase 14 „Kundenstamm aus Anfragen“** (Roadmap v15, Nutzerentscheidung 20.10.2026, Begründung und Regeln in `docs/decisions.md`): Kunden werden beim Abschluss der Erstbearbeitung automatisch zugeordnet oder angelegt. Startbar: `task-14-1` (automatische Zuordnung/Anlage in der Datenbank). Danach `task-14-2` (Hinweis „Möglicher Bestandskunde“), `task-14-3` (Nachzuordnung bestehender Anfragen, erst Probelauf, Ausführung nach Freigabe), `task-14-4` (manuelles Anlegen mit Dublettenprüfung und Herkunft). Keine Aufgabe in Arbeit, keine Blockierung.
+Phasen 0–13 abgeschlossen. Aktiv: **Phase 14 „Kundenstamm aus Anfragen“** (Roadmap v15, Regeln in `docs/decisions.md` und `docs/database.md`). `task-14-1` erledigt: Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (Trigger `requests_link_customer`). Startbar: `task-14-2` (Hinweis „Möglicher Bestandskunde“, Vorschläge aus `request_customer_suggestions`), `task-14-3` (Nachzuordnung bestehender Anfragen, u. a. RIS-2026-01948; erst Probelauf, Ausführung nach Freigabe), `task-14-4` (manuelles Anlegen mit Dublettenprüfung). Keine Aufgabe in Arbeit.
+
+Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
 
 ## Zuletzt abgeschlossen
 
+- `task-14-1` (20.10.2026): automatische Kundenzuordnung/-anlage beim Abschluss der Erstbearbeitung (Migration `20261020130000_auto_customers.sql`, Vorschläge in `request_customer_suggestions`); Kundenliste-Einbettung mit `requests_customer_id_fkey`.
 - `task-12-12` (20.10.2026): Anfragenliste sortierbar (Spaltenköpfe, Menü „Sortiert“, `?sortierung=`, `lib/request-sort.ts`); auf Tablets Leistung/Dispatcher ausgeblendet (`Column.tablet`).
 - `task-12-11` (20.10.2026): Betriebskonzept `docs/betrieb.md` (Stufe 1 eigener Rechner + Cloudflare Tunnel unter `rheinwerk-service.online`, Stufe 2 Server, Sicherung, Wartung, Notfälle); `npm run backup` (verschlüsselt mit `BACKUP_PASSPHRASE`) und `npm run backup:check` (Wiederherstellung in Datenbank `backup_check`).
-- `task-12-10` (20.10.2026): Dokumentation `docs/supabase-lokal.md` und `docs/n8n-workflows.md` (acht Workflows, Verbindungen, Sequenzdiagramme, Einrichtung) nach Rückmeldung des Dozenten.
 
 ## Wo was dokumentiert ist (Telefonassistent)
 

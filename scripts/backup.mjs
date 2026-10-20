@@ -4,7 +4,7 @@
 // Secrets (n8n key, .env.local) only go into encrypted archives. Restore check: npm run backup:check.
 // Usage: npm run backup
 //   BACKUP_DIR (default ~/RheinWerk-Backups), BACKUP_KEEP (default 14 archives), BACKUP_PASSPHRASE,
-//   N8N_DATA_DIR (default ~/n8n/data), SUPABASE_DB_CONTAINER, SUPABASE_STORAGE_CONTAINER
+//   N8N_CONTAINER (default n8n), SUPABASE_DB_CONTAINER, SUPABASE_STORAGE_CONTAINER
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -13,7 +13,8 @@ import path from "node:path";
 
 const DB = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_A.Sadkovojs_Project";
 const STORAGE = process.env.SUPABASE_STORAGE_CONTAINER ?? "supabase_storage_A.Sadkovojs_Project";
-const N8N_DATA = process.env.N8N_DATA_DIR ?? path.join(homedir(), "n8n", "data");
+const N8N = process.env.N8N_CONTAINER ?? "n8n";
+const N8N_HOME = "/home/node/.n8n";
 const OUT = process.env.BACKUP_DIR ?? path.join(homedir(), "RheinWerk-Backups");
 const KEEP = Number(process.env.BACKUP_KEEP ?? 14);
 const PASSPHRASE = process.env.BACKUP_PASSPHRASE ?? "";
@@ -46,12 +47,22 @@ try {
   const storageFiles = Number(run("docker", ["exec", STORAGE, "sh", "-c", "find /mnt -type f | wc -l"]).toString().trim());
   writeFileSync(path.join(dir, "storage.tar.gz"), run("docker", ["exec", STORAGE, "tar", "-czf", "-", "-C", "/mnt", "."]));
 
-  // 3. n8n: online copy of the SQLite database (consistent while n8n runs), the encryption key only when encrypted
-  run("sqlite3", [path.join(N8N_DATA, "database.sqlite"), `.backup '${path.join(dir, "n8n-database.sqlite")}'`]);
+  // 3. n8n: the live SQLite database is never opened from the host. In WAL mode a second process outside the Docker VM
+  // cannot share the lock and index file reliably; on 20.10.2026 this left n8n stuck on its write lock for two hours.
+  // The container is paused for the copy (a few seconds, schedules resume afterwards), the copy is then merged locally.
+  const raw = path.join(work, "n8n-raw.sqlite");
+  run("docker", ["pause", N8N]);
+  try {
+    run("docker", ["cp", `${N8N}:${N8N_HOME}/database.sqlite`, raw]);
+    try { run("docker", ["cp", `${N8N}:${N8N_HOME}/database.sqlite-wal`, `${raw}-wal`], { stdio: "ignore" }); } catch { /* no WAL file */ }
+    if (PASSPHRASE) run("docker", ["cp", `${N8N}:${N8N_HOME}/config`, path.join(dir, "n8n-config")]);
+  } finally {
+    run("docker", ["unpause", N8N]);
+  }
+  run("sqlite3", [raw, `.backup '${path.join(dir, "n8n-database.sqlite")}'`]);
   const n8nWorkflows = Number(run("sqlite3", [path.join(dir, "n8n-database.sqlite"), "select count(*) from workflow_entity"]).toString().trim());
   const secrets = [];
   if (PASSPHRASE) {
-    copyFileSync(path.join(N8N_DATA, "config"), path.join(dir, "n8n-config"));
     secrets.push("n8n-config");
     if (existsSync(".env.local")) { copyFileSync(".env.local", path.join(dir, "env.local")); secrets.push("env.local"); }
   }

@@ -83,6 +83,8 @@ test("Verlauf: Ereignisse verständlich beschreiben", async () => {
   assert.equal(describeEvent({ event_type: "visit_scheduled", from_value: null, to_value: "[2026-10-29T12:00:00.000Z,2026-10-29T15:00:00.000Z)" }, names).change, "Do., 29.10.2026, 13:00–16:00");
   assert.equal(describeEvent({ event_type: "automatic_result_corrected", from_value: '{"priority":"normal"}', to_value: '{"priority":"high"}' }, names).change, "Priorität: Normal → Priorität: Hoch");
   assert.equal(describeEvent({ event_type: "message_queued", from_value: "draft", to_value: "queued" }, names).change, "Entwurf → In Warteschlange, nicht versendet");
+  assert.deepEqual(describeEvent({ event_type: "customer_auto_created", from_value: null, to_value: "K-20001" }, names), { title: "Kunde automatisch angelegt", change: "K-20001" });
+  assert.equal(describeEvent({ event_type: "customer_suggested", from_value: null, to_value: "K-10420, K-10421" }, names).title, "Möglicher Bestandskunde – bitte prüfen");
   assert.deepEqual(describeEvent({ event_type: "unbekannt", from_value: null, to_value: null }, names), { title: "unbekannt", change: null });
 });
 

@@ -108,7 +108,7 @@ Die vorhandenen Tabellen enthalten bereits alle Felder für diese Funktionen (`r
 
 3. `finish_automation_run` speichert Status, Entscheidung, Konfidenz und `result`. Technische Fehler → `status = failed` mit `error_code`; die Anfrage bleibt unverändert und erscheint weiter in der Analyse-Warteschlange.
 4. `apply_analysis_result(run_id, request_id, expected_version, result)` prüft Version und Übergang und schreibt dann in einer Transaktion:
-   - `ready_for_planning`: nur wenn `human_review_required = false` und keine Gefahr/kein Produktionsstillstand gemeldet ist → Erstbearbeitung abgeschlossen mit `intake_mode = automatic` und eingefrorenem Basiswert (wie `complete_intake`), Ereignisse `intake_status_changed`, `intake_completed`.
+   - `ready_for_planning`: nur wenn `human_review_required = false` und keine Gefahr/kein Produktionsstillstand gemeldet ist → Erstbearbeitung abgeschlossen mit `intake_mode = automatic` und eingefrorenem Basiswert (wie `complete_intake`), Ereignisse `intake_status_changed`, `intake_completed`. Seit task-14-1 ordnet die Datenbank dabei die Anfrage einem Kunden zu oder legt ihn an (Trigger `requests_link_customer`, siehe [database.md](database.md)); für n8n ändert sich nichts.
    - `ask_customer`: Rückfrage als Entwurf (`create_message_draft`-Logik, Art `clarification`), Status `awaiting_customer` erst nach bestätigtem Versand; ohne Freigabe-Pflicht nur, wenn die Konfiguration das erlaubt (Standard: Entwurf zur Freigabe durch den Dispatcher).
    - `human_review`: `needs_review`, Dispatcher-Warteschlange „Prüfung“.
    - Abgelehnt wird nie automatisch (Constraint `requests_rejection_not_automatic`).
@@ -153,7 +153,7 @@ Ausnahme Eingangsbestätigung (task-10-6): `ingest_submission` legt für jede ne
 | Zeitplan (z. B. jede Minute) | Versand der Warteschlange |
 | Zeitplan (täglich) | Aufräumen von Staging-Dateien |
 
-Statusänderungen durch den Workflow selbst (`apply_analysis_result`, `confirm_message_sent`) sind **keine** Auslöser. Datenbank-Trigger oder Webhooks auf `requests`/`request_events` werden nicht verwendet, damit eine Statusänderung keine erneute Analyse derselben Anfrage auslöst. Jeder Lauf ist über `operation_key` an genau eine Eingabeversion gebunden.
+Statusänderungen durch den Workflow selbst (`apply_analysis_result`, `confirm_message_sent`) sind **keine** Auslöser. Datenbank-Trigger oder Webhooks auf `requests`/`request_events` lösen keine Workflows aus, damit eine Statusänderung keine erneute Analyse derselben Anfrage auslöst. (Der Trigger `requests_link_customer`, task-14-1, schreibt nur Kundenstamm und Ereignisse in derselben Transaktion und startet nichts.) Jeder Lauf ist über `operation_key` an genau eine Eingabeversion gebunden.
 
 ## 6. Telefonassistent (task-13-2)
 

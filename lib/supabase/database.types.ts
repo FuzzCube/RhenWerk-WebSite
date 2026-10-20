@@ -464,6 +464,38 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"request_customer_suggestions": {
+                  Row: {
+                    "created_at": string,"customer_id": string,"reason": string,"request_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"customer_id": string,"reason": string,"request_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"customer_id"?: string,"reason"?: string,"request_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "request_customer_suggestions_customer_id_fkey"
+      columns: ["customer_id"]
+isOneToOne: false
+      referencedRelation: "customers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "request_customer_suggestions_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "dispatcher_queue"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "request_customer_suggestions_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "requests"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"request_events": {
                   Row: {
                     "actor_id": string | null,"actor_type": Database["public"]['Enums']["actor_type"],"created_at": string,"data": NonNullable<Json>,"event_type": string,"from_value": string | null,"id": string,"note": string | null,"occurred_at": string,"request_id": string,"seq": number,"to_value": string | null,"visibility": Database["public"]['Enums']["visibility_level"],"visit_id": string | null

@@ -41,7 +41,7 @@ export async function listCustomers(filters: CustomerFilters): Promise<{ rows: C
       .or(`street_house_number.ilike.%${q}%,postal_code.ilike.${q}%,city.ilike.%${q}%`).limit(500);
     siteCustomerIds = [...new Set((data ?? []).map((row) => row.customer_id))];
   }
-  let query = supabase.from("customers").select("*, customer_sites(*), requests(count)", { count: "exact" });
+  let query = supabase.from("customers").select("*, customer_sites(*), requests!requests_customer_id_fkey(count)", { count: "exact" });
   if (filters.view === "aktiv") query = query.eq("is_active", true);
   if (filters.view === "inaktiv") query = query.eq("is_active", false);
   if (q) {
