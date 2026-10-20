@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 14,
-  "status": "completed",
+  "roadmapVersion": 15,
+  "status": "active",
   "phases": [
     {
       "id": "phase-0",
@@ -2532,6 +2532,115 @@
             ],
             "checkedAt": "2026-10-19T20:11:40Z"
           }
+        }
+      ]
+    },
+    {
+      "id": "phase-14",
+      "title": "Kundenstamm aus Anfragen",
+      "description": "Nutzerentscheidung 20.10.2026: Kunden entstehen nicht mehr nur von Hand. Sobald eine Anfrage die Erstbearbeitung abschließt (Formular, E-Mail, Telefonassistent oder manuell; automatisch oder durch einen Dispatcher), wird sie einem vorhandenen Kunden zugeordnet oder ein neuer Kunde mit erstem Standort angelegt. Unsichere Treffer entscheidet ein Mensch. Wie in Field-Service-Systemen üblich (Lead wird bei Annahme zum Kunden); abgelehnte, stornierte und Demo-Anfragen erzeugen keine Kunden.",
+      "order": 15,
+      "weight": 7,
+      "status": "ready",
+      "tasks": [
+        {
+          "weight": 2,
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          },
+          "id": "task-14-1",
+          "title": "Automatische Kundenzuordnung und -anlage beim Abschluss der Erstbearbeitung",
+          "order": 1,
+          "status": "ready",
+          "dependsOn": [],
+          "description": "Beim Übergang einer Live-Anfrage auf intake_status processed (complete_intake durch Mitarbeitende und apply_analysis_result durch n8n; eine gemeinsame Funktion, damit jeder Weg gleich behandelt wird): bereits verknüpft → nur neuen Standort ergänzen; genau ein sicherer Treffer (gleiche E-Mail ohne Groß-/Kleinschreibung oder normalisierte Firma ohne Rechtsform + PLZ eines aktiven Standorts) → verknüpfen, neue Adresse als weiterer Standort; kein Treffer → Kunde K-2xxxx aus Firma, Ansprechperson, E-Mail, Telefon und Adresse anlegen und verknüpfen; unsicher oder mehrdeutig (gleiche Firma andere PLZ, gleiche Firmen-Domain, mehrere Treffer) → nichts anlegen, Vorschlag merken. Freemail-Domains (gmail, gmx, web.de, t-online, outlook …) zählen nicht als Firmen-Domain. Demo, abgelehnt, storniert: nichts. Ereignisse customer_auto_created / customer_auto_linked im Verlauf.",
+          "definitionOfDone": [
+            "Funktion zur Kundenzuordnung in einer Migration, aufgerufen bei jedem Übergang auf processed (Mitarbeitende und n8n)",
+            "Regeln: sicherer Treffer verknüpft, kein Treffer legt Kunde mit erstem Standort an, unsicherer Treffer legt nichts an und speichert Vorschläge",
+            "neue Adresse eines vorhandenen Kunden wird weiterer Standort",
+            "Demo, abgelehnte und stornierte Anfragen unberührt; Ereignisse im Verlauf",
+            "pgTAP-Tests für alle Fälle inkl. Freemail und Wiederholung (idempotent)",
+            "docs/database.md, docs/n8n-contract.md (Analyseergebnis), docs/architecture.md aktualisiert"
+          ]
+        },
+        {
+          "weight": 2,
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          },
+          "id": "task-14-2",
+          "title": "Hinweis „Möglicher Bestandskunde“ auf der Anfrageseite",
+          "order": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-14-1"
+          ],
+          "description": "Bei unsicherem Treffer zeigt die Anfrageseite im Block Kundenstamm die vorgeschlagenen Kunden (Nummer, Firma, Standorte, Grund des Vorschlags) mit „Zuordnen“ und „Neuen Kunden anlegen“ (legt aus den Anfragedaten an und verknüpft, eine Aktion). Offene Vorschläge erscheinen als Hinweis in der Erstbearbeitung/Einsatzplanung des Dispatchers.",
+          "definitionOfDone": [
+            "Vorschläge mit Grund im Block Kundenstamm, Zuordnen und Neuen Kunden anlegen mit Versionsprüfung",
+            "RPC zum Anlegen aus der Anfrage (ein Schritt, Ereignis im Verlauf)",
+            "Hinweis auf offene Vorschläge für Dispatcher",
+            "test:ui und Sichtprüfung 390/768/1440"
+          ]
+        },
+        {
+          "weight": 2,
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          },
+          "id": "task-14-3",
+          "title": "Bestehende bearbeitete Anfragen nachträglich zuordnen",
+          "order": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-14-1"
+          ],
+          "description": "Einmalige Übernahme: dieselbe Logik für alle bereits bearbeiteten Live-Anfragen ohne Kunden (z. B. RIS-2026-01948). Zuerst Probelauf mit Bericht (würde anlegen / verknüpfen / Vorschlag), Ausführung erst nach Freigabe durch den Nutzer; vorher Sicherung mit npm run backup.",
+          "definitionOfDone": [
+            "Probelauf-Bericht ohne Änderungen",
+            "Ausführung nach Nutzerfreigabe, vorher npm run backup",
+            "Ergebnis (Anzahl angelegt/verknüpft/Vorschläge) im verification-Objekt"
+          ]
+        },
+        {
+          "weight": 1,
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          },
+          "id": "task-14-4",
+          "title": "Kundenseite: manuelles Anlegen mit Dublettenprüfung und Herkunft",
+          "order": 4,
+          "status": "planned",
+          "dependsOn": [
+            "task-14-1"
+          ],
+          "description": "„Kunde anlegen“ bleibt für Fälle ohne Anfrage: Wartungs- oder SLA-Vertrag vor dem ersten Auftrag (der Telefonassistent erkennt den Kunden dann schon beim ersten Anruf an Kundennummer und PLZ), Übernahme von Bestandskunden, Kunde mit mehreren Standorten vorab erfassen. Neu: vor dem Anlegen Prüfung auf ähnliche Kunden mit denselben Regeln wie task-14-1 und Warnung „Ähnlicher Kunde vorhanden“; Erklärtext, dass Kunden normalerweise automatisch aus Anfragen entstehen; Herkunft je Kunde sichtbar (automatisch aus RIS-… / manuell).",
+          "definitionOfDone": [
+            "Erklärtext und Anwendungsfälle im Block Kunde anlegen",
+            "Warnung bei ähnlichem Kunden mit Link, Anlegen trotzdem möglich",
+            "Herkunft (automatisch aus Anfrage / manuell) in Liste oder Kundenseite",
+            "test:ui, Sichtprüfung 390/768/1440, Dokumentation"
+          ]
         }
       ]
     }

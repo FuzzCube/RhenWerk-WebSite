@@ -4,13 +4,13 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v14, 14 Phasen, 71 Tasks, Fortschritt 100 % (Gewicht 190 von 190).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v15, 15 Phasen, 75 Tasks, Fortschritt 96 % (Gewicht 190 von 197).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Alle Phasen 0–13 abgeschlossen (zuletzt `task-12-12` am 20.10.2026). Keine Aufgabe in Arbeit, keine Blockierung. Neue Arbeit entsteht nur nach Rücksprache als neuer Task (Roadmap-Version erhöhen).
+Phasen 0–13 abgeschlossen. Aktiv: **Phase 14 „Kundenstamm aus Anfragen“** (Roadmap v15, Nutzerentscheidung 20.10.2026, Begründung und Regeln in `docs/decisions.md`): Kunden werden beim Abschluss der Erstbearbeitung automatisch zugeordnet oder angelegt. Startbar: `task-14-1` (automatische Zuordnung/Anlage in der Datenbank). Danach `task-14-2` (Hinweis „Möglicher Bestandskunde“), `task-14-3` (Nachzuordnung bestehender Anfragen, erst Probelauf, Ausführung nach Freigabe), `task-14-4` (manuelles Anlegen mit Dublettenprüfung und Herkunft). Keine Aufgabe in Arbeit, keine Blockierung.
 
 ## Zuletzt abgeschlossen
 
