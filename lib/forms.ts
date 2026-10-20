@@ -7,7 +7,11 @@ export type FormState = {
   values: Record<string, string>;
   // Changes with every completed save, so the UI can react to repeated results
   submittedAt: number | null;
+  // Similar customers found before a manual creation (task-14-4); the form then asks for confirmation
+  similarCustomers?: SimilarCustomer[];
 };
+
+export type SimilarCustomer = { id: string; customer_number: string; company: string; city: string | null; is_active: boolean; reason: string };
 
 export const initialFormState: FormState = { status: "idle", message: null, fieldErrors: {}, values: {}, submittedAt: null };
 

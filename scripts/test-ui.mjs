@@ -665,6 +665,10 @@ try {
     const created = await waitFor(async () => !!(await admin.from("requests").select("customer_id").eq("id", createReq.id).single()).data?.customer_id);
     const { data: newCustomer } = await admin.from("requests").select("customers!requests_customer_id_fkey(company_name, is_demo)").eq("id", createReq.id).single();
     check("  „Neuen Kunden anlegen“ legt den Kunden aus der Anfrage an (Demo) und verknüpft", created && newCustomer?.customers?.company_name === `UI-Neukunde ${runId}` && newCustomer?.customers?.is_demo === true, JSON.stringify(newCustomer));
+    // Origin of the customer (task-14-4)
+    const { data: origin } = await admin.from("requests").select("request_number, customer_id").eq("id", createReq.id).single();
+    await page.open(`${BASE}/dashboard/kunden/${origin.customer_id}`);
+    check("  Kundenseite: Herkunft „Automatisch aus RIS-…“ mit Link zur Anfrage", await page.eval(`(() => { const dd = document.querySelector("[data-origin]"); return !!dd && dd.textContent.includes(${JSON.stringify(origin.request_number)}) && !!dd.querySelector('a[href="/dashboard/anfragen/${createReq.id}"]'); })()`));
 
     const plainReq = await newRequest("kunde-ohne-vorschlag");
     await page.open(`${BASE}/dashboard/anfragen/${plainReq.id}`);
@@ -893,6 +897,7 @@ try {
       customerId = customer?.id ?? null;
       check("  Kunde anlegen: Kundennummer automatisch, Weiterleitung zur Kundenseite", created && /^K-2\d{4}$/.test(customer.customer_number)
         && await waitFor(async () => (await page.eval("location.pathname")) === `/dashboard/kunden/${customer.id}`), JSON.stringify(customer));
+      check("  Herkunft „Manuell angelegt“", await waitFor(async () => (await page.eval(`document.querySelector("[data-origin]")?.textContent ?? ""`)) === "Manuell angelegt"));
 
       // Master data read-only first, the form behind „Stammdaten ändern“ (task-12-8)
       const stammdaten = `document.querySelector("#stammdaten-title").closest("section")`;
@@ -929,6 +934,49 @@ try {
       await shot("anfrage-kunde-390.png");
     } finally {
       if (customerId) await admin.from("customers").delete().eq("id", customerId);
+    }
+  }
+
+  console.log("\nKunde anlegen: Hinweis auf ähnlichen Kunden, Herkunft (task-14-4)");
+  {
+    const createBox = `[...document.querySelectorAll("details.action")].find((d) => d.querySelector("summary").textContent.includes("Kunde anlegen"))`;
+    const { data: similar } = await admin.from("customers").select("customer_number, company_name, customer_sites(postal_code)").eq("is_demo", true).eq("is_active", true).order("customer_number").limit(1).single();
+    // Same company as a demo customer plus a unique suffix in the notes: found by company, created only on confirmation
+    const marker = `UI-Dublette ${runId}`;
+    let duplicateId = null;
+    try {
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+      for (const width of [1440, 768, 390]) {
+        await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+        await page.open(`${BASE}/dashboard/kunden`);
+        if (width === 1440) {
+          const intro = await page.eval(`${createBox}.textContent`);
+          check("Erklärtext: Kunden entstehen automatisch, Anwendungsfälle genannt", intro.includes("automatisch") && intro.includes("SLA-Vertrag") && intro.includes("Bestandskunden"));
+          check("  Liste zeigt die Herkunft je Kunde", await page.eval(`[...document.querySelectorAll("[data-origin]")].some((e) => /^(manuell|aus )/.test(e.textContent))`));
+        }
+        await fillIn(createBox, { company_name: similar.company_name, street_house_number: "Dublettenweg 1", postal_code: similar.customer_sites[0]?.postal_code ?? "68159", city: "Mannheim", notes: marker });
+        const warned = await waitFor(async () => page.eval(`!!document.querySelector(".similar-customers [data-similar='${similar.customer_number}']")`));
+        const kept = await page.eval(`${createBox}.querySelector('[name="company_name"]').value`);
+        const card = await page.eval(`(() => { const el = document.querySelector(".similar-customers"); return { text: el?.textContent ?? "", scroll: document.documentElement.scrollWidth, width: innerWidth }; })()`);
+        check(`  Warnung „Ähnlicher Kunde vorhanden“ mit Kunde und Grund, Eingaben bleiben, kein horizontales Scrollen @${width}`,
+          warned && kept === similar.company_name && card.text.includes("Gleiche Firma") && card.scroll <= card.width, JSON.stringify(card).slice(0, 300));
+        if (SHOTS) {
+          const clip = await page.eval(`(() => { document.documentElement.style.scrollBehavior = "auto"; const el = document.querySelector(".similar-customers"); el.scrollIntoView({ block: "center" });
+            const r = el.getBoundingClientRect(); return { x: Math.max(0, r.left - 16), y: Math.max(0, r.top + scrollY - 16), width: Math.min(innerWidth, r.width + 32), height: r.height + 80, scale: 1 }; })()`);
+          const image = await page.send("Page.captureScreenshot", { format: "png", clip });
+          await writeFile(path.join(SHOTS, `kunde-dublette-${width}.png`), Buffer.from(image.data, "base64"));
+        }
+      }
+      const { count: none } = await admin.from("customers").select("id", { count: "exact", head: true }).eq("notes", marker);
+      check("  ohne Bestätigung kein Kunde angelegt", none === 0);
+      await page.eval(`(() => { const box = ${createBox}; box.querySelector('[name="confirm_duplicate"]').checked = true; box.querySelector("form").requestSubmit(); })()`);
+      const created = await waitFor(async () => Boolean((await admin.from("customers").select("id").eq("notes", marker).maybeSingle()).data));
+      duplicateId = (await admin.from("customers").select("id, origin_request_id").eq("notes", marker).maybeSingle()).data?.id ?? null;
+      check("  „Trotzdem als neuen Kunden anlegen“ legt an und öffnet die Kundenseite", created
+        && await waitFor(async () => (await page.eval("location.pathname")) === `/dashboard/kunden/${duplicateId}`));
+    } finally {
+      if (duplicateId) await admin.from("customers").delete().eq("id", duplicateId);
     }
   }
 

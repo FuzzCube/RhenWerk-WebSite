@@ -7,7 +7,9 @@ import { createClient } from "@/lib/supabase/server";
 type Tables = Database["public"]["Tables"];
 export type Customer = Tables["customers"]["Row"];
 export type CustomerSite = Tables["customer_sites"]["Row"];
-export type CustomerListItem = Customer & { sites: CustomerSite[]; requestCount: number };
+// Request the customer was created from (task-14-4); null when manual, or when the request is not visible to the user
+export type CustomerOrigin = { id: string; request_number: string } | null;
+export type CustomerListItem = Customer & { sites: CustomerSite[]; requestCount: number; origin: CustomerOrigin };
 export type CustomerRequest = Pick<Tables["requests"]["Row"], "id" | "request_number" | "created_at" | "intake_status" | "work_status" | "service_kind" | "equipment_kind" | "street_house_number" | "city" | "customer_site_id">;
 
 export const CUSTOMER_VIEWS = [
@@ -41,7 +43,7 @@ export async function listCustomers(filters: CustomerFilters): Promise<{ rows: C
       .or(`street_house_number.ilike.%${q}%,postal_code.ilike.${q}%,city.ilike.%${q}%`).limit(500);
     siteCustomerIds = [...new Set((data ?? []).map((row) => row.customer_id))];
   }
-  let query = supabase.from("customers").select("*, customer_sites(*), requests!requests_customer_id_fkey(count)", { count: "exact" });
+  let query = supabase.from("customers").select("*, customer_sites(*), requests!requests_customer_id_fkey(count), origin:requests!customers_origin_request_id_fkey(id, request_number)", { count: "exact" });
   if (filters.view === "aktiv") query = query.eq("is_active", true);
   if (filters.view === "inaktiv") query = query.eq("is_active", false);
   if (q) {
@@ -55,8 +57,9 @@ export async function listCustomers(filters: CustomerFilters): Promise<{ rows: C
     supabase.from("customers").select("id", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("customers").select("id", { count: "exact", head: true }).eq("is_active", false),
   ]);
-  const rows = (data ?? []).map(({ customer_sites: sites, requests, ...row }) => ({
+  const rows = (data ?? []).map(({ customer_sites: sites, requests, origin, ...row }) => ({
     ...row,
+    origin,
     sites: [...sites].sort((a, b) => Number(b.is_active) - Number(a.is_active) || a.created_at.localeCompare(b.created_at)),
     requestCount: requests[0]?.count ?? 0,
   }));
@@ -68,11 +71,11 @@ export async function listCustomers(filters: CustomerFilters): Promise<{ rows: C
   };
 }
 
-export async function getCustomer(id: string): Promise<{ customer: Customer; sites: CustomerSite[]; requests: CustomerRequest[] } | null> {
+export async function getCustomer(id: string): Promise<{ customer: Customer & { origin: CustomerOrigin }; sites: CustomerSite[]; requests: CustomerRequest[] } | null> {
   if (!UUID.test(id)) return null;
   const supabase = await createClient();
   const [{ data: customer, error }, sites, requests] = await Promise.all([
-    supabase.from("customers").select("*").eq("id", id).maybeSingle(),
+    supabase.from("customers").select("*, origin:requests!customers_origin_request_id_fkey(id, request_number)").eq("id", id).maybeSingle(),
     supabase.from("customer_sites").select("*").eq("customer_id", id).order("created_at"),
     supabase.from("requests").select("id, request_number, created_at, intake_status, work_status, service_kind, equipment_kind, street_house_number, city, customer_site_id")
       .eq("customer_id", id).order("created_at", { ascending: false }).limit(100),

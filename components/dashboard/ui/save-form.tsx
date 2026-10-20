@@ -8,6 +8,11 @@ import { initialFormState, type FormState } from "@/lib/forms";
 type SaveAction = (previous: FormState, formData: FormData) => Promise<FormState>;
 const SaveFormContext = createContext<{ state: FormState; pending: boolean }>({ state: initialFormState, pending: false });
 
+// Result of the last save, for parts of a form that react to it (e.g. a confirmation step)
+export function useSaveFormState() {
+  return useContext(SaveFormContext);
+}
+
 // Form for dashboard save actions. Submits without React's automatic form reset, so inputs stay as typed
 // after a failed save (validation, permission, version conflict). Shows saving, saved and error state.
 export function SaveForm({

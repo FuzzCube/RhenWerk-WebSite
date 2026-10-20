@@ -53,6 +53,9 @@ export default async function CustomerPage({ params, searchParams }: Props) {
           <div><dt>E-Mail</dt><dd>{customer.business_email ? <a href={`mailto:${customer.business_email}`}>{customer.business_email}</a> : EMPTY}</dd></div>
           <div><dt>Telefon</dt><dd>{customer.phone_number ? <a className="mono" href={`tel:${customer.phone_number.replace(/[^\d+]/g, "")}`}>{customer.phone_number}</a> : EMPTY}</dd></div>
           <div><dt>Status</dt><dd>{customer.is_active ? "Aktiv" : "Deaktiviert"}</dd></div>
+          <div><dt>Herkunft</dt><dd data-origin>{customer.origin_request_id
+            ? <>Automatisch aus {customer.origin ? <Link className="mono" href={`/dashboard/anfragen/${customer.origin.id}`}>{customer.origin.request_number}</Link> : "einer Anfrage"} angelegt</>
+            : "Manuell angelegt"}</dd></div>
           <div><dt>Notizen</dt><dd className="pre-line">{customer.notes || EMPTY}</dd></div>
         </dl>
         <details className="action">

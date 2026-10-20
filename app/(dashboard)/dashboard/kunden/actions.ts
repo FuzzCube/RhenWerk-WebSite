@@ -47,6 +47,15 @@ export async function createCustomer(_previous: FormState, formData: FormData): 
   const errors = { ...customerErrors(values), ...siteErrors(values) };
   if (Object.keys(errors).length > 0) return formError("Bitte die markierten Felder prüfen.", values, errors);
   const supabase = await createClient();
+  // Customers normally come from requests (task-14-1): warn about a similar customer first, create only on confirmation
+  if (values.confirm_duplicate !== "on") {
+    const { data: similar } = await supabase.rpc("find_similar_customers", {
+      company_name: values.company_name.trim(), business_email: text(values.business_email), postal_code: values.postal_code.trim(),
+    });
+    if (similar && similar.length > 0) {
+      return { ...formError("Ähnlicher Kunde vorhanden. Bitte prüfen oder „Trotzdem anlegen“ bestätigen.", values), similarCustomers: similar };
+    }
+  }
   const { data, error } = await supabase.rpc("create_customer", {
     company_name: values.company_name.trim(), street_house_number: values.street_house_number.trim(), postal_code: values.postal_code.trim(), city: values.city.trim(),
     contact_name: text(values.contact_name), business_email: text(values.business_email), phone_number: text(values.phone_number), notes: text(values.notes),

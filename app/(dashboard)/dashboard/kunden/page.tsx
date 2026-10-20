@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createCustomer } from "@/app/(dashboard)/dashboard/kunden/actions";
 import { CustomerShell } from "@/components/dashboard/customer-shell";
+import { SimilarCustomers } from "@/components/dashboard/similar-customers";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { SaveForm, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { SearchSuggest } from "@/components/dashboard/ui/search-suggest";
@@ -39,7 +40,12 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const current = CUSTOMER_VIEWS.find((view) => view.key === filters.view)!;
 
   const columns: Column<CustomerListItem>[] = [
-    { key: "company", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub mono">{row.customer_number}</span></>, mobile: "title" },
+    {
+      key: "company",
+      header: "Kunde",
+      cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub"><span className="mono">{row.customer_number}</span> · <span data-origin>{row.origin_request_id ? `aus ${row.origin?.request_number ?? "Anfrage"}` : "manuell"}</span></span></>,
+      mobile: "title",
+    },
     {
       key: "site",
       header: "Standort",
@@ -75,7 +81,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     >
       <details className="action">
         <summary>Kunde anlegen</summary>
-        <p className="section-note">Ohne Angabe vergibt das System die nächste freie Kundennummer. Der erste Standort ist Pflicht; weitere lassen sich danach hinzufügen.</p>
+        <p className="section-note">Kunden entstehen normalerweise automatisch, sobald eine Anfrage bearbeitet ist. Manuell anlegen nur ohne Anfrage: Wartungs- oder SLA-Vertrag vor dem ersten Auftrag (der Telefonassistent erkennt den Kunden dann schon beim ersten Anruf), Übernahme von Bestandskunden oder mehrere Standorte vorab erfassen.</p>
+        <p className="section-note">Ohne Angabe vergibt das System die nächste freie Kundennummer. Der erste Standort ist Pflicht; weitere lassen sich danach hinzufügen. Vor dem Anlegen wird auf ähnliche Kunden geprüft.</p>
         <SaveForm action={createCustomer} submitLabel="Kunde anlegen">
           <div className="form-grid">
             <TextField name="company_name" label="Firma" required />
@@ -89,6 +96,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             <TextField name="site_label" label="Standortbezeichnung" hint="z. B. Halle 3, Werk Nord" />
           </div>
           <TextAreaField name="notes" label="Notizen" rows={2} />
+          <SimilarCustomers />
         </SaveForm>
       </details>
 

@@ -10,12 +10,13 @@ Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main
 
 ## Aktive Phase und Aufgabe
 
-Phasen 0–13 abgeschlossen. Aktiv: **Phase 14 „Kundenstamm aus Anfragen“** (Roadmap v15, Regeln in `docs/decisions.md` und `docs/database.md`). `task-14-1` erledigt: Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (Trigger `requests_link_customer`). `task-14-2` erledigt: unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ auf der Anfrageseite (Zuordnen / Neuen Kunden anlegen über `create_customer_from_request`). `task-14-3` erledigt: bestehende Anfrage RIS-2026-01948 nachträglich zugeordnet (K-20181, `npm run customers:backfill`). Startbar: `task-14-4` (manuelles Anlegen mit Dublettenprüfung). Keine Aufgabe in Arbeit.
+Alle Phasen 0–14 abgeschlossen (Roadmap v15). Zuletzt **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`). Keine Aufgabe in Arbeit, keine startbar.
 
 Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
 
 ## Zuletzt abgeschlossen
 
+- `task-14-4` (20.10.2026): „Kunde anlegen“ mit Erklärtext und Warnung „Ähnlicher Kunde vorhanden“ (`find_similar_customers`), Herkunft `customers.origin_request_id` in Liste und Kundenseite (Migration `20261020160000_customer_origin.sql`).
 - `task-14-3` (20.10.2026): einmalige Nachzuordnung (Migration `20261020150000_customer_backfill.sql`, `npm run customers:backfill`): 1 Kunde angelegt, 0 verknüpft, 0 Vorschläge.
 - `task-14-2` (20.10.2026): Karte „Möglicher Bestandskunde“, RPC `create_customer_from_request`, Kennzeichen „Kunde prüfen“ in Liste und Erstbearbeitung (Migration `20261020140000_customer_from_request.sql`).
 - `task-14-1` (20.10.2026): automatische Kundenzuordnung/-anlage beim Abschluss der Erstbearbeitung (Migration `20261020130000_auto_customers.sql`, Vorschläge in `request_customer_suggestions`); Kundenliste-Einbettung mit `requests_customer_id_fkey`.

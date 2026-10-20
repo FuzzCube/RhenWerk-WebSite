@@ -2541,7 +2541,7 @@
       "description": "Nutzerentscheidung 20.10.2026: Kunden entstehen nicht mehr nur von Hand. Sobald eine Anfrage die Erstbearbeitung abschließt (Formular, E-Mail, Telefonassistent oder manuell; automatisch oder durch einen Dispatcher), wird sie einem vorhandenen Kunden zugeordnet oder ein neuer Kunde mit erstem Standort angelegt. Unsichere Treffer entscheidet ein Mensch. Wie in Field-Service-Systemen üblich (Lead wird bei Annahme zum Kunden); abgelehnte, stornierte und Demo-Anfragen erzeugen keine Kunden.",
       "order": 15,
       "weight": 7,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "weight": 2,
@@ -2644,18 +2644,26 @@
         },
         {
           "weight": 1,
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-20T19:25:32Z",
+          "completedAt": "2026-10-20T19:25:32Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-20T19:25:32Z",
+            "commands": [
+              "npx supabase test db",
+              "npm run db:types",
+              "npm run test:unit",
+              "npm run test:ui",
+              "npm run lint",
+              "npx tsc --noEmit",
+              "npm run build"
+            ],
+            "summary": "Migration 20261020160000_customer_origin.sql: customers.origin_request_id (FK requests, on delete set null), gesetzt von private.new_customer_from_request, für bestehende Kunden aus den Ereignissen nachgetragen (u. a. K-20181 ← RIS-2026-01948); find_similar_customers(company_name, business_email, postal_code) mit Gründen gleiche_email/gleiche_firma/gleiche_firma_anderswo/gleiche_domain, inaktive markiert, Demo-Kunden zählen als Hinweis mit. Kunden-Seite: Erklärtext (Kunden entstehen automatisch; manuell für Wartungs-/SLA-Vertrag, Bestandskunden, mehrere Standorte), createCustomer prüft vorher auf ähnliche Kunden und zeigt „Ähnlicher Kunde vorhanden“ mit Link und Grund (components/dashboard/similar-customers.tsx, FormState.similarCustomers, useSaveFormState); Anlage nur mit „Trotzdem als neuen Kunden anlegen“, Eingaben bleiben. Herkunft in der Liste („aus RIS-…“/„manuell“) und auf der Kundenseite (Link zur Anfrage). Geprüft: customer_origin.test.sql 11/11, test:db sonst unverändert (technician_load_intervals scheitert weiter an lokalen Daten), test:unit 92/92, test:ui alle bestanden inkl. neuem Block (Erklärtext, Herkunft, Warnung 1440/768/390 ohne horizontales Scrollen, keine Anlage ohne Bestätigung, Anlage mit Bestätigung), Sichtprüfung der Ausschnitte, lint, typecheck, build. Doku: database.md, architecture.md, testing.md."
           },
           "id": "task-14-4",
           "title": "Kundenseite: manuelles Anlegen mit Dublettenprüfung und Herkunft",
           "order": 4,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-14-1"
           ],

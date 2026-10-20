@@ -184,17 +184,29 @@ isOneToOne: false
                   ]
                 },"customers": {
                   Row: {
-                    "business_email": string | null,"company_name": string,"contact_name": string | null,"created_at": string,"customer_number": string,"id": string,"is_active": boolean,"is_demo": boolean,"notes": string | null,"phone_number": string | null,"updated_at": string,"version": number
+                    "business_email": string | null,"company_name": string,"contact_name": string | null,"created_at": string,"customer_number": string,"id": string,"is_active": boolean,"is_demo": boolean,"notes": string | null,"origin_request_id": string | null,"phone_number": string | null,"updated_at": string,"version": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "business_email"?: string | null,"company_name": string,"contact_name"?: string | null,"created_at"?: string,"customer_number": string,"id"?: string,"is_active"?: boolean,"is_demo"?: boolean,"notes"?: string | null,"phone_number"?: string | null,"updated_at"?: string,"version"?: number
+                    "business_email"?: string | null,"company_name": string,"contact_name"?: string | null,"created_at"?: string,"customer_number": string,"id"?: string,"is_active"?: boolean,"is_demo"?: boolean,"notes"?: string | null,"origin_request_id"?: string | null,"phone_number"?: string | null,"updated_at"?: string,"version"?: number
                   }
                   Update: {
-                    "business_email"?: string | null,"company_name"?: string,"contact_name"?: string | null,"created_at"?: string,"customer_number"?: string,"id"?: string,"is_active"?: boolean,"is_demo"?: boolean,"notes"?: string | null,"phone_number"?: string | null,"updated_at"?: string,"version"?: number
+                    "business_email"?: string | null,"company_name"?: string,"contact_name"?: string | null,"created_at"?: string,"customer_number"?: string,"id"?: string,"is_active"?: boolean,"is_demo"?: boolean,"notes"?: string | null,"origin_request_id"?: string | null,"phone_number"?: string | null,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "customers_origin_request_id_fkey"
+      columns: ["origin_request_id"]
+isOneToOne: false
+      referencedRelation: "dispatcher_queue"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "customers_origin_request_id_fkey"
+      columns: ["origin_request_id"]
+isOneToOne: false
+      referencedRelation: "requests"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"employee_availability": {
                   Row: {
@@ -1793,6 +1805,7 @@ isOneToOne: false
 "is_active": boolean,
 "is_demo": boolean,
 "notes": string | null,
+"origin_request_id": string | null,
 "phone_number": string | null,
 "updated_at": string,
 "version": number
@@ -2063,6 +2076,11 @@ isOneToOne: false
                            },
 "expire_visit_holds":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"find_similar_customers":
+{ Args: { "business_email"?: string,"company_name": string,"postal_code"?: string }; Returns: {
+              "city": string,"company": string,"customer_number": string,"id": string,"is_active": boolean,"reason": string
+            }[]
                            },
 "find_submission":
 { Args: { "submission_id": string }; Returns: Json
@@ -3078,6 +3096,7 @@ isOneToOne: false
 "is_active": boolean,
 "is_demo": boolean,
 "notes": string | null,
+"origin_request_id": string | null,
 "phone_number": string | null,
 "updated_at": string,
 "version": number
