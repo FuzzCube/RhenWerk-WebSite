@@ -1321,7 +1321,7 @@
           "completedAt": "2026-10-12T09:56:52Z",
           "verification": {
             "status": "passed",
-            "summary": "Lokale Integration abgeschlossen: sechs veröffentlichte ungruppierte MCP-Workflows; N8N_WEBHOOK_URL lokal gesetzt. OpenAI GPT-4.1 mini, echte Gmail-Rückfrage 6779 und Kundenantwortanalyse 6790/6791 (RIS-2026-00355) bestätigt. Blob-Token lokal vorhanden; PDF/PNG über den tatsächlichen /api/upload-Clientpfad in privaten Vercel Blob geladen. Formular-API → produktiver n8n-Webhooks → Dateikopie 6813/6814 → privater Supabase Storage → OpenAI-Analyse 6815: RIS-2026-00356 processed, KAESER SM 13/RW-002 aus Dokumenten extrahiert, Formularmodell leer. Fehler 6810 (URL-Konstruktor im Code-Sandbox nicht vorhanden) durch enge private Blob-URL-Prüfung behoben. Wiederholungen liefern HTTP 201 und dieselbe Anfrage; genau ein Datensatz, ein Eingangsereignis, ein Analyselauf und zwei private Dateien. Direkte Analyse bei Duplikaten ausgeschlossen (6833/6834). Gmail ersetzt benutzerdefinierte Message-ID: Versandwiederaufnahme jetzt über X-RheinWerk-Message-Id und tatsächliche Provider-MIME-ID. 6825 findet das echte bereits gesendete Mail ohne erneuten Send-Aufruf (Queue/Bestätigung für diesen Replay gepinnt); 6839 prüft den Annahme→Metadaten-Zweig mit gepinntem Send-Ergebnis und echtem Gmail-Get. 6828 liest echte RIS-Antwort erneut, duplicate=true; 15-Minuten-Recovery für letzte sieben Tage ergänzt. Send-Scheduler 6837 erfolgreich, genehmigte Queue leer. Node-/SDK-Validierung bestanden, lint/build/typecheck bestanden; DB 532/532 und Unit 58/58 aus der unmittelbar vorherigen Integrationsprüfung, Unit nach Doku-Sync erneut 58/58 bestanden. Keine neue SQL-Migration in diesem Schritt. Kein DB-Reset und keine neue API/Auth/UI-Regression; keine Browser-Sichtprüfung der Formular-UI. Alle Tests synthetisch, keine realen Kunden. Öffentliche Website/Turnstile/Cloudflare-Maschinenzugriff nicht umgestellt; keine Make-Konto-Deaktivierung, kein Push/Website-Deployment. Nutzerkorrektur 12.10.2026: Alle 99 Knotennamen in sechs lokalen n8n-Workflows geprüft; 23 russische/englische Bezeichnungen ins Deutsche übertragen. Namensreferenzen in Ausdrücken aktualisiert, Graph und Credentials gegenüber dem vorherigen Stand verglichen und unverändert bestätigt. Geänderte Workflows erneut veröffentlicht und alle sechs aktiven Graphen per MCP zurückgelesen. Generatorsourcen und Exporte synchronisiert; SDK-Validierung der geänderten Quellen bestanden. Keine erneuten E-Mail-/OpenAI-Aufrufe und keine neue Website-/Datenbankänderung.",
+            "summary": "Lokale Integration abgeschlossen: sechs veröffentlichte ungruppierte MCP-Workflows; N8N_WEBHOOK_URL lokal gesetzt. OpenAI GPT-4.1 mini, echte Gmail-Rückfrage 6779 und Kundenantwortanalyse 6790/6791 (RIS-2026-00355) bestätigt. Blob-Token lokal vorhanden; PDF/PNG über den tatsächlichen /api/upload-Clientpfad in privaten Vercel Blob geladen. Formular-API → produktiver n8n-Webhooks → Dateikopie 6813/6814 → privater Supabase Storage → OpenAI-Analyse 6815: RIS-2026-00356 processed, KAESER SM 13/RW-002 aus Dokumenten extrahiert, Formularmodell leer. Fehler 6810 (URL-Konstruktor im Code-Sandbox nicht vorhanden) durch enge private Blob-URL-Prüfung behoben. Wiederholungen liefern HTTP 201 und dieselbe Anfrage; genau ein Datensatz, ein Eingangsereignis, ein Analyselauf und zwei private Dateien. Direkte Analyse bei Duplikaten ausgeschlossen (6833/6834). Gmail ersetzt benutzerdefinierte Message-ID: Versandwiederaufnahme jetzt über X-RheinWerk-Message-Id und tatsächliche Provider-MIME-ID. 6825 findet das echte bereits gesendete Mail ohne erneuten Send-Aufruf (Queue/Bestätigung für diesen Replay gepinnt); 6839 prüft den Annahme→Metadaten-Zweig mit gepinntem Send-Ergebnis und echtem Gmail-Get. 6828 liest echte RIS-Antwort erneut, duplicate=true; 15-Minuten-Recovery für letzte sieben Tage ergänzt. Send-Scheduler 6837 erfolgreich, genehmigte Queue leer. SDK-Validierung, lint, build, typecheck bestanden; test:db 532/532, test:unit 58/58. Keine SQL-Migration, kein DB-Reset, keine API/Auth/UI-Regression, keine Sichtprüfung der Formular-UI. Alle Tests synthetisch, keine realen Kunden. Öffentliche Website, Turnstile, Make-Konto und Deployment unverändert. Nutzerkorrektur 12.10.2026: 23 von 99 Knotennamen ins Deutsche übertragen, Referenzen, Generatoren und Exporte synchronisiert, Graphen und Credentials unverändert, alle sechs Workflows erneut veröffentlicht und per MCP zurückgelesen. Details: docs/n8n-contract.md.",
             "commands": [
               "npm run lint",
               "npm run typecheck",
@@ -1468,7 +1468,8 @@
               "APP_URL=http://127.0.0.1:3201 npm run test:ui",
               "npm run demo:seed",
               "npm run demo:verify"
-            ]
+            ],
+            "checkedAt": "2026-10-13T13:25:22Z"
           }
         },
         {
@@ -1502,7 +1503,8 @@
               "APP_URL=http://127.0.0.1:3201 npm run test:ui",
               "npm run demo:seed",
               "npm run demo:verify"
-            ]
+            ],
+            "checkedAt": "2026-10-13T13:44:30Z"
           }
         },
         {
@@ -1536,7 +1538,8 @@
               "APP_URL=http://127.0.0.1:1201 npm run test:ui",
               "npm run demo:seed",
               "npm run demo:verify"
-            ]
+            ],
+            "checkedAt": "2026-10-13T14:41:45Z"
           }
         }
       ]
@@ -1572,7 +1575,8 @@
               "npm run lint",
               "npm run typecheck",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T09:44:25Z"
           }
         },
         {
@@ -1598,7 +1602,8 @@
               "npm run lint",
               "npm run typecheck",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T09:51:55Z"
           }
         },
         {
@@ -1625,7 +1630,8 @@
               "npm run typecheck",
               "npm run test:unit",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T09:58:31Z"
           }
         },
         {
@@ -1656,7 +1662,8 @@
               "npm run typecheck",
               "npm run build",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T10:13:54Z"
           }
         },
         {
@@ -1688,7 +1695,8 @@
               "npm run build",
               "APP_URL=http://127.0.0.1:3202 npm run test:auth",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T11:06:37Z"
           }
         },
         {
@@ -1720,7 +1728,8 @@
               "npm run build",
               "APP_URL=http://127.0.0.1:3202 npm run test:auth",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T11:22:56Z"
           }
         },
         {
@@ -1751,7 +1760,8 @@
               "npm run typecheck",
               "npm run build",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T11:37:46Z"
           }
         }
       ]
@@ -1792,7 +1802,8 @@
               "npm run typecheck",
               "npm run build",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T11:54:39Z"
           }
         },
         {
@@ -1819,7 +1830,8 @@
               "npm run typecheck",
               "npm run build",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T12:21:18Z"
           }
         },
         {
@@ -1853,7 +1865,8 @@
               "npm run typecheck",
               "npm run build",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T12:38:50Z"
           }
         },
         {
@@ -1883,7 +1896,8 @@
               "npm run test:unit",
               "npm run demo:seed",
               "npm run demo:verify"
-            ]
+            ],
+            "checkedAt": "2026-10-19T14:52:30Z"
           }
         },
         {
@@ -1909,7 +1923,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-19T21:15:17Z"
           }
         },
         {
@@ -1937,7 +1952,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-20T10:18:20Z"
           }
         },
         {
@@ -1964,7 +1980,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-20T11:34:13Z"
           }
         },
         {
@@ -1992,7 +2009,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-20T11:53:15Z"
           }
         },
         {
@@ -2021,7 +2039,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-20T13:27:01Z"
           }
         },
         {
@@ -2046,7 +2065,8 @@
             "commands": [
               "mmdc -i <diagramm>.mmd",
               "npm run test:unit"
-            ]
+            ],
+            "checkedAt": "2026-10-20T13:43:10Z"
           }
         },
         {
@@ -2076,7 +2096,8 @@
               "BACKUP_PASSPHRASE=… npm run backup && npm run backup:check",
               "npm run lint",
               "npm run test:unit"
-            ]
+            ],
+            "checkedAt": "2026-10-20T13:49:53Z"
           }
         },
         {
@@ -2104,7 +2125,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-20T15:04:59Z"
           }
         }
       ]
@@ -2139,7 +2161,8 @@
             "commands": [
               "python3 -c \"import json;json.load(open('docs/telefonassistent/einsatzgebiet.json'))\"",
               "Abgleich der Wissensbasis mit components/pages.tsx und docs/equipment/RheinWerk_Anlagenkatalog_DE.md"
-            ]
+            ],
+            "checkedAt": "2026-10-15T13:09:37Z"
           }
         },
         {
@@ -2174,7 +2197,8 @@
               "npm run typecheck",
               "npm run build",
               "APP_URL=http://localhost:3201 npm run test:ui"
-            ]
+            ],
+            "checkedAt": "2026-10-15T13:36:37Z"
           }
         },
         {
@@ -2207,7 +2231,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-15T13:47:32Z"
           }
         },
         {
@@ -2241,7 +2266,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-15T14:07:29Z"
           }
         },
         {
@@ -2313,7 +2339,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-19T13:28:50Z"
           }
         },
         {
@@ -2351,7 +2378,8 @@
               "npm run typecheck",
               "npm run build",
               "npm run demo:verify"
-            ]
+            ],
+            "checkedAt": "2026-10-19T17:19:37Z"
           }
         },
         {
@@ -2386,7 +2414,8 @@
               "npm run typecheck",
               "npm run build",
               "npm run test:auth (5 Cache-Control-Prüfungen unter next dev, auch ohne Änderungen)"
-            ]
+            ],
+            "checkedAt": "2026-10-19T18:06:42Z"
           }
         },
         {
@@ -2421,7 +2450,8 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-19T19:11:53Z"
           }
         },
         {
@@ -2462,7 +2492,8 @@
               "APP_URL=http://localhost:3201 npm run test:ui",
               "APP_URL=http://localhost:3201 npm run test:auth",
               "npm run test:unit"
-            ]
+            ],
+            "checkedAt": "2026-10-19T14:07:18Z"
           }
         },
         {
@@ -2498,11 +2529,11 @@
               "npm run lint",
               "npm run typecheck",
               "npm run build"
-            ]
+            ],
+            "checkedAt": "2026-10-19T20:11:40Z"
           }
         }
-      ],
-      "completedAt": "2026-10-19T20:11:40Z"
+      ]
     }
   ]
 }
