@@ -79,7 +79,7 @@ Gemeinsame Bausteine aller Dashboard-Bereiche; Übersicht mit Beispielwerten unt
 
 | Pfad | Inhalt |
 | --- | --- |
-| `/dashboard/anfragen` | Liste mit Suche (Nummer, Firma, Kontakt, Ort) und Filtern Erstbearbeitung, Arbeit, Priorität; 25 je Seite; Filter stehen in der URL (`?suche=…&erstbearbeitung=…&arbeit=…&prioritaet=…&seite=…`), funktionieren ohne JavaScript |
+| `/dashboard/anfragen` | Liste mit Suche (Nummer, Firma, Kontakt, Ort) und Filtern Erstbearbeitung, Arbeit, Priorität; 25 je Seite; Filter stehen in der URL (`?suche=…&erstbearbeitung=…&arbeit=…&prioritaet=…&seite=…`), funktionieren ohne JavaScript. Sortierung (task-12-12, `lib/request-sort.ts`): Klick auf den Spaltenkopf (Pfeil, `aria-sort`) oder Menü „Sortiert“ (auch auf dem Smartphone) nach Eingang (Standard, neueste zuerst), Priorität (leere zuletzt), Anfrage, Kunde, Leistung (Reihenfolge der Leistungsarten) und für Manager/Admin Dispatcher; `?sortierung=<feld>-<auf\|ab>` bleibt bei Seite, Suche, Filter und Ansicht erhalten, bei Gleichstand gilt der Eingang. Auf Tablets (768–1099 px) blendet die Liste Leistung und Dispatcher aus (`Column.tablet = "hide"` in `DataTable`), weil sieben Spalten dort nicht passen |
 | `/dashboard/anfragen/[id]` | Anfrageseite mit stabiler URL je Anfrage |
 | `/dashboard/anfragen/[id]/dokumente/[attachmentId]` | Download eines Dokuments (Route Handler) |
 

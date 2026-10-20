@@ -319,3 +319,5 @@
 {"timestamp":"2026-10-20T13:43:10Z","type":"task_completed","taskId":"task-12-10","summary":"Dokumentation lokales Supabase und n8n-Workflows (Steckbriefe, Verbindungen, Sequenzdiagramme, Einrichtung) erstellt und gegen das laufende System geprüft."}
 {"timestamp":"2026-10-20T13:43:10Z","type":"task_started","taskId":"task-12-11","summary":"Betriebskonzept begonnen: Stufe 1 eigener Rechner mit Cloudflare Tunnel, Stufe 2 Server; Sicherung und Prüfung als npm-Skripte."}
 {"timestamp":"2026-10-20T13:49:53Z","type":"task_completed","taskId":"task-12-11","summary":"Betriebskonzept docs/betrieb.md, npm run backup und backup:check erstellt; Sicherung und Wiederherstellungsprüfung (auch verschlüsselt) bestanden."}
+{"timestamp":"2026-10-20T14:30:31Z","type":"task_started","taskId":"task-12-12","summary":"Sortierbare Anfragenliste nach Rücksprache angelegt und begonnen."}
+{"timestamp":"2026-10-20T15:04:59Z","type":"task_completed","taskId":"task-12-12","summary":"Anfragenliste sortierbar (Spaltenköpfe und Menü, Sortierung in der Adresse); Tablet-Darstellung der Liste korrigiert; test:unit, test:ui, lint, typecheck, build bestanden."}

@@ -8,6 +8,10 @@ export type Column<Row> = {
   align?: "start" | "end";
   // Mobile card: "title" is the card heading, "hide" is only shown from tablet width on
   mobile?: "title" | "hide";
+  // Hidden on tablets (768–1099 px) where a wide table does not fit; shown again on desktops
+  tablet?: "hide";
+  // Sortable column (task-12-12): link of the header and the current direction, null when sorted by another column
+  sort?: { href: string; active: "ascending" | "descending" | null; title: string };
 };
 
 // One markup for all widths: a table from 768 px, stacked cards with labels below.
@@ -38,7 +42,13 @@ export function DataTable<Row>({
         <thead>
           <tr>
             {columns.map((column) => (
-              <th key={column.key} scope="col" className={column.align === "end" ? "data-table__end" : undefined}>{column.header}</th>
+              <th key={column.key} scope="col" className={[column.align === "end" ? "data-table__end" : "", column.tablet === "hide" ? "data-table__tablet-hide" : ""].filter(Boolean).join(" ") || undefined} aria-sort={column.sort?.active ?? undefined}>
+                {column.sort ? (
+                  <Link className={`data-table__sort${column.sort.active ? " is-active" : ""}`} href={column.sort.href} scroll={false} title={column.sort.title}>
+                    {column.header}<span aria-hidden="true">{column.sort.active === "ascending" ? "↑" : column.sort.active === "descending" ? "↓" : "↕"}</span>
+                  </Link>
+                ) : column.header}
+              </th>
             ))}
           </tr>
         </thead>
@@ -52,6 +62,7 @@ export function DataTable<Row>({
                     column.align === "end" ? "data-table__end" : "",
                     column.mobile === "title" ? "data-table__title" : "",
                     column.mobile === "hide" ? "data-table__hide" : "",
+                    column.tablet === "hide" ? "data-table__tablet-hide" : "",
                   ].filter(Boolean).join(" ");
                   const content = column.cell(row);
                   // One wrapper per cell keeps multi-part content in the value column of the mobile card

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import type { EmployeeRole } from "@/lib/auth/roles";
 import { REQUEST_DISPLAY_STATUSES, requestStatusFilter } from "@/lib/display-status";
+import { parseSort, sortParam, type RequestSort } from "@/lib/request-sort";
 import type { ReminderState } from "@/lib/reminders";
 
 // Reads for the request list and the request page. All queries run with the signed-in user's rights,
@@ -31,6 +32,8 @@ export type RequestFilters = {
   // Quick view (task-10-3) and displayed status from "Weitere Filter"
   view: RequestView;
   display: string;
+  // Sorting (task-12-12), default newest receipt first
+  sort: RequestSort;
   page: number;
 };
 
@@ -110,6 +113,7 @@ export function parseRequestFilters(params: Record<string, string | string[] | u
     hazard: single(params.gefahr) === "1",
     view: REQUEST_VIEWS.some((entry) => entry.key === view) ? (view as RequestView) : anyFilter ? "alle" : "offen",
     display: REQUEST_DISPLAY_STATUSES.some((status) => status.key === display) ? display : "",
+    sort: parseSort(single(params.sortierung)),
     page: Number.isFinite(page) && page > 0 ? page : 1,
   };
 }
@@ -138,12 +142,15 @@ export function filterQuery(filters: RequestFilters, overrides: Partial<RequestF
   if (merged.hazard) params.set("gefahr", "1");
   if (merged.display) params.set("anzeige", merged.display);
   params.set("ansicht", merged.view);
+  const sort = sortParam(merged.sort);
+  if (sort) params.set("sortierung", sort);
   if (merged.page > 1) params.set("seite", String(merged.page));
   const query = params.toString();
   return query ? `?${query}` : "";
 }
 
-const LIST_COLUMNS = "id, request_number, company_name, city, service_kind, equipment_kind, intake_status, work_status, priority, created_at, dispatcher_id, technician_id, is_demo, safety_risk";
+// The dispatcher name is embedded only so the list can be sorted by it (task-12-12)
+const LIST_COLUMNS = "id, request_number, company_name, city, service_kind, equipment_kind, intake_status, work_status, priority, created_at, dispatcher_id, technician_id, is_demo, safety_risk, dispatcher:profiles!requests_dispatcher_id_fkey(display_name)";
 export type RequestListItem = Pick<RequestRow, "id" | "request_number" | "company_name" | "city" | "service_kind" | "equipment_kind" | "intake_status" | "work_status" | "priority" | "created_at" | "dispatcher_id" | "technician_id" | "is_demo" | "safety_risk">;
 
 // Requests with an open window hold of the phone assistant (task-13-3) → start of the held window
@@ -154,10 +161,16 @@ export async function openHoldStarts(requestIds: string[]): Promise<Map<string, 
   return new Map((data ?? []).map((row) => [row.request_id, row.starts_at]));
 }
 
+const SORT_COLUMNS = { prioritaet: "priority", anfrage: "request_number", kunde: "company_name", leistung: "service_kind", dispatcher: "dispatcher(display_name)" } as const;
+
 export async function listRequests(filters: RequestFilters, userId: string): Promise<{ rows: RequestListItem[]; total: number; error: boolean }> {
   const supabase = await createClient();
   const from = (filters.page - 1) * PAGE_SIZE;
-  let query = supabase.from("requests").select(LIST_COLUMNS, { count: "exact" }).order("created_at", { ascending: false }).order("id").range(from, from + PAGE_SIZE - 1);
+  const ascending = filters.sort.dir === "auf";
+  let query = supabase.from("requests").select(LIST_COLUMNS, { count: "exact" });
+  // Sorted column first (empty values last), then newest receipt and id, so pages stay stable
+  if (filters.sort.key !== "eingang") query = query.order(SORT_COLUMNS[filters.sort.key], { ascending, nullsFirst: false });
+  query = query.order("created_at", { ascending: filters.sort.key === "eingang" ? ascending : false }).order("id").range(from, from + PAGE_SIZE - 1);
   if (filters.intake) query = query.eq("intake_status", filters.intake);
   if (filters.work) query = query.eq("work_status", filters.work);
   if (filters.priority) query = query.eq("priority", filters.priority);

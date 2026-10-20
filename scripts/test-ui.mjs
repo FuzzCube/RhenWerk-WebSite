@@ -312,6 +312,78 @@ try {
     await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   }
 
+  console.log("\nAnfragenliste sortieren (task-12-12)");
+  {
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+    // Same order as the list: sorted column (empty last), newest receipt, id
+    const expected = async (column, ascending, page = 1) => {
+      let query = admin.from("requests").select("request_number");
+      if (column) query = query.order(column, { ascending, nullsFirst: false });
+      const { data } = await query.order("created_at", { ascending: column ? false : ascending }).order("id").range((page - 1) * 25, page * 25 - 1);
+      return data.map((row) => row.request_number).join(",");
+    };
+    const shown = () => page.eval(`({
+      numbers: [...document.querySelectorAll(".data-table tbody tr td:first-child .mono")].map((el) => el.textContent).join(","),
+      sorted: [...document.querySelectorAll(".data-table th[aria-sort]")].map((th) => th.textContent.replace(/[↑↓↕]/g, "").trim() + ":" + th.getAttribute("aria-sort")).join(","),
+      label: document.querySelector(".req-sort summary strong")?.textContent,
+      url: location.search,
+    })`);
+    const clickHeader = async (text) => {
+      const before = await page.eval("location.search");
+      await page.eval(`[...document.querySelectorAll(".data-table th a.data-table__sort")].find((a) => a.textContent.includes(${JSON.stringify(text)})).click()`);
+      await page.until(`location.search !== ${JSON.stringify(before)} && !!document.querySelector(".data-table tbody tr")`, 10000);
+      await sleep(300);
+    };
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.open(`${BASE}/dashboard/anfragen?ansicht=alle`);
+    const initial = await shown();
+    check("Standard: Eingang, neueste zuerst (wie Datenbank)", initial.sorted === "Eingang:descending" && initial.label === "Eingang, neueste zuerst" && initial.numbers === await expected(null, false), JSON.stringify(initial).slice(0, 300));
+    await clickHeader("Priorität");
+    const high = await shown();
+    check("  Klick auf „Priorität“: höchste zuerst, Pfeil und aria-sort", high.url.includes("sortierung=prioritaet-ab") && high.sorted === "Priorität:descending" && high.numbers === await expected("priority", false), JSON.stringify(high).slice(0, 300));
+    await clickHeader("Priorität");
+    const low = await shown();
+    check("  zweiter Klick: niedrigste zuerst", low.url.includes("sortierung=prioritaet-auf") && low.sorted === "Priorität:ascending" && low.numbers === await expected("priority", true), JSON.stringify(low).slice(0, 300));
+    await page.eval(`document.querySelector('.pagination a[rel="next"]').click()`);
+    await page.until(`location.search.includes("seite=2")`, 10000);
+    await sleep(300);
+    const second = await shown();
+    check("  Seite 2 behält die Sortierung", second.url.includes("sortierung=prioritaet-auf") && second.numbers === await expected("priority", true, 2), JSON.stringify(second).slice(0, 300));
+    await clickHeader("Kunde");
+    const customers = await shown();
+    check("  Kunde A–Z, zurück auf Seite 1", customers.url.includes("sortierung=kunde-auf") && !customers.url.includes("seite=") && customers.numbers === await expected("company_name", true), JSON.stringify(customers).slice(0, 300));
+    await page.open(`${BASE}/dashboard/anfragen?ansicht=alle&sortierung=dispatcher-auf`);
+    const byDispatcher = await shown();
+    check("  Admin: nach Dispatcher sortierbar", byDispatcher.sorted === "Dispatcher:ascending", JSON.stringify(byDispatcher).slice(0, 200));
+    // The search keeps the sorting
+    await page.open(`${BASE}/dashboard/anfragen?ansicht=alle&sortierung=prioritaet-ab`);
+    await page.eval(`(() => { const input = document.querySelector("#filter-suche"); input.value = "GmbH"; input.form.requestSubmit(); })()`);
+    await page.until(`location.search.includes("suche=GmbH")`, 10000);
+    check("  Suche behält die Sortierung", (await page.eval("location.search")).includes("sortierung=prioritaet-ab"));
+    for (const width of [1440, 768, 390]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/anfragen?ansicht=alle&sortierung=prioritaet-ab`);
+      await page.eval(`document.querySelector(".req-sort").open = true`);
+      const menu = await page.eval(`({ items: document.querySelectorAll(".req-sort a").length, current: document.querySelector('.req-sort a[aria-current="true"]')?.textContent, scroll: document.documentElement.scrollWidth, width: innerWidth, visible: !!document.querySelector(".req-sort summary").offsetParent })`);
+      check(`  Menü „Sortiert“ @${width}: 12 Möglichkeiten, aktuelle markiert, kein horizontales Scrollen`, menu.visible && menu.items === 12 && menu.current === "Priorität, höchste zuerst" && menu.scroll <= menu.width, JSON.stringify(menu));
+      if (SHOTS) {
+        const shot = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, `anfragen-sortierung-${width}.png`), Buffer.from(shot.data, "base64"));
+      }
+    }
+    await page.eval(`[...document.querySelectorAll(".req-sort a")].find((a) => a.textContent === "Kunde, Z–A").click()`);
+    await page.until(`location.search.includes("sortierung=kunde-ab")`, 10000);
+    check("  Smartphone: Auswahl „Kunde, Z–A“ sortiert", (await shown()).numbers === await expected("company_name", false));
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("dispo1.demo@example.com") });
+    await page.open(`${BASE}/dashboard/anfragen?ansicht=alle&sortierung=dispatcher-auf`);
+    const dispo = await shown();
+    check("  Dispatcher: ohne Dispatcher-Spalte keine Sortierung danach (Standard)", dispo.label === "Eingang, neueste zuerst" && !(await page.eval(`[...document.querySelectorAll(".req-sort a")].some((a) => a.textContent.startsWith("Dispatcher"))`)), JSON.stringify(dispo).slice(0, 200));
+  }
+
   console.log("\nAnfrage aus Sicht des Technikers: eigener Einsatz oben, nur technische Angaben");
   {
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });

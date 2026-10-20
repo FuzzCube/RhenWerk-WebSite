@@ -2078,6 +2078,34 @@
               "npm run test:unit"
             ]
           }
+        },
+        {
+          "id": "task-12-12",
+          "title": "Anfragenliste sortierbar",
+          "description": "Nutzerwunsch 20.10.2026: Die Anfragenliste ließ sich nur nach Eingang sortieren; eine eigene Anfrage verschwand hinter Testanfragen auf Seite 2. Sortierung nach Eingang (Standard, neueste zuerst), Priorität, Anfragenummer, Kunde, Leistung und – für Manager/Admin – Dispatcher; Klick auf den Spaltenkopf, auf dem Smartphone Auswahl „Sortieren“; Sortierung bleibt in der Adresse über Seiten, Filter, Suche und Ansichten erhalten.",
+          "order": 12,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "startedAt": "2026-10-20T14:30:31Z",
+          "definitionOfDone": [
+            "Sortierung nach Eingang (Standard), Priorität, Anfrage, Kunde, Leistung, Dispatcher (Manager/Admin), auf- und absteigend",
+            "Spaltenkopf mit Pfeil und aria-sort; Auswahl für schmale Bildschirme",
+            "Parameter sortierung bleibt bei Seite, Filter, Suche, Ansicht; Seitenwechsel stabil",
+            "Unit-Test, test:ui, Sichtprüfung 390/768/1440, lint, typecheck, build"
+          ],
+          "completedAt": "2026-10-20T15:04:59Z",
+          "verification": {
+            "status": "passed",
+            "summary": "lib/request-sort.ts (Parameter sortierung=<feld>-<auf|ab>, Standard Eingang neueste zuerst ohne Adressparameter, Richtungswechsel, Beschriftung); listRequests sortiert nach Spalte (leere zuletzt), dann Eingang und id; Dispatcher über eingebettetes Profil, nur Manager/Admin (sonst Standard). DataTable: sortierbare Spaltenköpfe mit Pfeil und aria-sort, neue Option tablet: hide. Anfragenliste: Spaltenköpfe Anfrage, Kunde, Leistung, Priorität, Dispatcher, Eingang; Menü „Sortiert“ mit 12 bzw. 10 Möglichkeiten für alle Breiten; Sortierung in Suche, Filtern, Ansichten und Seiten erhalten, Wechsel springt auf Seite 1. Nebenbei: Prioritätskennzeichen bricht nicht mehr um; auf Tablets (768–1099 px) waren sieben Spalten zu eng (Wörter buchstabenweise umbrochen, Eingang abgeschnitten, schon vorher) – Leistung und Dispatcher dort ausgeblendet. Geprüft: test:unit 92/92 (neu request-sort.test.mjs), test:ui alle bestanden (neu 12 Prüfungen: Reihenfolge gleich Datenbank für Standard, Priorität ab/auf, Seite 2, Kunde, Dispatcher, Suche, Menü bei 1440/768/390, Smartphone-Auswahl, Dispatcher-Rolle), Sichtprüfung 390/768/1440, lint, typecheck, build.",
+            "commands": [
+              "npm run test:unit",
+              "UI_SCREENSHOTS=… npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         }
       ]
     },

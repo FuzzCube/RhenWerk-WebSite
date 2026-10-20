@@ -10,6 +10,7 @@ import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { DATE_FIELDS, countViews, filterQuery, getEmployeeNames, listRequests, openHoldStarts, PAGE_SIZE, parseRequestFilters, viewsFor, type RequestFilters, type RequestListItem, type RequestView } from "@/lib/dashboard/requests";
 import { REQUEST_DISPLAY_STATUSES } from "@/lib/display-status";
+import { DEFAULT_SORT, nextSort, REQUEST_SORTS, sortLabel, sortParam, type SortKey } from "@/lib/request-sort";
 import { formatDate, formatDateTime, formatNumber, formatTime } from "@/lib/format";
 import { label, STATUS } from "@/lib/status";
 
@@ -42,10 +43,14 @@ const DESCRIPTION: Record<RequestView, string> = {
 
 // Request list (task-4-3; redesigned in task-10-3: canvas "Anfragen – Liste", then 12.10.2026 after user
 // feedback): views as a side menu grouped by urgency, one heading with the meaning of the chosen view,
-// search and a compact filter panel with removable chips for active filters.
+// search and a compact filter panel with removable chips for active filters. Sortable by column header and the
+// "Sortiert" menu (task-12-12).
 export default async function RequestsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const employee = await requireRole(rolesFor("/dashboard/anfragen"));
   const filters = parseRequestFilters(await searchParams);
+  // Only manager and admin have the dispatcher column, so only they may sort by it
+  const showsDispatcher = employee.role === "manager" || employee.role === "admin";
+  if (filters.sort.key === "dispatcher" && !showsDispatcher) filters.sort = DEFAULT_SORT;
   const [{ rows, total, error }, names, counts] = await Promise.all([listRequests(filters, employee.id), getEmployeeNames(), countViews(employee.role, employee.id)]);
   const holds = employee.role === "technician" ? new Map<string, string>() : await openHoldStarts(rows.map((row) => row.id));
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -57,20 +62,33 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const chips = activeChips(filters, href);
   const furtherCount = [filters.display, filters.intake, filters.work, filters.priority].filter(Boolean).length;
 
+  // Column header link: the active column turns around, another one starts in its natural direction
+  const sortable = (key: SortKey): Column<RequestListItem>["sort"] => {
+    const next = nextSort(filters.sort, key);
+    return {
+      href: href({ sort: next }),
+      active: filters.sort.key === key ? (filters.sort.dir === "auf" ? "ascending" : "descending") : null,
+      title: `Sortieren: ${sortLabel(next)}`,
+    };
+  };
+  const sortOptions = (Object.keys(REQUEST_SORTS) as SortKey[]).filter((key) => key !== "dispatcher" || showsDispatcher)
+    .flatMap((key) => [REQUEST_SORTS[key].first, REQUEST_SORTS[key].first === "ab" ? "auf" : "ab"].map((dir) => ({ key, dir: dir as "auf" | "ab" })));
   const columns: Column<RequestListItem>[] = [
-    { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} />{holds.has(row.id) && <span className="rw-flag rw-flag--hold" title={`Vorgemerkt: ${formatDateTime(holds.get(row.id)!)}`}>Terminwunsch</span>}</>, mobile: "title" },
-    { key: "company", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub">{row.city}</span></> },
-    { key: "service", header: "Leistung", cell: (row) => <>{label("service_kind", row.service_kind)}<span className="cell-sub">{label("equipment_kind", row.equipment_kind)}</span></>, mobile: "hide" },
+    { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} />{holds.has(row.id) && <span className="rw-flag rw-flag--hold" title={`Vorgemerkt: ${formatDateTime(holds.get(row.id)!)}`}>Terminwunsch</span>}</>, mobile: "title", sort: sortable("anfrage") },
+    { key: "company", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub">{row.city}</span></>, sort: sortable("kunde") },
+    { key: "service", header: "Leistung", cell: (row) => <>{label("service_kind", row.service_kind)}<span className="cell-sub">{label("equipment_kind", row.equipment_kind)}</span></>, mobile: "hide", tablet: "hide", sort: sortable("leistung") },
     { key: "status", header: "Status", cell: (row) => <RequestStatusChip intakeStatus={row.intake_status} workStatus={row.work_status} /> },
-    { key: "priority", header: "Priorität", cell: (row) => <PriorityText priority={row.priority} /> },
+    { key: "priority", header: "Priorität", cell: (row) => <PriorityText priority={row.priority} />, sort: sortable("prioritaet") },
     // A dispatcher only sees requests assigned to them, so the column would always show their own name
-    ...(employee.role === "technician" || employee.role === "dispatcher" ? [] : [{
+    ...(!showsDispatcher ? [] : [{
       key: "dispatcher",
       header: "Dispatcher",
       cell: (row: RequestListItem) => (row.dispatcher_id ? names.get(row.dispatcher_id) : <span className="rw-unassigned">Nicht zugewiesen</span>),
       mobile: "hide" as const,
+      tablet: "hide" as const,
+      sort: sortable("dispatcher"),
     }]),
-    { key: "created", header: "Eingang", cell: (row) => <><span className="mono">{formatDate(row.created_at)}</span><span className="cell-sub mono">{formatTime(row.created_at)}</span></> },
+    { key: "created", header: "Eingang", cell: (row) => <><span className="mono">{formatDate(row.created_at)}</span><span className="cell-sub mono">{formatTime(row.created_at)}</span></>, sort: sortable("eingang") },
   ];
 
   return (
@@ -170,7 +188,15 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
                   <strong>{formatNumber(total)} {total === 1 ? "Anfrage" : "Anfragen"}</strong> · {current.label}
                   {total > 0 && pages > 1 && <> · Seite <span className="mono">{filters.page}</span> von <span className="mono">{pages}</span></>}
                 </p>
-                <span>Sortiert nach Eingang, neueste zuerst</span>
+                <details className="req-sort">
+                  <summary>Sortiert: <strong>{sortLabel(filters.sort)}</strong><Icon name="chevron-down" size={16} /></summary>
+                  <ul aria-label="Sortierung wählen">
+                    {sortOptions.map((option) => {
+                      const active = option.key === filters.sort.key && option.dir === filters.sort.dir;
+                      return <li key={`${option.key}-${option.dir}`}><Link href={href({ sort: option })} scroll={false} aria-current={active ? "true" : undefined}>{sortLabel(option)}</Link></li>;
+                    })}
+                  </ul>
+                </details>
               </div>
               <DataTable
                 caption={`Anfragen · ${current.label}`}
@@ -214,6 +240,7 @@ function HiddenFilters({ filters, skip }: { filters: RequestFilters; skip: "such
   return (
     <>
       <input type="hidden" name="ansicht" value={filters.view} />
+      {sortParam(filters.sort) && <input type="hidden" name="sortierung" value={sortParam(filters.sort)!} />}
       {skip !== "suche" && filters.q && <input type="hidden" name="suche" value={filters.q} />}
       {skip !== "further" && (
         <>

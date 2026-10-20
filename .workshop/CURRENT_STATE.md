@@ -4,19 +4,19 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v14, 14 Phasen, 70 Tasks, Fortschritt 100 % (Gewicht 189 von 189).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v14, 14 Phasen, 71 Tasks, Fortschritt 100 % (Gewicht 190 von 190).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Alle Phasen 0–13 abgeschlossen (zuletzt `task-12-11` am 20.10.2026). Keine Aufgabe in Arbeit, keine Blockierung. Neue Arbeit entsteht nur nach Rücksprache als neuer Task (Roadmap-Version erhöhen).
+Alle Phasen 0–13 abgeschlossen (zuletzt `task-12-12` am 20.10.2026). Keine Aufgabe in Arbeit, keine Blockierung. Neue Arbeit entsteht nur nach Rücksprache als neuer Task (Roadmap-Version erhöhen).
 
 ## Zuletzt abgeschlossen
 
+- `task-12-12` (20.10.2026): Anfragenliste sortierbar (Spaltenköpfe, Menü „Sortiert“, `?sortierung=`, `lib/request-sort.ts`); auf Tablets Leistung/Dispatcher ausgeblendet (`Column.tablet`).
 - `task-12-11` (20.10.2026): Betriebskonzept `docs/betrieb.md` (Stufe 1 eigener Rechner + Cloudflare Tunnel unter `rheinwerk-service.online`, Stufe 2 Server, Sicherung, Wartung, Notfälle); `npm run backup` (verschlüsselt mit `BACKUP_PASSPHRASE`) und `npm run backup:check` (Wiederherstellung in Datenbank `backup_check`).
 - `task-12-10` (20.10.2026): Dokumentation `docs/supabase-lokal.md` und `docs/n8n-workflows.md` (acht Workflows, Verbindungen, Sequenzdiagramme, Einrichtung) nach Rückmeldung des Dozenten.
-- `task-12-9` (20.10.2026): Hinweis „E-Mail-Versand hängt“ im Dashboard (RPC `send_backlog`).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
