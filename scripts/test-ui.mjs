@@ -669,6 +669,29 @@ try {
     const { data: origin } = await admin.from("requests").select("request_number, customer_id").eq("id", createReq.id).single();
     await page.open(`${BASE}/dashboard/kunden/${origin.customer_id}`);
     check("  Kundenseite: Herkunft „Automatisch aus RIS-…“ mit Link zur Anfrage", await page.eval(`(() => { const dd = document.querySelector("[data-origin]"); return !!dd && dd.textContent.includes(${JSON.stringify(origin.request_number)}) && !!dd.querySelector('a[href="/dashboard/anfragen/${createReq.id}"]'); })()`));
+    // Customer number and main address in the master data (task-15-1)
+    const { data: master } = await admin.from("customers").select("customer_number, customer_sites(street_house_number, postal_code, city)").eq("id", origin.customer_id).single();
+    for (const width of [390, 768, 1440]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/kunden/${origin.customer_id}`);
+      const facts = await page.eval(`(() => { const rows = [...document.querySelectorAll("#stammdaten-title ~ .facts > div")]; const number = document.querySelector("[data-customer-number]"); const address = document.querySelector("[data-main-address]");
+        return { first: rows[0]?.querySelector("dt")?.textContent, number: number?.querySelector(".copy-value__text")?.textContent, button: !!number?.querySelector("button"), address: address?.textContent ?? "", scroll: document.documentElement.scrollWidth, width: innerWidth }; })()`);
+      const site = master.customer_sites[0];
+      check(`  Stammdaten: Kundennummer als erste Zeile mit Kopieren, Anschrift mit PLZ, kein horizontales Scrollen @${width}`, facts.first === "Kundennummer" && facts.number === master.customer_number && facts.button
+        && facts.address.includes(site.street_house_number) && facts.address.includes(site.postal_code) && facts.address.includes(site.city) && facts.scroll <= facts.width, JSON.stringify(facts));
+      if (SHOTS) {
+        const shot = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, `kunde-stammdaten-${width}.png`), Buffer.from(shot.data, "base64"));
+      }
+    }
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    // Headless Chrome only grants the clipboard to a focused page with permission
+    await page.send("Browser.grantPermissions", { origin: new URL(BASE).origin, permissions: ["clipboardReadWrite", "clipboardSanitizedWrite"] });
+    await page.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+    await page.eval(`document.querySelector("[data-customer-number] button").click()`);
+    const copied = await waitFor(async () => page.eval(`document.querySelector("[data-customer-number] [role=status]").textContent === "Kundennummer kopiert"`), 3000);
+    const clipboard = await page.eval(`navigator.clipboard.readText().catch((e) => String(e))`);
+    check("  „Kopieren“ legt die Kundennummer in die Zwischenablage", copied && clipboard === master.customer_number, JSON.stringify({ copied, clipboard }));
 
     const plainReq = await newRequest("kunde-ohne-vorschlag");
     await page.open(`${BASE}/dashboard/anfragen/${plainReq.id}`);

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { addSite, updateCustomer, updateSite } from "@/app/(dashboard)/dashboard/kunden/actions";
 import { CustomerShell } from "@/components/dashboard/customer-shell";
+import { CopyValue } from "@/components/dashboard/ui/copy-value";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { CheckboxField, HiddenField, SaveForm, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { EmptyState } from "@/components/dashboard/ui/states";
@@ -18,7 +19,7 @@ type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<str
 
 export const metadata: Metadata = { title: "Kunde" };
 
-// One customer (task-13-10): master data (read-only, edit form behind „Stammdaten ändern“, task-12-8), sites (the phone assistant checks the postal code of an active site),
+// One customer (task-13-10): master data with customer number and main address (task-15-1; read-only, edit form behind „Stammdaten ändern“, task-12-8), sites (the phone assistant checks the postal code of an active site),
 // linked requests. Customers and sites are deactivated, not deleted, so linked requests keep their reference.
 export default async function CustomerPage({ params, searchParams }: Props) {
   await requireRole(rolesFor("/dashboard/kunden"));
@@ -26,6 +27,8 @@ export default async function CustomerPage({ params, searchParams }: Props) {
   const detail = await getCustomer(id);
   if (!detail) notFound();
   const { customer, sites, requests } = detail;
+  // Main address: the oldest active site (sites come ordered by creation)
+  const mainSite = sites.find((site) => site.is_active);
   const siteText = new Map(sites.map((site) => [site.id, `${site.street_house_number}, ${site.city}`]));
 
   const requestColumns: Column<CustomerRequest>[] = [
@@ -40,7 +43,7 @@ export default async function CustomerPage({ params, searchParams }: Props) {
       current={null}
       counts={null}
       title={customer.company_name}
-      description={<><span className="mono">{customer.customer_number}</span> · {customer.is_active ? "aktiv" : "deaktiviert"} · zuletzt geändert <span className="mono">{formatDateTime(customer.updated_at)}</span>{customer.is_demo && <> <span className="demo-tag">Demodaten</span></>}</>}
+      description={<>{customer.is_active ? "aktiv" : "deaktiviert"} · zuletzt geändert <span className="mono">{formatDateTime(customer.updated_at)}</span>{customer.is_demo && <> <span className="demo-tag">Demodaten</span></>}</>}
     >
       <p><Link href="/dashboard/kunden">← Alle Kunden</Link></p>
       {query.angelegt === "1" && <p className="notice" role="status">Kunde angelegt.</p>}
@@ -48,7 +51,11 @@ export default async function CustomerPage({ params, searchParams }: Props) {
       <section className="request-section" aria-labelledby="stammdaten-title">
         <h2 id="stammdaten-title">Stammdaten</h2>
         <dl className="facts">
+          <div><dt>Kundennummer</dt><dd data-customer-number><CopyValue value={customer.customer_number} label="Kundennummer" /></dd></div>
           <div><dt>Firma</dt><dd>{customer.company_name}</dd></div>
+          <div><dt>Anschrift</dt><dd data-main-address>{mainSite
+            ? <>{mainSite.street_house_number}<br /><span className="mono">{mainSite.postal_code}</span> {mainSite.city}{mainSite.label && <span className="cell-sub">{mainSite.label}</span>}</>
+            : <>Noch kein aktiver Standort – <a href="#standorte-title">unten hinzufügen</a></>}</dd></div>
           <div><dt>Ansprechperson</dt><dd>{customer.contact_name ?? EMPTY}</dd></div>
           <div><dt>E-Mail</dt><dd>{customer.business_email ? <a href={`mailto:${customer.business_email}`}>{customer.business_email}</a> : EMPTY}</dd></div>
           <div><dt>Telefon</dt><dd>{customer.phone_number ? <a className="mono" href={`tel:${customer.phone_number.replace(/[^\d+]/g, "")}`}>{customer.phone_number}</a> : EMPTY}</dd></div>

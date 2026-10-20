@@ -10,6 +10,7 @@ import {
   ChevronRight,
   CircleCheck,
   Clock3,
+  Copy,
   FileText,
   Info,
   LoaderCircle,
@@ -39,6 +40,7 @@ export type IconName =
   | "chevron-right"
   | "clock"
   | "compressor"
+  | "copy"
   | "document"
   | "filter"
   | "hazard"
@@ -71,6 +73,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
     "chevron-down": ChevronDown,
     "chevron-right": ChevronRight,
     clock: Clock3,
+    copy: Copy,
     document: FileText,
     filter: SlidersHorizontal,
     hazard: TriangleAlert,

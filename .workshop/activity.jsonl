@@ -337,3 +337,5 @@
 {"timestamp":"2026-10-20T20:09:44Z","type":"task_ready","taskId":"task-15-1","summary":"Startbar (keine offenen Abhängigkeiten)."}
 {"timestamp":"2026-10-20T20:09:44Z","type":"task_ready","taskId":"task-15-2","summary":"Startbar (keine offenen Abhängigkeiten)."}
 {"timestamp":"2026-10-20T20:09:44Z","type":"task_ready","taskId":"task-15-3","summary":"Startbar (keine offenen Abhängigkeiten)."}
+{"timestamp":"2026-10-20T20:15:04Z","type":"task_started","taskId":"task-15-1","summary":"Kundennummer und Hauptanschrift in den Stammdaten nach Planbestätigung begonnen."}
+{"timestamp":"2026-10-20T20:35:18Z","type":"task_completed","taskId":"task-15-1","summary":"Kundennummer mit Kopieren und Hauptanschrift in den Stammdaten; test:ui, typecheck, lint, build bestanden."}

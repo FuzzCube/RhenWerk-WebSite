@@ -4,24 +4,23 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v16, 16 Phasen, 78 Tasks, Fortschritt 97,5 % (Gewicht 197 von 202).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v16, 16 Phasen, 78 Tasks, Fortschritt 98 % (Gewicht 198 von 202).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Phasen 0–14 abgeschlossen; **Phase 15 „Kundennummer sichtbar“** geplant (Roadmap v16, Nutzerentscheidung 20.10.2026 nach Testanruf): Kundennummer in Stammdaten (`task-15-1`), Listen, Rechnungen, Einsatz und Rechnungs-PDF (`task-15-2`) und E-Mails an Kunden (`task-15-3`); alle drei startbar, keine in Arbeit. Zuvor **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`).
+Phasen 0–14 abgeschlossen; **Phase 15 „Kundennummer sichtbar“** geplant (Roadmap v16, Nutzerentscheidung 20.10.2026 nach Testanruf): Kundennummer in Stammdaten (`task-15-1`, abgeschlossen), Listen, Rechnungen, Einsatz und Rechnungs-PDF (`task-15-2`) und E-Mails an Kunden (`task-15-3`); `task-15-2` und `15-3` startbar, keine in Arbeit. Zuvor **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`).
 
 Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
 
 ## Zuletzt abgeschlossen
 
+- `task-15-1` (20.10.2026): Stammdaten der Kundenseite beginnen mit der Kundennummer (Kopieren, `components/dashboard/ui/copy-value.tsx`), danach Firma und Anschrift (ältester aktiver Standort).
 - `task-14-4` (20.10.2026): „Kunde anlegen“ mit Erklärtext und Warnung „Ähnlicher Kunde vorhanden“ (`find_similar_customers`), Herkunft `customers.origin_request_id` in Liste und Kundenseite (Migration `20261020160000_customer_origin.sql`).
 - `task-14-3` (20.10.2026): einmalige Nachzuordnung (Migration `20261020150000_customer_backfill.sql`, `npm run customers:backfill`): 1 Kunde angelegt, 0 verknüpft, 0 Vorschläge.
 - `task-14-2` (20.10.2026): Karte „Möglicher Bestandskunde“, RPC `create_customer_from_request`, Kennzeichen „Kunde prüfen“ in Liste und Erstbearbeitung (Migration `20261020140000_customer_from_request.sql`).
 - `task-14-1` (20.10.2026): automatische Kundenzuordnung/-anlage beim Abschluss der Erstbearbeitung (Migration `20261020130000_auto_customers.sql`, Vorschläge in `request_customer_suggestions`); Kundenliste-Einbettung mit `requests_customer_id_fkey`.
-- `task-12-12` (20.10.2026): Anfragenliste sortierbar (Spaltenköpfe, Menü „Sortiert“, `?sortierung=`, `lib/request-sort.ts`); auf Tablets Leistung/Dispatcher ausgeblendet (`Column.tablet`).
-- `task-12-11` (20.10.2026): Betriebskonzept `docs/betrieb.md` (Stufe 1 eigener Rechner + Cloudflare Tunnel unter `rheinwerk-service.online`, Stufe 2 Server, Sicherung, Wartung, Notfälle); `npm run backup` (verschlüsselt mit `BACKUP_PASSPHRASE`) und `npm run backup:check` (Wiederherstellung in Datenbank `backup_check`).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -53,4 +52,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 15 umsetzen (startbar `task-15-1`, `task-15-2`, `task-15-3`). Weitere mögliche Tasks nur nach Rücksprache: eigene Rechnungsanschrift je Kunde, Sprachtest von Mira nach neuem ElevenLabs-Guthaben, Löschung von Anrufzusammenfassungen ohne Anfrage nach 12 Monaten, Deployment (Supabase Cloud, öffentliche Website auf n8n und Demo-Anruf), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 15 fortsetzen (startbar `task-15-2`, `task-15-3`). Weitere mögliche Tasks nur nach Rücksprache: eigene Rechnungsanschrift je Kunde, Sprachtest von Mira nach neuem ElevenLabs-Guthaben, Löschung von Anrufzusammenfassungen ohne Anfrage nach 12 Monaten, Deployment (Supabase Cloud, öffentliche Website auf n8n und Demo-Anruf), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

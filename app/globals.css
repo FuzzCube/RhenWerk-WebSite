@@ -530,6 +530,11 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .facts dt { font-size: 14px; color: var(--rw-text-secondary); hyphens: auto; overflow-wrap: break-word; min-width: 0; }
 .facts dd { overflow-wrap: anywhere; }
 .facts dd.pre-line { white-space: pre-line; }
+/* Value with copy button (task-15-1): customer number in the master data */
+.copy-value { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.copy-value__text { font-size: 18px; font-weight: 600; color: var(--rw-text-primary); letter-spacing: 0.02em; }
+.copy-value__button { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 10px; border: 1px solid var(--rw-action-secondary-border); border-radius: var(--rw-radius-sm); background: var(--rw-surface-raised); color: var(--rw-action-secondary-fg); font: 600 13px var(--rw-font-body); cursor: pointer; }
+.copy-value__button:hover { background: var(--rw-action-secondary-bg-hover); }
 @media (min-width: 900px) {
   .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .facts > div:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
