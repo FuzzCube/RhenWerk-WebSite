@@ -2612,18 +2612,26 @@
         },
         {
           "weight": 2,
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-20T17:07:37Z",
+          "completedAt": "2026-10-20T18:58:55Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-20T18:58:55Z",
+            "commands": [
+              "npx supabase test db",
+              "npm run customers:backfill",
+              "npm run backup",
+              "npm run customers:backfill -- --apply",
+              "npm run test:unit",
+              "npm run lint",
+              "npx tsc --noEmit"
+            ],
+            "summary": "Migration 20261020150000_customer_backfill.sql: Regeln von task-14-1 in private.assign_request_customer (Trigger ruft nur noch diese Funktion), private.backfill_request_customers(apply) für bearbeitete Live-Anfragen ohne Kunden und ohne offenen Vorschlag; Probelauf rollt je Anfrage zurück und setzt die Kundennummernfolge zurück. Skript npm run customers:backfill (Bericht; --apply nur mit Sicherung aus der letzten Stunde). Geprüft: customer_backfill.test.sql 17/17, test:db sonst unverändert (technician_load_intervals scheitert weiter an lokalen Daten), Probelauf zweimal ohne Änderung. Nach Nutzerfreigabe: npm run backup (rheinwerk-20261020T185815Z.tar.gz.enc), Ausführung. Ergebnis: 1 angelegt (RIS-2026-01948 → K-20181 Test Unternehmen, Standort Teststrasse 3, 68167 Mannheim, Ereignis customer_auto_created), 0 verknüpft, 0 Vorschläge, 0 übersprungen; zweiter Probelauf findet nichts. Doku: database.md, betrieb.md, testing.md."
           },
           "id": "task-14-3",
           "title": "Bestehende bearbeitete Anfragen nachträglich zuordnen",
           "order": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-14-1"
           ],

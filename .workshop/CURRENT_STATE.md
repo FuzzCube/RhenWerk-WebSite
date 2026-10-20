@@ -10,12 +10,13 @@ Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main
 
 ## Aktive Phase und Aufgabe
 
-Phasen 0–13 abgeschlossen. Aktiv: **Phase 14 „Kundenstamm aus Anfragen“** (Roadmap v15, Regeln in `docs/decisions.md` und `docs/database.md`). `task-14-1` erledigt: Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (Trigger `requests_link_customer`). `task-14-2` erledigt: unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ auf der Anfrageseite (Zuordnen / Neuen Kunden anlegen über `create_customer_from_request`). Startbar: `task-14-3` (Nachzuordnung bestehender Anfragen, u. a. RIS-2026-01948; erst Probelauf, Ausführung nach Freigabe), `task-14-4` (manuelles Anlegen mit Dublettenprüfung). Keine Aufgabe in Arbeit.
+Phasen 0–13 abgeschlossen. Aktiv: **Phase 14 „Kundenstamm aus Anfragen“** (Roadmap v15, Regeln in `docs/decisions.md` und `docs/database.md`). `task-14-1` erledigt: Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (Trigger `requests_link_customer`). `task-14-2` erledigt: unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ auf der Anfrageseite (Zuordnen / Neuen Kunden anlegen über `create_customer_from_request`). `task-14-3` erledigt: bestehende Anfrage RIS-2026-01948 nachträglich zugeordnet (K-20181, `npm run customers:backfill`). Startbar: `task-14-4` (manuelles Anlegen mit Dublettenprüfung). Keine Aufgabe in Arbeit.
 
 Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
 
 ## Zuletzt abgeschlossen
 
+- `task-14-3` (20.10.2026): einmalige Nachzuordnung (Migration `20261020150000_customer_backfill.sql`, `npm run customers:backfill`): 1 Kunde angelegt, 0 verknüpft, 0 Vorschläge.
 - `task-14-2` (20.10.2026): Karte „Möglicher Bestandskunde“, RPC `create_customer_from_request`, Kennzeichen „Kunde prüfen“ in Liste und Erstbearbeitung (Migration `20261020140000_customer_from_request.sql`).
 - `task-14-1` (20.10.2026): automatische Kundenzuordnung/-anlage beim Abschluss der Erstbearbeitung (Migration `20261020130000_auto_customers.sql`, Vorschläge in `request_customer_suggestions`); Kundenliste-Einbettung mit `requests_customer_id_fkey`.
 - `task-12-12` (20.10.2026): Anfragenliste sortierbar (Spaltenköpfe, Menü „Sortiert“, `?sortierung=`, `lib/request-sort.ts`); auf Tablets Leistung/Dispatcher ausgeblendet (`Column.tablet`).

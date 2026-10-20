@@ -329,3 +329,5 @@
 {"timestamp":"2026-10-20T16:17:07Z","type":"task_ready","taskId":"task-14-2","summary":"Abhängigkeit task-14-1 erfüllt."}
 {"timestamp":"2026-10-20T16:23:33Z","type":"task_started","taskId":"task-14-2","summary":"Hinweis „Möglicher Bestandskunde“ nach bestätigtem Plan begonnen."}
 {"timestamp": "2026-10-20T16:48:54Z", "type": "task_completed", "taskId": "task-14-2", "summary": "Karte „Möglicher Bestandskunde“ mit Zuordnen/Neuen Kunden anlegen, RPC create_customer_from_request, Hinweise in Liste und Erstbearbeitung; alle Prüfungen bestanden."}
+{"timestamp": "2026-10-20T17:07:37Z", "type": "task_started", "taskId": "task-14-3", "summary": "Nachzuordnung bestehender Anfragen nach bestätigtem Plan begonnen."}
+{"timestamp": "2026-10-20T18:58:55Z", "type": "task_completed", "taskId": "task-14-3", "summary": "Nachzuordnung ausgeführt: 1 Kunde angelegt (RIS-2026-01948 → K-20181), 0 verknüpft, 0 Vorschläge."}

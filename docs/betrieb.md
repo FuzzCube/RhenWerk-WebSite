@@ -261,6 +261,15 @@ Nächster sinnvoller Ausbau: ein n8n-*Error Workflow*, der bei jedem fehlgeschla
 6. App neu starten: `launchctl kickstart -k gui/$(id -u)/online.rheinwerk.web`.
 7. Rückweg: vorherigen Commit auschecken und neu bauen; bei Datenproblemen Sicherung aus Schritt 1 nach 4.5.
 
+**Einmalige Datenübernahmen** laufen nach demselben Muster: Probelauf mit Bericht, Freigabe, Sicherung, Ausführung. Beispiel Kundenstamm (task-14-3): bearbeitete Live-Anfragen ohne Kunden nachträglich zuordnen.
+
+```bash
+npm run customers:backfill                            # Probelauf: Bericht, nichts wird geändert
+npm run backup && npm run customers:backfill -- --apply  # Ausführung, verlangt eine Sicherung aus der letzten Stunde
+```
+
+Ein zweiter Lauf findet nichts mehr (Anfragen mit offenem Vorschlag warten auf die Entscheidung auf der Anfrageseite).
+
 ## 7. Notfallanleitungen
 
 | Notfall | Erkennen | Sofortmaßnahme | Danach |
