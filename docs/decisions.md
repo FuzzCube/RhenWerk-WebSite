@@ -330,3 +330,7 @@ Nutzerentscheidung: Weitergearbeitet wird nur im eigenen Repository (`origin`), 
 ## 2026-10-19: Diagrammlegende als Schalter
 
 Nutzerwunsch, task-12-5: Bei zwei oder mehr Reihen ist die Legende eine Reihe von Schaltern (`aria-pressed`); ein Klick blendet eine Reihe aus, y-Achse und Tooltip folgen, die letzte sichtbare Reihe bleibt. Die Datentabelle zeigt immer alle Reihen, die Auswahl wird nicht gespeichert.
+
+## 2026-10-20: Betrieb in zwei Stufen, Sicherung als geprüftes Archiv
+
+Nutzerentscheidung, task-12-11: Stufe 1 ohne laufende Kosten – Website unter `rheinwerk-service.online`, Next.js, n8n und Supabase auf dem eigenen Rechner, öffentlich nur über den bestehenden Cloudflare Tunnel (keine offenen Ports, Supabase nicht veröffentlicht). Stufe 2 später ein Server; empfohlen ein virtueller Server in Deutschland mit denselben Containern, weil der Umzug dann mit den vorhandenen Sicherungsskripten gelingt. Die kostenlosen Oracle-Instanzen reichen bis auf die oft nicht verfügbare Ampere-A1-Instanz nicht. Sicherung: `npm run backup` erzeugt ein Archiv aus `pg_dump`, Storage-Dateien, n8n-Datenbank und – nur verschlüsselt (AES-256, `BACKUP_PASSPHRASE`) – n8n-Schlüssel und `.env.local`; `npm run backup:check` stellt es in eine getrennte Datenbank wieder her und vergleicht Zeilenzahlen. Begründung: Eine Sicherung zählt erst mit geprüfter Wiederherstellung; der n8n-Schlüssel ist ohne Sicherung unersetzlich. Details: `docs/betrieb.md`.

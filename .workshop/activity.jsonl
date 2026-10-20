@@ -318,3 +318,4 @@
 {"timestamp":"2026-10-20T13:37:14Z","type":"task_started","taskId":"task-12-10","summary":"Nach Rückmeldung des Dozenten angelegt: Dokumentation Supabase lokal und n8n-Workflows; task-12-11 Betriebskonzept geplant."}
 {"timestamp":"2026-10-20T13:43:10Z","type":"task_completed","taskId":"task-12-10","summary":"Dokumentation lokales Supabase und n8n-Workflows (Steckbriefe, Verbindungen, Sequenzdiagramme, Einrichtung) erstellt und gegen das laufende System geprüft."}
 {"timestamp":"2026-10-20T13:43:10Z","type":"task_started","taskId":"task-12-11","summary":"Betriebskonzept begonnen: Stufe 1 eigener Rechner mit Cloudflare Tunnel, Stufe 2 Server; Sicherung und Prüfung als npm-Skripte."}
+{"timestamp":"2026-10-20T13:49:53Z","type":"task_completed","taskId":"task-12-11","summary":"Betriebskonzept docs/betrieb.md, npm run backup und backup:check erstellt; Sicherung und Wiederherstellungsprüfung (auch verschlüsselt) bestanden."}

@@ -2055,7 +2055,7 @@
           "description": "Rückmeldung des Dozenten 20.10.2026: künftigen Betrieb, Datensicherung und technische Wartung konkretisieren. Nutzerentscheidung: Stufe 1 ohne Kosten – Website unter rheinwerk-service.online, n8n und Supabase auf dem eigenen Rechner über Cloudflare Tunnel; Stufe 2 später ein echter Server. Neu docs/betrieb.md sowie npm run backup und npm run backup:check (Wiederherstellung in eine Prüfdatenbank).",
           "order": 11,
           "weight": 1,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-12-10"
           ],
@@ -2065,7 +2065,19 @@
             "npm run backup:check stellt eine Sicherung in eine getrennte Datenbank wieder her und vergleicht Zeilenzahlen",
             "Sicherung und Prüfung einmal ausgeführt"
           ],
-          "startedAt": "2026-10-20T13:43:10Z"
+          "startedAt": "2026-10-20T13:43:10Z",
+          "completedAt": "2026-10-20T13:49:53Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Neu docs/betrieb.md: Rahmen und Nutzerentscheidung, Stufe 1 (Aufbau mit Diagramm, Tunnel-Routen auf host.docker.internal, Website unter der Domain schalten, Dauerbetrieb mit launchd, Grenzen, RPO 24 h/RTO ca. 2 h), Stufe 2 (Varianten mit Kosten, Umzug), Datensicherung (Umfang, Erstellen, Prüfen, 3-2-1, launchd-Zeitplan, Wiederherstellung), Überwachung, Wartungsplan mit Deployment-Regeln, Notfallanleitungen, Zuständigkeit. Neu scripts/backup.mjs (npm run backup: pg_dump, Storage-tar, SQLite-Online-Kopie n8n, bei BACKUP_PASSPHRASE n8n-Schlüssel und .env.local, AES-256-Verschlüsselung, Manifest mit Zeilenzahlen und Prüfsummen, Aufbewahrung) und scripts/backup-check.mjs (npm run backup:check: Entschlüsselung, Prüfsummen, Wiederherstellung in Datenbank backup_check ohne pg_cron, Zeilenzahlen von 11 Tabellen, Passwort-Hashes, Storage, n8n integrity_check, Schlüssel). Geprüft: unverschlüsselt und verschlüsselt je Sicherung + Prüfung bestanden (829 Anfragen, 113 Konten, 2950 Nachrichten, 53 Dateien, 28 Workflows; ca. 10 s/5 s), falsche Passphrase meldet sauber Exit 1; Wiederherstellung mit --clean über bestehende Datenbank an der Prüfdatenbank getestet (nur harmlose Realtime-Partitionsmeldungen). Testarchive danach gelöscht. Mermaid gerendert, lint, test:unit 88/88.",
+            "commands": [
+              "npm run backup",
+              "npm run backup:check",
+              "BACKUP_PASSPHRASE=… npm run backup && npm run backup:check",
+              "npm run lint",
+              "npm run test:unit"
+            ]
+          }
         }
       ]
     },

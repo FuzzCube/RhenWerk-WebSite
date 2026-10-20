@@ -4,7 +4,7 @@ Roadmap v14 vollständig abgeschlossen; Stand und bekannte Probleme in `.worksho
 
 1. Sprachtest von Mira, sobald ElevenLabs-Guthaben da ist: Szenarien aus `docs/telefonassistent/testprotokoll.md` per Demo-Anruf (`localhost:3000`, Klick auf die Service-Desk-Nummer), Ergebnisse dort eintragen.
 2. Anrufzusammenfassungen ohne Anfrage nach 12 Monaten löschen (pg_cron wie `call-transcripts-30-days`, Vorgabe in `docs/telefonassistent/datenschutz.md`).
-3. Deployment: Supabase-Cloud-Projekt (`supabase link`, `db push`), Website auf n8n statt Make, `ELEVENLABS_API_KEY` für den Demo-Anruf, Agent-Werkzeuge ohne laufenden Mac erreichbar.
+3. Deployment nach `docs/betrieb.md` (Nutzerentscheidung 20.10.2026): Stufe 1 Website unter `rheinwerk-service.online` über den Cloudflare Tunnel vom eigenen Rechner (Tunnel-Route, Turnstile-Produktionsschlüssel, `site_url`, launchd), tägliche Sicherung per launchd mit `BACKUP_PASSPHRASE` einrichten; Stufe 2 Server später. `ELEVENLABS_API_KEY` für den Demo-Anruf.
 4. SMTP für echte Passwort-Mails (`docs/setup.md`).
 5. Ideen: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
 

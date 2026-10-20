@@ -120,6 +120,10 @@ sender_name = "RheinWerk Service Desk"
 
 Das App-Passwort gehört nur in die Umgebung, nie ins Repository. Ohne eigenen SMTP-Server begrenzt Supabase den Versand stark (`[auth.rate_limit] email_sent`). Im Betrieb außerdem `site_url` und `additional_redirect_urls` auf die echte Domain setzen, sonst verweist der Link auf eine lokale Adresse. Wer keinen Link nutzen kann, erhält vom Admin ein vorläufiges Passwort (Verwaltung → Person → Passwort).
 
+## Sicherung
+
+`npm run backup` sichert Datenbank, Dateien und n8n in ein Archiv, `npm run backup:check` prüft die Wiederherstellung in einer getrennten Datenbank. Vor `supabase db reset` und vor Updates ausführen. Einstellungen, Zeitplan und Wiederherstellung: [betrieb.md](betrieb.md#4-datensicherung).
+
 ## Ports des lokalen Stacks
 
 | Dienst | Port |
