@@ -796,6 +796,10 @@ try {
     check("Kunden: Vorschlag mit Kundennummer", await waitFor(async () => (await options("#kunden-suche")).some((t) => t.includes(demoCustomer.company_name))));
     await page.eval(`document.getElementById(document.querySelector("#kunden-suche").getAttribute("aria-controls")).querySelector('[role="option"]').click()`);
     check("  Klick öffnet den Kunden", await waitFor(async () => (await page.eval("location.pathname")).startsWith("/dashboard/kunden/")));
+    // Found via the contact person: the suggestion names it (task-12-7)
+    const { data: contactCustomer } = await admin.from("customers").select("company_name, contact_name").eq("is_demo", true).not("contact_name", "is", null).order("customer_number").limit(1).single();
+    const byContact = await suggestAs(dispoEmail, "kunden", contactCustomer.contact_name);
+    check("Kunden: Suche nach Kontaktperson zeigt sie im Vorschlag", byContact.items.some((i) => i.title === contactCustomer.company_name && i.meta.includes(contactCustomer.contact_name)), JSON.stringify(byContact.items[0]));
 
     // Fill field: customer number in the Kundenstamm block of a request
     await page.open(`${BASE}/dashboard/anfragen/${own.id}`);

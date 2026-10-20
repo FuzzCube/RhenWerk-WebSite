@@ -54,16 +54,17 @@ async function customerSuggestions(term: string, fill: boolean): Promise<Suggest
   const ids = [...new Set((sites ?? []).map((row) => row.customer_id))];
   const ors = ["customer_number", "company_name", "contact_name", "business_email"].map((column) => `${column}.ilike.*${term}*`);
   if (ids.length > 0) ors.push(`id.in.(${ids.join(",")})`);
-  let query = supabase.from("customers").select("id, customer_number, company_name, is_active, customer_sites(street_house_number, postal_code, city, is_active, created_at)").or(ors.join(","));
+  let query = supabase.from("customers").select("id, customer_number, company_name, contact_name, is_active, customer_sites(street_house_number, postal_code, city, is_active, created_at)").or(ors.join(","));
   // The phone assistant and new links only use active customers
   if (fill) query = query.eq("is_active", true);
   const { data } = await query.order("company_name").limit(SUGGEST_LIMIT);
+  // The contact person is shown because the search also matches it (task-12-7)
   return (data ?? []).map((row) => {
     const site = [...row.customer_sites].sort((a, b) => Number(b.is_active) - Number(a.is_active) || a.created_at.localeCompare(b.created_at))[0];
     return {
       id: row.id,
       title: row.company_name,
-      meta: [row.customer_number, site && `${site.street_house_number}, ${site.postal_code} ${site.city}`, !row.is_active && "inaktiv"].filter(Boolean).join(" · "),
+      meta: [row.customer_number, row.contact_name, site && `${site.street_house_number}, ${site.postal_code} ${site.city}`, !row.is_active && "inaktiv"].filter(Boolean).join(" · "),
       value: row.customer_number,
       href: fill ? null : `/dashboard/kunden/${row.id}`,
     };

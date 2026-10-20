@@ -1939,6 +1939,33 @@
               "npm run build"
             ]
           }
+        },
+        {
+          "id": "task-12-7",
+          "title": "Kundensuche: Kontaktperson in den Vorschlägen",
+          "description": "Nutzerwunsch 20.10.2026: die Suche findet Kunden auch über die Kontaktperson, die Vorschläge zeigten aber nur Firma, Kundennummer und Standort. Die zweite Zeile der Kundenvorschläge (Kunden und Kundennummer-Auswahl) nennt zusätzlich die Kontaktperson, damit erkennbar ist, bei welcher Firma z. B. „Elena Kowalski“ Ansprechpartnerin ist.",
+          "order": 7,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "startedAt": "2026-10-20T11:19:52Z",
+          "definitionOfDone": [
+            "Kundenvorschläge zeigen Kundennummer · Kontaktperson · Standort (Kontakt entfällt, wenn leer)",
+            "Suche nach Kontaktname liefert die passende Firma mit sichtbarem Namen",
+            "test:ui, lint, typecheck, build"
+          ],
+          "completedAt": "2026-10-20T11:34:13Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Kundenvorschläge (lib/dashboard/suggestions.ts, Bereiche kunden und kundennummer) zeigen in der zweiten Zeile Kundennummer · Kontaktperson · Standort; ohne Kontaktperson entfällt der Teil. Die Zeile bricht um (overflow-wrap), nichts wird abgeschnitten. Geprüft: test:ui alle bestanden (neu: Suche nach Kontaktperson liefert die Firma mit dem Namen im Vorschlag), test:unit 85/85, lint, typecheck, build.",
+            "commands": [
+              "npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         }
       ]
     },
