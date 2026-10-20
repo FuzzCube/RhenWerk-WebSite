@@ -4,18 +4,18 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v14, 14 Phasen, 66 Tasks, Fortschritt 100 % (Gewicht 185 von 185).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v14, 14 Phasen, 67 Tasks, Fortschritt 100 % (Gewicht 186 von 186).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Alle Phasen 0–13 abgeschlossen (zuletzt Nachbesserung `task-12-7` am 20.10.2026). Keine Aufgabe in Arbeit, keine Blockierung. Neue Arbeit entsteht nur nach Rücksprache als neuer Task (Roadmap-Version erhöhen).
+Alle Phasen 0–13 abgeschlossen (zuletzt Nachbesserung `task-12-8` am 20.10.2026). Keine Aufgabe in Arbeit, keine Blockierung. Neue Arbeit entsteht nur nach Rücksprache als neuer Task (Roadmap-Version erhöhen).
 
 ## Zuletzt abgeschlossen
 
+- `task-12-8` (20.10.2026): Kundenseite – Stammdaten kompakt als Faktenliste, Formular erst unter „Stammdaten ändern“ und nach dem Speichern wieder zu (`SaveForm` mit `closeOnSuccess`).
 - `task-12-7` (20.10.2026): Kundensuche – Vorschläge nennen die Kontaktperson (Kundennummer · Kontakt · Standort), weil die Suche auch über sie findet (`lib/dashboard/suggestions.ts`).
-- `task-12-6` (20.10.2026): Auswertung Telefon – nur acht Telefon-Kennzahlen (allgemeine Karten nur dort ausgeblendet), „Aktueller Zeitraum“ links der Zeitraumtasten, damit sie beim Blättern nicht springen (`components/dashboard/period-bar.tsx`), Anliegen einklappbar.
 - `task-12-5` (19.10.2026): Legende der Diagramme als Schalter – Reihen ein- und ausblenden, y-Achse und Tooltip folgen, letzte Reihe bleibt, Datentabelle vollständig (`components/dashboard/charts.tsx`).
 
 ## Wo was dokumentiert ist (Telefonassistent)

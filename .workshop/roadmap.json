@@ -1966,6 +1966,34 @@
               "npm run build"
             ]
           }
+        },
+        {
+          "id": "task-12-8",
+          "title": "Kundenseite: Stammdaten kompakt, Bearbeiten auf Klick",
+          "description": "Nutzerwunsch 20.10.2026: die Kundenseite öffnete oben direkt das Bearbeitungsformular. Stammdaten erscheinen jetzt kompakt als Faktenliste (Firma, Ansprechperson, E-Mail, Telefon, Status, Notizen); das Formular liegt eingeklappt unter „Stammdaten ändern“ und schließt nach dem Speichern wieder. Standorte und Anfragen unverändert.",
+          "order": 8,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "startedAt": "2026-10-20T11:45:53Z",
+          "definitionOfDone": [
+            "Stammdaten als kompakte Faktenliste, E-Mail und Telefon als Link",
+            "Formular erst nach Klick auf „Stammdaten ändern“, nach dem Speichern wieder zu, Liste aktualisiert",
+            "Sichtprüfung 390/768/1440 px",
+            "test:ui, lint, typecheck, build"
+          ],
+          "completedAt": "2026-10-20T11:53:15Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Kundenseite (app/(dashboard)/dashboard/kunden/[id]/page.tsx): Stammdaten als Faktenliste (Firma, Ansprechperson, E-Mail als mailto-, Telefon als tel-Link, Status, Notizen; leer „–“), zweispaltig ab 900 px. Formular eingeklappt unter „Stammdaten ändern“, Hinweistext zu E-Mail und Telefonassistent im Formular. SaveForm mit neuer Option closeOnSuccess schließt das umgebende <details> nach erfolgreichem Speichern; refresh() aktualisiert die Liste. Geprüft: test:ui alle bestanden (neu: Übersicht mit eingeklapptem Formular; nach dem Speichern Formular zu und neue Telefonnummer in der Übersicht), Sichtprüfung 390/768/1440 px, test:unit 85/85, lint, typecheck, build.",
+            "commands": [
+              "UI_SCREENSHOTS=… npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         }
       ]
     },

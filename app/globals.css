@@ -527,6 +527,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .facts > div:last-child { border-bottom: 0; }
 .facts dt { font-size: 14px; color: var(--rw-text-secondary); hyphens: auto; overflow-wrap: break-word; min-width: 0; }
 .facts dd { overflow-wrap: anywhere; }
+.facts dd.pre-line { white-space: pre-line; }
 @media (min-width: 900px) {
   .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .facts > div:nth-last-child(2):nth-child(odd) { border-bottom: 0; }

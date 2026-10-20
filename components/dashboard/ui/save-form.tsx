@@ -16,6 +16,7 @@ export function SaveForm({
   submitLabel = "Speichern",
   submitVariant = "primary",
   resetOnSuccess = false,
+  closeOnSuccess = false,
   className,
 }: {
   action: SaveAction;
@@ -23,6 +24,8 @@ export function SaveForm({
   submitLabel?: string;
   submitVariant?: "primary" | "secondary" | "danger";
   resetOnSuccess?: boolean;
+  // Closes the surrounding <details> after a successful save (edit form behind a read-only view)
+  closeOnSuccess?: boolean;
   className?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initialFormState);
@@ -32,8 +35,10 @@ export function SaveForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (state.status === "success" && resetOnSuccess) formRef.current?.reset();
-  }, [state, resetOnSuccess]);
+    if (state.status !== "success") return;
+    if (resetOnSuccess) formRef.current?.reset();
+    if (closeOnSuccess) formRef.current?.closest("details")?.removeAttribute("open");
+  }, [state, resetOnSuccess, closeOnSuccess]);
 
   useEffect(() => {
     if (state.status !== "error") return;

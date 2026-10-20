@@ -11,14 +11,14 @@ import { RequestStatusChip } from "@/components/dashboard/ui/status-chip";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { getCustomer, type CustomerRequest } from "@/lib/dashboard/customers";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { EMPTY, formatDate, formatDateTime } from "@/lib/format";
 import { label } from "@/lib/status";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export const metadata: Metadata = { title: "Kunde" };
 
-// One customer (task-13-10): master data, sites (the phone assistant checks the postal code of an active site),
+// One customer (task-13-10): master data (read-only, edit form behind „Stammdaten ändern“, task-12-8), sites (the phone assistant checks the postal code of an active site),
 // linked requests. Customers and sites are deactivated, not deleted, so linked requests keep their reference.
 export default async function CustomerPage({ params, searchParams }: Props) {
   await requireRole(rolesFor("/dashboard/kunden"));
@@ -47,22 +47,33 @@ export default async function CustomerPage({ params, searchParams }: Props) {
 
       <section className="request-section" aria-labelledby="stammdaten-title">
         <h2 id="stammdaten-title">Stammdaten</h2>
-        <p className="section-note">
-          Die E-Mail-Adresse erhält bei Anrufen eines Bestandskunden die Eingangsbestätigung. Die Kundennummer ist fest.
-          Deaktivierte Kunden findet der Telefonassistent nicht mehr.
-        </p>
-        <SaveForm action={updateCustomer}>
-          <HiddenField name="customer_id" value={customer.id} />
-          <HiddenField name="version" value={customer.version} />
-          <div className="form-grid">
-            <TextField name="company_name" label="Firma" required defaultValue={customer.company_name} />
-            <TextField name="contact_name" label="Ansprechperson" defaultValue={customer.contact_name ?? ""} />
-            <TextField name="business_email" label="E-Mail" type="email" defaultValue={customer.business_email ?? ""} />
-            <TextField name="phone_number" label="Telefon" type="tel" defaultValue={customer.phone_number ?? ""} />
-          </div>
-          <TextAreaField name="notes" label="Notizen" rows={2} defaultValue={customer.notes ?? ""} />
-          <CheckboxField name="is_active" label="Aktiv" defaultChecked={customer.is_active} />
-        </SaveForm>
+        <dl className="facts">
+          <div><dt>Firma</dt><dd>{customer.company_name}</dd></div>
+          <div><dt>Ansprechperson</dt><dd>{customer.contact_name ?? EMPTY}</dd></div>
+          <div><dt>E-Mail</dt><dd>{customer.business_email ? <a href={`mailto:${customer.business_email}`}>{customer.business_email}</a> : EMPTY}</dd></div>
+          <div><dt>Telefon</dt><dd>{customer.phone_number ? <a className="mono" href={`tel:${customer.phone_number.replace(/[^\d+]/g, "")}`}>{customer.phone_number}</a> : EMPTY}</dd></div>
+          <div><dt>Status</dt><dd>{customer.is_active ? "Aktiv" : "Deaktiviert"}</dd></div>
+          <div><dt>Notizen</dt><dd className="pre-line">{customer.notes || EMPTY}</dd></div>
+        </dl>
+        <details className="action">
+          <summary>Stammdaten ändern</summary>
+          <p className="section-note">
+            Die E-Mail-Adresse erhält bei Anrufen eines Bestandskunden die Eingangsbestätigung. Die Kundennummer ist fest.
+            Deaktivierte Kunden findet der Telefonassistent nicht mehr.
+          </p>
+          <SaveForm action={updateCustomer} closeOnSuccess>
+            <HiddenField name="customer_id" value={customer.id} />
+            <HiddenField name="version" value={customer.version} />
+            <div className="form-grid">
+              <TextField name="company_name" label="Firma" required defaultValue={customer.company_name} />
+              <TextField name="contact_name" label="Ansprechperson" defaultValue={customer.contact_name ?? ""} />
+              <TextField name="business_email" label="E-Mail" type="email" defaultValue={customer.business_email ?? ""} />
+              <TextField name="phone_number" label="Telefon" type="tel" defaultValue={customer.phone_number ?? ""} />
+            </div>
+            <TextAreaField name="notes" label="Notizen" rows={2} defaultValue={customer.notes ?? ""} />
+            <CheckboxField name="is_active" label="Aktiv" defaultChecked={customer.is_active} />
+          </SaveForm>
+        </details>
       </section>
 
       <section className="request-section" aria-labelledby="standorte-title">

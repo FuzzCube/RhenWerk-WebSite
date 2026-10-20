@@ -724,9 +724,16 @@ try {
       check("  Kunde anlegen: Kundennummer automatisch, Weiterleitung zur Kundenseite", created && /^K-2\d{4}$/.test(customer.customer_number)
         && await waitFor(async () => (await page.eval("location.pathname")) === `/dashboard/kunden/${customer.id}`), JSON.stringify(customer));
 
-      await fillIn(`document.querySelector("#stammdaten-title").closest("section")`, { phone_number: "0621 999000" });
-      const saved = await settled(`document.querySelector("#stammdaten-title").closest("section")`, "save-status--success");
+      // Master data read-only first, the form behind „Stammdaten ändern“ (task-12-8)
+      const stammdaten = `document.querySelector("#stammdaten-title").closest("section")`;
+      const editBox = `${stammdaten}.querySelector("details.action")`;
+      const initial = await page.eval(`(() => ({ facts: ${stammdaten}.querySelector("dl.facts")?.textContent ?? "", open: ${editBox}?.open, summary: ${editBox}?.querySelector("summary").textContent }))()`);
+      check("  Stammdaten als Übersicht, Formular eingeklappt unter „Stammdaten ändern“", initial.facts.includes(company) && initial.open === false && initial.summary === "Stammdaten ändern", JSON.stringify(initial));
+      await fillIn(editBox, { phone_number: "0621 999000" });
+      const saved = await settled(stammdaten, "save-status--success");
       check("  Stammdaten speichern", Boolean(saved) && (await admin.from("customers").select("phone_number").eq("id", customer.id).single()).data.phone_number === "0621 999000", JSON.stringify(saved));
+      const closedAfterSave = await waitFor(async () => { const state = await page.eval(`(() => ({ open: ${editBox}.open, tel: ${stammdaten}.querySelector('dl.facts a[href^="tel:"]')?.textContent }))()`); return state.open === false && state.tel === "0621 999000"; });
+      check("  nach dem Speichern: Formular zu, Übersicht zeigt die neue Telefonnummer", closedAfterSave);
       await fillIn(`[...document.querySelectorAll("details.action")].find((d) => d.querySelector("summary").textContent.includes("Standort hinzufügen"))`,
         { street_house_number: "Lagerstraße 2", postal_code: "68219", city: "Mannheim", label: "Lager" });
       check("  zweiter Standort", await waitFor(async () => ((await admin.from("customer_sites").select("id").eq("customer_id", customer.id)).data ?? []).length === 2));
