@@ -1994,6 +1994,35 @@
               "npm run build"
             ]
           }
+        },
+        {
+          "id": "task-12-9",
+          "title": "Hinweis bei hängendem E-Mail-Versand",
+          "description": "Rücksprache 20.10.2026: der Gmail-Zugang in n8n war seit 19.10. abgelaufen, Eingangsbestätigungen blieben unbemerkt in der Warteschlange. Versandfähige E-Mails (gleiche Bedingung wie claim_queued_messages), die länger als 10 Minuten warten, erscheinen jetzt als Hinweis oben im Dashboard für Disposition, Leitung und Verwaltung.",
+          "order": 9,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "startedAt": "2026-10-20T13:10:02Z",
+          "definitionOfDone": [
+            "RPC liefert Anzahl und ältesten Zeitpunkt versandfähiger E-Mails über 10 Minuten (ohne Demo/Testmails)",
+            "Hinweis oben auf allen Dashboard-Seiten für dispatcher, manager, admin; ohne Stau kein Hinweis",
+            "SQL-Test, Unit-Test, test:ui",
+            "Sichtprüfung 390/768/1440 px; lint, typecheck, build"
+          ],
+          "completedAt": "2026-10-20T13:27:01Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261020120000_send_backlog.sql: RPC send_backlog(min_minutes=10) für Dispatcher, Manager, Admin (security definer, nur Zahlen) mit der Versandbedingung von claim_queued_messages; Testmails zu Demo-Anfragen zählen nicht. Hinweis „E-Mail-Versand hängt“ (components/dashboard/send-backlog-alert.tsx, Text lib/send-backlog.ts) im Dashboard-Layout über jeder Seite; Dispatcher: Verwaltung informieren, Manager/Admin: Zugang „RheinWerk Gmail“ in n8n neu verbinden. Abweichung vom Plan: kein Link zum Posteingang, weil der ausgehende Warteschlangen nicht zeigt. Geprüft: send_backlog.test.sql 9/9 (test:db sonst unverändert; technician_load_intervals.test.sql scheitert unabhängig davon an lokalen Daten, 6 statt 4 Intervalle), test:unit 88/88, test:ui alle bestanden (neu: Dispatcher- und Admin-Hinweis, 390/768/1440 ohne horizontales Scrollen, Techniker ohne Hinweis, nach dem Versand weg; Versandsperre verhindert echten Versand durch n8n), Sichtprüfung 390/1440, lint, typecheck, build.",
+            "commands": [
+              "npx supabase test db",
+              "npm run test:unit",
+              "UI_SCREENSHOTS=… npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ]
+          }
         }
       ]
     },

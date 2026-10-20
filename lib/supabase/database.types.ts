@@ -2888,6 +2888,11 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"send_backlog":
+{ Args: { "min_minutes"?: number }; Returns: {
+              "oldest_at": string,"waiting": number
+            }[]
+                           },
 "send_payment_reminder":
 { Args: { "expected_version": number,"invoice_id": string }; Returns: {
               "created_at": string,

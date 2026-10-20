@@ -6,7 +6,7 @@
 // Usage: npm run build && npm run start, then npm run test:ui
 //   APP_URL (default http://localhost:3000), CHROME_PATH (default: Google Chrome on macOS),
 //   UI_SCREENSHOTS=<dir> additionally stores a screenshot per page and width.
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -492,6 +492,54 @@ try {
     return data;
   };
   const request = await newRequest("review");
+
+  // Hanging Gmail dispatch (task-12-9): a receipt of a real request waiting for 15 minutes. The send lease is created
+  // in the same statement, so the running n8n does not claim and really send it during the test.
+  {
+    console.log("\nHinweis bei hängendem E-Mail-Versand");
+    const container = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_A.Sadkovojs_Project";
+    const psql = (sql) => execFileSync("docker", ["exec", "-i", container, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-Atq"], { input: sql }).toString().trim();
+    const banner = () => page.eval(`(() => { const el = document.querySelector(".send-backlog-alert"); return el ? { text: el.textContent, scroll: document.documentElement.scrollWidth, width: innerWidth } : null; })()`);
+    const real = await newRequest("backlog", { is_demo: false, source: "website_form", dispatcher_id: null });
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
+    await page.open(`${BASE}/dashboard/erstbearbeitung`);
+    const before = await banner();
+    const messageId = psql(`with m as (insert into public.messages (request_id, direction, kind, status, to_address, subject, body_text, approved_at)
+      values ('${real.id}', 'outgoing', 'receipt', 'queued', 'ui-backlog@example.com', 'UI-Test', 'UI-Test', now() - interval '15 minutes') returning id),
+      l as (insert into private.integration_send_leases (message_id, lease_until, next_attempt_at) select id, now() + interval '1 hour', now() + interval '1 hour' from m)
+      select id from m;`);
+    try {
+      await page.open(`${BASE}/dashboard/erstbearbeitung`);
+      const dispo = await banner();
+      check("Dispatcher: Hinweis mit Wartezeit und Bitte an die Verwaltung", before === null && !!dispo && /warte(t|n) seit 1\d min/.test(dispo.text) && dispo.text.includes("Verwaltung informieren"), JSON.stringify({ before, dispo }));
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
+      for (const width of [1440, 768, 390]) {
+        await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+        await page.open(`${BASE}/dashboard/kunden`);
+        const shown = await banner();
+        check(`  Admin: Hinweis nennt den Gmail-Zugang in n8n, kein horizontales Scrollen @${width}`, !!shown && shown.text.includes("in n8n prüfen") && shown.scroll <= shown.width, JSON.stringify(shown));
+        if (SHOTS) {
+          const shot = await page.send("Page.captureScreenshot", { format: "png" });
+          await writeFile(path.join(SHOTS, `versand-haengt-${width}.png`), Buffer.from(shot.data, "base64"));
+        }
+      }
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies("technik1.demo@example.com") });
+      await page.open(`${BASE}/dashboard`);
+      check("  Techniker: kein Hinweis", (await banner()) === null);
+    } finally {
+      // The request is not a demo request, so it is removed again instead of staying in the local data
+      psql(`delete from private.integration_send_leases where message_id = '${messageId}'; delete from public.messages where id = '${messageId}';
+        delete from public.requests where id = '${real.id}';`);
+    }
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
+    await page.open(`${BASE}/dashboard/kunden`);
+    check("  Nach dem Versand kein Hinweis mehr", (await banner()) === null);
+  }
   const startedAt = new Date(Date.now() - 120_000).toISOString();
   const { data: analysis, error: analysisError } = await admin.from("automation_runs").insert({ request_id: request.id, operation_key: `ui:${runId}`, step: "intake_analysis", status: "succeeded", decision: "human_review", started_at: startedAt, finished_at: new Date(Date.now() - 60_000).toISOString() }).select().single();
   if (analysisError) throw new Error(`Automatisierungslauf: ${analysisError.message}`);

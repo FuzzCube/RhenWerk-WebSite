@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CallbackAlerts } from "@/components/dashboard/callback-alerts";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
+import { SendBacklogAlert } from "@/components/dashboard/send-backlog-alert";
 import { Logo } from "@/components/ui";
 import { logout } from "@/lib/auth/actions";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { requireEmployee } from "@/lib/auth/session";
 import { loadCallbackAlerts } from "@/lib/dashboard/callbacks";
 import { inboxCount } from "@/lib/dashboard/inbox";
+import { loadSendBacklog } from "@/lib/dashboard/send-backlog";
 
 export const metadata: Metadata = {
   title: { default: "Dashboard", template: "%s | RheinWerk Dashboard" },
@@ -23,6 +25,8 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
   // Callback requests of the phone assistant (task-13-4): technicians their own, dispatchers escalations
   const alertRole = employee.role === "technician" || employee.role === "dispatcher" ? employee.role : null;
   const callbacks = alertRole ? await loadCallbackAlerts(alertRole) : [];
+  // E-mails waiting for the Gmail dispatch (task-12-9): everyone who writes to customers
+  const backlog = employee.role === "technician" ? null : await loadSendBacklog();
   return (
     <div className="dash-shell">
       <a className="skip-link" href="#dash-main">Zum Inhalt springen</a>
@@ -40,6 +44,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
         <DashboardNav role={employee.role} counts={inbox ? { "/dashboard/posteingang": inbox } : {}} />
       </header>
       <main id="dash-main" className="dash-main">
+        {backlog && <SendBacklogAlert backlog={backlog} role={employee.role} />}
         {alertRole && <CallbackAlerts initial={callbacks} role={alertRole} />}
         {children}
       </main>

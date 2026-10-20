@@ -508,6 +508,8 @@ Migrationen `20261007180000_confirm_message_sent.sql`, `20261007180100_request_e
 - Demo-Anfragen (`is_demo`) werden nicht versendet.
 - Ereignisse `message_sent` und ggf. `invoice_sent` mit `actor_type = automation`.
 
+**`send_backlog(min_minutes = 10)`** (task-12-9, Migration `20261020120000_send_backlog.sql`) – Dispatcher, Manager, Admin; `security definer`, liefert nur Zahlen: `waiting` (ausgehende `queued`-Nachrichten, die n8n senden würde – gleiche Bedingung wie `claim_queued_messages`: keine Demo-Anfrage, freigegeben oder automatisch –, seit `approved_at` länger als `min_minutes`, mindestens 1) und `oldest_at`. Ein Wert über 0 heißt: der Gmail-Versand in n8n steht (z. B. abgelaufener Google-Zugang). Das Dashboard zeigt dann einen Hinweis über jeder Seite. Tests: `send_backlog.test.sql`.
+
 **`request_events.seq`** (Identity) ordnet Ereignisse mit gleichem `occurred_at` (gleiche Transaktion). Historie und Analytik sortieren nach `(occurred_at, seq)`.
 
 Tests: siehe [testing.md](testing.md).
@@ -698,3 +700,5 @@ Migration `20261019140000_phone_dashboard.sql` (task-13-7): Kennzahlen `analytic
 Migration `20261019150000_widget_sessions.sql` (task-13-8): `public.widget_sessions` (Sitzungen des Demo-Anrufs bzw. Web-Widgets (task-13-11: Dialog über die Service-Desk-Nummer): gesalzener Hash der IP-Adresse, Reservierung in Sekunden, gebundene `conversation_id`; RLS ohne Policies, kein API-Zugriff; Löschung nach 90 Tagen per Cron `widget-sessions-90-days`). Nur für den Website-Server (`service_role`): `widget_budget(daily_seconds, max_seconds)` (Restsekunden des lokalen Tages), `widget_session_start(client_key, max_seconds, daily_seconds, per_client_hour)` (Advisory-Lock, `tageslimit`/`zu_viele`), `widget_session_bind(session_id, conversation_id)`. Verbrauch je Tag (`private.widget_seconds_used`): ausgewertete Gespräche mit echter Dauer (höchstens die Reservierung), sonst die Reservierung. Tests: `widget_sessions.test.sql`.
 
 Migration `20261019160000_agent_forward.sql` (task-13-11): `phone_calls.forward_target` (`service_desk`, `bereitschaft`), `forward_reason`, `forwarded_at` (nur zusammen mit `forwarded`). Für n8n: `agent_forward(call_id, ziel, grund)` – Demo-Weiterleitung ohne Telefonleitung: markiert den Anruf (erste Zeit bleibt) und liefert `ansage`, `demo: true`, `verbunden: false`; `service_desk` außerhalb der Servicezeit `fehler: ausserhalb_servicezeit`, unbekanntes Ziel `ziel_ungueltig`. Tests: `agent_forward.test.sql`.
+
+Migration `20261020120000_send_backlog.sql` (task-12-9): `send_backlog(min_minutes)` – Anzahl und ältester Zeitpunkt versandfähiger E-Mails, die länger warten (siehe Integration). Tests: `send_backlog.test.sql`.

@@ -1804,6 +1804,11 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .plan3__blk--hold { z-index: 2; color: var(--rw-color-info-800); }
 .request-hold__when { font-family: var(--rw-font-body); font-size: 20px; }
 
+/* E-mails waiting for the Gmail dispatch (task-12-9): banner above every dashboard page */
+.send-backlog-alert { max-width: 1680px; margin: 0 auto 16px; align-items: flex-start; padding: 14px 16px; }
+.send-backlog-alert > svg { flex: none; margin-top: 2px; }
+.send-backlog-alert__text { flex: 1 1 240px; min-width: 0; display: grid; gap: 2px; }
+
 /* Callback requests of the phone assistant (task-13-4): banner above every dashboard page, mobile first */
 .callback-alerts { display: grid; gap: 8px; max-width: 1680px; margin: 0 auto 16px; }
 .callback-alert { align-items: flex-start; padding: 14px 16px; }
