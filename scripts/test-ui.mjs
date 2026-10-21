@@ -148,8 +148,8 @@ try {
     { name: "1440", width: 1440, height: 900, mobile: false },
   ];
   const roles = [
-    { email: "admin.demo@example.com", pages: ["/dashboard/bausteine", "/dashboard/verwaltung", "detail:/dashboard/verwaltung", "detail:/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/tarife", "/dashboard/verwaltung/einstellungen", "/dashboard/uebersicht", "/dashboard/anfragen", "/dashboard/posteingang", "/dashboard/kunden", "/dashboard/anrufe"] },
-    { email: "manager.demo@example.com", pages: ["/dashboard/uebersicht", "/dashboard/uebersicht?zeitraum=jahr", "/dashboard/rechnungen", "/dashboard/auswertung", "/dashboard/auswertung?bereich=warteschlangen", "/dashboard/auswertung?bereich=automatisierung", "/dashboard/planung", "/dashboard/anfragen", "detail:/dashboard/anfragen?arbeit=completed", "detail:/dashboard/anfragen?erstbearbeitung=needs_review", "/dashboard/posteingang", "/dashboard/posteingang?ansicht=zugeordnet", "/dashboard/kunden", "detail:/dashboard/kunden", "/dashboard/auswertung?bereich=telefon", "/dashboard/anrufe", "detail:/dashboard/anrufe"] },
+    { email: "admin.demo@example.com", pages: ["/dashboard/bausteine", "/dashboard/verwaltung", "detail:/dashboard/verwaltung", "detail:/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/arbeitszeiten", "/dashboard/verwaltung/tarife", "/dashboard/verwaltung/einstellungen", "/dashboard/uebersicht", "/dashboard/anfragen", "/dashboard/posteingang", "/dashboard/kunden", "/dashboard/anrufe", "/dashboard/system"] },
+    { email: "manager.demo@example.com", pages: ["/dashboard/uebersicht", "/dashboard/uebersicht?zeitraum=jahr", "/dashboard/rechnungen", "/dashboard/auswertung", "/dashboard/auswertung?bereich=warteschlangen", "/dashboard/auswertung?bereich=automatisierung", "/dashboard/planung", "/dashboard/anfragen", "detail:/dashboard/anfragen?arbeit=completed", "detail:/dashboard/anfragen?erstbearbeitung=needs_review", "/dashboard/posteingang", "/dashboard/posteingang?ansicht=zugeordnet", "/dashboard/kunden", "detail:/dashboard/kunden", "/dashboard/auswertung?bereich=telefon", "/dashboard/anrufe", "detail:/dashboard/anrufe", "/dashboard/system"] },
     { email: "dispo3.demo@example.com", pages: ["/dashboard/erstbearbeitung", "/dashboard/erstbearbeitung?tab=planung", "/dashboard/erstbearbeitung?tab=alle", "/dashboard/posteingang", "/dashboard/kunden", "/dashboard/anrufe", "detail:/dashboard/anrufe?ansicht=anfrage"] },
     { email: "technik1.demo@example.com", pages: ["/dashboard/heute", "/dashboard/kalender", "/dashboard/anfragen", "detail:/dashboard/anfragen", "einsatz:/dashboard/heute"] },
   ];
@@ -179,6 +179,42 @@ try {
         }
       }
     }
+  }
+
+  // task-17-7/17-12: area "System" for the owner. Admin and manager see the same content; no code updates, no buttons.
+  console.log("\nSystem: Zusammenfassung, Datensicherung, Systeme, Guthaben, Versionen");
+  {
+    const view = () => page.eval(`({
+      nav: !!document.querySelector('.dash-nav a[href="/dashboard/system"]'),
+      summary: document.querySelector(".system-summary__title")?.textContent ?? "",
+      alerts: document.querySelectorAll(".system-alerts li").length,
+      cards: [...document.querySelectorAll(".rw-card__title")].map((t) => t.textContent.replace(/\\s*\\d+$/, "")),
+      buttons: document.querySelectorAll(".system-page button").length,
+      mainWidth: getComputedStyle(document.querySelector(".dash-main")).maxWidth,
+      scroll: document.documentElement.scrollWidth, width: innerWidth })`);
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+    const { count: openAlerts } = await admin.from("system_alerts").select("id", { count: "exact", head: true }).is("resolved_at", null);
+    const expected = openAlerts === 0 ? "Alles in Ordnung" : openAlerts === 1 ? "1 Punkt braucht Aufmerksamkeit" : `${openAlerts} Punkte brauchen Aufmerksamkeit`;
+    const sections = ["Datensicherung", "Zustand der Systeme", "Guthaben externer Dienste", "Systemversionen"];
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
+    await page.open(`${BASE}/dashboard/system`);
+    const adminView = await view();
+    check(`Admin: „System“ in der Navigation, Zusammenfassung „${expected}“ mit ${openAlerts} Warnung(en), vier Abschnitte`,
+      adminView.nav && adminView.summary === expected && adminView.alerts === openAlerts && sections.every((t) => adminView.cards.includes(t)), JSON.stringify(adminView));
+    check("  keine Schaltflächen, keine Code-Updates, Breite wie die übrigen Bereiche (1680 px)",
+      adminView.buttons === 0 && !adminView.cards.some((t) => ["Versionen", "Verlauf", "Aktuelle Version"].includes(t)) && adminView.mainWidth === "1680px", JSON.stringify(adminView));
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("manager.demo@example.com") });
+    for (const width of [390, 768, 1440]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/system`);
+      const managerView = await view();
+      check(`  Manager @${width}: gleiche Inhalte, kein Querscrollen`,
+        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons === 0 && managerView.scroll <= managerView.width, JSON.stringify(managerView));
+    }
+    await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   }
 
   console.log("\nÜbersicht (Admin): Kennzahlen führen zu passenden Listen");

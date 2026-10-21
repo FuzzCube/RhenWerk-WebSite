@@ -30,6 +30,7 @@ export const DASHBOARD_AREAS: readonly DashboardArea[] = [
   { href: "/dashboard/anrufe", label: "Anrufe", roles: ["dispatcher", "manager", "admin"] },
   { href: "/dashboard/rechnungen", label: "Rechnungen", roles: ["manager", "admin"] },
   { href: "/dashboard/verwaltung", label: "Verwaltung", roles: ["admin"] },
+  { href: "/dashboard/system", label: "System", roles: ["manager", "admin"] },
 ];
 
 const START_PAGES: Record<EmployeeRole, string> = {

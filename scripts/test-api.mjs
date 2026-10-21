@@ -250,6 +250,25 @@ check("Buchung und gleichzeitige Abwesenheit nie beide erfolgreich (10 Durchläu
 check("jeweils genau eine Seite erfolgreich", neitherSucceeded === 0, `keine: ${neitherSucceeded}`);
 
 
+// task-17-7/17-12: area "System". Manager and admin read; code updates are no longer requested from the dashboard,
+// so even admin is refused (nothing reaches the service on the host, which shares the database).
+console.log("\nSystem: Updates und Warnungen");
+{
+  const systemAdmin = await createEmployee("system-admin", "admin");
+  check("Admin: request_update abgewiesen (task-17-12)", denied(await systemAdmin.client.rpc("request_update")));
+  check("Admin: request_rollback abgewiesen (task-17-12)", denied(await systemAdmin.client.rpc("request_rollback", { target_commit: "0".repeat(40) })));
+  check("Admin liest offene Warnungen", !(await systemAdmin.client.from("system_alerts").select("id").is("resolved_at", null)).error);
+  const status = async (client) => (await client.from("system_status").select("id")).data?.length ?? 0;
+  check("Manager liest den Systemstatus", (await status(manager.client)) === 1);
+  check("Dispatcher und Techniker sehen keinen Systemstatus", (await status(dispatcherA.client)) === 0 && (await status(technicianA.client)) === 0);
+  check("Manager: request_update abgewiesen", denied(await manager.client.rpc("request_update")));
+  check("Manager: request_rollback abgewiesen", denied(await manager.client.rpc("request_rollback", { target_commit: "0".repeat(40) })));
+  check("Dispatcher: request_update abgewiesen", denied(await dispatcherA.client.rpc("request_update")));
+  check("Manager: resolve_alert abgewiesen", denied(await manager.client.rpc("resolve_alert", { alert_id: "00000000-0000-0000-0000-000000000000" })));
+  check("Manager: raise_alert der Skripte abgewiesen", denied(await manager.client.rpc("raise_alert", { source: "app", alert_key: "test", severity: "warning", title: "x" })));
+  check("Manager: kein direktes Anlegen von Anfragen", denied(await manager.client.from("update_requests").insert({ action: "update", requested_by: manager.id })));
+}
+
 await deactivateTestAccounts(admin, createdAccounts);
 
 console.log(`\n${failures === 0 ? "Alle API-Prüfungen bestanden." : `${failures} Prüfung(en) fehlgeschlagen.`}`);

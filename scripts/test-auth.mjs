@@ -36,12 +36,12 @@ async function login(email, password) { const jar = new Jar(); const page = awai
 const path = (loc) => (loc ? new URL(loc, BASE).pathname : null);
 
 const roles = [
-  ["admin.demo@example.com", "Clara Becker", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung"], "/dashboard/heute"],
-  ["manager.demo@example.com", "Jonas Hoffmann", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen"], "/dashboard/verwaltung"],
+  ["admin.demo@example.com", "Clara Becker", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung", "System"], "/dashboard/heute"],
+  ["manager.demo@example.com", "Jonas Hoffmann", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen", "System"], "/dashboard/verwaltung"],
   ["dispo1.demo@example.com", "Lea Schneider", "/dashboard/erstbearbeitung", ["Erstbearbeitung", "Einsatzplanung", "Anfragen", "Posteingang"], "/dashboard/uebersicht"],
   ["technik1.demo@example.com", "Tobias Krüger", "/dashboard/heute", ["Mein Tag", "Kalender", "Anfragen"], "/dashboard/planung"],
 ];
-const ALL = ["Übersicht", "Auswertung", "Erstbearbeitung", "Mein Tag", "Kalender", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung"];
+const ALL = ["Übersicht", "Auswertung", "Erstbearbeitung", "Mein Tag", "Kalender", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung", "System"];
 for (const [email, name, start, nav, forbidden] of roles) {
   const { jar, res } = await login(email, pw);
   check(`${email}: Login leitet zu /dashboard`, res.status === 303 && path(res.loc) === "/dashboard", `${res.status} ${res.loc}`);
@@ -352,6 +352,25 @@ const ownPage = await get(adminJar, `/dashboard/verwaltung/mitarbeitende/${admin
 check("  eigenes Konto: keine Deaktivierung angeboten", !ownPage.html.includes('id="deaktivieren-title"'));
 const unknown = await get(adminJar, "/dashboard/verwaltung/mitarbeitende/00000000-0000-0000-0000-000000000000");
 check("  unbekannte Person → 404", unknown.status === 404, String(unknown.status));
+
+// Area "System" (task-17-7, task-17-12): admin and manager read the same summary, no code update buttons; other roles
+// go to their start page
+{
+  const { jar: adminJar } = await login("admin.demo@example.com", pw);
+  const a = await get(adminJar, "/dashboard/system");
+  const owner = (html) => html.includes("Datensicherung") && html.includes("Zustand der Systeme") && /Alles in Ordnung|brauch(t|en) Aufmerksamkeit/.test(html);
+  const noCode = (html) => !/>(Jetzt aktualisieren|Wiederherstellen)<\/button>/.test(html) && !html.includes("Verlauf der Updates");
+  check("/dashboard/system: Admin 200 mit Zusammenfassung und Datensicherung, ohne Code-Updates", a.status === 200 && owner(a.html) && noCode(a.html), String(a.status));
+  check("  privat/no-store", /no-store/.test(a.cc ?? ""), a.cc);
+  const { jar: managerJar } = await login("manager.demo@example.com", pw);
+  const m = await get(managerJar, "/dashboard/system");
+  check("  Manager 200, gleiche Inhalte", m.status === 200 && owner(m.html) && noCode(m.html), String(m.status));
+  for (const [email, start] of [["dispo1.demo@example.com", "/dashboard/erstbearbeitung"], ["technik1.demo@example.com", "/dashboard/heute"]]) {
+    const { jar } = await login(email, pw);
+    const r = await get(jar, "/dashboard/system");
+    check(`  ${email.split(".")[0]} → ${start}`, r.status === 307 && path(r.loc) === start, `${r.status} ${r.loc}`);
+  }
+}
 
 // Health check (task-17-4): public only the status, details only with HEALTH_TOKEN, never cached
 {

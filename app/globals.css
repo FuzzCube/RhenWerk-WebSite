@@ -1155,7 +1155,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 /* Visit planning (task-10-3) */
 /* Einsatzplanung (task-10-3, after the user's dashboard draft): queue · planning board · booking panel */
 /* Wide pages: header, navigation and content share one width, so all left edges line up */
-.dash-shell:has(.plan3-page, .side-page, .dash-request--wide, .overview, .tech-page, .cal-page) :is(.dash-header__inner, .dash-nav ul, .dash-main) { max-width: 1680px; }
+.dash-shell:has(.plan3-page, .side-page, .dash-request--wide, .overview, .tech-page, .cal-page, .system-page) :is(.dash-header__inner, .dash-nav ul, .dash-main) { max-width: 1680px; }
 .plan3-page { container-type: inline-size; }
 .plan3__eyebrow { margin: 0; font-family: var(--rw-font-mono); font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--rw-text-secondary); }
 .plan3__muted { font-size: 14px; line-height: 1.43; color: var(--rw-text-secondary); }
@@ -1900,3 +1900,19 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .rw-legend--toggle button[aria-pressed="false"] .rw-legend__key { border: 0; background: transparent; }
 .rw-legend--toggle button[aria-disabled="true"] { cursor: default; }
 .rw-legend--toggle button[aria-disabled="true"]:hover { background: none; }
+
+/* Area "System" (task-17-7, task-17-12) */
+.system-summary { align-items: flex-start; }
+.system-summary > svg { flex: none; margin-top: 2px; }
+.system-summary > div { flex: 1 1 260px; display: flex; flex-direction: column; gap: 4px; }
+.system-summary__title { font-size: 16px; line-height: 1.4; font-weight: 600; }
+.system-alerts { list-style: none; display: flex; flex-direction: column; gap: 8px; margin: 4px 0 0; padding: 0; }
+.system-alerts li { display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.system-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: var(--rw-space-16); align-items: stretch; }
+.system-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; font-size: 14px; }
+.system-facts dt { color: var(--rw-text-secondary); }
+.system-facts dd { margin: 0; overflow-wrap: anywhere; }
+.system-details { margin-top: 12px; }
+.system-details summary { cursor: pointer; font-size: 14px; color: var(--rw-action-secondary-fg); white-space: nowrap; }
+.system-packages { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.system-packages li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; }

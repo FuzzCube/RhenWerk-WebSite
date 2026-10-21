@@ -2,7 +2,7 @@
 -- warnings, scripts write as service_role; one request/run at a time, one open warning per key with e-mail decision.
 -- Run with: supabase test db
 begin;
-select plan(43);
+select plan(45);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000017a1', 'admin17@x.test'),
@@ -49,9 +49,12 @@ select throws_ok($$insert into public.update_requests (action, requested_by) val
   '42501', null, 'no direct insert');
 select throws_ok($$select public.raise_alert('app', 'x', 'warning', 'x')$$, '42501', null, 'staff cannot raise warnings');
 
--- Requests: only admin, one at a time
+-- Requests: not from the dashboard any more (task-17-12); the functions stay for the owner, one at a time
 select pg_temp.as_user('a1');
-select is((public.request_update()).status, 'pending', 'admin requests an update');
+select throws_ok($$select public.request_update()$$, '42501', null, 'admin cannot request an update (task-17-12)');
+select throws_ok($$select public.request_rollback(repeat('1', 40))$$, '42501', null, 'admin cannot request a rollback (task-17-12)');
+reset role;
+select is((public.request_update()).status, 'pending', 'update requested as owner');
 select throws_ok($$select public.request_update()$$, 'RW422', null, 'second request while one waits');
 select throws_ok($$select public.request_rollback(repeat('1', 40))$$, 'RW422', null, 'no rollback while an update waits');
 reset role;
@@ -76,7 +79,6 @@ select is((public.finish_update_request((select id from public.update_requests w
 reset role;
 
 -- Rollback to an existing, inactive release
-set local role authenticated;
 select pg_temp.as_user('a1');
 select throws_ok($$select public.request_rollback(repeat('2', 40))$$, 'RW422', null, 'active release is not a rollback target');
 select throws_ok($$select public.request_rollback(repeat('9', 40))$$, 'RW422', null, 'unknown release');
