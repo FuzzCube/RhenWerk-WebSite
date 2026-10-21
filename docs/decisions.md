@@ -415,3 +415,13 @@ Nutzerentscheidung, task-17-2: Das Dashboard liest Updates, Releases und Warnung
 
 Nutzerentscheidung, task-17-3: Warnungen gehen direkt aus den Skripten per Gmail SMTP (App-Passwort des Kontos `rheinwerk.industrieservice@gmail.com`) an `ALERT_EMAILS`. Über n8n ließe sich ein Ausfall von n8n selbst nicht melden. `nodemailer` ist exakt auf 10.0.14 gepinnt: Die 10.1.x-Reihe bekam am 18.10.2026 fünf Versionen an einem Tag, eine neue Abhängigkeit kommt erst nach zwei Wochen Reifezeit. Ausnahme vom Freigabegrundsatz für ausgehende E-Mails: Diese E-Mails gehen nur an den Betreiber, nie an Kunden.
 
+## 2026-10-21: Nächtliches Update aus origin/main mit Sicherung und Rückfall
+
+Nutzerentscheidung, task-17-5: Jede Nacht um 02:00 sichert ein Lauf zuerst die Daten mit Wiederherstellungstest und übernimmt danach den neuesten Stand von `origin/main` in den Betrieb. Die bisher getrennt geplante tägliche Sicherung ist Teil dieses Laufs.
+
+- Ohne wiederherstellbare Sicherung kein Update.
+- Migrationen laufen vor dem Umschalten und werden nie zurückgenommen; sie müssen mit dem vorherigen Code verträglich sein. So bleibt der Rückweg ein reines Umschalten des Codes.
+- Ein Release, dessen Migration oder Gesundheitsprüfung scheitert, wird verworfen, damit nur lauffähige Releases als Rückweg bleiben.
+- E-Mails nur bei Fehlern und nach einem Fehler die Entwarnung; erfolgreiche Updates stehen nur im Dashboard.
+- npm-Pakete und n8n werden nur als verfügbar angezeigt und nie automatisch aktualisiert.
+

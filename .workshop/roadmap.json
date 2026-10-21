@@ -3169,7 +3169,7 @@
           "description": "Nutzerentscheidung 21.10.2026: täglich 02:00 automatisch, Quelle ausschließlich origin/main. scripts/update.mjs: Sperre, git fetch, nichts tun ohne neuen Commit, Sicherung (npm run backup) vor dem Update, Release über scripts/prod/release.mjs bauen und umschalten (task-17-1), supabase migration up, /api/health prüfen. Bei Fehler: Symlink zurück, Neustart, Warnung und E-Mail. Zusätzlich nur anzeigen (nicht installieren): verfügbare npm-Updates (npm outdated) und neue n8n-Version. launchd ersetzt den bisherigen Sicherungsauftrag 02:00 (Sicherung läuft im Update-Lauf zuerst). Präzisierung 21.10.2026: Die tägliche Sicherung mit Prüfung läuft jede Nacht im Update-Lauf zuerst (auch ohne neuen Commit); scheitert sie, kein Update. E-Mail nur bei Fehlern, Erfolg nur im Dashboard. Migrationen werden nicht zurückgenommen.",
           "order": 5,
           "weight": 3,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-17-1",
             "task-17-2",
@@ -3184,12 +3184,21 @@
             "launchd 02:00, Probelauf mit --dry-run, betrieb.md (Zeitplan, Rückweg, Grenzen bei Migrationen), lint"
           ],
           "startedAt": "2026-10-21T14:52:41Z",
-          "completedAt": null,
+          "completedAt": "2026-10-21T15:08:07Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-21T15:08:07Z",
+            "commands": [
+              "npm run prod:update -- --dry-run",
+              "npm run prod:update",
+              "npm run prod:update -- --ref <Testzweig> (Build, Gesundheitsprüfung, Migration)",
+              "npm run prod:install",
+              "launchctl kickstart gui/$(id -u)/online.rheinwerk.update",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "summary": "scripts/prod/update.mjs (npm run prod:update), gemeinsame Funktionen in scripts/prod/lib.mjs (Sperre mit Übernahme verwaister Sperren, build, activate mit Rückfall, prune, removeRelease, rpc, syncReleases), LaunchAgent online.rheinwerk.update 02:00 (ops/launchd, prod:install). Ablauf: origin/main holen, Status mit neuen Commits und nur angezeigten npm-/n8n-Updates (14 npm-Pakete, n8n 2.40.7 → 2.44.5), Sicherung mit backup:check, no_change oder Build → supabase migration up --local → Umschalten → /api/health mit neuem Commit. Geprüft: Probelauf; erster echter Lauf deckte einen eigenen Fehler auf (Migrationsabfrage vor Initialisierung) → failed, current unverändert, Warnung mit E-Mail; danach echte Updates b3cda09 → bf76d75 → 12cd0ea erfolgreich mit Entwarnungs-E-Mail; no_change; Testzweige im Klon: Build-Fehler (failed, Ende des Build-Protokolls im Log), Gesundheitsprüfung immer 503 (rolled_back auf bf76d75), Migration select 1/0 (failed, nicht angewandt, kein Umschalten); drei Fehler eines Vorfalls = eine E-Mail; Lauf über launchctl kickstart (nightly, no_change). Fehlgeschlagene Releases werden verworfen, 3 bleiben. lint, typecheck, build bestanden. Doku: betrieb.md (4.4, 6, 7), decisions.md."
           }
         },
         {
@@ -3198,7 +3207,7 @@
           "description": "Die Web-App führt keine Befehle aus. Ein launchd-Auftrag prüft jede Minute update_requests und startet update.mjs für „Jetzt aktualisieren“ oder „Auf Release X zurück“. Rücksetzen schaltet nur den Code um; brachte ein späteres Release Migrationen, wird gewarnt, die Datenbank bleibt (Wiederherstellung nach betrieb.md 4.5 bleibt manuell).",
           "order": 6,
           "weight": 2,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-17-5"
           ],

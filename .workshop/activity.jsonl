@@ -397,3 +397,6 @@
 {"timestamp":"2026-10-21T14:41:26Z","type":"task_completed","taskId":"task-17-4","summary":"Gesundheitsprüfung /api/health mit HEALTH_TOKEN; prod:release prüft den Commit des neuen Releases."}
 {"timestamp":"2026-10-21T14:41:26Z","type":"task_ready","taskId":"task-17-5","summary":"task-17-5 ist startbar (task-17-1 bis task-17-4 abgeschlossen)."}
 {"timestamp":"2026-10-21T14:52:41Z","type":"task_started","taskId":"task-17-5","summary":"task-17-5 begonnen: nächtlicher Lauf 02:00 mit Sicherung, Prüfung von origin/main, Build, Migrationen, Umschalten, Gesundheitsprüfung und Rückfall; E-Mail nur bei Fehlern."}
+{"timestamp":"2026-10-21T15:08:07Z","type":"verification_passed","taskId":"task-17-5","summary":"Nächtliches Update geprüft: echte Updates, no_change, Fehler in Build, Gesundheitsprüfung und Migration mit Rückfall und einer E-Mail je Vorfall, Lauf über launchd; lint, typecheck, build."}
+{"timestamp":"2026-10-21T15:08:07Z","type":"task_completed","taskId":"task-17-5","summary":"Nächtliches Update 02:00 aus origin/main mit Sicherung, Migrationen, Gesundheitsprüfung, automatischem Rückfall und Warnung per E-Mail."}
+{"timestamp":"2026-10-21T15:08:07Z","type":"task_ready","taskId":"task-17-6","summary":"task-17-6 ist startbar (task-17-5 abgeschlossen)."}
