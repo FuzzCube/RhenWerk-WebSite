@@ -64,6 +64,8 @@ npm run start                        # http://localhost:3000
 
 Ein anderer Port: `npm run dev -- -p 3201` bzw. `npx next start -p 3202`.
 
+Betrieb (Dienst unter `launchd`, Port 3200) läuft nicht aus diesem Ordner, sondern aus der Produktionskopie `~/RheinWerk-Prod`: `npm run prod:install`, danach `npm run prod:release` ([betrieb.md](betrieb.md#23-dauerbetrieb-des-rechners)).
+
 Startseiten je Rolle: Admin und Manager → Übersicht, Dispatcher → Erstbearbeitung, Techniker → Mein Tag. Die Techniker-Seiten sind für Tablet und Smartphone gestaltet.
 
 ## Prüfungen
@@ -122,7 +124,7 @@ Das App-Passwort gehört nur in die Umgebung, nie ins Repository. Ohne eigenen S
 
 ## Sicherung
 
-`npm run backup` sichert Datenbank, Dateien und n8n in ein Archiv, `npm run backup:check` prüft die Wiederherstellung in einer getrennten Datenbank. Vor `supabase db reset` und vor Updates ausführen. Einstellungen, Zeitplan und Wiederherstellung: [betrieb.md](betrieb.md#4-datensicherung).
+`npm run backup` sichert Datenbank, Dateien und n8n in ein Archiv und löscht Sicherungen, die älter als 14 Tage sind (die neueste bleibt immer), `npm run backup:check` prüft die Wiederherstellung in einer getrennten Datenbank. Vor `supabase db reset` und vor Updates ausführen. Einstellungen, Zeitplan und Wiederherstellung: [betrieb.md](betrieb.md#4-datensicherung).
 
 ## Ports des lokalen Stacks
 

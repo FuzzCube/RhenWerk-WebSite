@@ -22,7 +22,7 @@ if (ids.length) {
 const counted = tasks.filter((task) => !["cancelled", "superseded"].includes(task.status));
 const done = counted.filter((task) => task.status === "completed");
 const weight = (list) => list.reduce((sum, task) => sum + (task.weight ?? 0), 0);
-const overall = weight(counted) ? Math.round((weight(done) / weight(counted)) * 1000) / 10 : 0;
+const overall = weight(counted) ? Math.round((weight(done) / weight(counted)) * 10000) / 100 : 0; // two decimals (DASHBOARD_CONTRACT.md)
 
 console.log(`${project.name} (${project.status}) · Roadmap v${roadmap.roadmapVersion} (${roadmap.status})`);
 console.log(`Fortschritt ${overall} % · Gewicht ${weight(done)}/${weight(counted)} · Tasks ${done.length}/${counted.length}`);

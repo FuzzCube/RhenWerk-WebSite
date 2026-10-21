@@ -3,7 +3,7 @@
 // rheinwerk-<timestamp>.tar.gz, encrypted to .tar.gz.enc (AES-256, PBKDF2) when BACKUP_PASSPHRASE is set.
 // Secrets (n8n key, .env.local) only go into encrypted archives. Restore check: npm run backup:check.
 // Usage: npm run backup
-//   BACKUP_DIR (default ~/RheinWerk-Backups), BACKUP_KEEP (default 14 archives), BACKUP_PASSPHRASE,
+//   BACKUP_DIR (default ~/RheinWerk-Backups), BACKUP_KEEP_DAYS (default 14: older archives are deleted, the newest always stays), BACKUP_PASSPHRASE,
 //   N8N_CONTAINER (default n8n), SUPABASE_DB_CONTAINER, SUPABASE_STORAGE_CONTAINER
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -16,7 +16,7 @@ const STORAGE = process.env.SUPABASE_STORAGE_CONTAINER ?? "supabase_storage_A.Sa
 const N8N = process.env.N8N_CONTAINER ?? "n8n";
 const N8N_HOME = "/home/node/.n8n";
 const OUT = process.env.BACKUP_DIR ?? path.join(homedir(), "RheinWerk-Backups");
-const KEEP = Number(process.env.BACKUP_KEEP ?? 14);
+const KEEP_DAYS = Number(process.env.BACKUP_KEEP_DAYS ?? 14);
 const PASSPHRASE = process.env.BACKUP_PASSPHRASE ?? "";
 
 // Row counts recorded at backup time; backup:check compares the restored database with them
@@ -82,9 +82,12 @@ try {
     copyFileSync(tarball, target);
   }
 
-  // 5. Retention: keep the newest KEEP archives
+  // 5. Retention (user decision 21.10.2026, task-17-1): delete archives older than KEEP_DAYS by the time in their
+  // name; the newest archive always stays, even if it is older (e.g. after a longer outage)
   const archives = readdirSync(OUT).filter((file) => /^rheinwerk-\d{8}T\d{6}Z\.tar\.gz(\.enc)?$/.test(file)).sort();
-  const removed = archives.slice(0, Math.max(0, archives.length - KEEP));
+  const createdAt = (file) => Date.parse(file.replace(/^rheinwerk-(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z.*$/, "$1-$2-$3T$4:$5:$6Z"));
+  const cutoff = Date.now() - KEEP_DAYS * 24 * 60 * 60 * 1000;
+  const removed = archives.slice(0, -1).filter((file) => createdAt(file) < cutoff);
   for (const file of removed) rmSync(path.join(OUT, file));
 
   const size = (statSync(target).size / 1024 / 1024).toFixed(1);
@@ -93,7 +96,7 @@ try {
   console.log(`  Storage: ${storageFiles} Dateien · n8n: ${n8nWorkflows} Workflows`);
   if (PASSPHRASE) console.log(`  verschlüsselt (AES-256), enthält zusätzlich: ${secrets.join(", ")}`);
   else console.log("  WARNUNG: unverschlüsselt und ohne n8n-Schlüssel und .env.local. BACKUP_PASSPHRASE setzen, damit die Sicherung vollständig ist.");
-  if (removed.length) console.log(`  ${removed.length} ältere Sicherung(en) entfernt (behalten: ${KEEP})`);
+  if (removed.length) console.log(`  ${removed.length} Sicherung(en) älter als ${KEEP_DAYS} Tage entfernt`);
 } finally {
   rmSync(work, { recursive: true, force: true });
 }

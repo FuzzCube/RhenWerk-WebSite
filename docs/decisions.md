@@ -390,3 +390,15 @@ Befund aus dem Sprachtest vom 20.10.2026, task-16-2: Gerade bei Notfällen soll 
 
 Nutzerentscheidung, task-16-3: Dispatcher, Manager und Admin sehen, welche Kunden einen SLA-Vertrag haben – Kennzeichen in der Kundenliste, Ansicht „Mit SLA-Vertrag“ (aktive Kunden mit heute gültigem Vertrag) und Vertragsangaben auf der Kundenseite. Zuordnung über die Kundennummer wie in `service_contracts`. Die Pflege der Verträge im Dashboard ist ein eigener, späterer Schritt.
 
+## 2026-10-21: Betrieb aus einer Produktionskopie mit Releases je Commit
+
+Nutzerentscheidung, task-17-1 (Phase 17 „Updates und Überwachung“): Der Betrieb läuft aus `~/RheinWerk-Prod`, nicht aus dem Entwicklungsordner. Ein automatisches Update darf nie auf laufende Entwicklungsarbeit treffen; Quelle ist ausschließlich `origin/main`.
+
+- Jedes Release wird in einen eigenen Ordner gebaut und erst nach erfolgreichem Build über den Symlink `current` aktiviert. Der Rückweg ist ein Umschalten ohne Neubau; antwortet die App nach dem Umschalten nicht, schaltet das Skript selbst zurück.
+- Es bleiben 3 Releases (je etwa 1,5 GB), nicht 5.
+- Port 3200 für den Betrieb, Port 3000 bleibt `next dev`. Beide nutzen in Stufe 1 dieselbe lokale Datenbank.
+- Der Rückweg betrifft nur den Code; Migrationen werden nicht zurückgenommen (sie sind nur vorwärts geschrieben). Daten zurück nur über die Wiederherstellung einer Sicherung.
+
+## 2026-10-21: Sicherungen 14 Tage nach Alter aufbewahren
+
+Nutzerentscheidung, task-17-1: Sicherungen werden nach 14 Tagen gelöscht, gemessen am Zeitstempel im Dateinamen (`BACKUP_KEEP_DAYS`), statt der 14 neuesten Archive. Zusätzliche Sicherungen vor Updates oder Datenübernahmen verdrängen so keine Tagessicherungen. Die neueste Sicherung bleibt immer, auch wenn sie älter ist (etwa nach einem längeren Ausfall).

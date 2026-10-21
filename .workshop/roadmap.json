@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 17,
+  "roadmapVersion": 18,
   "status": "active",
   "phases": [
     {
@@ -3024,6 +3024,307 @@
             "UI bei 390/768/1440 geprüft",
             "test:ui, lint, typecheck, build"
           ]
+        }
+      ]
+    },
+    {
+      "id": "phase-17",
+      "title": "Updates und Überwachung",
+      "description": "Nutzerentscheidung 21.10.2026: tägliches automatisches Update um 02:00 aus origin/main mit Sicherung und automatischem Rückfall, Bereich „Updates“ (admin bedient, manager liest), npm/n8n-Updates nur als verfügbar anzeigen, Überwachung von n8n und Mira mit E-Mail an den Admin (Gmail SMTP) und Warnungen im Dashboard für admin und manager.",
+      "order": 18,
+      "weight": 22,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-17-1",
+          "title": "Produktionskopie und App-Dienst",
+          "description": "Nutzerentscheidung 21.10.2026 (Phase 17): Betrieb aus einer eigenen Kopie ~/RheinWerk-Prod statt aus dem Entwicklungsordner, damit nächtliche Updates nie laufende Entwicklungsarbeit berühren. Jede Version wird in einen eigenen Ordner releases/<commit> gebaut, current ist ein Symlink; next start läuft als launchd-Dienst aus current. So ist der Rückweg ein Umschalten des Symlinks. Nutzerergänzung 21.10.2026: Sicherungen werden nach 14 Tagen automatisch gelöscht (Alter statt Anzahl), die neueste bleibt immer.",
+          "order": 1,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "~/RheinWerk-Prod mit releases/<commit> und Symlink current, .env.local außerhalb der Releases verlinkt",
+            "launchd-Auftrag online.rheinwerk.web startet next start aus current, Neustart per launchctl kickstart",
+            "Erstes Release aus origin/main gebaut und erreichbar",
+            "betrieb.md 2.3 und 6 auf die Produktionskopie umgestellt",
+            "npm run backup löscht Archive älter als 14 Tage (BACKUP_KEEP_DAYS), die neueste Sicherung bleibt immer"
+          ],
+          "startedAt": "2026-10-21T13:42:06Z",
+          "completedAt": "2026-10-21T13:49:33Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-21T13:49:33Z",
+            "commands": [
+              "npm run prod:install",
+              "npm run prod:release",
+              "APP_URL=http://localhost:3200 npm run test:auth",
+              "npm run prod:release -- --switch <leeres Probe-Release>",
+              "BACKUP_DIR=<Testordner> npm run backup",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "summary": "scripts/prod/lib.mjs, install.mjs, release.mjs, Vorlage ops/launchd/online.rheinwerk.web.plist, npm run prod:install/prod:release. ~/RheinWerk-Prod mit repo/ (Klon von origin), releases/<commit> mit release.json, Symlink current (atomar umgeschaltet), shared/.env.local (Modus 600, je Release verlinkt), logs/. Erstes Release 767dd24 (origin/main) in 35 s gebaut, Dienst online.rheinwerk.web auf Port 3200 (Nutzerentscheidung, 3000 bleibt next dev): / 200, /login 200, /dashboard → /login; test:auth gegen 3200 bestanden. Zweiter Lauf: bereits gebaut und aktiv, nichts geändert. Leeres Probe-Release per --switch: App antwortet nicht, automatischer Rückfall auf 767dd24, Exit 1; unbekanntes Release: Fehler, Exit 1. kill -9 des Servers: launchd startet neu, /login wieder 200. 3 Releases werden behalten (Nutzerentscheidung). backup.mjs: Aufbewahrung nach Alter (BACKUP_KEEP_DAYS 14), neueste bleibt immer; Probe mit Archiven von vor 20 und 10 Tagen: nur das 20 Tage alte entfernt. lint, typecheck, build bestanden. Doku: betrieb.md (2.1–2.3, 4.2, 6, 7), setup.md, decisions.md, README.md, .env.example."
+          }
+        },
+        {
+          "id": "task-17-2",
+          "title": "Datenmodell für Updates und Warnungen",
+          "description": "Tabellen system_updates (Version/Commit von→nach, Auslöser nightly/manual/rollback, ausgelöst von, Status, Beginn/Ende, Migrationen, Logauszug), update_requests (Aktion update/rollback, Ziel-Release, Status), system_alerts (Quelle n8n/mira/update/app, Schweregrad, Schlüssel zur Entdublierung, erstmals/zuletzt gesehen, behoben, zuletzt gemailt), alert_recipients (Start: andrejs.sadkovojs@gmail.com, Rolle admin). RLS: admin und manager lesen, nur admin erstellt Anfragen über RPC mit expected_version; Skripte und n8n schreiben über eigene service_role-Funktionen.",
+          "order": 2,
+          "weight": 2,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Migration mit vier Tabellen, RLS nur lesend für admin und manager",
+            "RPCs request_update/request_rollback (nur admin, RW422 bei laufendem Update), record_update_*, raise_alert/resolve_alert (nur service_role) mit Entdublierung über alert_key",
+            "Empfänger andrejs.sadkovojs@gmail.com als Admin hinterlegt; Manager erhalten keine E-Mails",
+            "pgTAP: Rechte je Rolle, Entdublierung, nur ein laufendes Update",
+            "database.md, db:types, test:db, lint, typecheck"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-3",
+          "title": "E-Mail-Benachrichtigung über Gmail SMTP",
+          "description": "Nutzerentscheidung 21.10.2026: Warnungen gehen per Gmail SMTP (App-Passwort des Kontos rheinwerk.industrieservice@gmail.com) direkt aus den Skripten, unabhängig von n8n, damit ein Ausfall von n8n selbst gemeldet werden kann. Neue Abhängigkeit nodemailer, nur in Skripten auf dem Rechner.",
+          "order": 3,
+          "weight": 1,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "scripts/lib/notify.mjs sendet Text-E-Mail an alert_recipients, Zugangsdaten nur in .env.local (SMTP_USER, SMTP_APP_PASSWORD), Namen in .env.example",
+            "npm run notify:test stellt eine Probe-E-Mail an andrejs.sadkovojs@gmail.com zu",
+            "Fehler beim Versand landen im Log und brechen den aufrufenden Lauf nicht ab",
+            "setup.md (App-Passwort einrichten), STACK.md, lint"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-4",
+          "title": "Gesundheitsprüfung /api/health",
+          "description": "Öffentlich nur Status ok/fehler ohne Details; mit Token (HEALTH_TOKEN) Einzelergebnisse: App-Version (Commit), Datenbank erreichbar, n8n healthz erreichbar. Grundlage für die Prüfung nach einem Update und für den Wächter.",
+          "order": 4,
+          "weight": 1,
+          "status": "ready",
+          "dependsOn": [
+            "task-17-1"
+          ],
+          "definitionOfDone": [
+            "GET /api/health: 200 bei ok, 503 bei Fehler, keine Interna ohne Token",
+            "Mit Token: commit, db, n8n mit Laufzeit je Prüfung, Cache-Control no-store",
+            "test:api ergänzt, lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-5",
+          "title": "Update-Skript mit automatischem Rückfall",
+          "description": "Nutzerentscheidung 21.10.2026: täglich 02:00 automatisch, Quelle ausschließlich origin/main. scripts/update.mjs: Sperre, git fetch, nichts tun ohne neuen Commit, Sicherung (npm run backup) vor dem Update, Release über scripts/prod/release.mjs bauen und umschalten (task-17-1), supabase migration up, /api/health prüfen. Bei Fehler: Symlink zurück, Neustart, Warnung und E-Mail. Zusätzlich nur anzeigen (nicht installieren): verfügbare npm-Updates (npm outdated) und neue n8n-Version. launchd ersetzt den bisherigen Sicherungsauftrag 02:00 (Sicherung läuft im Update-Lauf zuerst).",
+          "order": 5,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-1",
+            "task-17-2",
+            "task-17-3",
+            "task-17-4"
+          ],
+          "definitionOfDone": [
+            "Ohne neuen Commit: nur Eintrag „keine Änderung“, keine Sicherung doppelt, kein Neustart",
+            "Erfolgreiches Update: Eintrag mit Commits, Migrationen, Dauer; altes Release bleibt für den Rückweg (letzte 3, PROD_KEEP_RELEASES)",
+            "Fehler in Build, Migration oder Gesundheitsprüfung: automatischer Rückfall auf das vorherige Release, Warnung und E-Mail an den Admin",
+            "Verfügbare npm- und n8n-Updates werden gespeichert, nicht installiert",
+            "launchd 02:00, Probelauf mit --dry-run, betrieb.md (Zeitplan, Rückweg, Grenzen bei Migrationen), lint"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-6",
+          "title": "Ausführung von Dashboard-Anfragen",
+          "description": "Die Web-App führt keine Befehle aus. Ein launchd-Auftrag prüft jede Minute update_requests und startet update.mjs für „Jetzt aktualisieren“ oder „Auf Release X zurück“. Rücksetzen schaltet nur den Code um; brachte ein späteres Release Migrationen, wird gewarnt, die Datenbank bleibt (Wiederherstellung nach betrieb.md 4.5 bleibt manuell).",
+          "order": 6,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-5"
+          ],
+          "definitionOfDone": [
+            "Anfrage wird innerhalb von etwa einer Minute übernommen, Status angefordert → läuft → erfolgreich/fehlgeschlagen",
+            "Rücksetzen auf ein vorhandenes Release ohne Neubau; Hinweis bei dazwischenliegenden Migrationen",
+            "Nie zwei Läufe gleichzeitig (Sperre gemeinsam mit dem Nachtlauf)",
+            "Fehler erzeugen Warnung und E-Mail; betrieb.md, lint"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-7",
+          "title": "Bereich „Updates“ im Dashboard",
+          "description": "Neuer Bereich für admin und manager (manager nur lesend): aktuelle Version mit Datum, verfügbarer Commit auf main mit Nachrichten, Verlauf der Updates mit Status und Logauszug, vorhandene Releases. Nur admin: Schaltflächen „Jetzt aktualisieren“ und „Wiederherstellen“ je Release mit Bestätigung. Abschnitt „Verfügbar, nicht installiert“ für npm-Pakete und n8n.",
+          "order": 7,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-2",
+            "task-17-6"
+          ],
+          "definitionOfDone": [
+            "Bereich in roles.ts für admin und manager, Zugriffsschutz in der Seite und über RLS",
+            "Manager sieht keine Schaltflächen, Aufruf der RPC durch manager scheitert mit 42501",
+            "Laufender Vorgang wird angezeigt und aktualisiert sich",
+            "UI bei 390/768/1440 geprüft, test:ui und test:api ergänzt, architecture.md",
+            "lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-8",
+          "title": "Überwachung von n8n",
+          "description": "n8n-Error-Workflow für alle Workflows meldet fehlgeschlagene Läufe über raise_alert. Unabhängiger Wächter (scripts/watchdog.mjs, launchd alle 5 Minuten): n8n healthz, alle erwarteten Workflows aktiv, Stau in der Versandwarteschlange und bei KI-Analysen, keine neuen Läufe trotz wartender Arbeit. Neue Warnung → E-Mail an den Admin, Behebung → E-Mail „wieder in Ordnung“. Zugriff auf n8n nur über die API, nie auf database.sqlite.",
+          "order": 8,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-2",
+            "task-17-3"
+          ],
+          "definitionOfDone": [
+            "Error-Workflow in n8n/workflows exportiert und allen Workflows zugewiesen",
+            "Wächter erkennt: n8n nicht erreichbar, Workflow inaktiv, Versandstau > 10 min, Analysestau",
+            "Eine E-Mail je Vorfall, Erinnerung nach 6 Stunden, E-Mail bei Behebung",
+            "Probe: n8n gestoppt → Warnung und E-Mail; gestartet → behoben",
+            "n8n-workflows.md, betrieb.md 5, lint"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-9",
+          "title": "Überwachung von Mira",
+          "description": "Wächter prüft den Telefonassistenten: Agent bei ElevenLabs abrufbar, Guthaben über Schwellwert, Werkzeug-Webhooks über den Tunnel erreichbar (mit Service Token), Gesprächsauswertungen ohne Fehler, keine Häufung fehlgeschlagener Werkzeugaufrufe. Warnungen und E-Mails wie bei n8n.",
+          "order": 9,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-2",
+            "task-17-3"
+          ],
+          "definitionOfDone": [
+            "Prüfungen Agent, Guthaben (Schwellwert in .env.local), Webhook-Erreichbarkeit, Auswertungsfehler",
+            "Ohne ELEVENLABS_API_KEY: Prüfung übersprungen, keine Fehlwarnung",
+            "Probe mit falschem Schlüssel bzw. gesperrtem Webhook erzeugt Warnung und E-Mail",
+            "telefonassistent/setup.md, betrieb.md 5, lint"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-10",
+          "title": "Warnungen im Dashboard für Admin und Manager",
+          "description": "Nutzerentscheidung 21.10.2026: E-Mails nur an den Admin, Warnungen im Dashboard für admin und manager. Hinweis oben auf jeder Seite bei offenen Warnungen (Muster send-backlog-alert), Liste offener und behobener Warnungen im Bereich „Updates“; admin kann eine Warnung als erledigt markieren.",
+          "order": 10,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-8",
+            "task-17-9"
+          ],
+          "definitionOfDone": [
+            "Banner für admin und manager mit Anzahl und schwerster Warnung, Link zur Liste",
+            "Liste mit Quelle, seit wann, zuletzt gesehen, behoben; Erledigen nur admin",
+            "Dispatcher und Techniker sehen nichts",
+            "UI bei 390/768/1440, test:ui, test:api, lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-11",
+          "title": "Gesamtprobe und Dokumentation",
+          "description": "Ende-zu-Ende-Probe: Update auf einen neuen Commit, Update mit absichtlich fehlerhaftem Build (automatischer Rückfall und E-Mail), Wiederherstellen über das Dashboard, n8n-Ausfall mit Warnung und Behebung. Entscheidungen in decisions.md, Übergabe aktualisiert.",
+          "order": 11,
+          "weight": 1,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-5",
+            "task-17-6",
+            "task-17-7",
+            "task-17-10"
+          ],
+          "definitionOfDone": [
+            "Alle vier Proben durchgeführt und im verification-Objekt beschrieben",
+            "decisions.md, betrieb.md, HANDOFF.md, testing.md aktuell",
+            "lint, typecheck, build, test:db, test:api, test:ui"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
         }
       ]
     }
