@@ -457,3 +457,11 @@ task-17-9: Ein Wächter auf dem Rechner (`online.rheinwerk.watchdog`, alle 5 Min
 - Die Werkzeugprobe ruft nur `agent-anlage-pruefen` auf (reiner Katalogabgleich in n8n): Werkzeuge mit `call_id` würden Gesprächszeilen in `phone_calls` anlegen.
 - Fehlgeschlagene Werkzeugaufrufe stehen nicht in der Datenbank; der Wächter liest sie aus den Gesprächen der letzten Stunde bei ElevenLabs (höchstens 30 Gespräche am Tag). Ab 3 Fehlern je Stunde gibt es eine Warnung, einzelne Ausreißer nicht.
 - Fehlt der Zugriff (Berechtigung „User: Read“ für das Guthaben, Secret, Datenbank), wird die Prüfung übersprungen statt gewarnt. Ohne Datenbank verschickt der Wächter keine E-Mail, sonst käme alle 5 Minuten eine; diesen Ausfall meldet `/api/health`.
+
+## 2026-10-21: Kein Betrieb aus einer Produktionskopie bis Projektende
+
+Nutzerentscheidung, task-17-17 (ersetzt den Abschnitt „Betrieb aus einer Produktionskopie“ von task-17-1): Bis zum Abschluss des Projekts läuft alles auf dem eigenen Rechner aus dem Entwicklungsordner. Die Website kommt erst danach unter die Domain, Supabase und n8n voraussichtlich auf einen Server.
+
+- `~/RheinWerk-Prod` mit Releases je Commit, nächtlichem Code-Update aus `origin/main` und Rücksetzen ist entfernt (Papierkorb), ebenso die Dienste `online.rheinwerk.web`, `.update` und `.requests` und ihr Code (Git-Historie bis `284294f`, Vorlage für den Server).
+- Weiter automatisch, jetzt aus dem Entwicklungsordner: nächtliche Sicherung mit Wiederherstellungstest (`online.rheinwerk.backup`, 02:00) und Wächter (`online.rheinwerk.watchdog`, alle 5 Minuten). `node` und `zsh` brauchen dafür Festplattenvollzugriff, weil macOS LaunchAgents sonst nicht in `~/Documents` lesen lässt (Nutzerentscheidung statt Umzug des Projektordners).
+- Die Tabellen der Code-Updates (`system_releases`, `system_updates`, `update_requests`) bleiben vorerst ungenutzt in der Datenbank; Migrationen werden nicht zurückgenommen.

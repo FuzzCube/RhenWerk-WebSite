@@ -13,8 +13,8 @@ import { alertSourceLabel, systemSummary } from "@/lib/system-summary";
 export const metadata: Metadata = { title: "System" };
 
 // Area "System" for the owner (task-17-12): is the data safe, does everything run, is anything to update or top up?
-// Admin and manager read the same content. Code updates are not part of the dashboard (nightly run and terminal,
-// docs/betrieb.md 6). The watchdog fills state and credit of the phone assistant (task-17-9); backups (task-17-13)
+// Admin and manager read the same content. Code updates are not part of the dashboard (task-17-12;
+// since task-17-17 the code runs only from the development folder). The watchdog fills state and credit of the phone assistant (task-17-9); backups (task-17-13)
 // and the other systems (task-17-15) still show an empty state.
 export default async function SystemPage() {
   await requireRole(rolesFor("/dashboard/system"));

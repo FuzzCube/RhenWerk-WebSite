@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Nightly backup with restore check (task-17-17), 02:00 from the development folder; macOS makes up a run missed
+     while the computer slept. Template: npm run ops:install fills in __PROJECT_DIR__ and __LOG_DIR__. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>online.rheinwerk.backup</string>
+  <key>ProgramArguments</key><array>
+    <string>/bin/zsh</string><string>-lc</string>
+    <string>cd "__PROJECT_DIR__" &amp;&amp; exec node --env-file=.env.local scripts/ops/nightly.mjs</string>
+  </array>
+  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>2</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key><string>__LOG_DIR__/backup.log</string>
+  <key>StandardErrorPath</key><string>__LOG_DIR__/backup.log</string>
+</dict></plist>

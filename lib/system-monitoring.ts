@@ -1,5 +1,5 @@
 // Results of the watchdog in the area "System" (task-17-9): state per system and the credit of external services.
-// The watchdog (scripts/prod/watchdog.mjs) writes system_status.monitoring every 5 minutes; an entry older than
+// The watchdog (scripts/ops/watchdog.mjs) writes system_status.monitoring every 5 minutes; an entry older than
 // 15 minutes means the watchdog itself does not run. Pure functions, shared by page and unit tests.
 import type { DisplayStatus } from "./display-status";
 

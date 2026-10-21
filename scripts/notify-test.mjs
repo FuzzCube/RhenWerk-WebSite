@@ -1,5 +1,4 @@
 // Test e-mail to the recipients in ALERT_EMAILS (task-17-3): npm run notify:test
-// In operation from the production copy: cd ~/RheinWerk-Prod/current && npm run notify:test
 import { alertRecipients, sendAlert } from "./lib/notify.mjs";
 
 const result = await sendAlert({

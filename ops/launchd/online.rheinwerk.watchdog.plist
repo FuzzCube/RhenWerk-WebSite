@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Watchdog (task-17-9), every 5 minutes. Template: npm run prod:install fills in __PROD_DIR__.
-     Output only for failed checks. -->
+<!-- Watchdog (task-17-9), every 5 minutes from the development folder. Template: npm run ops:install fills in
+     __PROJECT_DIR__ and __LOG_DIR__. Output only for failed checks. -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>Label</key><string>online.rheinwerk.watchdog</string>
   <key>ProgramArguments</key><array>
     <string>/bin/zsh</string><string>-lc</string>
-    <string>cd __PROD_DIR__/tools &amp;&amp; exec node --env-file=__PROD_DIR__/shared/.env.local scripts/prod/watchdog.mjs</string>
+    <string>cd "__PROJECT_DIR__" &amp;&amp; exec node --env-file=.env.local scripts/ops/watchdog.mjs</string>
   </array>
   <key>StartInterval</key><integer>300</integer>
-  <key>StandardOutPath</key><string>__PROD_DIR__/logs/watchdog.log</string>
-  <key>StandardErrorPath</key><string>__PROD_DIR__/logs/watchdog.log</string>
+  <key>StandardOutPath</key><string>__LOG_DIR__/watchdog.log</string>
+  <key>StandardErrorPath</key><string>__LOG_DIR__/watchdog.log</string>
 </dict></plist>

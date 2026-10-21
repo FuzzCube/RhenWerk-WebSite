@@ -97,7 +97,7 @@ function agentCheck(agent, id) {
   if (agent.status === 200) return check("mira:agent", label, true);
   if (agent.status === 401 || agent.status === 403) {
     return check("mira:agent", label, false, "critical", "Telefonassistent: Zugang zu ElevenLabs abgelehnt",
-      "ElevenLabs lehnt ELEVENLABS_API_KEY ab (ungültig, gelöscht oder ohne Berechtigung „Agents: Read“). Schlüssel in ElevenLabs prüfen und in shared/.env.local sowie im n8n-Credential „RheinWerk ElevenLabs“ ersetzen.");
+      "ElevenLabs lehnt ELEVENLABS_API_KEY ab (ungültig, gelöscht oder ohne Berechtigung „Agents: Read“). Schlüssel in ElevenLabs prüfen und in .env.local sowie im n8n-Credential „RheinWerk ElevenLabs“ ersetzen.");
   }
   if (agent.status === 404) {
     return check("mira:agent", label, false, "critical", "Telefonassistent: Agent nicht gefunden",
@@ -115,11 +115,11 @@ function webhookCheck(webhook) {
   // Cloudflare answers 401 (wrong secret) or 403 (no or unknown token) with its own error page
   if ((webhook.status === 401 || webhook.status === 403) && /Cloudflare Access/i.test(webhook.text ?? "")) {
     return check("mira:webhook", label, false, "critical", title,
-      "Cloudflare Access lässt den Service Token nicht durch (abgelaufen, gelöscht oder Richtlinie „Service Auth“ geändert). Mira kann keine Termine, Anfragen oder Rückrufe anlegen. Zero Trust → Access → Service Tokens prüfen, CF_ACCESS_CLIENT_ID/SECRET in shared/.env.local und mit npm run agent:sync in ElevenLabs aktualisieren.");
+      "Cloudflare Access lässt den Service Token nicht durch (abgelaufen, gelöscht oder Richtlinie „Service Auth“ geändert). Mira kann keine Termine, Anfragen oder Rückrufe anlegen. Zero Trust → Access → Service Tokens prüfen, CF_ACCESS_CLIENT_ID/SECRET in .env.local und mit npm run agent:sync in ElevenLabs aktualisieren.");
   }
   if (webhook.status === 401 || webhook.status === 403) {
     return check("mira:webhook", label, false, "critical", title,
-      "n8n lehnt das Werkzeug-Secret ab (x-agent-secret passt nicht zu Credential rwAgentSecret001). AGENT_WEBHOOK_SECRET in shared/.env.local, n8n und ElevenLabs angleichen (npm run agent:sync).");
+      "n8n lehnt das Werkzeug-Secret ab (x-agent-secret passt nicht zu Credential rwAgentSecret001). AGENT_WEBHOOK_SECRET in .env.local, n8n und ElevenLabs angleichen (npm run agent:sync).");
   }
   if (webhook.status === 404) {
     return check("mira:webhook", label, false, "critical", title,

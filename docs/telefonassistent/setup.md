@@ -78,7 +78,7 @@ Benötigte Rechte des ElevenLabs-API-Schlüssels: Agents (Conversational AI) les
 
 ## Überwachung (task-17-9)
 
-Der Wächter auf dem Rechner (`scripts/prod/watchdog.mjs`, Prüfungen in `scripts/prod/mira.mjs`, LaunchAgent `online.rheinwerk.watchdog` alle 5 Minuten, eingerichtet mit `npm run prod:install`) prüft Mira mit den Schlüsseln aus `shared/.env.local`:
+Der Wächter auf dem Rechner (`scripts/ops/watchdog.mjs`, Prüfungen in `scripts/ops/mira.mjs`, LaunchAgent `online.rheinwerk.watchdog` alle 5 Minuten aus dem Entwicklungsordner, eingerichtet mit `npm run ops:install`) prüft Mira mit den Schlüsseln aus `.env.local`:
 
 | Prüfung | Wie | Warnung |
 | --- | --- | --- |
@@ -88,7 +88,7 @@ Der Wächter auf dem Rechner (`scripts/prod/watchdog.mjs`, Prüfungen in `script
 | Gesprächsauswertung | `monitor_call_analysis()`: Gespräche ohne `analyzed_at` 30 Minuten nach Ende (letzte 7 Tage, ohne Demo) | Warnung |
 | Werkzeugaufrufe | Gespräche der letzten Stunde bei ElevenLabs, Werkzeugergebnisse mit `is_error` oder `ok: false` | ab 3 Fehlern Warnung |
 
-Warnungen erscheinen im Dashboard-Bereich „System“ (Zusammenfassung, Zeile „Telefonassistent (Mira)“, Guthaben mit Tarif, Schwellwert und nächstem Kontingent) und gehen per E-Mail an `ALERT_EMAILS`. Probe: `ELEVENLABS_API_KEY=falsch npm run prod:watchdog` bzw. `CF_ACCESS_CLIENT_SECRET=falsch …` erzeugt Warnung und E-Mail, der nächste normale Lauf schließt sie mit „Wieder in Ordnung“.
+Warnungen erscheinen im Dashboard-Bereich „System“ (Zusammenfassung, Zeile „Telefonassistent (Mira)“, Guthaben mit Tarif, Schwellwert und nächstem Kontingent) und gehen per E-Mail an `ALERT_EMAILS`. Probe: `ELEVENLABS_API_KEY=falsch npm run watchdog` bzw. `CF_ACCESS_CLIENT_SECRET=falsch …` erzeugt Warnung und E-Mail, der nächste normale Lauf schließt sie mit „Wieder in Ordnung“.
 
 ## Demo-Anruf über die Service-Desk-Nummer (task-13-8, task-13-11)
 

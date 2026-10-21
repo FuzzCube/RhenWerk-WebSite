@@ -28,10 +28,10 @@ flowchart LR
   CF ==>|"ausgehender Tunnel,<br/>keine offenen Ports"| Tunnel
   subgraph Mac["Eigener Rechner (Docker Desktop)"]
     Tunnel["cloudflared"]
-    App["Next.js<br/>next start :3200<br/>aus ~/RheinWerk-Prod"]
+    App["Next.js<br/>aus dem Entwicklungsordner"]
     N8N["n8n :5678"]
     SB[("Supabase<br/>:54321, nicht öffentlich")]
-    Backup["Sicherung täglich<br/>npm run backup"]
+    Backup["Sicherung täglich 02:00<br/>online.rheinwerk.backup"]
     Tunnel -->|"rheinwerk-service.online"| App
     Tunnel -->|"n8n.rheinwerk-service.online<br/>(nur mit Access)"| N8N
     App --> SB
@@ -44,7 +44,7 @@ flowchart LR
 
 | Öffentliche Adresse | Ziel im Tunnel | Schutz |
 | --- | --- | --- |
-| `rheinwerk-service.online` (und `www.`) | `http://host.docker.internal:3200` (Next.js aus der Produktionskopie) | öffentlich; Dashboard nur mit Anmeldung, Pause nach Fehlversuchen, RLS |
+| `rheinwerk-service.online` (und `www.`) | noch nicht geschaltet (2.2); vorgesehen: Next.js auf dem Rechner bzw. später auf dem Server | öffentlich; Dashboard nur mit Anmeldung, Pause nach Fehlversuchen, RLS |
 | `n8n.rheinwerk-service.online` | `http://host.docker.internal:5678` | Cloudflare Access (Anmeldung); nur `webhook/agent-*` per Service Token für ElevenLabs |
 | Supabase | – | **nicht veröffentlicht**: Der Browser spricht nie direkt mit Supabase, nur die App auf dem Server und n8n |
 
@@ -54,14 +54,7 @@ flowchart LR
 
 ### 2.2 Website unter der Domain schalten
 
-1. **Produktionskopie und Dienst einrichten:** `npm run prod:install && npm run prod:release` (Port 3200, Abschnitt 2.3).
-2. **Tunnel-Route anlegen:** Cloudflare Zero Trust → Networks → Tunnels → Tunnel → *Public Hostname* → `rheinwerk-service.online`, Service `HTTP`, URL `host.docker.internal:3200`; ebenso `www`.
-3. **`.env.local` für den Betrieb** (`~/RheinWerk-Prod/shared/.env.local`, nicht die des Entwicklungsordners):
-   - `N8N_WEBHOOK_URL=http://127.0.0.1:5678/webhook/rheinwerk-service-request` (App und n8n auf demselben Rechner)
-   - Turnstile: Produktionsschlüssel für die Domain `rheinwerk-service.online` (`NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`)
-   - `BLOB_READ_WRITE_TOKEN` bleibt (Vercel Blob, kostenloser Umfang)
-4. **Supabase Auth auf die Domain stellen** (Links in Passwort-Mails): in `supabase/config.toml` `site_url = "https://rheinwerk-service.online"` und die Domain in `additional_redirect_urls`; danach `supabase stop && supabase start` (Daten bleiben erhalten). Für echte Passwort-Mails SMTP nach [setup.md](setup.md#passwort-e-mails-supabase-auth).
-5. **Prüfen:** `https://rheinwerk-service.online` öffnen, Formular absenden (RIS-Nummer kommt), unter `/login` anmelden.
+Nutzerentscheidung 21.10.2026 (task-17-17): Bis zum Abschluss des Projekts läuft alles aus dem Entwicklungsordner auf dem eigenen Rechner, die Domain ist noch nicht auf diesen Rechner geschaltet (Cloudflare meldet 522). Die Website kommt erst nach Projektende unter die Domain, Supabase und n8n voraussichtlich auf einen Server (Stufe 2, Abschnitt 3). Dafür dann: gebaute App als Dienst (`next build && next start`), Tunnel-Route bzw. DNS auf das Ziel, eigene `.env.local` für den Betrieb (`N8N_WEBHOOK_URL`, Turnstile-Produktionsschlüssel, `BLOB_READ_WRITE_TOKEN`), Supabase Auth auf die Domain (`site_url`, `additional_redirect_urls`, SMTP nach [setup.md](setup.md#passwort-e-mails-supabase-auth)). Die frühere Produktionskopie auf diesem Rechner (task-17-1 bis 17-6: `~/RheinWerk-Prod` mit Releases je Commit, nächtlichem Code-Update und Rücksetzen) wurde mit task-17-17 entfernt; ihr Code steht in der Git-Historie (bis Commit `284294f`) als Vorlage für den Server.
 
 ### 2.3 Dauerbetrieb des Rechners
 
@@ -71,35 +64,18 @@ flowchart LR
 | Nach Stromausfall starten | Systemeinstellungen → Energie → „Nach Stromausfall automatisch starten“ | Wiederanlauf ohne Eingriff |
 | Docker beim Anmelden starten | Docker Desktop → Settings → General → „Start Docker Desktop when you sign in“ | Container starten selbst |
 | Container-Neustart | bereits gesetzt: `restart: unless-stopped` für n8n, cloudflared und die Supabase-Container | nach Docker-Neustart automatisch |
-| App als Dienst | `launchd`-Auftrag `online.rheinwerk.web` (unten) | `next start` startet beim Anmelden und nach Absturz neu |
+| Dienste auf dem Rechner | `npm run ops:install` (unten) | nächtliche Sicherung und Wächter |
 
-**Produktionskopie (task-17-1).** Der Betrieb läuft nicht aus dem Entwicklungsordner, sondern aus `~/RheinWerk-Prod`. So berühren Updates nie laufende Entwicklungsarbeit, und der Rückweg auf eine frühere Version ist nur das Umschalten eines Symlinks.
+**Dienste (task-17-17).** Zwei LaunchAgents laufen aus dem Entwicklungsordner mit dessen `.env.local`; Vorlagen in `ops/launchd/`, eingerichtet und bei Änderung neu geladen mit `npm run ops:install` (wiederholbar; `-- --remove` entfernt beide, alte Dienste der Produktionskopie räumt es mit ab). Protokolle in `~/Library/Logs/RheinWerk/`.
 
-| Pfad | Inhalt |
-| --- | --- |
-| `repo/` | Klon von `origin` (GitHub), Quelle jedes Releases |
-| `releases/<commit>/` | ein gebautes Release je Commit (`git archive`, `npm ci`, `next build`), `release.json` mit Commit, Betreff, Bauzeit, letzter Migration; die neuesten 3 bleiben (`PROD_KEEP_RELEASES`), das aktive nie gelöscht |
-| `current` | Symlink auf das aktive Release (App-Dienst) |
-| `tools` | Symlink auf das neueste gebaute Release; Update- und Anfrage-Dienst starten ihre Skripte von dort, damit ein Rücksetzen der App keine älteren Update-Skripte zurückbringt |
-| `skip-commit` | nach einem Rücksetzen der Commit, den die Nacht überspringt, bis `origin/main` weiterzieht |
-| `shared/.env.local` | Umgebung für alle Releases (Modus 600), jedes Release verlinkt darauf; beim ersten `prod:install` aus dem Entwicklungsordner kopiert |
-| `logs/` | `web.log` (Dienst), `release.log` (Umschaltungen), `update.log` (Nachtlauf), `requests.log` (Dashboard-Anfragen), `build-<commit>.log` |
+| Dienst | Wann | Skript | Von Hand |
+| --- | --- | --- | --- |
+| `online.rheinwerk.backup` | täglich 02:00 (verpasste Läufe holt macOS nach dem Aufwachen nach) | `scripts/ops/nightly.mjs`: Sicherung mit Wiederherstellungstest (4.2, 4.3), bei Fehler Warnung `backup:failed` und E-Mail; danach neuere Versionen von npm-Paketen und n8n für den Bereich „System“ (nur Anzeige) | `npm run nightly` |
+| `online.rheinwerk.watchdog` | alle 5 Minuten | `scripts/ops/watchdog.mjs` (Abschnitt 5) | `npm run watchdog` |
 
-```bash
-npm run prod:install                      # einmalig: Ordner, Klon, shared/.env.local, LaunchAgent (wiederholbar)
-npm run prod:release                      # origin/main bauen (falls neu), umschalten, Dienst neu starten, prüfen
-npm run prod:release -- <commit|branch>   # anderen Stand von origin bauen und aktivieren
-npm run prod:release -- --no-switch       # nur bauen
-npm run prod:release -- --switch <commit> # auf ein vorhandenes Release zurück, ohne Neubau
-```
+**macOS-Datenschutz:** Ein LaunchAgent darf ohne Freigabe nicht in `~/Documents` lesen (`Operation not permitted`, im Protokoll `node: .env.local: not found`). Deshalb brauchen `/opt/homebrew/bin/node` und `/bin/zsh` „Festplattenvollzugriff“ (Systemeinstellungen → Datenschutz & Sicherheit → Festplattenvollzugriff → „+“, im Dateidialog ⌘⇧G und den Pfad eingeben). Nach `brew upgrade node` ändert sich der Pfad des Programms: Freigabe erneuern, dann `launchctl kickstart gui/$(id -u)/online.rheinwerk.watchdog` und das Protokoll prüfen.
 
-Ein fehlgeschlagener Build lässt `current` unverändert. Antwortet die App nach dem Umschalten 90 Sekunden lang nicht mit dem Commit des neuen Releases auf `/api/health` (Releases vor task-17-4 ohne diese Route: `/login` mit 200), schaltet das Skript auf das vorherige Release zurück und endet mit Fehler (geprüft am 21.10.2026 mit einem absichtlich leeren Release). Nur ein Lauf gleichzeitig (`~/RheinWerk-Prod/.lock`; bleibt er nach einem Absturz liegen, löschen). Der Rückweg betrifft nur den Code: Migrationen eines späteren Releases bleiben in der Datenbank (Daten zurück nur über 4.5).
-
-**Port 3200:** Port 3000 bleibt `next dev` im Entwicklungsordner vorbehalten. Entwicklung und Betrieb nutzen in Stufe 1 dieselbe lokale Supabase-Datenbank; Testläufe (`test:ui`, `test:api`) hinterlassen ihre Testdaten deshalb auch im Betrieb.
-
-Der LaunchAgent entsteht aus der Vorlage `ops/launchd/online.rheinwerk.web.plist` (`npm run prod:install` setzt Pfad und Port ein): `zsh -lc` lädt das Benutzerprofil, damit `node` im Pfad ist; `cd ~/RheinWerk-Prod/current` löst den Symlink bei jedem Start neu auf; `KeepAlive` startet nach einem Absturz neu (geprüft mit `kill -9`).
-
-Neustart: `launchctl kickstart -k gui/$(id -u)/online.rheinwerk.web`; anhalten: `launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/online.rheinwerk.web.plist`; wieder laden: `npm run prod:install`.
+Die Website läuft während der Entwicklung als `next dev` im Terminal (Port 3000) und ist kein Dienst.
 
 ### 2.4 Grenzen von Stufe 1 (bewusst akzeptiert)
 
@@ -178,17 +154,17 @@ Ergebnis vom 20.10.2026: alle Prüfungen bestanden (829 Anfragen, 113 Konten, 2 
 
 | Was | Wann | Wo |
 | --- | --- | --- |
-| Sicherung + Prüfung | täglich 02:00 als erster Schritt des nächtlichen Updates (`launchd` `online.rheinwerk.update`, Abschnitt 6; verpasste Läufe holt macOS nach dem Aufwachen nach) | `~/RheinWerk-Backups`, ältere als 14 Tage löscht jeder Lauf |
+| Sicherung + Prüfung | täglich 02:00 (`launchd` `online.rheinwerk.backup`, Abschnitt 2.3; verpasste Läufe holt macOS nach dem Aufwachen nach) | `~/RheinWerk-Backups`, ältere als 14 Tage löscht jeder Lauf |
 | Kopie außer Haus | täglich mit (Ordner in iCloud Drive/Google Drive) oder wöchentlich manuell | Cloud-Ordner, verschlüsselt |
 | Monatssicherung | am 1. jedes Monats | externe SSD, 12 Monate aufbewahren |
 
 3 Kopien (Original, lokale Sicherung, extern), 2 Medien (interne SSD, externe SSD/Cloud), 1 außer Haus. Weil die Archive verschlüsselt sind, dürfen sie in einen Cloud-Ordner.
 
-Seit task-17-5 gibt es keinen eigenen Sicherungsauftrag mehr (der frühere `online.rheinwerk.backup` wird nicht eingerichtet): Der nächtliche Update-Lauf sichert jede Nacht zuerst mit `backup` und `backup:check` aus dem aktiven Release, auch ohne neuen Commit. Scheitert die Sicherung, folgt kein Update, und der Admin bekommt eine Warnung mit E-Mail (`backup:failed`). Protokoll: `~/RheinWerk-Prod/logs/update.log`.
+Der Nachtlauf (`scripts/ops/nightly.mjs`, task-17-17; von task-17-5 bis 17-16 war er Teil des nächtlichen Code-Updates der Produktionskopie) sichert mit `backup` und prüft mit `backup:check`. Scheitert eins davon, bekommt der Admin eine Warnung mit E-Mail (`backup:failed`), der nächste gute Lauf behebt sie. Protokoll: `~/Library/Logs/RheinWerk/backup.log`.
 
 ### 4.5 Wiederherstellung
 
-**Vorher:** App und n8n anhalten, damit niemand schreibt (`launchctl unload …web.plist`, `docker stop n8n`). Die aktuellen Daten zuerst selbst sichern (`npm run backup`), falls die Wiederherstellung rückgängig gemacht werden muss.
+**Vorher:** App und n8n anhalten, damit niemand schreibt (`next dev` im Terminal beenden, `docker stop n8n`). Die aktuellen Daten zuerst selbst sichern (`npm run backup`), falls die Wiederherstellung rückgängig gemacht werden muss.
 
 ```bash
 # 0. Archiv entpacken
@@ -223,12 +199,12 @@ Danach: Anmeldung im Dashboard, n8n → Executions (Zeitpläne laufen grün), ei
 | Was | Wie | Wer reagiert |
 | --- | --- | --- |
 | Website erreichbar | kostenloser Uptime-Monitor (z. B. UptimeRobot) auf `https://rheinwerk-service.online/api/health` (200 = ok, 503 = Datenbank nicht erreichbar), Benachrichtigung per E-Mail | Betreiber |
-| Gesundheitsprüfung | `curl -H "Authorization: Bearer $HEALTH_TOKEN" localhost:3200/api/health`: Commit des laufenden Releases, Datenbank und n8n mit Laufzeit (task-17-4); ohne Token nur der Status | Betreiber |
+| Gesundheitsprüfung | `curl -H "Authorization: Bearer $HEALTH_TOKEN" localhost:3000/api/health`: Commit (`dev` im Entwicklungsordner), Datenbank und n8n mit Laufzeit (task-17-4); ohne Token nur der Status | Betreiber |
 | E-Mail-Versand | Hinweis „E-Mail-Versand hängt“ oben im Dashboard nach 10 Minuten (task-12-9) | Dispatcher melden, Betreiber verbindet Gmail neu |
 | n8n-Läufe | n8n → Executions, rote Läufe; `docker logs n8n --since 1h` | Betreiber |
 | Automatisierung | Dashboard → Auswertung → Automatisierung (Anteil, Läufe mit Fehlern) | Manager |
-| Telefonassistent (task-17-9) | Wächter `online.rheinwerk.watchdog` alle 5 Minuten (`scripts/prod/watchdog.mjs`, `npm run prod:watchdog` von Hand, Protokoll `logs/watchdog.log` nur bei Fehlern): Agent bei ElevenLabs, Guthaben (Schwellwert `MIRA_CREDIT_MIN`, Standard 10 % des Kontingents), Werkzeug-Webhook über Tunnel und Cloudflare Access (Probe `agent-anlage-pruefen`, schreibt nichts), Gesprächsauswertung 30 Minuten nach Gesprächsende, ab 3 fehlgeschlagenen Werkzeugaufrufen in der letzten Stunde. Warnung im Bereich „System“ und E-Mail an den Admin (neuer Vorfall, Erinnerung nach 6 Stunden, „Wieder in Ordnung“); Ergebnis und Guthaben in `system_status.monitoring`. Ohne `ELEVENLABS_API_KEY` „nicht eingerichtet“, ohne Warnung. Einzelheiten `docs/telefonassistent/setup.md` | Betreiber (E-Mail), Inhaber sieht den Zustand |
-| Sicherung | `~/RheinWerk-Backups/backup.log`: letzte Zeile „Sicherung ist wiederherstellbar“ | Betreiber, wöchentlich |
+| Telefonassistent (task-17-9) | Wächter `online.rheinwerk.watchdog` alle 5 Minuten (`scripts/ops/watchdog.mjs`, `npm run watchdog` von Hand, Protokoll `~/Library/Logs/RheinWerk/watchdog.log` nur bei Fehlern): Agent bei ElevenLabs, Guthaben (Schwellwert `MIRA_CREDIT_MIN`, Standard 10 % des Kontingents), Werkzeug-Webhook über Tunnel und Cloudflare Access (Probe `agent-anlage-pruefen`, schreibt nichts), Gesprächsauswertung 30 Minuten nach Gesprächsende, ab 3 fehlgeschlagenen Werkzeugaufrufen in der letzten Stunde. Warnung im Bereich „System“ und E-Mail an den Admin (neuer Vorfall, Erinnerung nach 6 Stunden, „Wieder in Ordnung“); Ergebnis und Guthaben in `system_status.monitoring`. Ohne `ELEVENLABS_API_KEY` „nicht eingerichtet“, ohne Warnung. Einzelheiten `docs/telefonassistent/setup.md` | Betreiber (E-Mail), Inhaber sieht den Zustand |
+| Sicherung | Warnung `backup:failed` mit E-Mail; `~/Library/Logs/RheinWerk/backup.log`: letzte Zeile „Sicherung ist wiederherstellbar“ | Betreiber, wöchentlich |
 | Speicherplatz | `df -h`, `docker system df` | Betreiber, monatlich |
 
 Nächster sinnvoller Ausbau: ein n8n-*Error Workflow*, der bei jedem fehlgeschlagenen Lauf eine E-Mail an den Betreiber schickt (in n8n unter Settings → Error Workflow je Workflow eintragbar).
@@ -237,7 +213,7 @@ Nächster sinnvoller Ausbau: ein n8n-*Error Workflow*, der bei jedem fehlgeschla
 
 | Rhythmus | Aufgabe | Befehl / Ort |
 | --- | --- | --- |
-| täglich 02:00 (automatisch) | Sicherung + Wiederherstellungstest, danach Update aus `origin/main` (unten) | `launchd` `online.rheinwerk.update` |
+| täglich 02:00 (automatisch) | Sicherung + Wiederherstellungstest, Versionen für den Bereich „System“ | `launchd` `online.rheinwerk.backup` |
 | täglich (automatisch, Datenbank) | Transkripte > 30 Tage, Widget-Sitzungen > 90 Tage löschen; Zahlungserinnerungen; Eskalationen | pg_cron, [supabase-lokal.md](supabase-lokal.md#6-werkzeuge-im-alltag) |
 | wöchentlich | `backup.log` prüfen; n8n-Executions auf rote Läufe durchsehen; Dashboard-Hinweise | 5 Minuten |
 | monatlich | Sicherheitsupdates: `npm audit`, Next.js-Patchversion, macOS; Monatssicherung auf externe SSD; Kosten bei OpenAI und ElevenLabs prüfen; `docker system df`, alte Images entfernen (`docker image prune`) | [setup.md](setup.md#abhängigkeiten-und-sicherheitsmeldungen) |
@@ -245,38 +221,14 @@ Nächster sinnvoller Ausbau: ein n8n-*Error Workflow*, der bei jedem fehlgeschla
 | jährlich | Geheimnisse erneuern: `AGENT_WEBHOOK_SECRET` (`n8n/bootstrap_agent_secret.py`), Cloudflare-Service-Token für ElevenLabs (läuft nach der eingestellten Dauer ab), OpenAI- und ElevenLabs-Schlüssel; Domain `rheinwerk-service.online` verlängern; Datenschutz-Löschfristen überprüfen | |
 | bei Bedarf | Gmail-Zugang neu verbinden, wenn Google ihn widerruft (Passwortänderung, Sicherheitsprüfung) | Abschnitt 7 |
 
-**Nächtliches Update (task-17-5).** `scripts/prod/update.mjs`, LaunchAgent `online.rheinwerk.update` täglich 02:00 aus dem aktiven Release mit `shared/.env.local` (Vorlage `ops/launchd/`, eingerichtet von `npm run prod:install`). Quelle ist ausschließlich `origin/main` (Nutzerentscheidung 21.10.2026).
+**Code-Updates (task-17-5 bis 17-6, entfernt mit task-17-17):** Das nächtliche Update aus `origin/main`, die Releases je Commit und das Rücksetzen gehörten zur Produktionskopie `~/RheinWerk-Prod` und entfallen, solange alles aus dem Entwicklungsordner läuft (Nutzerentscheidung 21.10.2026). Die Tabellen `system_releases`, `system_updates` und `update_requests` bleiben ungenutzt erhalten; der Code steht in der Git-Historie bis `284294f`.
 
-1. `origin/main` holen; verfügbarer Commit, noch nicht installierte Commits und die nur angezeigten Updates (`npm outdated`, n8n-Version gegen `npm view n8n version`) nach `system_status`.
-2. Sicherung mit Prüfung (siehe 4.4). Scheitert sie: kein Update.
-3. Kein neuer Commit: Eintrag `no_change` (nach 30 Tagen gelöscht); eine offene Update-Warnung wird behoben.
-4. Neuer Commit: Release bauen, `supabase migration up --local` aus dem neuen Release, umschalten, `/api/health` mit dem neuen Commit abwarten.
-5. Fehler: Build → `current` bleibt; Migration → kein Umschalten, das Release wird verworfen; App antwortet nicht → zurück auf das vorherige Release (`rolled_back`), das Release wird verworfen. Migrationen werden nie zurückgenommen, sie müssen deshalb mit dem vorherigen Code verträglich sein (nur hinzufügen, nicht umbenennen oder löschen). Jeder Fehler: Warnung `update:failed` und E-Mail an `ALERT_EMAILS`; weitere Fehler desselben Vorfalls nur zählen, Erinnerung nach 6 Stunden, „Wieder in Ordnung“ nach dem nächsten erfolgreichen Lauf. Erfolg nur im Dashboard, ohne E-Mail.
-
-Jeder Lauf steht in `system_updates` (mit Logauszug), die Releases in `system_releases`. Geprüft am 21.10.2026: echte Updates b3cda09 → bf76d75 → 12cd0ea, Lauf ohne Änderung (auch über `launchctl kickstart`), absichtlich fehlerhafter Build, Gesundheitsprüfung und Migration (mit lokalen Testzweigen im Klon über `--ref`).
-
-```bash
-npm run prod:update -- --dry-run          # zeigt, was der Lauf täte, ändert nichts
-npm run prod:update                       # sofort ausführen (trigger cli)
-npm run prod:update -- --ref <ref>        # anderen Stand des Klons, nur von Hand (Tests)
-launchctl kickstart gui/$(id -u)/online.rheinwerk.update   # den Nachtlauf jetzt starten
-tail -f ~/RheinWerk-Prod/logs/update.log
-```
-
-**Anfragen aus dem Dashboard (task-17-6).** Seit task-17-12 bietet das Dashboard keine Code-Updates mehr an (Nutzerentscheidung: der Bereich „System“ ist für den Inhaber); Code kommt nur nachts oder über das Terminal in den Betrieb. Der Dienst bleibt für Sicherung, Datenwiederherstellung und Systemupdates (task-17-13 bis 17-16). Anfragen legen nur eine Zeile in `update_requests` an; die Web-App führt keine Befehle aus. LaunchAgent `online.rheinwerk.requests` startet jede Minute `scripts/prod/requests.mjs` aus `tools`: Sperre nehmen (hält ein anderer Lauf sie, wartet die Anfrage bis zur nächsten Minute), abgebrochene Läufe abschließen (`abandon_stale_runs`: Läufe und Anfragen in `running` ohne Prozess → `failed`), älteste Anfrage übernehmen.
-
-- **Jetzt aktualisieren**: derselbe Ablauf wie nachts (mit Sicherung), `trigger = dashboard` mit der anfragenden Person.
-- **Wiederherstellen**: Umschalten auf ein vorhandenes Release ohne Build, Sicherung und Migrationen, Gesundheitsprüfung mit Rückfall. Jüngere Migrationen bleiben und stehen als Hinweis im Log. Der verlassene Commit wird danach nachts übersprungen (`skip-commit`), sonst holte das nächste Update ihn sofort zurück; ein neuer Commit auf `origin/main`, `npm run prod:update` oder „Jetzt aktualisieren“ heben das auf.
-
-Geprüft am 21.10.2026 mit Anfragen über die RPCs als Admin: Manager abgewiesen (`42501`), zweite Anfrage `RW422`, „Jetzt aktualisieren“ ohne Änderung (`no_change`) und mit neuem Commit, Rücksetzen auf 12cd0ea und 0a37dba mit Hinweis auf jüngere Migration, Nachtlauf überspringt den verlassenen Commit, unbekanntes Release `RW422`, abgebrochener Lauf nach einer Minute geschlossen.
-
-**Regeln bei Änderungen (Deployment):**
+**Regeln bei Änderungen:**
 
 1. Prüfungen: `npm run lint && npm run typecheck && npm run test:unit && npm run test:db`.
-2. Neue Migrationen nur hinzufügend schreiben (siehe oben) und im Entwicklungsordner mit `supabase migration up` prüfen (nie `supabase db reset`), danach `npm run db:types`.
-3. Nach `origin/main` pushen; die Nacht übernimmt Sicherung, Build, Migrationen und Umschalten. Sofort: `npm run prod:update`.
-4. Geänderte n8n-Workflows aus `n8n/workflows/` importieren (nicht Teil des Updates).
-5. Rückweg: `npm run prod:release -- --switch <commit>` (vorhandene Releases: `ls ~/RheinWerk-Prod/releases`); bei Datenproblemen die Sicherung der Nacht nach 4.5.
+2. Neue Migrationen nur hinzufügend schreiben und mit `supabase migration up` einspielen (nie `supabase db reset`), danach `npm run db:types`.
+3. Geänderte n8n-Workflows aus `n8n/workflows/` importieren.
+4. Bei Datenproblemen die Sicherung der Nacht nach 4.5.
 
 **Einmalige Datenübernahmen** laufen nach demselben Muster: Probelauf mit Bericht, Freigabe, Sicherung, Ausführung. Beispiel Kundenstamm (task-14-3): bearbeitete Live-Anfragen ohne Kunden nachträglich zuordnen.
 
@@ -292,15 +244,14 @@ Ein zweiter Lauf findet nichts mehr (Anfragen mit offenem Vorschlag warten auf d
 | Notfall | Erkennen | Sofortmaßnahme | Danach |
 | --- | --- | --- | --- |
 | **Gmail-Zugang abgelaufen** (geschehen am 19.10.2026: Versand fiel aus, Eingangsbestätigungen blieben liegen) | Dashboard-Hinweis „E-Mail-Versand hängt“; Logs „needs to be reconnected“ | n8n über `https://n8n.rheinwerk-service.online` öffnen → Credentials → „RheinWerk Gmail“ → *Reconnect* | wartende E-Mails gehen innerhalb einer Minute automatisch raus; Google-Cloud-Projekt muss auf *In production* stehen (sonst Ablauf nach 7 Tagen) |
-| **Website nicht erreichbar** | Uptime-Monitor | Rechner wach? `docker ps` (cloudflared läuft?), `curl localhost:3200/login`, `tail ~/RheinWerk-Prod/logs/web.log` | ggf. `launchctl kickstart -k gui/$(id -u)/online.rheinwerk.web` |
+| **Website nicht erreichbar** (erst nach dem Schalten der Domain, 2.2) | Uptime-Monitor | Rechner wach? `docker ps` (cloudflared läuft?), läuft die App? | App neu starten |
 | **Datenbank versehentlich zurückgesetzt** (`supabase db reset`) oder beschädigt | Dashboard leer, Anmeldung scheitert | App und n8n anhalten | Wiederherstellung 4.5 aus der letzten Sicherung |
 | **Rechner defekt oder gestohlen** | – | Domain zeigt Fehlerseite von Cloudflare | Abschnitt 4.5 „Kompletter Verlust“ auf neuem Rechner oder direkt Stufe 2 |
 | **n8n-Credentials unbrauchbar** („could not decrypt“) | n8n-Fehler in allen Workflows | `~/n8n/data/config` aus der Sicherung zurückkopieren | Schlüssel nie neu erzeugen, solange alte Credentials gebraucht werden |
 | **KI-Analyse fällt aus** (OpenAI-Guthaben, Schlüssel) | Erstbearbeitungen bleiben „neu“ | Schlüssel/Guthaben prüfen | Zeitplan holt offene Analysen nach; bis dahin bearbeiten Dispatcher manuell |
 | **n8n führt nichts mehr aus** (Logs `LockAcquireTimeoutError … SqliteWriteConnectionMutex`; geschehen am 20.10.2026 nach Zugriff auf die Live-Datenbank vom Rechner aus) | Dashboard-Hinweis „E-Mail-Versand hängt“, n8n-Executions ohne neue Läufe | `docker restart n8n`, danach `pragma integrity_check` auf einer Kopie | wartende E-Mails gehen danach automatisch raus; nie mit Werkzeugen des Rechners auf `~/n8n/data/database.sqlite` zugreifen, solange n8n läuft |
-| **Nächtliches Update fehlgeschlagen** | E-Mail „Update auf … fehlgeschlagen/zurückgerollt“, Warnung `update:failed` | nichts sofort: es läuft weiter das vorherige Release. `tail -100 ~/RheinWerk-Prod/logs/update.log`, bei Build-Fehlern `logs/build-<commit>.log` | Fehler beheben und pushen; die nächste Nacht (oder `npm run prod:update`) versucht es erneut und behebt die Warnung |
-| **Sicherung fehlgeschlagen** | E-Mail „Tägliche Sicherung fehlgeschlagen“ | `docker ps` (Supabase und n8n laufen?), `df -h` | `npm run prod:update` erneut; bis dahin kein Update |
-| **Update-Lauf hängt** (`Ein anderer Lauf ist aktiv`) | Meldung beim Start | `cat ~/RheinWerk-Prod/.lock/pid`, läuft der Prozess? | eine Sperre ohne laufenden Prozess übernimmt der nächste Lauf selbst |
+| **Sicherung fehlgeschlagen** | E-Mail „Tägliche Sicherung fehlgeschlagen“, Warnung `backup:failed` | `docker ps` (Supabase und n8n laufen?), `df -h`, `tail -50 ~/Library/Logs/RheinWerk/backup.log` | `npm run nightly` erneut; der gute Lauf behebt die Warnung |
+| **Dienst läuft nicht** (Bereich „System“ zeigt „Prüfung veraltet“) | Protokoll `node: .env.local: not found` oder `Operation not permitted` | Festplattenvollzugriff für node und zsh (2.3), `npm run ops:install` | `launchctl kickstart gui/$(id -u)/online.rheinwerk.watchdog` |
 | **Festplatte voll** | Docker-Fehler, Sicherung scheitert | `docker image prune`, alte Sicherungen auslagern | `BACKUP_KEEP_DAYS` verkleinern |
 | **Verdacht auf kompromittierten Schlüssel** | – | betroffenen Schlüssel beim Anbieter bzw. mit dem Bootstrap-Skript erneuern (Agent-Secret, Cloudflare-Service-Token, OpenAI, ElevenLabs, Google-OAuth-Client); die Supabase-Schlüssel sind in Stufe 1 nur im eigenen Rechner nutzbar, weil Supabase nicht veröffentlicht ist (in Stufe 2 im Supabase-Projekt rotieren) | Zugriffe in Cloudflare Access und n8n-Executions prüfen |
 

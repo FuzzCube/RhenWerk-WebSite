@@ -4,17 +4,17 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// Health check (task-17-4) for the check after an update (scripts/prod) and for the watchdog. Public: only
+// Health check (task-17-4) for monitors and the watchdog. Public: only
 // {"status":"ok"} (200) or {"status":"fehler"} (503), because the route is reachable through the tunnel. With
 // "Authorization: Bearer <HEALTH_TOKEN>" also commit, database and n8n with their duration. Only the database decides
-// the status: without n8n the website and dashboard still work, and an n8n outage must not roll back an update
-// (the watchdog reports it, task-17-8).
+// the status: without n8n the website and dashboard still work (the watchdog reports it, task-17-8).
 const NO_STORE = { "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate" };
 const TIMEOUT_MS = 3000;
 
 type Check = { ok: boolean; ms: number; fehler?: string };
 
-// Commit of the running release (release.json written by scripts/prod/release.mjs); "dev" outside the production copy
+// Commit of a built release (release.json of a later deployment on a server); "dev" in the development folder
+// (task-17-17: no production copy on this computer)
 function releaseCommit(): string {
   try {
     return (JSON.parse(readFileSync(path.join(process.cwd(), "release.json"), "utf8")) as { commit: string }).commit;

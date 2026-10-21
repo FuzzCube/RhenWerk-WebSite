@@ -64,7 +64,7 @@ npm run start                        # http://localhost:3000
 
 Ein anderer Port: `npm run dev -- -p 3201` bzw. `npx next start -p 3202`.
 
-Betrieb (Dienst unter `launchd`, Port 3200) läuft nicht aus diesem Ordner, sondern aus der Produktionskopie `~/RheinWerk-Prod`: `npm run prod:install`, danach `npm run prod:release` ([betrieb.md](betrieb.md#23-dauerbetrieb-des-rechners)).
+Bis zum Projektende läuft alles aus diesem Ordner (task-17-17). Nächtliche Sicherung und Wächter als Dienste: `npm run ops:install`; dafür brauchen node und zsh Festplattenvollzugriff ([betrieb.md](betrieb.md#23-dauerbetrieb-des-rechners)).
 
 Startseiten je Rolle: Admin und Manager → Übersicht, Dispatcher → Erstbearbeitung, Techniker → Mein Tag. Die Techniker-Seiten sind für Tablet und Smartphone gestaltet.
 
@@ -128,7 +128,7 @@ Warnungen aus Updates und Überwachung (Phase 17) gehen direkt per Gmail SMTP an
 
 1. Im Google-Konto **`rheinwerk.industrieservice@gmail.com`** (dem Absender, nicht dem Empfänger) die Bestätigung in zwei Schritten einschalten.
 2. Als dieses Konto angemeldet unter <https://myaccount.google.com/apppasswords> ein App-Passwort „RheinWerk Alerts“ erzeugen (16 Buchstaben).
-3. In `.env.local` und `~/RheinWerk-Prod/shared/.env.local` eintragen (Leerzeichen im Passwort sind erlaubt):
+3. In `.env.local` eintragen (Leerzeichen im Passwort sind erlaubt):
 
    ```bash
    SMTP_USER=rheinwerk.industrieservice@gmail.com
@@ -136,7 +136,7 @@ Warnungen aus Updates und Überwachung (Phase 17) gehen direkt per Gmail SMTP an
    ALERT_EMAILS=andrejs.sadkovojs@gmail.com      # kommagetrennt; Nutzerentscheidung 21.10.2026: nur der Admin
    ```
 
-4. Prüfen: `npm run notify:test` (im Betrieb: `cd ~/RheinWerk-Prod/current && npm run notify:test`).
+4. Prüfen: `npm run notify:test`.
 
 `535 5.7.8 Username and Password not accepted`: Das App-Passwort gehört zu einem anderen Konto als `SMTP_USER`, ist widerrufen oder wurde nach einer Passwortänderung ungültig; neues App-Passwort im Absenderkonto erzeugen. Ein fehlgeschlagener Versand bricht keine Prüfung ab; die Datenbank versucht die E-Mail bei der nächsten Prüfung erneut.
 

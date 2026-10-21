@@ -2,7 +2,7 @@
 // Run with: npm run test:unit
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { creditOf, evaluateMira, isToolError } from "../../scripts/prod/mira.mjs";
+import { creditOf, evaluateMira, isToolError } from "../../scripts/ops/mira.mjs";
 
 const healthy = {
   configured: true,

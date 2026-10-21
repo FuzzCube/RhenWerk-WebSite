@@ -4,13 +4,13 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v20, 18 Phasen, 102 Tasks, Fortschritt 92,83 % (Gewicht 233 von 251).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v21, 18 Phasen, 103 Tasks, Fortschritt 92,89 % (Gewicht 235 von 253).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-**Phase 17 „Updates und Überwachung“** (Roadmap v18, Nutzerentscheidung 21.10.2026), `task-17-1` bis `task-17-7`, `task-17-9` und `task-17-12` abgeschlossen. Inhalt: tägliches automatisches Update um 02:00 ausschließlich aus `origin/main` mit Sicherung vorab und automatischem Rückfall auf das vorherige Release; Betrieb aus einer eigenen Produktionskopie `~/RheinWerk-Prod` (Releases je Commit, Symlink `current`); Bereich „System“ im Dashboard (`/dashboard/system`, admin: „Jetzt aktualisieren“, „Wiederherstellen“; manager nur lesend); die Web-App führt keine Befehle aus, ein launchd-Auftrag übernimmt Anfragen aus der Datenbank; npm- und n8n-Updates nur als „verfügbar“ anzeigen, nicht installieren; Rücksetzen schaltet nur den Code um (Migrationen bleiben, Datenwiederherstellung manuell); Überwachung von n8n (Error-Workflow, Wächter alle 5 Minuten) und Mira (Agent, Guthaben, Webhooks, Auswertungen); E-Mails per Gmail SMTP (App-Passwort, unabhängig von n8n) nur an den Admin `andrejs.sadkovojs@gmail.com`, Warnungen im Dashboard für admin und manager. Roadmap v20 (Nutzerentscheidung nach Sichtung von task-17-7, `docs/decisions.md`): Bereich „System“ für den Inhaber ohne Code-Updates (`task-17-12`), Datensicherungen im Dashboard (`task-17-13`), Datenwiederherstellung als Ganzes (`task-17-14`), Zustand der Systeme und Versionen (`task-17-15`), Systemupdate von n8n und Supabase mit Sicherung, Selbsttest und Rückfall (`task-17-16`). Startbar: `task-17-8` (Überwachung von n8n, ergänzt den Wächter `scripts/prod/watchdog.mjs`), `task-17-13` (Datensicherungen im Dashboard), `task-17-15` (Zustand der Systeme und Versionen). Dienste: `online.rheinwerk.web`, `online.rheinwerk.update` (02:00), `online.rheinwerk.requests` (jede Minute), `online.rheinwerk.watchdog` (alle 5 Minuten, ab task-17-9; noch nicht installiert); Betrieb mit `d3e8952`. E-Mail-Empfänger als `ALERT_EMAILS` in `shared/.env.local`, nicht in der Datenbank (öffentliches Repository).
+**Phase 17 „Updates und Überwachung“** (Roadmap v21). Abgeschlossen: `task-17-1` bis `task-17-7`, `task-17-9`, `task-17-12`, `task-17-17`. Nutzerentscheidungen 21.10.2026 (`docs/decisions.md`): Bereich „System“ für den Inhaber ohne Code-Updates; bis Projektende läuft alles aus dem Entwicklungsordner, die Produktionskopie `~/RheinWerk-Prod` ist entfernt (Papierkorb). Dienste aus dem Entwicklungsordner (`npm run ops:install`, Protokolle `~/Library/Logs/RheinWerk/`): `online.rheinwerk.backup` (02:00, Sicherung mit Prüfung, Versionen) und `online.rheinwerk.watchdog` (alle 5 Minuten, Mira); node und zsh haben dafür Festplattenvollzugriff. Offen: Überwachung von n8n (`task-17-8`), Warnungen im Dashboard (`task-17-10`), Sicherungen im Dashboard (`task-17-13`), Datenwiederherstellung (`task-17-14`), Zustand der Systeme (`task-17-15`), Systemupdate von n8n und Supabase mit Rückfall (`task-17-16`), Gesamtprobe (`task-17-11`). E-Mails nur an `ALERT_EMAILS` in `.env.local`.
 
 Phasen 0–16 abgeschlossen (zuletzt Phase 16 „Datenschutz und Telefonassistent“, Phase 15 „Kundennummer sichtbar“, Phase 14 „Kundenstamm aus Anfragen“); Einzelheiten im `verification`-Objekt der Roadmap und in `docs/decisions.md`.
 
@@ -18,9 +18,9 @@ Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank 
 
 ## Zuletzt abgeschlossen
 
+- `task-17-17` (21.10.2026): Produktionskopie entfernt; nächtliche Sicherung (`online.rheinwerk.backup`) und Wächter (`online.rheinwerk.watchdog`) laufen aus dem Entwicklungsordner (`scripts/ops/`, `npm run ops:install`).
 - `task-17-9` (21.10.2026): Wächter `scripts/prod/watchdog.mjs` (LaunchAgent alle 5 Minuten) prüft Mira: Agent, Guthaben (`MIRA_CREDIT_MIN`), Werkzeug-Webhook über Tunnel, überfällige Auswertungen, Werkzeugfehler; Warnung und E-Mail, Zustand und Guthaben im Bereich „System“ (`system_status.monitoring`).
 - `task-17-12` (21.10.2026): Bereich „System“ für den Inhaber: Zusammenfassung aus offenen Warnungen, Abschnitte Datensicherung, Zustand der Systeme, Guthaben, Systemversionen; keine Code-Updates im Dashboard mehr (`request_update`/`request_rollback` für Nutzer gesperrt, Migration `20261021170000`).
-- `task-17-7` (21.10.2026): Bereich „System“ (`/dashboard/system`, admin und manager, manager ohne Schaltflächen): Version im Betrieb, noch nicht installierte Commits, Releases, Verlauf mit Logauszug, npm/n8n nur angezeigt; „Jetzt aktualisieren“ und „Wiederherstellen“ mit Rückfrage legen nur Anfragen an; bei offener Anfrage Banner und Neuladen alle 5 s (`docs/architecture.md`).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -38,7 +38,8 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Bekannte Probleme
 
-- Entwicklung (Port 3000) und Betrieb (`~/RheinWerk-Prod`, Port 3200) nutzen dieselbe lokale Datenbank; Testläufe hinterlassen Testdaten auch im Betrieb. Die Cloudflare-Tunnel-Route muss beim Deployment auf `host.docker.internal:3200` zeigen.
+- Die Domain `rheinwerk-service.online` ist noch nicht auf diesen Rechner geschaltet (Cloudflare 522); erst nach Projektende (`docs/betrieb.md` 2.2). n8n ist über `n8n.rheinwerk-service.online` erreichbar.
+- Nach `brew upgrade node` den Festplattenvollzugriff für node erneuern, sonst laufen Sicherung und Wächter nicht (Bereich „System“: „Prüfung veraltet“).
 
 - Demo-Anruf funktioniert nur lokal (Budget in Supabase, `/api/mira`); auf der öffentlichen Website erst nach Anbindung von Supabase und `ELEVENLABS_API_KEY` im Deployment.
 - Kein Supabase-Cloud-Projekt verknüpft (für ein Deployment `supabase login`, `supabase link`); öffentliche Website nutzt weiterhin Make, nicht n8n.
@@ -53,4 +54,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 17 fortsetzen: `task-17-13`, `task-17-15` oder `task-17-8` (startbar). Wächter im Betrieb aktivieren: nach Push und neuem Release `npm run prod:install`. Gepushte Commits gehen nachts automatisch in den Betrieb. Für den Betrieb aktuelle Stände nach `origin/main` pushen und `npm run prod:release` ausführen (ab task-17-5 nächtlich automatisch). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard (bisher nur Migration/Demo-Seed), eigene Rechnungsanschrift je Kunde, Deployment (Supabase Cloud, öffentliche Website auf n8n und Demo-Anruf), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 17 fortsetzen: `task-17-8`, `task-17-13`, `task-17-15` (startbar). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, Deployment nach Projektende (Domain, Server für Supabase und n8n), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

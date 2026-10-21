@@ -4,7 +4,7 @@ import type { Monitoring } from "@/lib/system-monitoring";
 import type { SystemAlert } from "@/lib/system-summary";
 
 // Area "System" (task-17-12): open warnings, the versions of npm packages and n8n reported by the nightly run and the
-// results of the watchdog (task-17-9), read with the user's rights (RLS: only manager and admin). The scripts on the host write these tables (scripts/prod).
+// results of the watchdog (task-17-9), read with the user's rights (RLS: only manager and admin). The services on the host write these tables (scripts/ops).
 export type DependencyUpdates = {
   checked_at?: string;
   npm?: { name: string; current: string; wanted: string; latest: string }[] | null;

@@ -736,7 +736,7 @@ Migrationen `20261021120000_customer_number_note.sql`, `20261021120100_receipt_c
 
 ## Updates, Releases und Warnungen (task-17-2)
 
-Migration `20261021150000_system_updates.sql` (Phase 17, Entscheidungen in [decisions.md](decisions.md), Betrieb in [betrieb.md](betrieb.md)). Die Web-App führt keine Befehle aus: Sie liest nur und legt Anfragen an, die ein Skript auf dem Rechner (`~/RheinWerk-Prod`) abholt. E-Mail-Empfänger der Warnungen stehen nicht in der Datenbank, sondern als `ALERT_EMAILS` in `shared/.env.local` (das Repository ist öffentlich); die Datenbank entscheidet nur, **wann** gemailt wird.
+Migration `20261021150000_system_updates.sql` (Phase 17, Entscheidungen in [decisions.md](decisions.md), Betrieb in [betrieb.md](betrieb.md)). Die Web-App führt keine Befehle aus: Sie liest nur und legt Anfragen an, die ein Skript auf dem Rechner abholt. Seit task-17-17 (keine Produktionskopie mehr) sind `system_releases`, `system_updates` und `update_requests` ungenutzt; `system_status` (Versionen, `monitoring`) und `system_alerts` füllen die Dienste aus `scripts/ops/`. E-Mail-Empfänger der Warnungen stehen nicht in der Datenbank, sondern als `ALERT_EMAILS` in `.env.local` (das Repository ist öffentlich); die Datenbank entscheidet nur, **wann** gemailt wird.
 
 | Tabelle | Inhalt |
 | --- | --- |

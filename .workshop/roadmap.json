@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 20,
+  "roadmapVersion": 21,
   "status": "active",
   "phases": [
     {
@@ -3032,7 +3032,7 @@
       "title": "Updates und Überwachung",
       "description": "Nutzerentscheidung 21.10.2026: tägliches automatisches Update um 02:00 aus origin/main mit Sicherung und automatischem Rückfall, Bereich „Updates“ (admin bedient, manager liest), npm/n8n-Updates nur als verfügbar anzeigen, Überwachung von n8n und Mira mit E-Mail an den Admin (Gmail SMTP) und Warnungen im Dashboard für admin und manager.",
       "order": 18,
-      "weight": 36,
+      "weight": 38,
       "status": "in_progress",
       "tasks": [
         {
@@ -3276,13 +3276,14 @@
         {
           "id": "task-17-8",
           "title": "Überwachung von n8n",
-          "description": "n8n-Error-Workflow für alle Workflows meldet fehlgeschlagene Läufe über raise_alert. Unabhängiger Wächter (scripts/watchdog.mjs, launchd alle 5 Minuten): n8n healthz, alle erwarteten Workflows aktiv, Stau in der Versandwarteschlange und bei KI-Analysen, keine neuen Läufe trotz wartender Arbeit. Neue Warnung → E-Mail an den Admin, Behebung → E-Mail „wieder in Ordnung“. Zugriff auf n8n nur über die API, nie auf database.sqlite.",
+          "description": "n8n-Error-Workflow für alle Workflows meldet fehlgeschlagene Läufe über raise_alert. Der Wächter aus task-17-9 (scripts/ops/watchdog.mjs, online.rheinwerk.watchdog alle 5 Minuten) prüft zusätzlich: n8n healthz, alle erwarteten Workflows aktiv, Stau in der Versandwarteschlange und bei KI-Analysen, keine neuen Läufe trotz wartender Arbeit. Neue Warnung → E-Mail an den Admin, Behebung → E-Mail „wieder in Ordnung“. Zugriff auf n8n nur über die API, nie auf database.sqlite.",
           "order": 8,
           "weight": 3,
           "status": "ready",
           "dependsOn": [
             "task-17-2",
-            "task-17-3"
+            "task-17-3",
+            "task-17-17"
           ],
           "definitionOfDone": [
             "Error-Workflow in n8n/workflows exportiert und allen Workflows zugewiesen",
@@ -3367,18 +3368,17 @@
         {
           "id": "task-17-11",
           "title": "Gesamtprobe und Dokumentation",
-          "description": "Ende-zu-Ende-Probe: Update auf einen neuen Commit, Update mit absichtlich fehlerhaftem Build (automatischer Rückfall und E-Mail), Sicherung und Wiederherstellung der Daten über das Dashboard, n8n-Ausfall mit Warnung und Behebung, Systemupdate mit absichtlich scheiterndem Selbsttest (automatischer Rückfall). Entscheidungen in decisions.md, Übergabe aktualisiert.",
+          "description": "Ende-zu-Ende-Probe: Nachtlauf mit Sicherung (auch mit absichtlich scheiternder Sicherung: Warnung und E-Mail), Sicherung und Wiederherstellung der Daten über das Dashboard, n8n-Ausfall mit Warnung und Behebung, Systemupdate mit absichtlich scheiterndem Selbsttest (automatischer Rückfall). Entscheidungen in decisions.md, Übergabe aktualisiert.",
           "order": 11,
           "weight": 1,
           "status": "planned",
           "dependsOn": [
-            "task-17-5",
-            "task-17-6",
             "task-17-10",
             "task-17-13",
             "task-17-14",
             "task-17-15",
-            "task-17-16"
+            "task-17-16",
+            "task-17-17"
           ],
           "definitionOfDone": [
             "Alle vier Proben durchgeführt und im verification-Objekt beschrieben",
@@ -3434,12 +3434,13 @@
         {
           "id": "task-17-13",
           "title": "Datensicherungen im Dashboard",
-          "description": "Nutzerentscheidung 21.10.2026: Datensicherung einmal täglich genügt (Demo-Projekt); der bestehende Nachtlauf 02:00 bleibt. backup und backup:check melden jede Sicherung in die Datenbank (Zeitpunkt, Größe, Inhalt, Ergebnis des Wiederherstellungstests, Anlass: Nacht, manuell, vor Systemupdate, gelöscht nach Aufbewahrung). Der Bereich „System“ zeigt die letzte geprüfte Sicherung, die Liste der vorhandenen Sicherungen und ihren Inhalt (Anfragen, Kunden, Rechnungen, Dateien, n8n). Nur admin: „Jetzt sichern“ als Anfrage an den Dienst auf dem Rechner. Warnung, wenn die letzte geprüfte Sicherung älter als 26 Stunden ist oder eine Sicherung scheitert.",
+          "description": "Nutzerentscheidung 21.10.2026: Datensicherung einmal täglich genügt (Demo-Projekt); der bestehende Nachtlauf 02:00 bleibt. backup und backup:check melden jede Sicherung in die Datenbank (Zeitpunkt, Größe, Inhalt, Ergebnis des Wiederherstellungstests, Anlass: Nacht, manuell, vor Systemupdate, gelöscht nach Aufbewahrung). Der Bereich „System“ zeigt die letzte geprüfte Sicherung, die Liste der vorhandenen Sicherungen und ihren Inhalt (Anfragen, Kunden, Rechnungen, Dateien, n8n). Nur admin: „Jetzt sichern“ als Anfrage an den Anfrage-Dienst auf dem Rechner (LaunchAgent aus dem Entwicklungsordner, mit task-17-13 neu eingeführt). Warnung, wenn die letzte geprüfte Sicherung älter als 26 Stunden ist oder eine Sicherung scheitert.",
           "order": 13,
           "weight": 3,
           "status": "ready",
           "dependsOn": [
-            "task-17-12"
+            "task-17-12",
+            "task-17-17"
           ],
           "definitionOfDone": [
             "Sicherungen erscheinen nach nächtlichem Lauf, manueller Sicherung und Terminal-Aufruf",
@@ -3459,7 +3460,7 @@
         {
           "id": "task-17-14",
           "title": "Daten aus einer Sicherung wiederherstellen",
-          "description": "Nutzerentscheidung 21.10.2026: Nur admin stellt die gesamte Datenbank samt Dateien aus einer geprüften Sicherung wieder her (keine Auswahl einzelner Datensätze). Rückfrage mit deutlichem Hinweis, dass alles nach dem Zeitpunkt der Sicherung verloren geht, Bestätigung durch Eingabe eines Wortes. Der Dienst auf dem Rechner sichert vorher den aktuellen Stand (damit die Wiederherstellung umkehrbar ist), hält App und n8n an, stellt Postgres und Storage wieder her, startet neu und prüft die Gesundheit. Ergebnis und Sicherungsliste werden nach der Wiederherstellung erneut eingetragen, weil die Systemtabellen mit zurückgesetzt werden.",
+          "description": "Nutzerentscheidung 21.10.2026: Nur admin stellt die gesamte Datenbank samt Dateien aus einer geprüften Sicherung wieder her (keine Auswahl einzelner Datensätze). Rückfrage mit deutlichem Hinweis, dass alles nach dem Zeitpunkt der Sicherung verloren geht, Bestätigung durch Eingabe eines Wortes. Der Anfrage-Dienst auf dem Rechner sichert vorher den aktuellen Stand (damit die Wiederherstellung umkehrbar ist), hält n8n an (der Entwicklungsserver läuft im Terminal des Nutzers und wird vorher beendet), stellt Postgres und Storage wieder her, startet neu und prüft die Gesundheit. Ergebnis und Sicherungsliste werden nach der Wiederherstellung erneut eingetragen, weil die Systemtabellen mit zurückgesetzt werden.",
           "order": 14,
           "weight": 3,
           "status": "planned",
@@ -3490,7 +3491,8 @@
           "weight": 3,
           "status": "ready",
           "dependsOn": [
-            "task-17-12"
+            "task-17-12",
+            "task-17-17"
           ],
           "definitionOfDone": [
             "Alle genannten Systeme mit Zustand und Zeitpunkt der letzten Prüfung",
@@ -3533,6 +3535,43 @@
             "summary": null,
             "commands": [],
             "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-17",
+          "title": "Betrieb aus dem Entwicklungsordner, Produktionskopie entfernt",
+          "description": "Nutzerentscheidung 21.10.2026: Bis zum Abschluss des Projekts läuft alles auf dem eigenen Rechner aus dem Entwicklungsordner; die Produktionskopie ~/RheinWerk-Prod (task-17-1) mit Releases, nächtlichem Code-Update und Rücksetzen entfällt. Dienste online.rheinwerk.web, .update und .requests entfernt, ~/RheinWerk-Prod in den Papierkorb. Neu aus dem Entwicklungsordner: online.rheinwerk.backup (02:00: Sicherung mit Wiederherstellungstest, Warnung und E-Mail bei Fehler, Systemversionen für den Bereich „System“) und online.rheinwerk.watchdog (alle 5 Minuten, task-17-9). Skripte unter scripts/ops/ (npm run ops:install, nightly, watchdog); Code der Produktionskopie aus dem Repository entfernt (bleibt in der Git-Historie für einen späteren Server). Tabellen system_releases und system_updates bleiben ungenutzt erhalten.",
+          "order": 17,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-17-9"
+          ],
+          "definitionOfDone": [
+            "Dienste web/update/requests entladen, ~/RheinWerk-Prod im Papierkorb, Port 3200 frei; Mira und n8n laufen weiter",
+            "online.rheinwerk.backup und online.rheinwerk.watchdog aus dem Entwicklungsordner installiert und je einmal erfolgreich gelaufen (macOS-Datenschutz für ~/Documents geprüft)",
+            "Scheiternde Sicherung erzeugt Warnung backup:failed und E-Mail",
+            "Skripte und npm-Befehle der Produktionskopie entfernt; betrieb.md, decisions.md, database.md, setup.md, CURRENT_STATE aktuell",
+            "test:unit, lint, typecheck, build"
+          ],
+          "startedAt": "2026-10-21T17:54:31Z",
+          "completedAt": "2026-10-21T18:11:40Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Produktionskopie entfernt: LaunchAgents online.rheinwerk.web/.update/.requests entladen und gelöscht, ~/RheinWerk-Prod nach ~/.Trash/RheinWerk-Prod-20261021, Port 3200 frei; n8n (localhost:5678/healthz 200) und Tunnel n8n.rheinwerk-service.online laufen weiter. Die Domain rheinwerk-service.online antwortet mit 522 (DNS zeigt nicht auf den Tunnel), unabhängig von dieser Änderung. Code: scripts/prod/{release,update,requests,runs,install,lib}.mjs und drei Plists entfernt; neu scripts/ops/ (lib.mjs mit rpc und report, nightly.mjs, watchdog.mjs, mira.mjs, install.mjs), ops/launchd/online.rheinwerk.backup.plist (02:00) und .watchdog.plist (5 min), npm run ops:install, nightly, watchdog. Geprüft: npm run nightly (Sicherung 93 MB, Wiederherstellungstest, Versionen in system_status); Probe mit N8N_CONTAINER=gibt-es-nicht → Warnung backup:failed kritisch, E-Mail, nächster Lauf behoben mit E-Mail. LaunchAgents zuerst mit EPERM in ~/Documents (macOS-Datenschutz), nach Festplattenvollzugriff für node und zsh: watchdog per launchctl kickstart ohne Fehler (monitoring.mira ok), backup per kickstart mit wiederherstellbarer Sicherung. test:unit 107/107, lint, typecheck, build bestanden. Doku: betrieb.md 2.1–2.3, 4.4, 4.5, 5, 6, 7; setup.md, telefonassistent/setup.md, database.md, architecture.md, decisions.md, README.",
+            "commands": [
+              "launchctl bootout (web, update, requests)",
+              "mv ~/RheinWerk-Prod ~/.Trash/RheinWerk-Prod-20261021",
+              "npm run ops:install",
+              "npm run nightly",
+              "N8N_CONTAINER=gibt-es-nicht npm run nightly",
+              "launchctl kickstart online.rheinwerk.watchdog / online.rheinwerk.backup",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-21T18:11:40Z"
           }
         }
       ]
