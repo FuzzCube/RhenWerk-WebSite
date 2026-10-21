@@ -3392,7 +3392,7 @@
           "description": "Ende-zu-Ende-Probe auf dem Rechner: n8n-Ausfall mit Warnung, E-Mail und Behebung, Störung von Mira mit Warnung im Bereich „System“, scheiternde nächtliche Sicherung mit Warnung, Zustand der Systeme nach Ausfall eines Containers. Entscheidungen in decisions.md, Übergabe aktualisiert.",
           "order": 11,
           "weight": 1,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-17-10",
             "task-17-15",
@@ -3507,7 +3507,7 @@
           "description": "Ein Prüfauftrag auf dem Rechner meldet regelmäßig den Zustand von Website, Datenbank (Supabase), n8n, Telefonassistent, Cloudflare-Tunnel, E-Mail-Versand (SMTP), Docker und freiem Speicherplatz sowie installierte und verfügbare Versionen von Docker, Supabase CLI und Images, n8n, Node.js und npm-Paketen. Der Bereich „System“ zeigt je System Zustand und letzte Prüfung, bei Versionen eine Empfehlung mit Link zu den Release Notes. Updates werden nur angezeigt, nie installiert (Nutzerentscheidung 21.10.2026). Nur admin: „System prüfen“ startet die Prüfung sofort (Anfrage an den Dienst), etwa nach einem manuellen Update von Docker Desktop.",
           "order": 15,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-17-12",
             "task-17-17"
@@ -3519,13 +3519,22 @@
             "Wenig Speicherplatz oder ausgefallenes System erzeugt eine Warnung (raise_alert)",
             "UI bei 390/768/1440, test:ui, betrieb.md 5 und 6, lint, typecheck, build"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T19:25:43Z",
+          "completedAt": "2026-10-21T19:45:36Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Wächter prüft alle 5 Minuten Website, Datenbank, Cloudflare-Tunnel, Docker (Pflicht-Container) und Speicherplatz, SMTP stündlich (scripts/ops/systems.mjs); Fehler als Warnung system:* über raise_alert mit E-Mail, Datenbankausfall per Direkt-E-Mail. Versionen von Docker Desktop, Supabase CLI und Images, n8n, Node.js und npm-Paketen mit Empfehlung und Release Notes nur angezeigt (nightly und System prüfen). System prüfen nur admin (request_system_check, manager 42501, doppelt RW422), Dienst online.rheinwerk.systemcheck alle 20 s, Ende-zu-Ende in 13 s geprüft. Bereich System zeigt alle acht Systeme mit Zustand und Prüfzeit. test:unit 127/127, test:db PASS (system_checks.test.sql neu; system_updates.test.sql von Historie realer Warnungen isoliert), test:ui alle bestanden (System bei 390/768/1440, Klick auf System prüfen), lint, typecheck, build. Real gemeldet: Speicherplatz 12 GB frei (Warnung). test:api und test:auth nicht ausgeführt.",
+            "commands": [
+              "npm run test:unit",
+              "npm run test:db",
+              "npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run system:check",
+              "npm run ops:install"
+            ],
+            "checkedAt": "2026-10-21T19:45:36Z"
           }
         },
         {

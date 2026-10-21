@@ -483,3 +483,12 @@ task-17-8: Der Wächter prüft n8n nur über dessen API (`N8N_API_KEY`) und die 
 - n8n 2.x ruft einen Error-Workflow nur auf, wenn er veröffentlicht ist; der Wächter prüft ihn deshalb wie die übrigen Workflows.
 - Kritisch sind Ausfälle, die Kunden sofort merken (n8n aus, Workflow aus, Versandstau, Fehler in Formular, Versand und Mira-Werkzeugen); KI-Analysen und Zeitpläne, die von selbst nachholen, sind Warnungen.
 - Andere Workflows im selben n8n gehören nicht zum Projekt und werden weder geändert noch überwacht.
+
+## 2026-10-21: Zustand der Systeme und Versionen nur anzeigen (task-17-15)
+
+- Der Wächter prüft alle 5 Minuten zusätzlich Website, Datenbank, Cloudflare-Tunnel, SMTP, Docker und Speicherplatz (`scripts/ops/systems.mjs`); jede fehlgeschlagene Prüfung ist eine Warnung `system:*` mit E-Mail über `raise_alert`. SMTP meldet sich nur stündlich bei Gmail an, damit Google keine Anmeldung alle 5 Minuten sieht.
+- Bei einem Ausfall der Datenbank gibt es keinen Warnungseintrag. Die E-Mail geht deshalb direkt raus, höchstens alle 6 Stunden, gemerkt in einer Datei neben den Protokollen.
+- Docker: Pflicht sind nur die Container, die das Projekt braucht (Supabase db, kong, auth, rest, storage, realtime und n8n). Die Edge Runtime ist gestoppt und wird nicht genutzt (keine Edge Functions); sie löst keine Warnung aus.
+- Speicherplatz in absoluten Gigabyte (Warnung unter 20 GB, kritisch unter 5 GB, einstellbar), weil Sicherung und Datenbank feste Mengen brauchen, nicht einen Anteil der Platte.
+- Versionen (Docker Desktop, Supabase CLI und Images, n8n, Node.js, npm-Pakete) werden nur mit Empfehlung und Link zu den Release Notes angezeigt, nie installiert (Nutzerentscheidung 21.10.2026). Empfehlung: gleiche Hauptversion „Update empfohlen“, neue Hauptversion erst nach den Release Notes.
+- „System prüfen“ (nur Admin) legt eine Anfrage in `system_status` an; der Dienst `online.rheinwerk.systemcheck` fragt alle 20 Sekunden mit einer kleinen Abfrage nach. Die Web-App führt weiterhin keine Befehle auf dem Rechner aus.
