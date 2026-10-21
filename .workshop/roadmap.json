@@ -3166,10 +3166,10 @@
         {
           "id": "task-17-5",
           "title": "Update-Skript mit automatischem Rückfall",
-          "description": "Nutzerentscheidung 21.10.2026: täglich 02:00 automatisch, Quelle ausschließlich origin/main. scripts/update.mjs: Sperre, git fetch, nichts tun ohne neuen Commit, Sicherung (npm run backup) vor dem Update, Release über scripts/prod/release.mjs bauen und umschalten (task-17-1), supabase migration up, /api/health prüfen. Bei Fehler: Symlink zurück, Neustart, Warnung und E-Mail. Zusätzlich nur anzeigen (nicht installieren): verfügbare npm-Updates (npm outdated) und neue n8n-Version. launchd ersetzt den bisherigen Sicherungsauftrag 02:00 (Sicherung läuft im Update-Lauf zuerst).",
+          "description": "Nutzerentscheidung 21.10.2026: täglich 02:00 automatisch, Quelle ausschließlich origin/main. scripts/update.mjs: Sperre, git fetch, nichts tun ohne neuen Commit, Sicherung (npm run backup) vor dem Update, Release über scripts/prod/release.mjs bauen und umschalten (task-17-1), supabase migration up, /api/health prüfen. Bei Fehler: Symlink zurück, Neustart, Warnung und E-Mail. Zusätzlich nur anzeigen (nicht installieren): verfügbare npm-Updates (npm outdated) und neue n8n-Version. launchd ersetzt den bisherigen Sicherungsauftrag 02:00 (Sicherung läuft im Update-Lauf zuerst). Präzisierung 21.10.2026: Die tägliche Sicherung mit Prüfung läuft jede Nacht im Update-Lauf zuerst (auch ohne neuen Commit); scheitert sie, kein Update. E-Mail nur bei Fehlern, Erfolg nur im Dashboard. Migrationen werden nicht zurückgenommen.",
           "order": 5,
           "weight": 3,
-          "status": "ready",
+          "status": "in_progress",
           "dependsOn": [
             "task-17-1",
             "task-17-2",
@@ -3177,13 +3177,13 @@
             "task-17-4"
           ],
           "definitionOfDone": [
-            "Ohne neuen Commit: nur Eintrag „keine Änderung“, keine Sicherung doppelt, kein Neustart",
+            "Ohne neuen Commit: Sicherung und Prüfung, Eintrag no_change, kein Neubau und kein Neustart",
             "Erfolgreiches Update: Eintrag mit Commits, Migrationen, Dauer; altes Release bleibt für den Rückweg (letzte 3, PROD_KEEP_RELEASES)",
             "Fehler in Build, Migration oder Gesundheitsprüfung: automatischer Rückfall auf das vorherige Release, Warnung und E-Mail an den Admin",
             "Verfügbare npm- und n8n-Updates werden gespeichert, nicht installiert",
             "launchd 02:00, Probelauf mit --dry-run, betrieb.md (Zeitplan, Rückweg, Grenzen bei Migrationen), lint"
           ],
-          "startedAt": null,
+          "startedAt": "2026-10-21T14:52:41Z",
           "completedAt": null,
           "verification": {
             "status": "not_run",

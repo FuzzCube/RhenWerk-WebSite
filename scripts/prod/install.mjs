@@ -2,11 +2,12 @@
 // npm run prod:install
 //   1. ~/RheinWerk-Prod with repo/ (clone of origin), releases/, shared/, logs/
 //   2. shared/.env.local as a copy of the .env.local of this folder (only if missing; mode 600)
-//   3. ~/Library/LaunchAgents/online.rheinwerk.web.plist from ops/launchd/, loaded once a release is active
+//   3. LaunchAgents online.rheinwerk.web (app) and online.rheinwerk.update (02:00) from ops/launchd/, loaded once a
+//      release is active
 // Then: npm run prod:release (builds origin/main and starts the service).
 import { chmodSync, copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { CURRENT, PLIST, PORT, PROD_DIR, REPO, SHARED_ENV, ensureLayout, loadService, restartService, run, serviceLoaded } from "./lib.mjs";
+import { CURRENT, LABEL, LAUNCH_AGENTS, PORT, PROD_DIR, REPO, SHARED_ENV, UPDATE_LABEL, ensureLayout, run, serviceLoaded } from "./lib.mjs";
 
 ensureLayout();
 
@@ -29,20 +30,26 @@ if (existsSync(SHARED_ENV)) {
   process.exit(1);
 }
 
-const template = readFileSync(path.join("ops", "launchd", "online.rheinwerk.web.plist"), "utf8");
-const plist = template.replaceAll("__PROD_DIR__", PROD_DIR).replaceAll("__PORT__", String(PORT));
-const changed = !existsSync(PLIST) || readFileSync(PLIST, "utf8") !== plist;
-if (changed) {
-  if (serviceLoaded()) run("launchctl", ["bootout", `gui/${process.getuid()}`, PLIST]);
-  writeFileSync(PLIST, plist);
-  console.log(`Dienst geschrieben: ${PLIST} (Port ${PORT})`);
+// LaunchAgents from ops/launchd/: the app service and the nightly update (task-17-5). An unchanged agent stays loaded
+// as it is; a changed one is unloaded, rewritten and loaded again.
+function installAgent(label, replacements) {
+  let plist = readFileSync(path.join("ops", "launchd", `${label}.plist`), "utf8");
+  for (const [key, value] of Object.entries(replacements)) plist = plist.replaceAll(key, value);
+  const file = path.join(LAUNCH_AGENTS, `${label}.plist`);
+  const changed = !existsSync(file) || readFileSync(file, "utf8") !== plist;
+  if (changed) {
+    if (serviceLoaded(label)) run("launchctl", ["bootout", `gui/${process.getuid()}`, file]);
+    writeFileSync(file, plist);
+    console.log(`Geschrieben: ${file}`);
+  }
+  if (existsSync(CURRENT) && !serviceLoaded(label)) run("launchctl", ["bootstrap", `gui/${process.getuid()}`, file]);
 }
 
+installAgent(LABEL, { __PROD_DIR__: PROD_DIR, __PORT__: String(PORT) });
+installAgent(UPDATE_LABEL, { __PROD_DIR__: PROD_DIR });
 if (!existsSync(CURRENT)) {
-  console.log("Noch kein Release aktiv. Weiter mit: npm run prod:release");
+  console.log("Noch kein Release aktiv. Weiter mit: npm run prod:release, danach npm run prod:install");
 } else {
-  const wasLoaded = serviceLoaded();
-  loadService();
-  if (wasLoaded && !changed) restartService();
-  console.log(`Dienst läuft aus ${CURRENT} auf http://127.0.0.1:${PORT}`);
+  console.log(`App-Dienst ${LABEL} aus ${CURRENT} auf http://127.0.0.1:${PORT}`);
+  console.log(`Nächtliches Update ${UPDATE_LABEL} täglich 02:00 (Protokoll ${path.join(PROD_DIR, "logs", "update.log")})`);
 }
