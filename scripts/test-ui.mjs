@@ -192,6 +192,8 @@ try {
       alerts: document.querySelectorAll(".system-alerts li").length,
       cards: [...document.querySelectorAll(".rw-card__title")].map((t) => t.textContent.replace(/\\s*\\d+$/, "")),
       buttons: [...document.querySelectorAll(".system-page button")].map((b) => b.textContent),
+      check: document.querySelector(".system-check button")?.textContent ?? null,
+      versions: [...document.querySelectorAll(".system-versions tbody tr")].map((tr) => ({ text: tr.textContent, link: tr.querySelector('a[href^="https://"]')?.getAttribute("href") ?? "" })),
       openRows: [...document.querySelectorAll(".system-alerts-open tbody tr")].map((tr) => tr.textContent),
       resolvedRows: [...document.querySelectorAll(".system-alerts-resolved tbody tr")].map((tr) => tr.textContent),
       banner: !!document.querySelector(".system-alert-banner") && getComputedStyle(document.querySelector(".system-alert-banner")).display !== "none",
@@ -214,6 +216,13 @@ try {
       : { ok: "In Ordnung", warning: "Warnung", critical: "Gestört", off: "Nicht eingerichtet" }[entry.state];
     const miraLabel = stateLabel(mira);
     const n8nLabel = stateLabel(status.monitoring?.n8n);
+    // task-17-15: all eight systems in a fixed order, each with its state or "Noch nicht geprüft"
+    const systemRows = ["Website und Dashboard", "Datenbank (Supabase)", "Automatisierung (n8n)", "Telefonassistent (Mira)", "Cloudflare-Tunnel", "E-Mail-Versand (SMTP)", "Docker", "Speicherplatz"];
+    const systemKeys = ["website", "database", "n8n", "mira", "tunnel", "smtp", "docker", "disk"];
+    const stateLabelOf = (entry) => !entry ? "Noch nicht geprüft" : Date.now() - Date.parse(entry.checked_at) > (entry.stale_after_minutes ?? 15) * 60_000 ? "Prüfung veraltet"
+      : { ok: "In Ordnung", warning: "Warnung", critical: "Gestört", off: "Nicht eingerichtet" }[entry.state];
+    const { data: versionData } = await admin.from("system_status").select("dependency_updates").single();
+    const versionLabels = (versionData.dependency_updates?.versions ?? []).map((v) => v.label);
     const row = (view, label) => view.monitors.find((text) => text.includes(label)) ?? "";
     const creditText = mira?.credit ? `${mira.credit.remaining.toLocaleString("de-DE")} von ${mira.credit.limit.toLocaleString("de-DE")} Credits übrig` : null;
     await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
@@ -228,8 +237,14 @@ try {
         && (miraLabel ? row(adminView, "Telefonassistent (Mira)").includes(miraLabel) : !row(adminView, "Telefonassistent (Mira)")),
       JSON.stringify({ monitors: adminView.monitors, credit: adminView.credit }));
     if (creditText) check("  Guthaben wie gemeldet, mit Tarif und Schwellwert", adminView.credit.includes(creditText) && adminView.credit.includes("Warnung unter"), adminView.credit);
-    check("  nur „Erledigt“ je offener Warnung, keine Code-Updates, Breite wie die übrigen Bereiche (1680 px), Hinweis oben ausgeblendet",
-      adminView.buttons.length === openAlerts && adminView.buttons.every((b) => b === "Erledigt") && !adminView.cards.some((t) => ["Versionen", "Verlauf", "Aktuelle Version"].includes(t))
+    check("  Zustand: alle acht Systeme in fester Reihenfolge mit Zustand und Zeitpunkt der Prüfung",
+      adminView.monitors.length === 8 && systemRows.every((label, i) => adminView.monitors[i].startsWith(label) && adminView.monitors[i].includes(stateLabelOf(status.monitoring?.[systemKeys[i]]))
+        && (!status.monitoring?.[systemKeys[i]] || adminView.monitors[i].includes("Geprüft"))), JSON.stringify(adminView.monitors));
+    check(`  Versionen: ${versionLabels.length} Zeilen mit Empfehlung und Link zu den Release Notes, ohne Installieren`,
+      adminView.versions.length === versionLabels.length && versionLabels.every((label, i) => adminView.versions[i].text.startsWith(label) && adminView.versions[i].link.startsWith("https://"))
+        && !adminView.versions.some((v) => /installieren/i.test(v.text)), JSON.stringify(adminView.versions.map((v) => v.text.slice(0, 80))));
+    check("  „System prüfen“ und „Erledigt“ je offener Warnung, keine Code-Updates, Breite wie die übrigen Bereiche (1680 px), Hinweis oben ausgeblendet",
+      adminView.check !== null && adminView.buttons.length === openAlerts + 1 && adminView.buttons.filter((b) => b !== adminView.check).every((b) => b === "Erledigt") && !adminView.cards.some((t) => ["Versionen", "Verlauf", "Aktuelle Version"].includes(t))
         && adminView.mainWidth === "1680px" && !adminView.banner, JSON.stringify(adminView));
     check("  Testwarnung in „Offene Warnungen“ mit Quelle", adminView.openRows.some((text) => text.includes(testTitle) && text.includes("Website und Dashboard")), JSON.stringify(adminView.openRows));
     await page.send("Network.clearBrowserCookies");
@@ -238,8 +253,9 @@ try {
       await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
       await page.open(`${BASE}/dashboard/system`);
       const managerView = await view();
-      check(`  Manager @${width}: gleiche Inhalte, ohne „Erledigt“, kein Querscrollen`,
-        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons.length === 0
+      check(`  Manager @${width}: gleiche Inhalte (acht Systeme, Versionen), ohne „Erledigt“ und „System prüfen“, kein Querscrollen`,
+        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons.length === 0 && managerView.check === null
+          && managerView.monitors.length === 8 && managerView.versions.length === versionLabels.length
           && managerView.openRows.some((text) => text.includes(testTitle)) && managerView.scroll <= managerView.width, JSON.stringify(managerView));
     }
     // Banner on another page: manager yes, dispatcher no
@@ -267,6 +283,24 @@ try {
     const { data: stored } = await admin.from("system_alerts").select("resolved_reason, resolved_by").eq("alert_key", testKey).single();
     check("  Admin: „Erledigt“ verschiebt die Warnung nach „Behoben“ (von Hand, mit Person)", moved && stored?.resolved_reason === "manual" && Boolean(stored?.resolved_by), JSON.stringify(stored));
     await admin.from("system_alerts").delete().eq("alert_key", testKey);
+    // task-17-15: admin starts the check at 390, 768 and 1440 px; the service online.rheinwerk.systemcheck picks it up
+    // within 20 seconds (without the service the request stays and the page says so after 2 minutes)
+    for (const width of [390, 768, 1440]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/system`);
+      const layout = await page.eval(`({ scroll: document.documentElement.scrollWidth, width: innerWidth, check: document.querySelector(".system-check button")?.textContent ?? null,
+        versionsVisible: [...document.querySelectorAll(".system-versions tbody tr")].every((tr) => tr.getBoundingClientRect().width > 0) })`);
+      check(`  Admin @${width}: „System prüfen“ sichtbar, Versionen ohne Querscrollen`, layout.check === "System prüfen" && layout.versionsVisible && layout.scroll <= layout.width, JSON.stringify(layout));
+    }
+    await page.eval(`document.querySelector(".system-check button").click()`);
+    const requested = await page.until(`/Prüfung (angefordert|läuft)/.test(document.querySelector(".system-check button")?.textContent ?? "") && document.querySelector(".system-check button").disabled`, 10000);
+    const { data: pendingCheck } = await admin.from("system_status").select("check_requested_at, check_requested_by").single();
+    check("  Admin: „System prüfen“ legt eine Anfrage an, Knopf bis zum Ende gesperrt", requested && Boolean(pendingCheck.check_requested_at && pendingCheck.check_requested_by), JSON.stringify(pendingCheck));
+    const before = status.monitoring?.disk?.checked_at ?? "";
+    const done = await page.until(`document.querySelector(".system-check button")?.textContent === "System prüfen"`, 90000);
+    const { data: after } = await admin.from("system_status").select("check_requested_at, monitoring").single();
+    check("  Prüfdienst übernimmt die Anfrage, neue Ergebnisse erscheinen ohne Neuladen", done && after.check_requested_at === null && (after.monitoring?.disk?.checked_at ?? "") > before,
+      JSON.stringify({ done, requested: after.check_requested_at, disk: after.monitoring?.disk?.checked_at, before }));
   }
 
   console.log("\nÜbersicht (Admin): Kennzahlen führen zu passenden Listen");

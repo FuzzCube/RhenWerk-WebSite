@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- "System prüfen" (task-17-15), every 20 seconds from the development folder: runs all checks only when the
+     dashboard filed a request. Template: npm run ops:install fills in __PROJECT_DIR__ and __LOG_DIR__. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>online.rheinwerk.systemcheck</string>
+  <key>ProgramArguments</key><array>
+    <string>/bin/zsh</string><string>-lc</string>
+    <string>cd "__PROJECT_DIR__" &amp;&amp; exec node --env-file=.env.local scripts/ops/check.mjs</string>
+  </array>
+  <key>StartInterval</key><integer>20</integer>
+  <key>StandardOutPath</key><string>__LOG_DIR__/systemcheck.log</string>
+  <key>StandardErrorPath</key><string>__LOG_DIR__/systemcheck.log</string>
+</dict></plist>

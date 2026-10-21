@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ResolveAlertButton } from "@/components/dashboard/resolve-alert-button";
+import { SystemCheckButton } from "@/components/dashboard/system-check-button";
 import { Card } from "@/components/dashboard/ui/card";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { StatusChip } from "@/components/dashboard/ui/status-chip";
@@ -9,27 +10,29 @@ import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { loadSystemOverview } from "@/lib/dashboard/system";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
-import { creditView, monitorNotes, monitorStatus, type Credit, type MonitorEntry } from "@/lib/system-monitoring";
+import {
+  MONITORED_SYSTEMS, checkRequestState, creditView, monitorNotes, monitorStatus, versionStatus, type Credit, type MonitorEntry, type VersionRow,
+} from "@/lib/system-monitoring";
 import { alertSourceLabel, resolvedLabel, severityStatus, systemSummary, type SystemAlertRow } from "@/lib/system-summary";
 
 export const metadata: Metadata = { title: "System" };
 
 // Area "System" for the owner (task-17-12): is the data safe, does everything run, is anything to update or top up?
 // Admin and manager read the same content. Code updates are not part of the dashboard (task-17-12;
-// since task-17-17 the code runs only from the development folder). The watchdog fills the state of n8n (task-17-8)
-// and state and credit of the phone assistant (task-17-9); backups (task-18-6) and the other systems (task-17-15)
-// still show an empty state. Open and resolved warnings are listed at the end; only admin closes one (task-17-10).
+// since task-17-17 the code runs only from the development folder). The watchdog fills the state of every system
+// (n8n task-17-8, phone assistant and credit task-17-9, the others task-17-15), the nightly run the versions (only
+// shown, never installed); only admin starts a check at once ("System prüfen"). Backups (task-18-6) still show an
+// empty state. Open and resolved warnings are listed at the end; only admin closes one (task-17-10).
 export default async function SystemPage() {
   const employee = await requireRole(rolesFor("/dashboard/system"));
   const isAdmin = employee.role === "admin";
   const system = await loadSystemOverview();
   const summary = systemSummary(system.alerts);
   const critical = summary.alerts.some((alert) => alert.severity === "critical");
-  const npm = system.dependencies.npm;
-  const n8n = system.dependencies.n8n;
+  const versions = system.dependencies.versions ?? [];
   const mira = system.monitoring.mira;
-  const n8nMonitor = system.monitoring.n8n;
   const now = new Date();
+  const checkState = checkRequestState(system.checkRequest, now);
   const openAlerts = summary.alerts as SystemAlertRow[];
 
   const alertColumn: Column<SystemAlertRow> = {
@@ -68,6 +71,7 @@ export default async function SystemPage() {
           <h1>System</h1>
           <p>Datensicherung, Zustand der Systeme und verfügbare Updates auf einen Blick.</p>
         </div>
+        {isAdmin && !system.error && <div className="dash-page-header__actions"><SystemCheckButton state={checkState} /></div>}
       </header>
 
       {system.error ? (
@@ -102,14 +106,9 @@ export default async function SystemPage() {
 
             <Card stripe="neutral" title="Zustand der Systeme" id="system-zustand" headingLevel={2}
               description="Website, Datenbank, Automatisierung (n8n), Telefonassistent, E-Mail-Versand, Docker und Speicherplatz.">
-              {mira || n8nMonitor ? (
-                <ul className="system-monitors">
-                  {n8nMonitor && <MonitorRow label="Automatisierung (n8n)" entry={n8nMonitor} now={now} />}
-                  {mira && <MonitorRow label="Telefonassistent (Mira)" entry={mira} now={now} />}
-                </ul>
-              ) : (
-                <EmptyState title="Noch keine Prüfung gemeldet." />
-              )}
+              <ul className="system-monitors">
+                {MONITORED_SYSTEMS.map((item) => <MonitorRow key={item.key} label={item.label} entry={system.monitoring[item.key]} now={now} />)}
+              </ul>
             </Card>
 
             <Card stripe="neutral" title="Guthaben externer Dienste" id="system-guthaben" headingLevel={2}
@@ -123,24 +122,15 @@ export default async function SystemPage() {
               )}
             </Card>
 
-            <Card stripe="meta" title="Systemversionen" id="system-versionen" headingLevel={2}
-              description={`Neue Versionen werden angezeigt, aber nicht automatisch installiert.${system.dependencies.checked_at ? ` Geprüft ${formatDateTime(system.dependencies.checked_at)}.` : ""}`}>
-              <dl className="system-facts">
-                <dt>n8n</dt>
-                <dd>{n8n ? (n8n.update ? <span className="mono">{n8n.current} → {n8n.latest}</span> : <><span className="mono">{n8n.current}</span> aktuell</>) : "nicht geprüft"}</dd>
-                <dt>npm-Pakete</dt>
-                <dd>{npm === null || npm === undefined ? "nicht geprüft" : npm.length === 0 ? "alle aktuell" : `${npm.length} mit neuerer Version`}</dd>
-              </dl>
-              {npm && npm.length > 0 && (
-                <details className="system-details">
-                  <summary>Pakete anzeigen</summary>
-                  <ul className="system-packages">
-                    {npm.map((pkg) => <li key={pkg.name}><span className="mono">{pkg.name}</span> <span className="mono">{pkg.current} → {pkg.latest}</span></li>)}
-                  </ul>
-                </details>
-              )}
-            </Card>
           </div>
+
+          <Card stripe="meta" title="Systemversionen" id="system-versionen" headingLevel={2} flush
+            description={`Neue Versionen werden angezeigt, aber nicht installiert. Updates führt der Betreiber nach den Release Notes und mit Sicherung durch.${system.dependencies.checked_at ? ` Geprüft ${formatDateTime(system.dependencies.checked_at)}.` : ""}`}>
+            <div className="system-versions">
+              <DataTable caption="Systemversionen" columns={versionColumns} rows={versions} rowKey={(row) => row.key}
+                empty={<EmptyState title="Noch nicht geprüft. Die Versionen werden jede Nacht um 02:00 ermittelt." />} />
+            </div>
+          </Card>
 
           <Card stripe={summary.ok ? "success" : critical ? "danger" : "attention"} title="Warnungen" count={openAlerts.length} id="system-warnungen" headingLevel={2} flush
             description={isAdmin
@@ -162,7 +152,50 @@ export default async function SystemPage() {
   );
 }
 
-function MonitorRow({ label, entry, now }: { label: string; entry: MonitorEntry; now: Date }) {
+const versionColumns: Column<VersionRow>[] = [
+  { key: "system", header: "System", mobile: "title", cell: (row) => <strong>{row.label}</strong> },
+  { key: "current", header: "Installiert", cell: (row) => <span className="mono">{row.current ?? "–"}</span> },
+  { key: "latest", header: "Verfügbar", cell: (row) => <span className="mono">{row.latest ?? "–"}</span> },
+  {
+    key: "advice", header: "Empfehlung",
+    cell: (row) => (
+      <>
+        <StatusChip status={versionStatus(row.level)} />
+        {row.text !== versionStatus(row.level).label && <span className="cell-sub">{row.text}</span>}
+        {row.hint && <span className="cell-sub">{row.hint}</span>}
+        {(row.level === "update" || row.level === "major") && (
+          <details className="system-details system-details--inline">
+            <summary>{row.items && row.items.length > 0 ? `${row.items.length} anzeigen` : "Vorgehen"}</summary>
+            {row.how && <p className="system-alert-detail">{row.how}</p>}
+            {row.items && row.items.length > 0 && (
+              <ul className="system-packages">
+                {row.items.map((item) => (
+                  <li key={item.name}>
+                    {item.notes ? <a href={item.notes} target="_blank" rel="noreferrer" className="mono">{item.name}</a> : <span className="mono">{item.name}</span>}
+                    <span className="mono">{item.current} → {item.latest}{item.level === "major" ? " (Hauptversion)" : ""}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
+        )}
+      </>
+    ),
+  },
+  { key: "notes", header: "Release Notes", cell: (row) => <a href={row.notes} target="_blank" rel="noreferrer">Release Notes</a> },
+];
+
+function MonitorRow({ label, entry, now }: { label: string; entry: MonitorEntry | undefined; now: Date }) {
+  if (!entry) {
+    return (
+      <li>
+        <div className="system-monitors__head">
+          <strong>{label}</strong>
+          <StatusChip status={{ key: "nicht-geprueft", label: "Noch nicht geprüft", tone: "closed" }} />
+        </div>
+      </li>
+    );
+  }
   const notes = monitorNotes(entry);
   return (
     <li>
@@ -170,7 +203,7 @@ function MonitorRow({ label, entry, now }: { label: string; entry: MonitorEntry;
         <strong>{label}</strong>
         <StatusChip status={monitorStatus(entry, now)} />
       </div>
-      <span className="cell-sub">Geprüft <span className="mono">{formatDateTime(entry.checked_at)}</span></span>
+      <span className="cell-sub">{entry.summary ? <>{entry.summary} · </> : null}Geprüft <span className="mono">{formatDateTime(entry.checked_at)}</span></span>
       {notes.length > 0 && (
         <ul className="system-monitors__notes">
           {notes.map((note) => <li key={note.text} className={note.tone === "bad" ? "system-monitors__note--bad" : "cell-sub"}>{note.text}</li>)}

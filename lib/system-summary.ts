@@ -4,7 +4,7 @@ import type { DisplayStatus } from "./display-status";
 
 export type SystemAlert = {
   id: string;
-  source: "n8n" | "mira" | "update" | "backup" | "app";
+  source: "n8n" | "mira" | "update" | "backup" | "app" | "system";
   severity: "warning" | "critical";
   title: string;
   first_seen_at: string;
@@ -38,6 +38,7 @@ const SOURCE_LABEL: Record<SystemAlert["source"], string> = {
   update: "Nächtliches Update",
   backup: "Datensicherung",
   app: "Website und Dashboard",
+  system: "Zustand der Systeme",
 };
 
 export const alertSourceLabel = (source: SystemAlert["source"]): string => SOURCE_LABEL[source];

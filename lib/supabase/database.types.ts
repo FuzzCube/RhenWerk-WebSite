@@ -682,17 +682,23 @@ isOneToOne: false
                   ]
                 },"system_status": {
                   Row: {
-                    "available_commit": string | null,"checked_at": string | null,"current_commit": string | null,"dependency_updates": NonNullable<Json>,"id": number,"monitoring": NonNullable<Json>,"pending_commits": NonNullable<Json>,"updated_at": string
+                    "available_commit": string | null,"check_requested_at": string | null,"check_requested_by": string | null,"check_started_at": string | null,"checked_at": string | null,"current_commit": string | null,"dependency_updates": NonNullable<Json>,"id": number,"monitoring": NonNullable<Json>,"pending_commits": NonNullable<Json>,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "available_commit"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
+                    "available_commit"?: string | null,"check_requested_at"?: string | null,"check_requested_by"?: string | null,"check_started_at"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
                   }
                   Update: {
-                    "available_commit"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
+                    "available_commit"?: string | null,"check_requested_at"?: string | null,"check_requested_by"?: string | null,"check_started_at"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "system_status_check_requested_by_fkey"
+      columns: ["check_requested_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"system_updates": {
                   Row: {
@@ -1613,6 +1619,9 @@ isOneToOne: false
 "claim_queued_messages":
 { Args: { "batch_limit"?: number,"lease_seconds"?: number }; Returns: Json[]
                            },
+"claim_system_check":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "claim_update_request":
 { Args: Record<PropertyKey, never>; Returns: {
               "action": string,
@@ -2261,6 +2270,26 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "automation_runs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"finish_system_check":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "available_commit": string | null,
+"check_requested_at": string | null,
+"check_requested_by": string | null,
+"check_started_at": string | null,
+"checked_at": string | null,
+"current_commit": string | null,
+"dependency_updates": NonNullable<Json>,
+"id": number,
+"monitoring": NonNullable<Json>,
+"pending_commits": NonNullable<Json>,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_status"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -3065,6 +3094,26 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"request_system_check":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "available_commit": string | null,
+"check_requested_at": string | null,
+"check_requested_by": string | null,
+"check_started_at": string | null,
+"checked_at": string | null,
+"current_commit": string | null,
+"dependency_updates": NonNullable<Json>,
+"id": number,
+"monitoring": NonNullable<Json>,
+"pending_commits": NonNullable<Json>,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "request_update":
 { Args: Record<PropertyKey, never>; Returns: {
               "action": string,
@@ -3335,6 +3384,9 @@ isOneToOne: false
 "set_monitoring":
 { Args: { "payload": Json,"system_key": string }; Returns: {
               "available_commit": string | null,
+"check_requested_at": string | null,
+"check_requested_by": string | null,
+"check_started_at": string | null,
 "checked_at": string | null,
 "current_commit": string | null,
 "dependency_updates": NonNullable<Json>,
@@ -3352,6 +3404,9 @@ isOneToOne: false
 "set_system_status":
 { Args: { "payload": Json }; Returns: {
               "available_commit": string | null,
+"check_requested_at": string | null,
+"check_requested_by": string | null,
+"check_started_at": string | null,
 "checked_at": string | null,
 "current_commit": string | null,
 "dependency_updates": NonNullable<Json>,

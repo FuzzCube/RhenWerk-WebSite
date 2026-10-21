@@ -1,14 +1,14 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { Monitoring } from "@/lib/system-monitoring";
+import type { CheckRequest, Monitoring, VersionRow } from "@/lib/system-monitoring";
 import type { SystemAlertRow } from "@/lib/system-summary";
 
-// Area "System" (task-17-12): open warnings, the versions of npm packages and n8n reported by the nightly run and the
-// results of the watchdog (task-17-9), read with the user's rights (RLS: only manager and admin). The services on the host write these tables (scripts/ops).
+// Area "System" (task-17-12): open warnings, the versions reported by the nightly run (task-17-15), the results of the
+// watchdog (task-17-9) and a pending "System prüfen", read with the user's rights (RLS: only manager and admin). The
+// services on the host write these tables (scripts/ops).
 export type DependencyUpdates = {
   checked_at?: string;
-  npm?: { name: string; current: string; wanted: string; latest: string }[] | null;
-  n8n?: { current: string; latest: string; update: boolean } | null;
+  versions?: VersionRow[];
 };
 
 export type SystemOverview = {
@@ -16,6 +16,7 @@ export type SystemOverview = {
   resolvedAlerts: SystemAlertRow[];
   dependencies: DependencyUpdates;
   monitoring: Monitoring;
+  checkRequest: CheckRequest;
   error: boolean;
 };
 
@@ -30,7 +31,7 @@ export async function loadSystemOverview(): Promise<SystemOverview> {
   const supabase = await createClient();
   const since = new Date(Date.now() - RESOLVED_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const [status, alerts, resolved] = await Promise.all([
-    supabase.from("system_status").select("dependency_updates, monitoring").maybeSingle(),
+    supabase.from("system_status").select("dependency_updates, monitoring, check_requested_at, check_started_at").maybeSingle(),
     supabase.from("system_alerts").select(ALERT_COLUMNS).is("resolved_at", null),
     supabase.from("system_alerts").select(ALERT_COLUMNS).gte("resolved_at", since).order("resolved_at", { ascending: false }).limit(30),
   ]);
@@ -39,6 +40,7 @@ export async function loadSystemOverview(): Promise<SystemOverview> {
     resolvedAlerts: (resolved.data ?? []).map(alertRow),
     dependencies: (status.data?.dependency_updates as DependencyUpdates | undefined) ?? {},
     monitoring: (status.data?.monitoring as Monitoring | undefined) ?? {},
+    checkRequest: { requested_at: status.data?.check_requested_at ?? null, started_at: status.data?.check_started_at ?? null },
     error: Boolean(status.error || alerts.error || resolved.error),
   };
 }

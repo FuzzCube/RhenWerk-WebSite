@@ -4,6 +4,10 @@
 begin;
 select plan(45);
 
+-- The keys below are real keys of the watchdog; their history in the local database would otherwise match the
+-- subqueries more than once (removed only inside this transaction)
+delete from public.system_alerts where alert_key in ('n8n:down', 'mira:credit');
+
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000017a1', 'admin17@x.test'),
   ('00000000-0000-0000-0000-0000000017a2', 'manager17@x.test'),

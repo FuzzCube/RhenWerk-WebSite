@@ -2,11 +2,11 @@
 // made up by macOS after waking), by hand: npm run nightly
 //   1. backup with restore check (scripts/backup.mjs, scripts/backup-check.mjs; keeps BACKUP_KEEP_DAYS days); a failure
 //      is the warning backup:failed with e-mail, the next good run closes it
-//   2. newer versions of npm packages and n8n for the area "System" (only shown, never installed)
+//   2. installed and available versions for the area "System" (scripts/ops/versions.mjs, only shown, never installed)
 import { execFileSync } from "node:child_process";
-import { report, rpc } from "./lib.mjs";
+import { report } from "./lib.mjs";
+import { refreshVersions } from "./versions-report.mjs";
 
-const N8N = process.env.N8N_CONTAINER ?? "n8n";
 const run = (command, args) => execFileSync(command, args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] });
 const stamp = (message) => console.log(`${new Date().toISOString()} ${message}`);
 
@@ -30,18 +30,7 @@ try {
   });
 }
 
-// Only shown, never installed (user decision 21.10.2026)
-const dependencies = { checked_at: new Date().toISOString(), npm: [], n8n: null };
-try {
-  let out = "";
-  try { out = run("npm", ["outdated", "--json"]); } catch (error) { out = error.stdout ?? ""; }
-  dependencies.npm = Object.entries(JSON.parse(out || "{}")).map(([name, info]) => ({ name, current: info.current, wanted: info.wanted, latest: info.latest }))
-    .filter((entry) => entry.current !== entry.latest);
-} catch { dependencies.npm = null; }
-try {
-  const current = run("docker", ["exec", N8N, "n8n", "--version"]).trim();
-  const latest = run("npm", ["view", "n8n", "version"]).trim();
-  dependencies.n8n = { current, latest, update: current !== latest };
-} catch { /* n8n or registry not reachable */ }
-await rpc("set_system_status", { payload: { dependency_updates: dependencies } });
+// Versions of Docker, Supabase, n8n, Node.js and npm packages for the area "System" (task-17-15): only shown, never
+// installed (user decision 21.10.2026)
+await refreshVersions();
 process.exit(exitCode);

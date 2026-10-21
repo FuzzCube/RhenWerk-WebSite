@@ -10,19 +10,41 @@ export function alertRecipients() {
   return (process.env.ALERT_EMAILS ?? "").split(",").map((address) => address.trim()).filter(Boolean);
 }
 
+function smtpLogin() {
+  return { user: process.env.SMTP_USER ?? "", pass: (process.env.SMTP_APP_PASSWORD ?? "").replace(/\s+/g, "") };
+}
+
+function smtpTransport({ user, pass }) {
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass },
+    connectionTimeout: 15_000, greetingTimeout: 15_000, socketTimeout: 30_000,
+  });
+}
+
+// Login at Gmail without sending (task-17-15, system check "E-Mail-Versand"); { ok: null } without access data
+export async function verifySmtp() {
+  const login = smtpLogin();
+  if (!login.user || !login.pass) return { ok: null, error: "SMTP_USER oder SMTP_APP_PASSWORD fehlt" };
+  const transport = smtpTransport(login);
+  try {
+    await transport.verify();
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  } finally {
+    transport.close();
+  }
+}
+
 export async function sendAlert({ subject, text }) {
-  const user = process.env.SMTP_USER ?? "";
-  const pass = (process.env.SMTP_APP_PASSWORD ?? "").replace(/\s+/g, "");
+  const { user, pass } = smtpLogin();
   const to = alertRecipients();
   if (!user || !pass || to.length === 0) {
     const error = "SMTP_USER, SMTP_APP_PASSWORD oder ALERT_EMAILS fehlt";
     console.error(`Warn-E-Mail nicht gesendet: ${error}`);
     return { ok: false, error };
   }
-  const transport = nodemailer.createTransport({
-    host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass },
-    connectionTimeout: 15_000, greetingTimeout: 15_000, socketTimeout: 30_000,
-  });
+  const transport = smtpTransport({ user, pass });
   try {
     const info = await transport.sendMail({
       from: `"RheinWerk Betrieb" <${user}>`,

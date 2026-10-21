@@ -1932,3 +1932,8 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .system-details--inline { margin-top: 6px; }
 .system-alert-detail { margin: 6px 0 0; max-width: 640px; font-size: 13px; color: var(--rw-text-secondary); white-space: pre-line; overflow-wrap: anywhere; }
 .system-subheading { font-size: 15px; padding: 16px 20px 8px; border-top: 1px solid var(--rw-border-subtle); }
+/* System checks and versions (task-17-15) */
+.system-check { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.system-check .save-status:empty { display: none; }
+.system-versions .cell-sub { display: block; }
+@media (max-width: 767px) { .system-check { align-items: flex-start; } }

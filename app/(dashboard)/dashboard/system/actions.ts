@@ -19,3 +19,14 @@ export async function resolveAlert(alertId: string): Promise<Result> {
   refresh();
   return { ok: true };
 }
+
+// "System prüfen" (task-17-15): only admin files a request (request_system_check checks it again); the service
+// online.rheinwerk.systemcheck on the host runs the checks
+export async function requestSystemCheck(): Promise<Result> {
+  await requireRole(["admin"]);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_system_check");
+  if (error) return { ok: false, message: databaseErrorMessage(error) };
+  refresh();
+  return { ok: true };
+}

@@ -27,6 +27,7 @@
     "ops:install": "node scripts/ops/install.mjs",
     "nightly": "node --env-file=.env.local scripts/ops/nightly.mjs",
     "watchdog": "node --env-file=.env.local scripts/ops/watchdog.mjs",
+    "system:check": "node --env-file=.env.local scripts/ops/check.mjs --now",
     "notify:test": "node --env-file=.env.local scripts/notify-test.mjs",
     "customers:backfill": "node --env-file-if-exists=.env.local scripts/customers-backfill.mjs",
     "test:calls": "node --env-file=.env.local scripts/test-calls.mjs",

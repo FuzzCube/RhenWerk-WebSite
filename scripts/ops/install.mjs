@@ -1,15 +1,16 @@
 // Services on the host (task-17-17), safe to run again: npm run ops:install
 //   online.rheinwerk.backup    02:00, backup with restore check and versions (scripts/ops/nightly.mjs)
-//   online.rheinwerk.watchdog  every 5 minutes, checks of Mira (scripts/ops/watchdog.mjs)
-// Both run from this development folder with its .env.local; logs in ~/Library/Logs/RheinWerk. Agents of the former
+//   online.rheinwerk.watchdog  every 5 minutes, checks of Mira, n8n and the systems (scripts/ops/watchdog.mjs)
+//   online.rheinwerk.systemcheck  every 20 seconds, "System prüfen" from the dashboard (scripts/ops/check.mjs, task-17-15)
+// All run from this development folder with its .env.local; logs in ~/Library/Logs/RheinWerk. Agents of the former
 // production copy (online.rheinwerk.web, .update, .requests, task-17-1 to 17-6) are removed.
-// npm run ops:install -- --remove unloads and removes the two services.
+// npm run ops:install -- --remove unloads and removes the services.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
-const AGENTS = ["online.rheinwerk.backup", "online.rheinwerk.watchdog"];
+const AGENTS = ["online.rheinwerk.backup", "online.rheinwerk.watchdog", "online.rheinwerk.systemcheck"];
 const FORMER = ["online.rheinwerk.web", "online.rheinwerk.update", "online.rheinwerk.requests"];
 const LAUNCH_AGENTS = path.join(homedir(), "Library", "LaunchAgents");
 const LOG_DIR = path.join(homedir(), "Library", "Logs", "RheinWerk");
@@ -49,3 +50,4 @@ for (const label of AGENTS) {
 }
 console.log(`Sicherung online.rheinwerk.backup täglich 02:00 (Protokoll ${path.join(LOG_DIR, "backup.log")})`);
 console.log(`Wächter online.rheinwerk.watchdog alle 5 Minuten (Protokoll ${path.join(LOG_DIR, "watchdog.log")})`);
+console.log(`„System prüfen“ online.rheinwerk.systemcheck alle 20 Sekunden (Protokoll ${path.join(LOG_DIR, "systemcheck.log")})`);
