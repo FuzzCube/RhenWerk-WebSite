@@ -13,7 +13,7 @@ import path from "node:path";
 import { sendAlert } from "../lib/notify.mjs";
 import {
   CURRENT, PROD_DIR, RELEASES, REPO, SHARED_ENV, acquireLock, activate, build, currentCommit, ensureLayout, fetchOrigin, log, prune,
-  readRelease, releaseLock, resolveCommit, rpc, run, runLog, syncReleases,
+  readRelease, releaseLock, removeRelease, resolveCommit, rpc, run, runLog, syncReleases,
 } from "./lib.mjs";
 
 const args = process.argv.slice(2);
@@ -77,6 +77,8 @@ async function main() {
   if (from === target) {
     log(`Keine Änderung auf ${ref}`);
     await record("no_change", from, target, { backup_file: backupFile });
+    // The newest commit runs: a warning of an earlier failed update is settled
+    await recover("update:failed", "Update");
     return 0;
   }
 
@@ -101,6 +103,7 @@ async function main() {
     migrations = migrate(target);
   } catch (error) {
     log(`FEHLER: Migration: ${error.message.split("\n")[0]}`);
+    removeRelease(target);
     await finish("failed", { fields: { error: `Migration fehlgeschlagen: ${error.message.split("\n")[0]}`, migrations: error.applied ?? [] } });
     await warn("update:failed", `Update auf ${short(target)} fehlgeschlagen (Migration)`,
       `Eine Migration von ${short(target)} ist fehlgeschlagen; es läuft weiter ${short(from)}. Bereits angewandte Migrationen: ${(error.applied ?? []).join(", ") || "keine"}.\n\n${excerpt()}`);
@@ -113,6 +116,7 @@ async function main() {
     await recover("update:failed", "Update");
     log(`Update ${short(from)} → ${short(target)} erfolgreich`);
   } else {
+    if (result.restored) removeRelease(target);
     await finish(result.restored ? "rolled_back" : "failed", { fields: { migrations, error: `App antwortet nicht mit ${short(target)}` } });
     await warn("update:failed", `Update auf ${short(target)} zurückgerollt`,
       `Die App antwortete nach dem Umschalten nicht mit ${short(target)}. ${result.restored ? `Es läuft wieder ${short(from)}.` : "AUCH DER RÜCKFALL ANTWORTET NICHT – App prüfen."}` +

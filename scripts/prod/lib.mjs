@@ -136,6 +136,14 @@ export function prune() {
   }
 }
 
+// A release that failed its migrations or its check after the switch is no fallback target: removed, so that it does
+// not push a working release out of the KEEP_RELEASES (its build log stays in logs/)
+export function removeRelease(commit) {
+  if (commit === currentCommit()) return;
+  rmSync(path.join(RELEASES, commit), { recursive: true, force: true });
+  log(`Release ${commit.slice(0, 7)} verworfen`);
+}
+
 // Atomic switch: a new symlink is renamed over current, so the service never sees a missing link
 export function switchTo(commit) {
   const temp = `${CURRENT}.tmp`;
