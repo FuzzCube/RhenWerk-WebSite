@@ -64,7 +64,7 @@ npm run start                        # http://localhost:3000
 
 Ein anderer Port: `npm run dev -- -p 3201` bzw. `npx next start -p 3202`.
 
-Startseiten je Rolle: Admin → Verwaltung, Manager → Übersicht, Dispatcher → Erstbearbeitung, Techniker → Mein Tag. Die Techniker-Seiten sind für Tablet und Smartphone gestaltet.
+Startseiten je Rolle: Admin und Manager → Übersicht, Dispatcher → Erstbearbeitung, Techniker → Mein Tag. Die Techniker-Seiten sind für Tablet und Smartphone gestaltet.
 
 ## Prüfungen
 

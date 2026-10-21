@@ -33,7 +33,7 @@ export const DASHBOARD_AREAS: readonly DashboardArea[] = [
 ];
 
 const START_PAGES: Record<EmployeeRole, string> = {
-  admin: "/dashboard/verwaltung",
+  admin: "/dashboard/uebersicht",
   manager: "/dashboard/uebersicht",
   dispatcher: "/dashboard/erstbearbeitung",
   technician: "/dashboard/heute",

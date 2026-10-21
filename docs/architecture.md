@@ -215,7 +215,7 @@ Jede Abbildung hat Titel, Textzusammenfassung, Legende bei mindestens zwei Reihe
 
 ## Verwaltung (task-8-1)
 
-Nur Admin (`/dashboard/verwaltung`, Startseite der Rolle). Rahmen `AdminShell` in `components/dashboard/admin-nav.tsx` (seit 13.10.2026 wie die Listenseiten: Kopf mit Titel, Anzahl und Beschreibung, helles Seitenmenü mit den Gruppen Personal und Abrechnung, Listen in Listenkarten mit „Aktive/Alle“ in der Kopfleiste, Formulare als Karten); jede Seite prüft die Rolle selbst.
+Nur Admin (`/dashboard/verwaltung`; Startseite der Rolle ist seit 21.10.2026 die Übersicht). Rahmen `AdminShell` in `components/dashboard/admin-nav.tsx` (seit 13.10.2026 wie die Listenseiten: Kopf mit Titel, Anzahl und Beschreibung, helles Seitenmenü mit den Gruppen Personal und Abrechnung, Listen in Listenkarten mit „Aktive/Alle“ in der Kopfleiste, Formulare als Karten); jede Seite prüft die Rolle selbst.
 
 | Seite | Inhalt |
 | --- | --- |

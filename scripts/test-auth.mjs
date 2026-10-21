@@ -36,7 +36,7 @@ async function login(email, password) { const jar = new Jar(); const page = awai
 const path = (loc) => (loc ? new URL(loc, BASE).pathname : null);
 
 const roles = [
-  ["admin.demo@example.com", "Clara Becker", "/dashboard/verwaltung", ["Übersicht", "Auswertung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung"], "/dashboard/heute"],
+  ["admin.demo@example.com", "Clara Becker", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung"], "/dashboard/heute"],
   ["manager.demo@example.com", "Jonas Hoffmann", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen"], "/dashboard/verwaltung"],
   ["dispo1.demo@example.com", "Lea Schneider", "/dashboard/erstbearbeitung", ["Erstbearbeitung", "Einsatzplanung", "Anfragen", "Posteingang"], "/dashboard/uebersicht"],
   ["technik1.demo@example.com", "Tobias Krüger", "/dashboard/heute", ["Mein Tag", "Kalender", "Anfragen"], "/dashboard/planung"],
@@ -150,7 +150,7 @@ for (const id of tmp) await admin.auth.admin.deleteUser(id);
 
 // Request list and request page (task-4-3): RLS decides rows, sections follow the role
 console.log("\nAnfragen");
-const { data: userList } = await admin.auth.admin.listUsers({ perPage: 200 });
+const { data: userList } = await admin.auth.admin.listUsers({ perPage: 1000 });
 const userId = (email) => userList.users.find((user) => user.email === email)?.id;
 const countOf = async (build) => { const { count } = await build(admin.from("requests").select("id", { count: "exact", head: true })); return count; };
 // Count line of the list card (task-10-3: "<strong>684 Anfragen</strong> · Alle"); tags are stripped before matching
@@ -173,7 +173,13 @@ const dispoCount = await countOf((query) => query.eq("dispatcher_id", dispo1));
 check(`Dispatcher sieht nur eigene (${dispoCount})`, shownTotal((await get(dispoJar, "/dashboard/anfragen?ansicht=alle")).html) === dispoCount);
 const { data: ownVisits } = await admin.from("visits").select("request_id").eq("technician_id", tech1);
 const techIds = new Set(ownVisits.map((visit) => visit.request_id));
-const { data: allRequests } = await admin.from("requests").select("id, technician_id").range(0, 9999);
+// Paged: the API returns at most max_rows (1000) rows per request
+const allRequests = [];
+for (let from = 0; ; from += 1000) {
+  const { data } = await admin.from("requests").select("id, technician_id").order("id").range(from, from + 999);
+  allRequests.push(...data);
+  if (data.length < 1000) break;
+}
 const techVisible = (request) => request.technician_id === tech1 || techIds.has(request.id);
 const techCount = allRequests.filter(techVisible).length;
 check(`Techniker sieht zugewiesene und eigene Einsätze (${techCount})`, shownTotal((await get(techJar, "/dashboard/anfragen?ansicht=alle")).html) === techCount);
