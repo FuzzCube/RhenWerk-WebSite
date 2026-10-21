@@ -39,6 +39,7 @@ try {
   log(`FEHLER: ${error.message.split("\n")[0]}`);
   await warn("update:failed", "Update-Lauf abgebrochen", `${error.message}\n\n${excerpt()}`);
 } finally {
+  if (!dryRun) await syncReleases();
   releaseLock();
 }
 process.exit(exitCode);
@@ -118,7 +119,6 @@ async function main() {
       `${migrations.length ? `\nAngewandte Migrationen bleiben: ${migrations.join(", ")}.` : ""}\n\n${excerpt()}`);
   }
   prune();
-  await syncReleases();
   await rpc("set_system_status", { payload: { ...status, pending_commits: result.ok ? [] : pending } });
   return result.ok ? 0 : 1;
 }
@@ -127,7 +127,6 @@ async function main() {
 async function record(statusValue, from, target, fields) {
   const entry = await rpc("start_system_update", { kind: "update", trigger, from_commit: from, to_commit: target });
   if (entry) await rpc("finish_system_update", { update_id: entry.id, status: statusValue, log_excerpt: excerpt(), ...fields });
-  await syncReleases();
 }
 
 function pendingCommits(from, target) {
@@ -176,8 +175,10 @@ function backup() {
   return file;
 }
 
-const appliedMigrations = () =>
-  run("docker", ["exec", DB, "psql", "-U", "postgres", "-Atc", "select version from supabase_migrations.schema_migrations order by version"]).trim().split("\n").filter(Boolean);
+function appliedMigrations() {
+  return run("docker", ["exec", DB, "psql", "-U", "postgres", "-Atc", "select version from supabase_migrations.schema_migrations order by version"])
+    .trim().split("\n").filter(Boolean);
+}
 
 // supabase migration up from the new release (same project_id, so the same local stack); returns the new versions
 function migrate(commit) {
