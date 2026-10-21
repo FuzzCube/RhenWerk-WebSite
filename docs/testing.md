@@ -59,6 +59,7 @@ Jede Datei läuft in einer Transaktion mit `ROLLBACK` und hinterlässt keine Dat
 | `customer_from_request.test.sql` | „Neuen Kunden anlegen“ (task-14-2): Techniker abgewiesen, veraltete Version, Anlage mit Daten und erstem Standort aus der Anfrage, Kundennummer in der Anfrage, Vorschläge erledigt, Ereignis des Dispatchers, keine zweite Anlage, Demo-Anfrage ergibt Demo-Kunden, abgelehnte Anfrage abgewiesen, Verknüpfen per Nummer erledigt Vorschläge |
 | `send_backlog.test.sql` | Hängender E-Mail-Versand (task-12-9): Techniker abgewiesen; nur freigegebene bzw. automatische E-Mails echter Anfragen älter als die Schwelle (mind. 1 Minute) zählen, auch fremde Anfragen für Dispatcher; ältester Zeitpunkt; versandte E-Mails zählen nicht mehr |
 | `phone_request_customer.test.sql` | Telefonische Anfrage mit Bestandskunde (task-15-4): Verknüpfung beim Anlegen mit Standort gleicher Anschrift, Kundennummer aus dem Kundenstamm, Ereignis `customer_linked`; geänderte Anschrift ohne Standort; kein neuer Kunde; inaktiver und unbekannter Kunde RW422 ohne Anfrage; ohne Kunde bleibt die getippte Nummer `stated_customer_number` |
+| `customer_number_mails.test.sql` | Kundennummer in E-Mails (task-15-3): Eingangsbestätigung (Text und HTML) und Zahlungserinnerungen mit Satz zur Kundennummer nur bei verknüpftem Kunden, Erinnerung mit Nummer der Rechnung, sonst der Anfrage; Terminmail über `queue_hold_mail` mit Satz vor dem Gruß, ohne Kunde unverändert; HTML maskiert, kein Platzhalter übrig |
 
 `analytics.test.sql` (task-7-1) legt Fixtures im Jahr 2031 an und vergleicht Kennzahlen als Differenz vor und nach dem Anlegen, damit vorhandene Demodaten das Ergebnis nicht beeinflussen. Geprüft: Vergleichszeiträume, getrennte Zeitreihen nach `created_at`, `intake_completed_at` und `completed_at`, Zeitersparnis, Fristen, Rechnungs- und Zahlungsbeträge, Momentaufnahmen am Periodenende, Warteschlangenhistorie aus Ereignissen, Team, Automatisierung, Ablehnung für Dispatcher, Techniker und inaktive Manager, keine `security definer`-Funktion.
 
@@ -89,6 +90,8 @@ Voraussetzung: lokaler Supabase-Stack, Demo-Nutzer (`npm run demo:users`) und la
 Temporäre Konten (`e2e-…@example.com`) werden am Ende wieder gelöscht. Das Skript bricht ab, wenn App oder Supabase nicht lokal sind.
 
 Der „andere Techniker“ beim Dokument-Download ist ein Demo-Techniker ohne Bezug zur Anfrage (weder zugewiesen noch mit einem Einsatz darauf), da Einsätze Lesezugriff gewähren und die Demo-Daten vom Zeitpunkt des Seeds abhängen.
+
+Startseiten (task-15-5): Admin und Manager landen auf der Übersicht. Das Skript liest bis zu 1000 Konten und lädt Anfragen für die Technikerzählung seitenweise (API-Grenze `max_rows` 1000).
 
 Verwaltung (task-8-1): öffentliche Registrierung über die Auth-API abgewiesen; Unterseiten der Verwaltung für Admin 200, Manager auf seine Startseite; eigenes Konto ohne Deaktivierung, unbekannte Person 404.
 

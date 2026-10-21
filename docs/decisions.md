@@ -356,3 +356,12 @@ Nutzerentscheidung, task-15-4: Nennt ein Anrufer seine Kundennummer, tippt der D
 - Anders als bei Mira (Kundennummer + PLZ) prüft die Datenbank hier keine PLZ: Der Dispatcher sieht Firma und Anschrift und gleicht sie im Gespräch ab. Die Vorschläge zeigen nur, was Dispatcher, Manager und Admin über RLS ohnehin lesen dürfen.
 - Nur aktive Kunden; Demo-Kunden sind wie bei Mira zulässig (lokale Vorführung).
 - Ohne Auswahl aus den Vorschlägen bleibt eine getippte Nummer eine ungeprüfte Angabe (`stated_customer_number`) und wird wie bisher beim Abschluss der Erstbearbeitung geprüft.
+
+## 2026-10-21: Kundennummer in E-Mails an Kunden
+
+Nutzerentscheidung, task-15-3: Kunden sollen ihre Kundennummer bei Rückfragen und Anrufen nennen. Deshalb enthalten Eingangsbestätigung, Rückfrage, Terminbestätigung (auch die Absage einer Vormerkung) und Zahlungserinnerungen den Satz „Ihre Kundennummer: K-… – bitte bei Rückfragen und Anrufen angeben“ vor dem Gruß, sofern die Anfrage mit einem Kunden verknüpft ist.
+
+- Ohne Verknüpfung kein Satz: Neukunden entstehen erst beim Abschluss der Erstbearbeitung, ihre Eingangsbestätigung nennt daher keine Nummer.
+- Zahlungserinnerungen nennen die Nummer der Rechnung (Snapshot beim Ausstellen), damit Erinnerung und Rechnung übereinstimmen; fehlt sie dort, die der Anfrage.
+- Eine eigene Rechnungs-E-Mail gibt es nicht; das Rechnungs-PDF zeigt die Kundennummer bereits. Eine Rechnungs-E-Mail wurde nicht neu eingeführt.
+- Die Vorlagen bleiben in `emails/`; der Satz kommt über den Platzhalter `{{customer_number_note}}`, der ohne Kunde leer bleibt.

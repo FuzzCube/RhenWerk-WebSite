@@ -2682,7 +2682,7 @@
       "title": "Kundennummer sichtbar",
       "description": "Nutzerentscheidung 20.10.2026 nach einem Testanruf: Die Kundennummer ist im Dashboard kaum zu sehen (nur Untertitel der Kundenseite, Kundenliste, Anfrageseite) und erscheint in keiner E-Mail; der Kunde kennt sie daher nicht und kann sie Mira nicht nennen. Wie im papierbasierten Ablauf soll die Kundennummer überall dort stehen, wo Kunde, Anfrage und Rechnung zusammenkommen. Identifikation am Telefon bleibt bei Kundennummer + PLZ (Firma allein reicht aus Sicherheitsgründen nicht). Eine eigene Rechnungsanschrift je Kunde ist bewusst nicht Teil dieser Phase. Erweiterung 20.10.2026 (Nutzerentscheidung bei task-15-2): Die Kundennummer vergibt ausschließlich die Datenbank und sie ist der feste fachliche Schlüssel des Kunden; eine von Kunden genannte Nummer wird nur als „angegebene Kundennummer“ gespeichert und geprüft.",
       "order": 16,
-      "weight": 8,
+      "weight": 11,
       "status": "in_progress",
       "tasks": [
         {
@@ -2750,18 +2750,24 @@
         },
         {
           "weight": 2,
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T08:08:41Z",
+          "completedAt": "2026-10-21T08:14:42Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Migrationen 20261021120000_customer_number_note.sql (customer_number_note_text/_html, invoice_customer_number, queue_hold_mail mit Satz vor dem Gruß), 20261021120100_receipt_customer_number.sql und 20261021120200_reminder_customer_number.sql (aus emails/build_*_migration.py mit Platzhalter {{customer_number_note}}) per supabase migration up. Satz „Ihre Kundennummer: K-… – bitte bei Rückfragen und Anrufen angeben“ nur bei verknüpfter Anfrage in Eingangsbestätigung, Terminbestätigung/Absage, Zahlungserinnerungen (Nummer der Rechnung, sonst der Anfrage) und im Rückfrage-Entwurf (request-actions.tsx, per HTTP mit und ohne Kunde geprüft). Rechnung: keine eigene E-Mail vorhanden, Rechnungs-PDF zeigt die Nummer bereits. test:db bestanden (44 Dateien, 1048 Prüfungen, neu customer_number_mails.test.sql mit 13), test:unit 92 bestanden, lint, typecheck, build bestanden. Doku: database.md, decisions.md, testing.md.",
+            "commands": [
+              "npm run test:db",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-21T08:14:42Z"
           },
           "id": "task-15-3",
           "title": "Kundennummer in E-Mails an Kunden",
           "order": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "description": "Terminbestätigung, Rückfrage, Rechnung und Zahlungserinnerung nennen die Kundennummer („Ihre Kundennummer: K-2xxxx – bitte bei Rückfragen und Anrufen angeben“), sofern die Anfrage mit einem Kunden verknüpft ist. Die Eingangsbestätigung geht beim Eingang raus, bevor ein Neukunde entsteht (Kunde erst beim Abschluss der Erstbearbeitung); sie nennt die Nummer nur bei bereits verknüpften Anfragen (z. B. Bestandskunde über Mira). Textbausteine (Klartext und HTML) in den Datenbankfunktionen anpassen, geänderte Funktionen per psql einspielen.",
           "definitionOfDone": [
@@ -2804,6 +2810,60 @@
             "UI bei 390/768/1440 geprüft",
             "docs/database.md und betroffene Doku aktualisiert",
             "test:db, test:unit, test:ui, lint, typecheck, build"
+          ]
+        },
+        {
+          "weight": 1,
+          "startedAt": "2026-10-21T07:54:42Z",
+          "id": "task-15-5",
+          "title": "Startseite der Rolle Admin: Übersicht",
+          "order": 5,
+          "status": "completed",
+          "dependsOn": [],
+          "description": "Nutzerentscheidung 21.10.2026: Admin landet nach der Anmeldung und beim Aufruf von /dashboard auf der Übersicht statt auf der Verwaltung. Die Verwaltung bleibt über die Navigation erreichbar; Startseiten der anderen Rollen unverändert.",
+          "definitionOfDone": [
+            "START_PAGES in lib/auth/roles.ts: admin → /dashboard/uebersicht",
+            "test:auth erwartet für Admin die Übersicht als Startseite",
+            "docs/setup.md und docs/architecture.md aktualisiert",
+            "test:auth, lint, typecheck"
+          ],
+          "completedAt": "2026-10-21T07:58:43Z",
+          "verification": {
+            "status": "passed",
+            "summary": "START_PAGES in lib/auth/roles.ts: admin → /dashboard/uebersicht; Verwaltung weiter über die Navigation. test:auth gegen next start (PORT=3100): 136 Prüfungen bestanden, darunter Admin /dashboard → /dashboard/uebersicht, Startseite 200, Navigation unverändert. Im Testskript zwei datenbedingte Fehler behoben: listUsers mit perPage 1000 (222 lokale Konten), Anfragen für die Technikerzählung seitenweise geladen (max_rows 1000, 1108 Anfragen). lint, typecheck, build bestanden. Doku: docs/setup.md, docs/architecture.md, docs/testing.md.",
+            "commands": [
+              "npm run test:auth",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-21T07:58:43Z"
+          }
+        },
+        {
+          "weight": 2,
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          },
+          "id": "task-15-6",
+          "title": "Auswertung: Zeitraum je Diagramm, 12/24 Monate",
+          "order": 6,
+          "status": "ready",
+          "dependsOn": [],
+          "description": "Nutzerentscheidung 21.10.2026: Der Zeitraum-Schalter im Seitenkopf wirkt auf Durchsatz und Automatisierung nur auf ein Diagramm bzw. die Tabelle „Läufe“ und wirkt dadurch wie ein globaler Filter. Er wandert in den Kopf der Karte, die er steuert (Durchsatz: „Eingänge … kumuliert“; Automatisierung: „Läufe“). Monatsdiagramme (Eingang/Erstbearbeitung/Abschluss, Anteil automatisch, Zeitersparnis) erhalten statt des festen Chips „24 Monate“ einen Schalter 12/24 Monate (URL-Parameter monate, Standard 24, ohne zusätzliche Datenbankabfrage). Telefon behält den Zeitraum im Seitenkopf, da er dort die ganze Seite betrifft.",
+          "definitionOfDone": [
+            "Zeitraum-Schalter auf Durchsatz und Automatisierung im Kopf der gesteuerten Karte, nicht mehr im Seitenkopf",
+            "Telefon unverändert mit Zeitraum im Seitenkopf",
+            "Schalter 12/24 Monate in den Monatsdiagrammen, Wert in der URL, Standard 24",
+            "Links zwischen Bereichen erhalten Zeitraum und Monatsauswahl",
+            "UI bei 390/768/1440 geprüft",
+            "docs/architecture.md aktualisiert",
+            "test:unit, test:ui, lint, typecheck, build"
           ]
         }
       ]

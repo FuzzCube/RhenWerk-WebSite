@@ -346,3 +346,9 @@
 {"timestamp":"2026-10-21T07:12:52Z","type":"task_started","taskId":"task-15-4","summary":"Bestandskunde über die Kundennummer in der telefonischen Anfrage begonnen."}
 {"timestamp":"2026-10-21T07:32:21Z","type":"task_completed","taskId":"task-15-4","summary":"Telefonische Anfrage: Bestandskunde über Vorschläge zur Kundennummer übernommen und beim Anlegen verknüpft; alle Prüfungen bestanden."}
 {"timestamp":"2026-10-21T07:48:31Z","type":"decision_recorded","taskId":"task-15-4","summary":"Entscheidung zur Übernahme von Bestandskunden in der telefonischen Anfrage in docs/decisions.md festgehalten; Testbeschreibung, Architektur und Übergabe ergänzt."}
+{"timestamp":"2026-10-21T07:54:42Z","type":"roadmap_updated","summary":"task-15-5 nach Nutzerentscheidung ergänzt (Gewicht 1): Übersicht als Startseite der Rolle Admin."}
+{"timestamp":"2026-10-21T07:54:42Z","type":"task_started","taskId":"task-15-5","summary":"Übersicht als Startseite der Rolle Admin nach Planbestätigung begonnen."}
+{"timestamp":"2026-10-21T07:58:43Z","type":"task_completed","taskId":"task-15-5","summary":"Übersicht ist Startseite der Rolle Admin; test:auth (136 Prüfungen), lint, typecheck, build bestanden."}
+{"timestamp":"2026-10-21T08:08:41Z","type":"roadmap_updated","summary":"task-15-6 nach Nutzerentscheidung ergänzt (Gewicht 2): Auswertung mit Zeitraum je Diagramm und Schalter 12/24 Monate."}
+{"timestamp":"2026-10-21T08:08:41Z","type":"task_started","taskId":"task-15-3","summary":"Kundennummer in E-Mails an Kunden nach Planbestätigung begonnen."}
+{"timestamp":"2026-10-21T08:14:42Z","type":"task_completed","taskId":"task-15-3","summary":"Kundennummer in Eingangsbestätigung, Rückfrage, Terminmails und Zahlungserinnerungen bei verknüpftem Kunden; test:db, test:unit, lint, typecheck, build bestanden."}

@@ -59,7 +59,9 @@ export function RequestActions({ detail, employee }: { detail: RequestDetail; em
   const openVisits = detail.visits.filter((visit) => OPEN_VISITS.includes(visit.status)).length;
   const lastRun = [...(detail.automationRuns ?? [])].reverse().find((run) => run.status === "succeeded" && !run.corrected_at && ["intake_analysis", "reply_analysis"].includes(run.step));
   const subject = `Rückfrage zu Ihrer Serviceanfrage ${r.request_number}`;
-  const body = `Guten Tag ${r.contact_name},\n\nvielen Dank für Ihre Anfrage ${r.request_number}. Für die Planung des Einsatzes benötigen wir noch folgende Angaben:\n\n- \n\nMit freundlichen Grüßen\n${employee.displayName}\nRheinWerk Industrieservice`;
+  // Customer number only for linked requests (task-15-3); requests.customer_number is set only then
+  const customerNote = r.customer_number ? `Ihre Kundennummer: ${r.customer_number} – bitte bei Rückfragen und Anrufen angeben.\n\n` : "";
+  const body = `Guten Tag ${r.contact_name},\n\nvielen Dank für Ihre Anfrage ${r.request_number}. Für die Planung des Einsatzes benötigen wir noch folgende Angaben:\n\n- \n\n${customerNote}Mit freundlichen Grüßen\n${employee.displayName}\nRheinWerk Industrieservice`;
   // Only the next step has the primary (lime) button
   const variant = (key: ActionKey) => (key === primary ? "primary" : "secondary");
   const className = (key: ActionKey) => `action${key === primary ? " action--primary" : ""}${key === "reject" ? " action--danger" : ""}`;

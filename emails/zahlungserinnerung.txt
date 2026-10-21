@@ -24,7 +24,7 @@ betrachten Sie diese E-Mail bitte als gegenstandslos.
 Fragen zur Rechnung? Antworten Sie einfach auf diese E-Mail oder
 nennen Sie die Rechnungsnummer {{invoice_number}} im Betreff.
 
-Mit freundlichen Grüßen
+{{customer_number_note}}Mit freundlichen Grüßen
 RheinWerk Industrieservice · Buchhaltung
 
 --

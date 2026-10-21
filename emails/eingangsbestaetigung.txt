@@ -26,7 +26,7 @@ Sie uns bitte zusätzlich an: +49 621 00000-0
 Antworten Sie bei Fragen einfach auf diese E-Mail oder nennen Sie
 die Nummer {{request_number}} im Betreff.
 
-Mit freundlichen Grüßen
+{{customer_number_note}}Mit freundlichen Grüßen
 RheinWerk Industrieservice · Service Desk
 
 --
