@@ -425,3 +425,11 @@ Nutzerentscheidung, task-17-5: Jede Nacht um 02:00 sichert ein Lauf zuerst die D
 - E-Mails nur bei Fehlern und nach einem Fehler die Entwarnung; erfolgreiche Updates stehen nur im Dashboard.
 - npm-Pakete und n8n werden nur als verfügbar angezeigt und nie automatisch aktualisiert.
 
+## 2026-10-21: Dashboard-Anfragen über einen Dienst auf dem Rechner, Rücksetzen hält nachts an
+
+Nutzerentscheidung, task-17-6: Anfragen aus dem Dashboard führt ein LaunchAgent jede Minute aus; die Web-App bekommt keine Möglichkeit, Befehle auszuführen. Nacht, Terminal und Dashboard nutzen denselben Ablauf (`scripts/prod/runs.mjs`).
+
+- Nach „Wiederherstellen“ überspringt die Nacht den verlassenen Commit, bis `origin/main` weiterzieht; sonst würde das nächste Update das Rücksetzen sofort aufheben.
+- Update- und Anfrage-Skripte laufen aus dem neuesten gebauten Release (`tools`), nicht aus dem aktiven: Ein Rücksetzen der App darf keine älteren Update-Skripte (ohne diese Regel) zurückbringen.
+- Ein abgebrochener Lauf blockiert höchstens bis zur nächsten Minute: Wer die Sperre hält, schließt verwaiste `running`-Einträge ab.
+

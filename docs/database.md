@@ -760,4 +760,6 @@ Migration `20261021150000_system_updates.sql` (Phase 17, Entscheidungen in [deci
 
 **E-Mail-Entscheidung:** `raise_alert(source, alert_key, severity, title, detail)` legt den Vorfall an oder zählt ihn hoch (Schweregrad bleibt der höhere) und liefert `{alert_id, notify, reason}`: `notify` bei neuem Vorfall (`reason = new`) und 6 Stunden nach der letzten E-Mail (`reminder`). Das Skript ruft `mark_alert_notified(alert_id)` erst nach erfolgreichem Versand auf, ein fehlgeschlagener Versand wird bei der nächsten Prüfung wiederholt. `clear_alert(alert_key)` behebt den offenen Vorfall (`auto`) und liefert `notify = true` nur, wenn zu ihm eine Warn-E-Mail ging („wieder in Ordnung“); ohne offenen Vorfall `null`.
 
+**Abgebrochene Läufe** (task-17-6, Migration `20261021160000_abandon_stale_runs.sql`): `abandon_stale_runs()` (nur `service_role`) schließt Läufe und Anfragen in `running` als `failed` ab; die Skripte rufen sie nur mit gehaltener Sperre auf dem Rechner auf, wenn kein anderer Lauf aktiv sein kann.
+
 **Aufräumen:** `purge_system_history()`, pg_cron `system-history-cleanup` täglich 02:50: Läufe `no_change` nach 30 Tagen, behobene Warnungen nach 90 Tagen, übrige beendete Läufe und Anfragen nach 12 Monaten. Tests: `system_updates.test.sql`.

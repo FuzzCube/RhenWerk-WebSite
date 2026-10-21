@@ -79,9 +79,11 @@ flowchart LR
 | --- | --- |
 | `repo/` | Klon von `origin` (GitHub), Quelle jedes Releases |
 | `releases/<commit>/` | ein gebautes Release je Commit (`git archive`, `npm ci`, `next build`), `release.json` mit Commit, Betreff, Bauzeit, letzter Migration; die neuesten 3 bleiben (`PROD_KEEP_RELEASES`), das aktive nie gelöscht |
-| `current` | Symlink auf das aktive Release |
+| `current` | Symlink auf das aktive Release (App-Dienst) |
+| `tools` | Symlink auf das neueste gebaute Release; Update- und Anfrage-Dienst starten ihre Skripte von dort, damit ein Rücksetzen der App keine älteren Update-Skripte zurückbringt |
+| `skip-commit` | nach einem Rücksetzen der Commit, den die Nacht überspringt, bis `origin/main` weiterzieht |
 | `shared/.env.local` | Umgebung für alle Releases (Modus 600), jedes Release verlinkt darauf; beim ersten `prod:install` aus dem Entwicklungsordner kopiert |
-| `logs/` | `web.log` (Dienst), `release.log` (Umschaltungen), `build-<commit>.log` |
+| `logs/` | `web.log` (Dienst), `release.log` (Umschaltungen), `update.log` (Nachtlauf), `requests.log` (Dashboard-Anfragen), `build-<commit>.log` |
 
 ```bash
 npm run prod:install                      # einmalig: Ordner, Klon, shared/.env.local, LaunchAgent (wiederholbar)
@@ -259,6 +261,13 @@ npm run prod:update -- --ref <ref>        # anderen Stand des Klons, nur von Han
 launchctl kickstart gui/$(id -u)/online.rheinwerk.update   # den Nachtlauf jetzt starten
 tail -f ~/RheinWerk-Prod/logs/update.log
 ```
+
+**Anfragen aus dem Dashboard (task-17-6).** „Jetzt aktualisieren“ und „Wiederherstellen“ (ab task-17-7) legen nur eine Zeile in `update_requests` an; die Web-App führt keine Befehle aus. LaunchAgent `online.rheinwerk.requests` startet jede Minute `scripts/prod/requests.mjs` aus `tools`: Sperre nehmen (hält ein anderer Lauf sie, wartet die Anfrage bis zur nächsten Minute), abgebrochene Läufe abschließen (`abandon_stale_runs`: Läufe und Anfragen in `running` ohne Prozess → `failed`), älteste Anfrage übernehmen.
+
+- **Jetzt aktualisieren**: derselbe Ablauf wie nachts (mit Sicherung), `trigger = dashboard` mit der anfragenden Person.
+- **Wiederherstellen**: Umschalten auf ein vorhandenes Release ohne Build, Sicherung und Migrationen, Gesundheitsprüfung mit Rückfall. Jüngere Migrationen bleiben und stehen als Hinweis im Log. Der verlassene Commit wird danach nachts übersprungen (`skip-commit`), sonst holte das nächste Update ihn sofort zurück; ein neuer Commit auf `origin/main`, `npm run prod:update` oder „Jetzt aktualisieren“ heben das auf.
+
+Geprüft am 21.10.2026 mit Anfragen über die RPCs als Admin: Manager abgewiesen (`42501`), zweite Anfrage `RW422`, „Jetzt aktualisieren“ ohne Änderung (`no_change`) und mit neuem Commit, Rücksetzen auf 12cd0ea und 0a37dba mit Hinweis auf jüngere Migration, Nachtlauf überspringt den verlassenen Commit, unbekanntes Release `RW422`, abgebrochener Lauf nach einer Minute geschlossen.
 
 **Regeln bei Änderungen (Deployment):**
 

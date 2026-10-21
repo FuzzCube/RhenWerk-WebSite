@@ -3207,7 +3207,7 @@
           "description": "Die Web-App führt keine Befehle aus. Ein launchd-Auftrag prüft jede Minute update_requests und startet update.mjs für „Jetzt aktualisieren“ oder „Auf Release X zurück“. Rücksetzen schaltet nur den Code um; brachte ein späteres Release Migrationen, wird gewarnt, die Datenbank bleibt (Wiederherstellung nach betrieb.md 4.5 bleibt manuell).",
           "order": 6,
           "weight": 2,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-17-5"
           ],
@@ -3219,12 +3219,22 @@
             "Abgebrochene Läufe: Anfragen und Läufe in running ohne aktiven Prozess werden beim nächsten Lauf als failed abgeschlossen (abandon_stale_runs)"
           ],
           "startedAt": "2026-10-21T15:18:40Z",
-          "completedAt": null,
+          "completedAt": "2026-10-21T15:32:22Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-21T15:32:22Z",
+            "commands": [
+              "supabase migration up",
+              "npm run test:db",
+              "npm run db:types",
+              "npm run prod:install",
+              "RPC request_update/request_rollback als Admin und Manager + launchctl kickstart online.rheinwerk.requests",
+              "launchctl kickstart online.rheinwerk.update",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "summary": "scripts/prod/runs.mjs (runUpdate, runRollback; gemeinsam für Nacht, Terminal, Dashboard), scripts/prod/requests.mjs mit LaunchAgent online.rheinwerk.requests (jede Minute, ops/launchd, prod:install), Migration 20261021160000_abandon_stale_runs.sql. Update- und Anfrage-Skripte laufen aus tools (neuestes Release), nicht aus current: beim Test führte ein Rücksetzen auf 12cd0ea sonst das alte Update-Skript ohne Übersprung-Regel aus. Nach Wiederherstellen überspringt die Nacht den verlassenen Commit (skip-commit), bis origin/main weiterzieht. Geprüft über RPCs: Manager 42501, zweite Anfrage RW422, unbekanntes Release RW422, Jetzt aktualisieren ohne Änderung (no_change, dashboard, Clara Becker) und mit neuem Commit 12cd0ea → d3e8952, Wiederherstellen auf 12cd0ea und 0a37dba (Hinweis auf jüngere Migration 20261021160000), Nachtlauf über launchctl: no_change „Übersprungen: d3e8952 wurde zurückgesetzt“, Jetzt aktualisieren zurück auf d3e8952 und Übersprung aufgehoben, verwaister running-Lauf nach einer Minute failed. test:db bestanden (1097 Prüfungen, neu 4). lint, typecheck, build bestanden. Doku: betrieb.md (2.3, 6), database.md, decisions.md."
           }
         },
         {
@@ -3233,7 +3243,7 @@
           "description": "Neuer Bereich für admin und manager (manager nur lesend): aktuelle Version mit Datum, verfügbarer Commit auf main mit Nachrichten, Verlauf der Updates mit Status und Logauszug, vorhandene Releases. Nur admin: Schaltflächen „Jetzt aktualisieren“ und „Wiederherstellen“ je Release mit Bestätigung. Abschnitt „Verfügbar, nicht installiert“ für npm-Pakete und n8n.",
           "order": 7,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-17-2",
             "task-17-6"
