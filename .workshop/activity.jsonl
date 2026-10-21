@@ -392,3 +392,4 @@
 {"timestamp":"2026-10-21T14:31:48Z","type":"task_completed","taskId":"task-17-3","summary":"Warn-E-Mails über Gmail SMTP (scripts/lib/notify.mjs, npm run notify:test), nodemailer 10.0.14."}
 {"timestamp":"2026-10-21T14:31:48Z","type":"task_ready","taskId":"task-17-8","summary":"task-17-8 ist startbar (task-17-2 und task-17-3 abgeschlossen)."}
 {"timestamp":"2026-10-21T14:31:48Z","type":"task_ready","taskId":"task-17-9","summary":"task-17-9 ist startbar (task-17-2 und task-17-3 abgeschlossen)."}
+{"timestamp":"2026-10-21T14:37:38Z","type":"task_started","taskId":"task-17-4","summary":"task-17-4 begonnen: /api/health mit Token für Einzelergebnisse; Prüfung nach dem Umschalten über Commit des Releases; Tests in test:auth statt test:api (HTTP)."}

@@ -353,5 +353,26 @@ check("  eigenes Konto: keine Deaktivierung angeboten", !ownPage.html.includes('
 const unknown = await get(adminJar, "/dashboard/verwaltung/mitarbeitende/00000000-0000-0000-0000-000000000000");
 check("  unbekannte Person → 404", unknown.status === 404, String(unknown.status));
 
+// Health check (task-17-4): public only the status, details only with HEALTH_TOKEN, never cached
+{
+  const health = async (authorization) => {
+    const r = await fetch(`${BASE}/api/health`, { headers: authorization ? { Authorization: authorization } : {} });
+    return { status: r.status, cc: r.headers.get("cache-control"), body: await r.json() };
+  };
+  const open = await health();
+  check("/api/health ohne Token: 200, nur Status", open.status === 200 && JSON.stringify(open.body) === '{"status":"ok"}', `${open.status} ${JSON.stringify(open.body)}`);
+  check("  Cache-Control no-store", /no-store/.test(open.cc ?? ""), open.cc);
+  const wrong = await health("Bearer falsch");
+  check("  falscher Token: nur Status", JSON.stringify(wrong.body) === '{"status":"ok"}', JSON.stringify(wrong.body));
+  if (process.env.HEALTH_TOKEN) {
+    const full = await health(`Bearer ${process.env.HEALTH_TOKEN}`);
+    check("  mit Token: Commit, Datenbank und n8n mit Laufzeit",
+      typeof full.body.commit === "string" && full.body.db?.ok === true && typeof full.body.db?.ms === "number" && typeof full.body.n8n?.ok === "boolean",
+      JSON.stringify(full.body));
+  } else {
+    check("  mit Token: HEALTH_TOKEN fehlt in .env.local", false, "nicht geprüft");
+  }
+}
+
 console.log(fail ? `${fail} fehlgeschlagen` : "Alle Prüfungen bestanden");
 process.exit(fail ? 1 : 0);

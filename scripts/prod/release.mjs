@@ -60,7 +60,7 @@ try {
         console.log("App-Dienst ist nicht eingerichtet; nach npm run prod:install startet er aus current.");
       } else {
         if (wasLoaded) restartService();
-        if (await waitForApp()) {
+        if (await waitForApp(commit)) {
           log(`App antwortet auf Port ${PORT} mit ${commit.slice(0, 7)}`);
         } else {
           exitCode = 1;
@@ -68,7 +68,7 @@ try {
           if (previous && readRelease(previous)) {
             switchTo(previous);
             restartService();
-            log(`Rückfall auf ${previous.slice(0, 7)}: ${(await waitForApp()) ? "App antwortet" : "App antwortet weiterhin nicht"}`);
+            log(`Rückfall auf ${previous.slice(0, 7)}: ${(await waitForApp(previous)) ? "App antwortet" : "App antwortet weiterhin nicht"}`);
           }
         }
       }

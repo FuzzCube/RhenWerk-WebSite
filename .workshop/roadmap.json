@@ -3132,19 +3132,20 @@
         {
           "id": "task-17-4",
           "title": "Gesundheitsprüfung /api/health",
-          "description": "Öffentlich nur Status ok/fehler ohne Details; mit Token (HEALTH_TOKEN) Einzelergebnisse: App-Version (Commit), Datenbank erreichbar, n8n healthz erreichbar. Grundlage für die Prüfung nach einem Update und für den Wächter.",
+          "description": "Öffentlich nur Status ok/fehler ohne Details; mit Token (HEALTH_TOKEN, Authorization: Bearer) Einzelergebnisse: App-Version (Commit aus release.json), Datenbank erreichbar, n8n healthz erreichbar. 503 nur bei nicht erreichbarer Datenbank; n8n fällt nicht unter den Gesamtstatus (sonst würde ein n8n-Ausfall ein Update zurückrollen), seine Überwachung übernimmt task-17-8. Grundlage für die Prüfung nach einem Update und für den Wächter.",
           "order": 4,
           "weight": 1,
-          "status": "ready",
+          "status": "in_progress",
           "dependsOn": [
             "task-17-1"
           ],
           "definitionOfDone": [
-            "GET /api/health: 200 bei ok, 503 bei Fehler, keine Interna ohne Token",
+            "GET /api/health: 200 bei ok, 503 bei nicht erreichbarer Datenbank, keine Interna ohne gültigen Token",
             "Mit Token: commit, db, n8n mit Laufzeit je Prüfung, Cache-Control no-store",
-            "test:api ergänzt, lint, typecheck, build"
+            "prod:release wartet auf /api/health mit dem Commit des neuen Releases",
+            "test:auth ergänzt (HTTP), lint, typecheck, build"
           ],
-          "startedAt": null,
+          "startedAt": "2026-10-21T14:37:38Z",
           "completedAt": null,
           "verification": {
             "status": "not_run",

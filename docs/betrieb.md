@@ -91,7 +91,7 @@ npm run prod:release -- --no-switch       # nur bauen
 npm run prod:release -- --switch <commit> # auf ein vorhandenes Release zurück, ohne Neubau
 ```
 
-Ein fehlgeschlagener Build lässt `current` unverändert. Antwortet die App nach dem Umschalten 90 Sekunden lang nicht auf `/login`, schaltet das Skript auf das vorherige Release zurück und endet mit Fehler (geprüft am 21.10.2026 mit einem absichtlich leeren Release). Nur ein Lauf gleichzeitig (`~/RheinWerk-Prod/.lock`; bleibt er nach einem Absturz liegen, löschen). Der Rückweg betrifft nur den Code: Migrationen eines späteren Releases bleiben in der Datenbank (Daten zurück nur über 4.5).
+Ein fehlgeschlagener Build lässt `current` unverändert. Antwortet die App nach dem Umschalten 90 Sekunden lang nicht mit dem Commit des neuen Releases auf `/api/health` (Releases vor task-17-4 ohne diese Route: `/login` mit 200), schaltet das Skript auf das vorherige Release zurück und endet mit Fehler (geprüft am 21.10.2026 mit einem absichtlich leeren Release). Nur ein Lauf gleichzeitig (`~/RheinWerk-Prod/.lock`; bleibt er nach einem Absturz liegen, löschen). Der Rückweg betrifft nur den Code: Migrationen eines späteren Releases bleiben in der Datenbank (Daten zurück nur über 4.5).
 
 **Port 3200:** Port 3000 bleibt `next dev` im Entwicklungsordner vorbehalten. Entwicklung und Betrieb nutzen in Stufe 1 dieselbe lokale Supabase-Datenbank; Testläufe (`test:ui`, `test:api`) hinterlassen ihre Testdaten deshalb auch im Betrieb.
 
@@ -238,7 +238,8 @@ Danach: Anmeldung im Dashboard, n8n → Executions (Zeitpläne laufen grün), ei
 
 | Was | Wie | Wer reagiert |
 | --- | --- | --- |
-| Website erreichbar | kostenloser Uptime-Monitor (z. B. UptimeRobot) auf `https://rheinwerk-service.online`, Benachrichtigung per E-Mail | Betreiber |
+| Website erreichbar | kostenloser Uptime-Monitor (z. B. UptimeRobot) auf `https://rheinwerk-service.online/api/health` (200 = ok, 503 = Datenbank nicht erreichbar), Benachrichtigung per E-Mail | Betreiber |
+| Gesundheitsprüfung | `curl -H "Authorization: Bearer $HEALTH_TOKEN" localhost:3200/api/health`: Commit des laufenden Releases, Datenbank und n8n mit Laufzeit (task-17-4); ohne Token nur der Status | Betreiber |
 | E-Mail-Versand | Hinweis „E-Mail-Versand hängt“ oben im Dashboard nach 10 Minuten (task-12-9) | Dispatcher melden, Betreiber verbindet Gmail neu |
 | n8n-Läufe | n8n → Executions, rote Läufe; `docker logs n8n --since 1h` | Betreiber |
 | Automatisierung | Dashboard → Auswertung → Automatisierung (Anteil, Läufe mit Fehlern) | Manager |

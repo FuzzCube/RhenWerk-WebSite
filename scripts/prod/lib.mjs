@@ -73,13 +73,26 @@ export function restartService() {
   run("launchctl", ["kickstart", "-k", `gui/${process.getuid()}/${LABEL}`]);
 }
 
-// The app answers when /login returns 200 (task-17-4 replaces this with /api/health)
-export async function waitForApp(timeoutMs = 90_000) {
+// One value of shared/.env.local (the release scripts run without --env-file)
+export function sharedEnv(key) {
+  if (!existsSync(SHARED_ENV)) return "";
+  const line = readFileSync(SHARED_ENV, "utf8").split("\n").find((entry) => entry.startsWith(`${key}=`));
+  return line ? line.slice(key.length + 1).trim() : "";
+}
+
+// The release answers when /api/health returns 200 with its commit (task-17-4), so a still running old process does
+// not count. Releases from before task-17-4 have no /api/health (404): there /login with 200 is enough.
+export async function waitForApp(commit, timeoutMs = 90_000) {
   const until = Date.now() + timeoutMs;
+  const headers = { Authorization: `Bearer ${sharedEnv("HEALTH_TOKEN")}` };
   while (Date.now() < until) {
     try {
-      const response = await fetch(`http://127.0.0.1:${PORT}/login`, { redirect: "manual", signal: AbortSignal.timeout(5000) });
-      if (response.status === 200) return true;
+      const health = await fetch(`http://127.0.0.1:${PORT}/api/health`, { headers, signal: AbortSignal.timeout(5000) });
+      if (health.status === 200 && (await health.json()).commit === commit) return true;
+      if (health.status === 404) {
+        const login = await fetch(`http://127.0.0.1:${PORT}/login`, { redirect: "manual", signal: AbortSignal.timeout(5000) });
+        if (login.status === 200) return true;
+      }
     } catch { /* not up yet */ }
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
