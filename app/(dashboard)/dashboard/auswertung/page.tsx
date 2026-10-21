@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui";
 import { cache, Suspense, type ReactNode } from "react";
 import { TimeChart, type ChartFormat, type ChartSeries } from "@/components/dashboard/charts";
+import { PendingArea, PendingLink, PendingRegion } from "@/components/dashboard/pending-nav";
 import { PeriodControl } from "@/components/dashboard/period-bar";
 import { Card } from "@/components/dashboard/ui/card";
 import { PeriodChip } from "@/components/dashboard/ui/legend";
@@ -76,6 +77,7 @@ export default async function InsightsPage({ searchParams }: Props) {
   const months = parseMonths(params.monate);
   const current = AREAS.find((entry) => entry.key === area)!;
   return (
+    <PendingRegion>
     <div className="dash-page rw-page rw-page--tight side-page insights">
       <header className="side-page__head">
         <div className="side-page__head-text">
@@ -102,13 +104,15 @@ export default async function InsightsPage({ searchParams }: Props) {
             items: AREAS.filter((entry) => entry.group === group).map((entry) => ({ key: entry.key, label: entry.label, href: areaHref(entry.key, period, months), active: entry.key === area })),
           }))}
         />
-        <section className="side-page__main" aria-labelledby="area-title">
-          <Suspense key={`${area}-${period.param}-${period.anchor ?? ""}`} fallback={<div className="insights-grid">{[1, 2, 3, 4].map((index) => <Card key={index} busy><LoadingState shape="chart" label="Diagramme werden geladen …" /></Card>)}</div>}>
+        {/* Placeholders only for the first load and a new area; a new period keeps the content until it is there (task-15-8) */}
+        <PendingArea className="side-page__main" role="region" aria-labelledby="area-title">
+          <Suspense key={area} fallback={<div className="insights-grid">{[1, 2, 3, 4].map((index) => <Card key={index} busy><LoadingState shape="chart" label="Diagramme werden geladen …" /></Card>)}</div>}>
             <InsightsContent period={period} area={area} months={months} />
           </Suspense>
-        </section>
+        </PendingArea>
       </div>
     </div>
+    </PendingRegion>
   );
 }
 
@@ -129,7 +133,7 @@ function MonthsControl({ area, period, months, label }: { area: Area; period: Pe
       <nav className="rw-period" aria-label={`Monate: ${label}`}>
         <ul className="rw-period__kinds">
           {MONTH_OPTIONS.map((option) => (
-            <li key={option}><Link href={areaHref(area, period, option)} aria-current={option === months ? "page" : undefined} scroll={false}>{option} Monate</Link></li>
+            <li key={option}><PendingLink href={areaHref(area, period, option)} aria-current={option === months ? "page" : undefined}>{option} Monate</PendingLink></li>
           ))}
         </ul>
       </nav>

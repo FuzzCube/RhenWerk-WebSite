@@ -221,10 +221,13 @@ try {
     // Period control sits at the block it filters (task-10-3)
     const note = `document.querySelector("section[aria-labelledby=z-period] .rw-zone__note")?.textContent ?? ""`;
     const title = (await page.eval(note)).split(" · ")[0];
+    // task-15-8: the period zones stay while the previous period loads (no placeholders, control stays)
+    await page.eval(`(() => { const seen = { busy: false, placeholder: false, lostControl: false }; window.__switch = seen; const look = () => { if (document.querySelector(".pending-area[aria-busy]")) seen.busy = true; if (document.querySelector(".pending-area .dash-loading")) seen.placeholder = true; if (!document.querySelector("section[aria-labelledby=z-period] .rw-period")) seen.lostControl = true; }; new MutationObserver(look).observe(document.body, { subtree: true, childList: true, attributes: true }); })()`);
     await page.eval(`document.querySelector('.rw-period a[aria-label="Vorheriger Zeitraum"]').click()`);
-    // The note is empty while the period block loads, so wait for the new period's text
-    const moved = await page.until(`location.search.includes("datum=") && (${note}) !== "" && !(${note}).startsWith(${JSON.stringify(title)})`);
+    const moved = await page.until(`location.search.includes("datum=") && (${note}) !== "" && !(${note}).startsWith(${JSON.stringify(title)}) && !document.querySelector(".pending-area[aria-busy]")`);
     check(`Zeitraum zurück: ${title} → vorheriger Monat`, moved, await page.eval(`location.search`));
+    const overviewSwitch = await page.eval(`window.__switch`);
+    check("  Übersicht: Zeitraumwechsel ohne Ladeplatzhalter, Schalter bleibt, Bereich währenddessen aria-busy", overviewSwitch.busy && !overviewSwitch.placeholder && !overviewSwitch.lostControl, JSON.stringify(overviewSwitch));
     check("  vergangener Monat ist vollständig, Weiter-Pfeil vorhanden", await page.eval(`!!document.querySelector('.rw-period a[aria-label="Nächster Zeitraum"]') && !(${note}).includes("laufend")`));
   }
 
@@ -288,6 +291,15 @@ try {
     // task-15-7: compact controls (32 px) keep title and period control of the card in one row at 1440 px
     const row = await page.eval(`(() => { const box = (el) => el.getBoundingClientRect(); const title = box(document.querySelector("#comparison-chart .rw-card__title")); const nav = box(document.querySelector("#comparison-chart .rw-period")); const step = box(document.querySelector("#comparison-chart .rw-period__step")); return { title: document.querySelector("#comparison-chart .rw-card__title").textContent, sameRow: nav.top < title.bottom && title.top < nav.bottom, step: Math.round(step.height) }; })()`);
     check("  Karte „Eingänge kumuliert“: Titel und kompakter Zeitraumschalter (32 px) in einer Zeile @1440", row.title === "Eingänge kumuliert" && row.sameRow && row.step === 32, JSON.stringify(row));
+    // task-15-8: a new period keeps the cards (no loading placeholders, control stays), the area is busy meanwhile
+    const watchSwitch = `(() => { const seen = { busy: false, placeholder: false, lostControl: false }; window.__switch = seen; const look = () => { if (document.querySelector(".pending-area[aria-busy]")) seen.busy = true; if (document.querySelector(".pending-area .dash-loading")) seen.placeholder = true; if (!document.querySelector("#comparison-chart .rw-period, section[aria-labelledby=z-period] .rw-period")) seen.lostControl = true; }; new MutationObserver(look).observe(document.body, { subtree: true, childList: true, attributes: true }); })()`;
+    await page.eval(watchSwitch);
+    await page.eval(`[...document.querySelectorAll("#comparison-chart .rw-period__kinds a")].find((a) => a.textContent === "Woche").click()`);
+    await page.until(`location.search.includes("zeitraum=woche") && document.querySelector("#comparison-chart .rw-card__title") && !document.querySelector(".pending-area[aria-busy]") && document.querySelector('#comparison-chart .rw-period__kinds a[aria-current="page"]')?.textContent === "Woche"`, 15000);
+    const switched = await page.eval(`({ ...window.__switch, legend: document.querySelector("#comparison-chart .rw-legend")?.textContent ?? "" })`);
+    check("  Zeitraumwechsel ohne Neuaufbau: keine Ladeplatzhalter, Schalter bleibt, Bereich währenddessen aria-busy", switched.busy && !switched.placeholder && !switched.lostControl && /KW/.test(switched.legend), JSON.stringify(switched));
+    await page.open(`${BASE}/dashboard/auswertung`);
+    await page.until(`document.querySelectorAll(".figure .recharts-surface").length >= 3`, 10000);
     await page.eval(`[...document.querySelectorAll('#flow-chart nav[aria-label^="Monate"] a')].find((a) => a.textContent === "12 Monate").click()`);
     await page.until(`location.search.includes("monate=12") && document.querySelectorAll("#flow-chart .figure__table tbody tr").length === 12`, 10000);
     const kept = await page.eval(`({ rows: document.querySelectorAll("#flow-chart .figure__table tbody tr").length, step: document.querySelector("#comparison-chart .rw-period__step").getAttribute("href"), menu: document.querySelector('.side-menu--wide a[href*="bereich=automatisierung"]')?.getAttribute("href") })`);

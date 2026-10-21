@@ -865,6 +865,13 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .rw-period__kinds a[aria-current="page"] { font-weight: 600; background: var(--rw-action-primary-bg); color: var(--rw-text-on-lime); }
 .rw-period__step { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-default); border-radius: var(--rw-radius-sm); color: var(--rw-text-brand); }
 .rw-period__step:hover { background: var(--rw-action-secondary-bg-hover); }
+/* Period switch without rebuilding the page (task-15-8): the old content stays, dimmed after a short delay while the
+   new period loads; headers and controls stay as they are, the clicked button is marked at once */
+.pending-area :is(.rw-zone > :not(.rw-zone__header), .figure__body, .rw-glance, .insights-fold, #runs > :not(.rw-card__header)) { transition: opacity 150ms ease; }
+.pending-area[data-pending] :is(.rw-zone > :not(.rw-zone__header), .figure__body, .rw-glance, .insights-fold, #runs > :not(.rw-card__header)) { opacity: 0.5; transition-delay: 120ms; }
+.pending-area[data-pending] { cursor: progress; }
+.rw-period__kinds a[data-pending-link] { background: var(--rw-action-primary-bg); color: var(--rw-text-on-lime); }
+.rw-period__step[data-pending-link] { background: var(--rw-action-secondary-bg-hover); }
 /* Same height as the buttons, so the row keeps its height when the link appears */
 .rw-period .rw-period__current { min-height: 32px; font-size: 13px; }
 .rw-period__step--disabled, .rw-period__step--disabled:hover { background: var(--rw-surface-disabled); border-color: var(--rw-action-disabled-border); color: var(--rw-text-disabled); }

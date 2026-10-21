@@ -359,3 +359,7 @@
 {"timestamp":"2026-10-21T08:44:56Z","type":"task_started","taskId":"task-15-7","summary":"Kompakte Zeitraum- und Monatsschalter begonnen."}
 {"timestamp":"2026-10-21T08:56:00Z","type":"task_completed","taskId":"task-15-7","summary":"Kompakte Zeitraum- und Monatsschalter überall (32 px, Telefon 44 px), Karte „Eingänge kumuliert“ einzeilig; test:ui (417), lint, typecheck, build bestanden."}
 {"timestamp":"2026-10-21T08:56:00Z","type":"phase_completed","taskId":"task-15-7","summary":"Phase 15 Kundennummer sichtbar erneut abgeschlossen; alle Tasks der Roadmap v16 abgeschlossen."}
+{"timestamp":"2026-10-21T09:01:36Z","type":"roadmap_updated","summary":"task-15-8 nach Nutzerentscheidung ergänzt (Gewicht 1): Zeitraumwechsel ohne Neuaufbau der Seite."}
+{"timestamp":"2026-10-21T09:01:36Z","type":"task_started","taskId":"task-15-8","summary":"Zeitraumwechsel ohne Neuaufbau begonnen."}
+{"timestamp":"2026-10-21T09:18:14Z","type":"task_completed","taskId":"task-15-8","summary":"Zeitraumwechsel auf Übersicht und Auswertung ohne Neuaufbau: Inhalt bleibt stehen und wird während des Ladens abgeblendet; test:ui (419), lint, typecheck, build bestanden."}
+{"timestamp":"2026-10-21T09:18:14Z","type":"phase_completed","taskId":"task-15-8","summary":"Phase 15 Kundennummer sichtbar erneut abgeschlossen; alle Tasks der Roadmap v16 abgeschlossen."}

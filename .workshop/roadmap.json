@@ -2682,7 +2682,7 @@
       "title": "Kundennummer sichtbar",
       "description": "Nutzerentscheidung 20.10.2026 nach einem Testanruf: Die Kundennummer ist im Dashboard kaum zu sehen (nur Untertitel der Kundenseite, Kundenliste, Anfrageseite) und erscheint in keiner E-Mail; der Kunde kennt sie daher nicht und kann sie Mira nicht nennen. Wie im papierbasierten Ablauf soll die Kundennummer überall dort stehen, wo Kunde, Anfrage und Rechnung zusammenkommen. Identifikation am Telefon bleibt bei Kundennummer + PLZ (Firma allein reicht aus Sicherheitsgründen nicht). Eine eigene Rechnungsanschrift je Kunde ist bewusst nicht Teil dieser Phase. Erweiterung 20.10.2026 (Nutzerentscheidung bei task-15-2): Die Kundennummer vergibt ausschließlich die Datenbank und sie ist der feste fachliche Schlüssel des Kunden; eine von Kunden genannte Nummer wird nur als „angegebene Kundennummer“ gespeichert und geprüft.",
       "order": 16,
-      "weight": 12,
+      "weight": 13,
       "status": "completed",
       "tasks": [
         {
@@ -2898,6 +2898,35 @@
             "Karte „Eingänge kumuliert“: Titel und Schalter bei 1440 px in einer Zeile",
             "Übersicht und Auswertung bei 390/768/1440 geprüft",
             "test:ui, lint, typecheck, build"
+          ]
+        },
+        {
+          "weight": 1,
+          "startedAt": "2026-10-21T09:01:36Z",
+          "completedAt": "2026-10-21T09:18:14Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Ursache: Zeitraum im Suspense-Key von Übersicht und Auswertung – jeder Wechsel baute den Bereich mit Ladeplatzhaltern neu auf, in der Auswertung verschwanden dabei die Schalter. Neu components/dashboard/pending-nav.tsx (PendingRegion mit useTransition + router.push scroll:false, PendingLink, PendingArea mit aria-busy); PeriodControl und Monatsschalter nutzen PendingLink; Suspense-Key ohne Zeitraum (Auswertung nur bereich). CSS: Karteninhalte nach 120 ms auf 50 % abgeblendet, Köpfe und Schalter unverändert, geklickter Schalter sofort markiert. test:ui gegen next start (PORT=3100): 419 Prüfungen bestanden, neu je eine Prüfung für Übersicht und Auswertung (aria-busy während des Ladens, keine Ladeplatzhalter, Schalter durchgehend vorhanden). Ein Lauf davor scheiterte an der Einsatzplanung, weil die zufällige Testwoche (Januar 2056) schon Buchungen früherer Läufe hatte; Wiederholung bestanden. Screenshots geprüft. lint, typecheck, build bestanden. Doku: architecture.md, testing.md.",
+            "commands": [
+              "npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-21T09:18:14Z"
+          },
+          "id": "task-15-8",
+          "title": "Zeitraumwechsel ohne Neuaufbau der Seite",
+          "order": 8,
+          "status": "completed",
+          "dependsOn": [],
+          "description": "Nutzerentscheidung 21.10.2026: Beim Wechsel des Zeitraums (Übersicht, Auswertung) wird der Bereich mit Ladeplatzhaltern neu aufgebaut, weil der Zeitraum im Suspense-Key steht; die Seite springt, in der Auswertung verschwinden sogar die Schalter. Künftig bleibt der bisherige Inhalt stehen, bis die neuen Daten da sind; währenddessen wird der Bereich leicht abgeblendet (aria-busy), Schalter bleiben an ihrem Platz. Platzhalter nur beim ersten Laden und beim Bereichswechsel.",
+          "definitionOfDone": [
+            "Zeitraum nicht mehr im Suspense-Key von Übersicht und Auswertung",
+            "Zeitraum- und Monatsschalter navigieren per Transition; Bereich abgeblendet mit aria-busy während des Ladens",
+            "Kein Ladeplatzhalter beim Zeitraumwechsel, Scrollposition bleibt",
+            "test:ui-Prüfung, UI bei 390/768/1440",
+            "lint, typecheck, build"
           ]
         }
       ]

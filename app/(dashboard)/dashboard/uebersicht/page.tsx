@@ -6,6 +6,7 @@ import {
   ServiceDeskCard, TeamTable, TechniciansCard, ToPlanCard,
 } from "@/components/dashboard/overview";
 import { ACTIVE_FILTER_PARAM, showsInactive } from "@/components/dashboard/active-filter";
+import { PendingArea, PendingRegion } from "@/components/dashboard/pending-nav";
 import { PeriodControl, periodDescription } from "@/components/dashboard/period-bar";
 import { Card, Zone } from "@/components/dashboard/ui/card";
 import { ExpandTiles } from "@/components/dashboard/ui/expand-tiles";
@@ -30,6 +31,7 @@ export default async function OverviewPage({ searchParams }: Props) {
   const period = parsePeriodParams(params);
   const now = new Date();
   return (
+    <PendingRegion>
     <div className="dash-page rw-page overview">
       <header className="dash-page-header">
         <div>
@@ -43,6 +45,7 @@ export default async function OverviewPage({ searchParams }: Props) {
       </header>
       {employee.role === "manager" ? <ManagerOverview period={period} /> : <AdminOverview period={period} allTeam={showsInactive(params)} />}
     </div>
+    </PendingRegion>
   );
 }
 
@@ -79,9 +82,12 @@ function AdminOverview({ period, allTeam }: { period: PeriodParams; allTeam: boo
           <NowTiles />
         </Suspense>
       </Zone>
-      <Suspense key={`${period.param}-${period.anchor ?? ""}`} fallback={<PeriodZonesLoading />}>
-        <PeriodZones period={period} withFinance allTeam={allTeam} />
-      </Suspense>
+      {/* A new period keeps the zones until the data is there, dimmed meanwhile (task-15-8) */}
+      <PendingArea className="rw-page">
+        <Suspense fallback={<PeriodZonesLoading />}>
+          <PeriodZones period={period} withFinance allTeam={allTeam} />
+        </Suspense>
+      </PendingArea>
     </>
   );
 }
@@ -140,9 +146,11 @@ function ManagerOverview({ period }: { period: PeriodParams }) {
         </Guard>
       </Suspense>
 
-      <Suspense key={`${period.param}-${period.anchor ?? ""}`} fallback={<PeriodZonesLoading title="Durchsatz im Zeitraum" />}>
-        <PeriodZones period={period} title="Durchsatz im Zeitraum" />
-      </Suspense>
+      <PendingArea className="rw-page">
+        <Suspense fallback={<PeriodZonesLoading title="Durchsatz im Zeitraum" />}>
+          <PeriodZones period={period} title="Durchsatz im Zeitraum" />
+        </Suspense>
+      </PendingArea>
     </>
   );
 }
