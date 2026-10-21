@@ -41,6 +41,11 @@ test("Webhook: Cloudflare, Secret, inaktiver Workflow, Tunnel aus", () => {
   assert.match(webhook(403, "Authorization data is wrong!").detail, /Werkzeug-Secret/);
   assert.match(webhook(404, "").detail, /inaktiv/);
   assert.match(webhook(530, "").detail, /Tunnel oder n8n/);
+  // Gesamtprobe task-17-11: during the start of n8n 404 and 530 are skipped, a rejected Access token is not
+  const starting = (status, text = "") => checkOf(evaluateMira({ ...healthy, webhook: { status, text } }, { n8nStarting: true }), "mira:webhook");
+  assert.equal(starting(404).ok, null);
+  assert.equal(starting(530).ok, null);
+  assert.equal(starting(403, "<title>Error ・ Cloudflare Access</title>").ok, false);
   const failing = webhook(200, "{\"ok\":false}", false);
   assert.equal(failing.ok, false);
   assert.equal(failing.severity, "warning");

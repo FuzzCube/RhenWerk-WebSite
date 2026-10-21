@@ -4,6 +4,7 @@
 // answers, evaluateN8n turns them into checks (pure, unit tests in tests/unit/n8n-monitor.test.mjs).
 //   N8N_API_KEY (n8n → Settings → n8n API; without it only healthz and queues), N8N_API_URL (default
 //   http://127.0.0.1:5678), ELEVENLABS_API_KEY (without it the two workflows of Mira are not expected)
+import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 
 export const ERROR_WORKFLOW = "rwFehlerMeldung1";
@@ -12,6 +13,18 @@ const MIRA_WORKFLOWS = ["rwAgentTools2026", "rwCallAnalysis26"];
 export const SCHEDULES = { IlH4b7AKuSXyMiOd: 10, wO3EgSMM8l1wRKsc: 10, rGQGvOLDJUuHt4bO: 30 };
 // A warning of the error workflow closes after this long without a new failed execution
 export const ERROR_QUIET_MINUTES = 60;
+// Right after a start /healthz answers before the API is registered (HTTP 404, Gesamtprobe task-17-11): API errors
+// in this time are skipped instead of reported as a rejected key
+export const STARTUP_MINUTES = 3;
+
+// Start of the container (docker inspect), null if unknown
+export function containerStartedAt(env) {
+  try {
+    return execFileSync("docker", ["inspect", "-f", "{{.State.StartedAt}}", env.N8N_CONTAINER ?? "n8n"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 10_000 }).trim();
+  } catch {
+    return null;
+  }
+}
 
 // The RheinWerk workflows as exported in the repository, including the error workflow (n8n 2.x calls it only while it
 // is published); other workflows of the same n8n are not watched
@@ -44,7 +57,7 @@ export async function collectN8n(env, rpc) {
 
   const headers = { "X-N8N-API-KEY": env.N8N_API_KEY };
   const probe = await request(`${base}/api/v1/workflows?limit=1`, headers);
-  if (probe.status !== 200) return { health, queues, openErrors, api: { status: probe.status, error: probe.error } };
+  if (probe.status !== 200) return { health, queues, openErrors, api: { status: probe.status, error: probe.error }, startedAt: containerStartedAt(env) };
 
   const expected = expectedWorkflows(Boolean(env.ELEVENLABS_API_KEY));
   const workflows = await Promise.all(expected.map(async (workflow) => {
@@ -75,9 +88,14 @@ export function evaluateN8n(raw, now = new Date()) {
     const api = raw.api ?? { status: null };
     if (api.status === null) {
       checks.push(check("n8n:api", "n8n-API", null, "warning", "", "N8N_API_KEY fehlt: Workflows und Zeitpläne nicht geprüft"));
+    } else if (api.status !== 200 && raw.startedAt && minutesSince(raw.startedAt, now) < STARTUP_MINUTES) {
+      checks.push(check("n8n:api", "n8n-API", null, "warning", "", "n8n startet gerade, API noch nicht bereit: Workflows und Zeitpläne beim nächsten Lauf"));
     } else if (api.status !== 200) {
+      const rejected = api.status === 401 || api.status === 403;
       checks.push(check("n8n:api", "n8n-API", false, "warning", "Automatisierung: Wächter ohne Zugriff auf die n8n-API",
-        `Die n8n-API lehnt N8N_API_KEY ab (${api.status ? `HTTP ${api.status}` : api.error}); aktive Workflows und Zeitpläne werden nicht geprüft. In n8n unter Settings → n8n API einen neuen Schlüssel anlegen und in .env.local eintragen.`));
+        rejected
+          ? `Die n8n-API lehnt N8N_API_KEY ab (HTTP ${api.status}); aktive Workflows und Zeitpläne werden nicht geprüft. In n8n unter Settings → n8n API einen neuen Schlüssel anlegen und in .env.local eintragen.`
+          : `Die n8n-API antwortet nicht wie erwartet (${api.status ? `HTTP ${api.status}` : api.error}); aktive Workflows und Zeitpläne werden nicht geprüft. Ist die öffentliche API abgeschaltet (N8N_PUBLIC_API_DISABLED)? docker logs n8n --since 30m.`));
     } else {
       checks.push(check("n8n:api", "n8n-API", true));
       for (const workflow of raw.workflows) {

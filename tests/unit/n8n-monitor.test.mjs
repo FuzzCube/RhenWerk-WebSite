@@ -42,6 +42,13 @@ test("Ohne Schlüssel übersprungen, abgelehnter Schlüssel warnt", () => {
   assert.equal(checkOf(evaluateN8n({ ...healthy, api: { status: null } }, now), "n8n:api").ok, null);
   assert.equal(evaluateN8n({ ...healthy, api: { status: null } }, now).state, "ok");
   assert.equal(checkOf(evaluateN8n({ ...healthy, api: { status: 401 } }, now), "n8n:api").ok, false);
+  // Gesamtprobe task-17-11: right after a start the API answers 404 for a moment
+  const started = (minutes) => new Date(now.getTime() - minutes * 60_000).toISOString();
+  assert.equal(checkOf(evaluateN8n({ ...healthy, api: { status: 404 }, startedAt: started(1) }, now), "n8n:api").ok, null);
+  const late = checkOf(evaluateN8n({ ...healthy, api: { status: 404 }, startedAt: started(10) }, now), "n8n:api");
+  assert.equal(late.ok, false);
+  assert.doesNotMatch(late.detail, /lehnt N8N_API_KEY ab/);
+  assert.match(checkOf(evaluateN8n({ ...healthy, api: { status: 401 }, startedAt: started(10) }, now), "n8n:api").detail, /lehnt N8N_API_KEY ab/);
 });
 
 test("Inaktiver oder fehlender Workflow ist kritisch; sein Zeitplan wird dann nicht zusätzlich gemeldet", () => {

@@ -107,10 +107,15 @@ function agentCheck(agent, id) {
     `Abfrage des Agenten: ${agent.status ? `HTTP ${agent.status}` : agent.error}. Meist eine Störung bei ElevenLabs oder der Internetverbindung; status.elevenlabs.io prüfen.`);
 }
 
-function webhookCheck(webhook) {
+// n8nStarting: n8n started less than 3 minutes ago (n8n.mjs STARTUP_MINUTES); its webhooks are registered only after
+// /healthz answers, so 404 and connection errors are skipped then (Gesamtprobe task-17-11)
+function webhookCheck(webhook, n8nStarting = false) {
   const label = "Werkzeuge über den Tunnel";
   if (!webhook) return check("mira:webhook", label, null, "warning", "", "AGENT_WEBHOOK_SECRET fehlt, Prüfung übersprungen");
   if (webhook.status === 200 && webhook.ok === true) return check("mira:webhook", label, true);
+  if (n8nStarting && webhook.status !== 401 && webhook.status !== 403) {
+    return check("mira:webhook", label, null, "warning", "", "n8n startet gerade, Werkzeuge werden beim nächsten Lauf geprüft");
+  }
   const title = "Telefonassistent: Werkzeuge nicht erreichbar";
   // Cloudflare answers 401 (wrong secret) or 403 (no or unknown token) with its own error page
   if ((webhook.status === 401 || webhook.status === 403) && /Cloudflare Access/i.test(webhook.text ?? "")) {
@@ -177,10 +182,10 @@ function creditCheck(subscription, credit) {
 }
 
 // Raw answers → checks, state for the dashboard (off, ok, warning, critical) and the credit
-export function evaluateMira(raw, { creditMin } = {}) {
+export function evaluateMira(raw, { creditMin, n8nStarting = false } = {}) {
   if (!raw.configured) return { state: "off", checks: [], credit: null };
   const credit = creditOf(raw.subscription, creditMin);
-  const checks = [agentCheck(raw.agent, raw.agentId), webhookCheck(raw.webhook), analysisCheck(raw.analysis), toolsCheck(raw.tools), creditCheck(raw.subscription, credit)];
+  const checks = [agentCheck(raw.agent, raw.agentId), webhookCheck(raw.webhook, n8nStarting), analysisCheck(raw.analysis), toolsCheck(raw.tools), creditCheck(raw.subscription, credit)];
   const failed = checks.filter((c) => c.ok === false);
   const state = failed.some((c) => c.severity === "critical") ? "critical" : failed.length ? "warning" : "ok";
   return { state, checks, credit };

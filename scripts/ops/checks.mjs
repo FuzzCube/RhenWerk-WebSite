@@ -6,7 +6,7 @@
 // force: also the checks that otherwise run less often (SMTP once an hour).
 import { notifyDue, pingDatabase, readMonitoring, report, reportWithoutDatabase, rpc } from "./lib.mjs";
 import { collectMira, evaluateMira } from "./mira.mjs";
-import { collectN8n, evaluateN8n } from "./n8n.mjs";
+import { STARTUP_MINUTES, collectN8n, containerStartedAt, evaluateN8n } from "./n8n.mjs";
 import { collectSystems, evaluateSystems } from "./systems.mjs";
 
 const strip = (checks) => checks.map(({ key, label, ok, severity, title, detail }) => ({ key, label, ok, severity, title: ok === false ? title : null, detail }));
@@ -17,7 +17,9 @@ export async function runChecks({ force = false } = {}) {
     collectMira(process.env, rpc), collectN8n(process.env, rpc),
     collectSystems(process.env, { pingDatabase, previous, force }),
   ]);
-  const mira = evaluateMira(miraRaw, { creditMin: process.env.MIRA_CREDIT_MIN });
+  const n8nStart = containerStartedAt(process.env);
+  const n8nStarting = Boolean(n8nStart) && Date.now() - Date.parse(n8nStart) < STARTUP_MINUTES * 60_000;
+  const mira = evaluateMira(miraRaw, { creditMin: process.env.MIRA_CREDIT_MIN, n8nStarting });
   const n8n = evaluateN8n(n8nRaw);
   const systems = evaluateSystems(systemsRaw, process.env);
   for (const check of mira.checks) await report("mira", check);
