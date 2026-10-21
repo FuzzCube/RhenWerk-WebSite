@@ -4,21 +4,21 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v16, 16 Phasen, 83 Tasks, Fortschritt 100 % (Gewicht 210 von 210).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v17, 17 Phasen, 86 Tasks, Fortschritt 100 % (Gewicht 215 von 215).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Phasen 0–15 abgeschlossen; zuletzt **Phase 15 „Kundennummer sichtbar“** (Roadmap v16, Nutzerentscheidung 20.10.2026 nach Testanruf): Kundennummer in Stammdaten (`task-15-1`), Kundennummer nur aus dem Kundenstamm mit Prüfung der angegebenen Nummer und Anzeige in Listen, Rechnungen und Einsatz (`task-15-2`), Bestandskunde in der telefonischen Anfrage über Vorschläge zur Kundennummer (`task-15-4`, Nutzerentscheidung 21.10.2026) und Übersicht als Startseite der Rolle Admin (`task-15-5`, Nutzerentscheidung 21.10.2026), Kundennummer in E-Mails an Kunden (`task-15-3`), und Auswertung mit Zeitraum je Karte und Schalter 12/24 Monate (`task-15-6`) kompakte Zeitraumschalter (`task-15-7`) und Zeitraumwechsel ohne Neuaufbau (`task-15-8`), alle abgeschlossen; keine Aufgabe offen. Zuvor **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`).
+**Phase 16 „Datenschutz und Telefonassistent“** (Roadmap v17, Nutzerentscheidung 21.10.2026): Anrufe ohne Anfrage nach 12 Monaten löschen (`task-16-1`) und Mira fragt auch im Notfall nach der Kundennummer (`task-16-2`, Befund aus dem Sprachtest vom 20.10.2026) sowie SLA-Verträge in Kundenliste und Kundenseite (`task-16-3`), alle abgeschlossen; keine Aufgabe offen. Phasen 0–15 abgeschlossen; zuletzt **Phase 15 „Kundennummer sichtbar“** (Roadmap v16, Nutzerentscheidung 20.10.2026 nach Testanruf): Kundennummer in Stammdaten (`task-15-1`), Kundennummer nur aus dem Kundenstamm mit Prüfung der angegebenen Nummer und Anzeige in Listen, Rechnungen und Einsatz (`task-15-2`), Bestandskunde in der telefonischen Anfrage über Vorschläge zur Kundennummer (`task-15-4`, Nutzerentscheidung 21.10.2026) und Übersicht als Startseite der Rolle Admin (`task-15-5`, Nutzerentscheidung 21.10.2026), Kundennummer in E-Mails an Kunden (`task-15-3`), Auswertung mit Zeitraum je Karte und Schalter 12/24 Monate (`task-15-6`), kompakte Zeitraumschalter (`task-15-7`) und Zeitraumwechsel ohne Neuaufbau (`task-15-8`), alle abgeschlossen. Zuvor **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`).
 
 Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
 
 ## Zuletzt abgeschlossen
 
-- `task-15-8` (21.10.2026): Zeitraumwechsel auf Übersicht und Auswertung ohne Neuaufbau – Inhalt bleibt stehen, wird während des Ladens abgeblendet (`components/dashboard/pending-nav.tsx`, Zeitraum nicht mehr im `Suspense`-Key).
-- `task-15-7` (21.10.2026): Zeitraum- und Monatsschalter überall kompakt (32 px, Telefon 44 px); Karte „Eingänge kumuliert“ mit Titel und Schalter in einer Zeile.
-- `task-15-6` (21.10.2026): Auswertung – Zeitraumwahl in der Karte, die sie filtert (Durchsatz: „Eingänge … kumuliert“, Automatisierung: „Läufe“; Telefon weiter im Seitenkopf), Monatsdiagramme mit Schalter 12/24 Monate (`?monate=12`).
+- `task-16-3` (21.10.2026): Kundenliste mit SLA-Kennzeichen und Ansicht „Mit SLA-Vertrag“ (`?ansicht=sla`, heute gültige Verträge), Kundenseite mit Zeile „SLA-Vertrag“; nur lesend, Zuordnung über die Kundennummer.
+- `task-16-2` (21.10.2026): Notfallregel im Systemprompt als Schrittfolge mit Kundennummer zuerst; Szenario `notfall_bestand`, `agent:simulate` 17/17. Sprachtest eines Bestandskunden-Notfalls mit Stimme steht aus.
+- `task-16-1` (21.10.2026): `purge_unlinked_calls()` löscht Anrufe ohne Anfrage 12 Monate nach Gesprächsende, pg_cron `calls-without-request-12-months` (Migration `20261021130000_purge_unlinked_calls.sql`).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -36,8 +36,6 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Bekannte Probleme
 
-- ElevenLabs-Guthaben seit 19.10.2026 aufgebraucht: keine Sprachtests. Offen ist ein Anruf mit Stimme nach den letzten Änderungen (Sonnet, Kalender, ASR-Schlüsselwörter, Bestandskunde, Demo-Weiterleitung). API-Lesen, `agent:sync` und `agent:simulate` funktionieren weiter.
-- Zusammenfassungen von Anrufen ohne Anfrage sollen nach 12 Monaten gelöscht werden (`docs/telefonassistent/datenschutz.md`); noch nicht umgesetzt.
 - Demo-Anruf funktioniert nur lokal (Budget in Supabase, `/api/mira`); auf der öffentlichen Website erst nach Anbindung von Supabase und `ELEVENLABS_API_KEY` im Deployment.
 - Kein Supabase-Cloud-Projekt verknüpft (für ein Deployment `supabase login`, `supabase link`); öffentliche Website nutzt weiterhin Make, nicht n8n.
 - `test:api` und `test:ui` legen Testnutzer und Testanfragen an; `npm run demo:seed` räumt die Anfragen ab (danach meldet `demo:verify` keine Chronologie-Abweichungen mehr). Testnutzer bleiben bis zu einem Reset in Namenslisten.
@@ -51,4 +49,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Alle Tasks der Roadmap v16 abgeschlossen; neue Aufgaben nur nach Rücksprache. Weitere mögliche Tasks nur nach Rücksprache: eigene Rechnungsanschrift je Kunde, Sprachtest von Mira nach neuem ElevenLabs-Guthaben, Löschung von Anrufzusammenfassungen ohne Anfrage nach 12 Monaten, Deployment (Supabase Cloud, öffentliche Website auf n8n und Demo-Anruf), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Alle Tasks der Roadmap v17 abgeschlossen. Sprachtest mit Stimme am 20.10.2026 erfolgreich (Notfall Müller Technik, RIS-2026-02185). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard (bisher nur Migration/Demo-Seed), eigene Rechnungsanschrift je Kunde, Deployment (Supabase Cloud, öffentliche Website auf n8n und Demo-Anruf), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

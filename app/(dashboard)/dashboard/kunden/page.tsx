@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createCustomer } from "@/app/(dashboard)/dashboard/kunden/actions";
 import { CustomerShell } from "@/components/dashboard/customer-shell";
+import { ContractBadge } from "@/components/dashboard/ui/contract-badge";
 import { SimilarCustomers } from "@/components/dashboard/similar-customers";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { SaveForm, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
@@ -11,7 +12,7 @@ import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { CUSTOMER_PAGE_SIZE, CUSTOMER_VIEWS, listCustomers, parseCustomerFilters, type CustomerFilters, type CustomerListItem } from "@/lib/dashboard/customers";
-import { EMPTY, formatNumber } from "@/lib/format";
+import { berlinDayKey, EMPTY, formatNumber } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Kunden" };
 
@@ -19,6 +20,7 @@ const DESCRIPTION = {
   aktiv: "Kunden mit Kundennummer und Standorten. Hier lassen sich Angaben korrigieren, etwa nach einem Fehler des Telefonassistenten.",
   inaktiv: "Deaktivierte Kunden. Der Telefonassistent findet sie nicht mehr; bestehende Anfragen bleiben verknüpft.",
   alle: "Alle Kunden, aktive und deaktivierte.",
+  sla: "Aktive Kunden mit einem heute gültigen SLA-Vertrag. Die Verträge stehen auf der Kundenseite; gepflegt werden sie außerhalb des Dashboards.",
 } as const;
 
 function query(filters: CustomerFilters, overrides: Partial<CustomerFilters>) {
@@ -38,12 +40,20 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const { rows, total, counts, error } = await listCustomers(filters);
   const pages = Math.max(1, Math.ceil(total / CUSTOMER_PAGE_SIZE));
   const current = CUSTOMER_VIEWS.find((view) => view.key === filters.view)!;
+  const today = berlinDayKey(new Date());
 
   const columns: Column<CustomerListItem>[] = [
     {
       key: "company",
       header: "Kunde",
-      cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub"><span className="mono">{row.customer_number}</span> · <span data-origin>{row.origin_request_id ? `aus ${row.origin?.request_number ?? "Anfrage"}` : "manuell"}</span></span></>,
+      cell: (row) => (
+        <>
+          <strong className="rw-strong">{row.company_name}</strong>
+          <span className="cell-sub"><span className="mono">{row.customer_number}</span> · <span data-origin>{row.origin_request_id ? `aus ${row.origin?.request_number ?? "Anfrage"}` : "manuell"}</span></span>
+          {/* SLA contracts (task-16-3): the most recent one, expired and future ones included */}
+          {row.contracts[0] && <span className="cell-sub"><ContractBadge contract={row.contracts[0]} today={today} /></span>}
+        </>
+      ),
       mobile: "title",
     },
     {
@@ -57,7 +67,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     },
     { key: "contact", header: "Kontakt", cell: (row) => <>{row.contact_name ?? EMPTY}<span className="cell-sub">{row.business_email ?? "keine E-Mail"}</span></>, mobile: "hide" },
     { key: "requests", header: "Anfragen", cell: (row) => <span className="mono">{formatNumber(row.requestCount)}</span>, align: "end" },
-    ...(filters.view === "aktiv" ? [] : [{ key: "status", header: "Status", cell: (row: CustomerListItem) => (row.is_active ? "Aktiv" : "Inaktiv") }]),
+    ...(filters.view === "aktiv" || filters.view === "sla" ? [] : [{ key: "status", header: "Status", cell: (row: CustomerListItem) => (row.is_active ? "Aktiv" : "Inaktiv") }]),
   ];
 
   return (

@@ -2528,6 +2528,9 @@ isOneToOne: false
 "purge_call_transcripts":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"purge_unlinked_calls":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "queue_message":
 { Args: { "expected_version": number,"message_id": string }; Returns: {
               "approved_at": string | null,

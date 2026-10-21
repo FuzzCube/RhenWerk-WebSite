@@ -121,6 +121,15 @@ const SCENARIOS = {
     params: { weiterleiten: (p) => p.ziel === "service_desk", rueckruf_service_desk: (p) => p.dringend === true && /555 ?4443/.test(p.rueckrufnummer ?? "") },
     says: /Demo-Projekt/,
   },
+  // task-16-2: emergency of an existing customer at night without SLA – customer number asked, request linked via
+  // the number, no address or e-mail questions
+  notfall_bestand: {
+    caller: "Du bist Herr Braun von der Neckartal Brauerei. Euer Kompressor von Kaeser, Typ SM 13, ist ausgefallen, die Produktion steht. Keine Gefahr für Personen. Einen Notfall-SLA-Vertrag habt ihr nicht. Du bist Kunde, Kundennummer K-10000, der Standort hat die Postleitzahl 69115. Rückrufnummer 06221 555000. Antworte kurz und bestätige Zusammenfassungen.",
+    fixed: { servicezeit: night, rueckruf_service_desk: CALLBACK },
+    tools: { anlage_pruefen: { anlagenart: "Kompressor", hersteller: "Kaeser", typ: "SM 13" }, kunde_finden: { kundennummer: "K-10000", plz: "69115" }, anfrage_anlegen: null },
+    must: ["kunde_finden", "anfrage_anlegen"], never: ["freie_termine", "email_pruefen", "einsatzgebiet_pruefen", "weiterleiten", "rueckruf_service_desk"],
+    params: { anfrage_anlegen: (p) => p.customer_urgency === "production_stop" && /K-?10000/.test(p.customer_number ?? "") && !p.termin_beginn },
+  },
   // Scenario 9 without SLA: at night an urgent request without appointment, checked from 07:00
   notfall_ohne_sla: {
     caller: "Du bist Frau Engel von der Odenwald Papier GmbH, Mühlweg 7, 69469 Weinheim, Telefon 06201 444555, E-Mail m.engel@owp.de (buchstabiere sie, wenn du gefragt wirst: M, Punkt, E, N, G, E, L, at O, W, P, Punkt, D, E). Eure Pumpe von KSB ist ausgefallen, die Produktion steht. Keine Gefahr für Personen. Ihr habt keinen Servicevertrag und keine Kundennummer, ihr seid Neukunden. Antworte kurz und bestätige Zusammenfassungen.",

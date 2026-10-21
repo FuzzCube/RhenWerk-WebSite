@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 16,
+  "roadmapVersion": 17,
   "status": "active",
   "phases": [
     {
@@ -2927,6 +2927,102 @@
             "Kein Ladeplatzhalter beim Zeitraumwechsel, Scrollposition bleibt",
             "test:ui-Prüfung, UI bei 390/768/1440",
             "lint, typecheck, build"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-16",
+      "title": "Datenschutz und Telefonassistent",
+      "description": "Löschfrist für Anrufe ohne Anfrage und Befunde aus dem Sprachtest vom 20.10.2026.",
+      "order": 17,
+      "weight": 5,
+      "status": "completed",
+      "tasks": [
+        {
+          "weight": 2,
+          "startedAt": "2026-10-21T11:03:53Z",
+          "completedAt": "2026-10-21T11:05:27Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261021130000_purge_unlinked_calls.sql per supabase migration up: public.purge_unlinked_calls() (security definer, nur service_role) löscht phone_calls ohne request_id, deren Ende (ohne Ende: Beginn) älter als 12 Monate ist; pg_cron calls-without-request-12-months täglich 02:40. Keine Fremdschlüssel auf phone_calls. test:db bestanden (45 Dateien, 1054 Prüfungen, neu purge_unlinked_calls.test.sql mit 6). db:types aktualisiert, lint, typecheck bestanden. Doku: telefonassistent/datenschutz.md, database.md, testing.md.",
+            "commands": [
+              "npm run test:db",
+              "npm run db:types",
+              "npm run lint",
+              "npm run typecheck"
+            ],
+            "checkedAt": "2026-10-21T11:05:27Z"
+          },
+          "id": "task-16-1",
+          "title": "Anrufe ohne Anfrage nach 12 Monaten löschen",
+          "order": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "description": "Nutzerentscheidung 21.10.2026: Zusammenfassung, Kategorie und Kennzahlen von Anrufen ohne Anfrage werden nach 12 Monaten gelöscht (docs/telefonassistent/datenschutz.md, bisher nicht umgesetzt). Funktion purge_unlinked_calls() nach dem Muster von purge_call_transcripts, nächtlicher pg_cron-Lauf; Anrufe mit Anfrage bleiben wie die Anfrage.",
+          "definitionOfDone": [
+            "purge_unlinked_calls() löscht phone_calls ohne request_id, deren Ende länger als 12 Monate zurückliegt",
+            "pg_cron-Job calls-without-request-12-months",
+            "pgTAP: alt ohne Anfrage gelöscht, alt mit Anfrage und frisch ohne Anfrage bleiben, Job vorhanden, kein Aufruf durch authenticated",
+            "datenschutz.md, database.md, testing.md aktualisiert",
+            "test:db, lint, typecheck"
+          ]
+        },
+        {
+          "weight": 1,
+          "startedAt": "2026-10-21T11:35:47Z",
+          "completedAt": "2026-10-21T11:57:25Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Systemprompt: Notfallregel als Schrittfolge a–d, a) Kundennummer wie Schritt 3a mit kunde_finden (bei Treffer keine Firmen-, Adress- und E-Mail-Fragen, Kundennummer/standort_id an anfrage_anlegen), d) nachts ohne gültiges 24/7-SLA ausdrücklich weder weiterleiten noch rueckruf_service_desk. Leitfaden und Regeln angepasst. agent:sync. agent:simulate: neues Szenario notfall_bestand (K-10000, nachts ohne SLA) 3/3, notfall_ohne_sla 3/3; die erste, nur ergänzte Fassung scheiterte nachts in 2 von 3 Läufen (rueckruf_service_desk bzw. sla_pruefen ohne Nummer). Danach alle 17 Szenarien bestanden. Sprachtest mit Stimme für einen Notfall eines Bestandskunden steht noch aus (Testprotokoll). lint bestanden. Doku: systemprompt.md, leitfaden.md, regeln.md, testprotokoll.md.",
+            "commands": [
+              "npm run agent:sync",
+              "npm run agent:simulate",
+              "npm run lint"
+            ],
+            "checkedAt": "2026-10-21T11:57:25Z"
+          },
+          "id": "task-16-2",
+          "title": "Mira: Kundennummer auch im Notfallablauf",
+          "order": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "description": "Befund aus dem Sprachtest vom 20.10.2026: Im Notfallablauf (Produktionsstillstand) fragt Mira nicht nach der Kundennummer (Schritt 3a fehlt), Bestandskunden werden daher bei Notfällen nicht über kunde_finden verknüpft. Schritt 3a in den Notfallablauf aufnehmen, Agent synchronisieren, mit agent:simulate prüfen.",
+          "definitionOfDone": [
+            "Systemprompt: Notfallablauf fragt nach Kundennummer und nutzt kunde_finden wie Schritt 3a",
+            "Leitfaden und Regeln angepasst",
+            "agent:sync, agent:simulate mit Notfall eines Bestandskunden (Verknüpfung) und eines Neukunden",
+            "Testprotokoll ergänzt"
+          ]
+        },
+        {
+          "weight": 2,
+          "startedAt": "2026-10-21T12:06:28Z",
+          "completedAt": "2026-10-21T12:14:52Z",
+          "verification": {
+            "status": "passed",
+            "summary": "lib/service-contract.ts: contractState, isContractActive, contractBadge, contractTerm (rein, Unit-Test). lib/dashboard/customers.ts: Verträge über die Kundennummer (RLS unverändert), Ansicht sla = aktive Kunden mit heute gültigem Vertrag, Zähler im Seitenmenü; getCustomer liefert die Verträge. Kundenliste mit Kennzeichen des jüngsten Vertrags (ContractBadge), Kundenseite mit Zeile „SLA-Vertrag“ (Nummer, Kennzeichen, Laufzeit, PLZ). test:ui gegen next start (PORT=3100): 424 Prüfungen bestanden, neu: Ansicht „Mit SLA-Vertrag“ (12 Kunden = Datenbank), abgelaufener Vertrag, Kundenseite K-10000 bei 390/768/1440 ohne Querscrollen; Screenshots geprüft. test:unit 93, lint, typecheck, build bestanden. Doku: architecture.md, testing.md.",
+            "commands": [
+              "npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-21T12:14:52Z"
+          },
+          "id": "task-16-3",
+          "title": "SLA-Verträge in Kundenliste und Kundenseite",
+          "order": 3,
+          "status": "completed",
+          "dependsOn": [],
+          "description": "Nutzerentscheidung 21.10.2026: SLA-Verträge (service_contracts) sind bisher nur auf der Anfrageseite sichtbar. Kundenseite zeigt den Vertrag (Nummer, 24/7, Laufzeit, abgedeckte PLZ, Status aktiv/abgelaufen/noch nicht gültig); Kundenliste mit SLA-Kennzeichen und Filter, der nur Kunden mit SLA-Vertrag zeigt. Nur lesend; Pflege der Verträge bleibt außerhalb des Dashboards.",
+          "definitionOfDone": [
+            "Kundenseite: Block SLA-Vertrag mit Status, 24/7, Laufzeit, Standorte",
+            "Kundenliste: Kennzeichen SLA/24-7 und Filter nur Kunden mit SLA (in der URL, mit Suche kombinierbar)",
+            "Zuordnung über die Kundennummer, RLS unverändert",
+            "UI bei 390/768/1440 geprüft",
+            "test:ui, lint, typecheck, build"
           ]
         }
       ]

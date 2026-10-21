@@ -46,6 +46,7 @@ Auskunft nur, wenn `anfrage_finden` genau einen Treffer liefert und der Anrufer 
 - Vormerkung blockiert das Fenster für andere Anrufer, bis der Dispatcher entscheidet, höchstens 2 Werktage. Danach verfällt sie; die Anfrage bleibt in der Erstbearbeitung mit Hinweis.
 - Bestätigen plant den Einsatz mit Konfliktprüfung und sendet eine Bestätigung per E-Mail; Ablehnen verlangt einen Grund und optional einen Gegenvorschlag, der Kunde erhält eine E-Mail.
 - Notfälle (Stillstand, Gefahr) bekommen keine Vormerkung: sie gehen sofort an Menschen (`termin_hinweis: notfall_ohne_vormerkung`).
+- Auch im Notfall fragt Mira zuerst nach der Kundennummer (`kunde_finden`, task-16-2); bei Treffer wird die dringende Anfrage mit dem Kunden verknüpft, Firma, Adresse und E-Mail werden nicht erfragt.
 - Ist das Fenster beim Anlegen schon vergeben, entsteht die Anfrage ohne Vormerkung (`termin_vorgemerkt: false`, `termin_hinweis: fenster_nicht_mehr_frei`); Mira bietet ein anderes Fenster an oder sagt, dass der Service Desk den Termin abstimmt.
 - Bestätigen ist erst nach abgeschlossener Erstbearbeitung möglich (wie jede Einsatzplanung). Vormerkungen blockieren die manuelle Planung nicht; die Plantafel zeigt sie schraffiert.
 

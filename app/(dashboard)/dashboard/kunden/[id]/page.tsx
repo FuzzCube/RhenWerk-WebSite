@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { addSite, updateCustomer, updateSite } from "@/app/(dashboard)/dashboard/kunden/actions";
 import { CustomerShell } from "@/components/dashboard/customer-shell";
+import { ContractBadge } from "@/components/dashboard/ui/contract-badge";
 import { CopyValue } from "@/components/dashboard/ui/copy-value";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { CheckboxField, HiddenField, SaveForm, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
@@ -12,7 +13,8 @@ import { RequestStatusChip } from "@/components/dashboard/ui/status-chip";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { getCustomer, type CustomerRequest } from "@/lib/dashboard/customers";
-import { EMPTY, formatDate, formatDateTime } from "@/lib/format";
+import { berlinDayKey, EMPTY, formatDate, formatDateTime } from "@/lib/format";
+import { contractTerm } from "@/lib/service-contract";
 import { label } from "@/lib/status";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -26,7 +28,8 @@ export default async function CustomerPage({ params, searchParams }: Props) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const detail = await getCustomer(id);
   if (!detail) notFound();
-  const { customer, sites, requests } = detail;
+  const { customer, sites, requests, contracts } = detail;
+  const today = berlinDayKey(new Date());
   // Main address: the oldest active site (sites come ordered by creation)
   const mainSite = sites.find((site) => site.is_active);
   const siteText = new Map(sites.map((site) => [site.id, `${site.street_house_number}, ${site.city}`]));
@@ -59,6 +62,13 @@ export default async function CustomerPage({ params, searchParams }: Props) {
           <div><dt>Ansprechperson</dt><dd>{customer.contact_name ?? EMPTY}</dd></div>
           <div><dt>E-Mail</dt><dd>{customer.business_email ? <a href={`mailto:${customer.business_email}`}>{customer.business_email}</a> : EMPTY}</dd></div>
           <div><dt>Telefon</dt><dd>{customer.phone_number ? <a className="mono" href={`tel:${customer.phone_number.replace(/[^\d+]/g, "")}`}>{customer.phone_number}</a> : EMPTY}</dd></div>
+          {/* SLA contracts by customer number (task-16-3), read-only */}
+          <div><dt>SLA-Vertrag</dt><dd data-contracts>{contracts.length === 0 ? "Keiner" : contracts.map((contract) => (
+            <span key={contract.contract_number} className="contract-line">
+              <span className="mono">{contract.contract_number}</span> <ContractBadge contract={contract} today={today} />
+              <span className="cell-sub">{contractTerm(contract)} · {contract.postal_codes.length > 0 ? <>Standorte <span className="mono">{contract.postal_codes.join(", ")}</span></> : "alle Standorte"}</span>
+            </span>
+          ))}</dd></div>
           <div><dt>Status</dt><dd>{customer.is_active ? "Aktiv" : "Deaktiviert"}</dd></div>
           <div><dt>Herkunft</dt><dd data-origin>{customer.origin_request_id
             ? <>Automatisch aus {customer.origin ? <Link className="mono" href={`/dashboard/anfragen/${customer.origin.id}`}>{customer.origin.request_number}</Link> : "einer Anfrage"} angelegt</>

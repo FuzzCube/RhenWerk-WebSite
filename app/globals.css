@@ -1845,6 +1845,9 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 
 /* Contract master data next to the SLA number (task-13-9) */
 .contract-note { color: var(--rw-text-secondary); }
+/* SLA contracts on the customer page (task-16-3): one line per contract */
+.contract-line { display: block; }
+.contract-line + .contract-line { margin-top: var(--rw-space-8); }
 .contract-note[data-state="valid_24_7"], .contract-note[data-state="valid"] { color: var(--rw-color-success-800); }
 .contract-note[data-state="expired"], .contract-note[data-state="site_missing"], .contract-note[data-state="unknown"], .contract-note[data-state="not_yet"] { color: var(--rw-color-danger-800); }
 

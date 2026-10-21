@@ -23,7 +23,7 @@ Aufnahme von Serviceanfragen, Terminvormerkung, Auskunft zu bestehenden Anfragen
 | --- | --- | --- |
 | Audio | keine Aufzeichnung (Speicherung auf der Plattform deaktiviert; § 201 StGB) | – |
 | Transkript | Supabase `phone_calls` | 30 Tage, automatische Löschung per pg_cron |
-| Zusammenfassung, Kategorie, Kennzahlen | Supabase `phone_calls` | wie die zugehörige Anfrage; ohne Anfrage 12 Monate (Löschung noch nicht umgesetzt, Stand 19.10.2026) |
+| Zusammenfassung, Kategorie, Kennzahlen | Supabase `phone_calls` | wie die zugehörige Anfrage; ohne Anfrage 12 Monate nach Gesprächsende, automatische Löschung der ganzen Zeile per pg_cron (`purge_unlinked_calls`, task-16-1) |
 | Anfrage | Supabase `requests` | wie alle Serviceanfragen |
 | Rückrufbitte an Techniker | Supabase (Benachrichtigung im Dashboard) | Rückrufnummer nur für diesen Einsatz; Benachrichtigung nur mit Firma, Standort, Nummer und geplantem Beginn |
 | Sitzungen des Web-Widgets (task-13-8) | Supabase `widget_sessions` | gesalzener Hash der IP-Adresse (nie die Adresse), Reservierung, Gesprächs-ID; 90 Tage, automatische Löschung per pg_cron |

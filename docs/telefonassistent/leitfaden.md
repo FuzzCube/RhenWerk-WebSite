@@ -66,7 +66,7 @@ Antwort aus `wissen(frage)` oder [wissensbasis.md](wissensbasis.md). Unbekannt �
 ## 4. Notfall
 
 1. **Gefahr für Personen** (Brand, Austritt gefährlicher Stoffe, Verletzte, Explosion, Gasgeruch): fester Text, `gespraech_beenden`; die Auswertung meldet den Fall dringend.
-2. **Produktionsstillstand oder Sicherheitsgefahr bekannt/unklar:** kurz Firma, Standort, Anlage, Rückrufnummer aufnehmen, dann nach [regeln.md](regeln.md#weiterleitung):
+2. **Produktionsstillstand oder Sicherheitsgefahr bekannt/unklar:** zuerst nach der Kundennummer fragen wie bei 3a (`kunde_finden`; bei Treffer weder Firma noch Adresse oder E-Mail erfragen, die Anfrage wird mit dem Kunden verknüpft; task-16-2 nach dem Sprachtest vom 20.10.2026), dann kurz Firma (nur Neukunden), Standort, Anlage, Rückrufnummer aufnehmen, dann nach [regeln.md](regeln.md#weiterleitung):
    - in der Servicezeit → `weiterleiten("service_desk")`;
    - außerhalb: „Haben Sie mit uns einen Notfall-SLA-Vertrag? Wie lautet die Vertragsnummer?“ → `sla_pruefen(vertragsnummer, plz)`;
      - `gueltig_24_7` → `weiterleiten("bereitschaft")`;

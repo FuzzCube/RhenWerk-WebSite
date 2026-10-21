@@ -363,3 +363,13 @@
 {"timestamp":"2026-10-21T09:01:36Z","type":"task_started","taskId":"task-15-8","summary":"Zeitraumwechsel ohne Neuaufbau begonnen."}
 {"timestamp":"2026-10-21T09:18:14Z","type":"task_completed","taskId":"task-15-8","summary":"Zeitraumwechsel auf Übersicht und Auswertung ohne Neuaufbau: Inhalt bleibt stehen und wird während des Ladens abgeblendet; test:ui (419), lint, typecheck, build bestanden."}
 {"timestamp":"2026-10-21T09:18:14Z","type":"phase_completed","taskId":"task-15-8","summary":"Phase 15 Kundennummer sichtbar erneut abgeschlossen; alle Tasks der Roadmap v16 abgeschlossen."}
+{"timestamp":"2026-10-21T11:03:53Z","type":"roadmap_updated","summary":"Roadmap v17: Phase 16 „Datenschutz und Telefonassistent“ mit task-16-1 (Anrufe ohne Anfrage nach 12 Monaten löschen) und task-16-2 (Kundennummer im Notfallablauf von Mira); Sprachtest vom 20.10.2026 erfolgreich."}
+{"timestamp":"2026-10-21T11:03:53Z","type":"task_started","taskId":"task-16-1","summary":"Löschung von Anrufen ohne Anfrage nach 12 Monaten begonnen."}
+{"timestamp":"2026-10-21T11:05:27Z","type":"task_completed","taskId":"task-16-1","summary":"Anrufe ohne Anfrage werden nach 12 Monaten per nächtlichem pg_cron-Lauf gelöscht; test:db, lint, typecheck bestanden."}
+{"timestamp":"2026-10-21T11:35:47Z","type":"task_started","taskId":"task-16-2","summary":"Kundennummer im Notfallablauf von Mira begonnen."}
+{"timestamp":"2026-10-21T11:57:25Z","type":"task_completed","taskId":"task-16-2","summary":"Mira fragt auch im Notfall nach der Kundennummer; Notfallregel als Schrittfolge, agent:simulate alle 17 Szenarien bestanden."}
+{"timestamp":"2026-10-21T11:57:25Z","type":"phase_completed","taskId":"task-16-2","summary":"Phase 16 Datenschutz und Telefonassistent abgeschlossen; alle Tasks der Roadmap v17 abgeschlossen."}
+{"timestamp":"2026-10-21T12:06:28Z","type":"roadmap_updated","summary":"task-16-3 nach Nutzerentscheidung ergänzt (Gewicht 2): SLA-Verträge in Kundenliste (Kennzeichen, Filter) und Kundenseite."}
+{"timestamp":"2026-10-21T12:06:28Z","type":"task_started","taskId":"task-16-3","summary":"SLA-Verträge in Kundenliste und Kundenseite begonnen."}
+{"timestamp":"2026-10-21T12:14:52Z","type":"task_completed","taskId":"task-16-3","summary":"SLA-Verträge in Kundenliste (Kennzeichen, Ansicht „Mit SLA-Vertrag“) und auf der Kundenseite; test:ui (424), test:unit, lint, typecheck, build bestanden."}
+{"timestamp":"2026-10-21T12:14:52Z","type":"phase_completed","taskId":"task-16-3","summary":"Phase 16 Datenschutz und Telefonassistent erneut abgeschlossen; alle Tasks der Roadmap v17 abgeschlossen."}

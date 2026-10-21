@@ -954,6 +954,34 @@ try {
       check("Dispatcher: „Kunden“ in der Navigation, Suche nach Kundennummer findet den Kunden", listed.nav && listed.rows.some((t) => t.includes(demoCustomer.company_name)), JSON.stringify(listed));
       await shot("kunden-1440.png");
 
+      // task-16-3: view „Mit SLA-Vertrag“ lists active customers with a contract valid today; badge in the list, contracts on the customer page
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(new Date());
+      const { data: contracts } = await admin.from("service_contracts").select("customer_number, emergency_24_7, valid_from, valid_until");
+      const slaNumbers = [...new Set(contracts.filter((c) => c.customer_number && c.valid_from <= today && (!c.valid_until || c.valid_until >= today)).map((c) => c.customer_number))];
+      const { count: slaCount } = await admin.from("customers").select("id", { count: "exact", head: true }).eq("is_active", true).in("customer_number", slaNumbers.length ? slaNumbers : ["-"]);
+      await page.open(`${BASE}/dashboard/kunden?ansicht=sla`);
+      const slaView = await page.eval(`({ menu: document.querySelector('.side-menu--wide a[href="/dashboard/kunden?ansicht=sla"]')?.textContent ?? "", total: document.querySelector(".result-count strong")?.textContent ?? "", rows: [...document.querySelectorAll("tbody tr")].length, badges: [...document.querySelectorAll("tbody [data-sla]")].map((b) => b.textContent) })`);
+      check(`  Kunden „Mit SLA-Vertrag“: ${slaCount} aktive Kunden mit heute gültigem Vertrag, jeder mit SLA-Kennzeichen`,
+        slaView.menu.includes("Mit SLA-Vertrag") && slaView.total.startsWith(`${slaCount} `) && slaView.rows === Math.min(slaCount, 50) && slaView.badges.length === slaView.rows && slaView.badges.every((b) => b === "SLA" || b === "SLA 24/7"), JSON.stringify(slaView));
+      const expired = contracts.find((c) => c.customer_number && c.valid_until && c.valid_until < today);
+      if (expired) {
+        await page.open(`${BASE}/dashboard/kunden?ansicht=alle&suche=${encodeURIComponent(expired.customer_number)}`);
+        check("  Abgelaufener Vertrag: Kennzeichen „SLA abgelaufen“, nicht in „Mit SLA-Vertrag“", (await page.eval(`document.querySelector("tbody [data-sla]")?.textContent`)) === "SLA abgelaufen" && !slaNumbers.includes(expired.customer_number));
+      }
+      const { data: slaCustomer } = await admin.from("customers").select("id, customer_number").eq("customer_number", "K-10000").maybeSingle();
+      if (slaCustomer) {
+        for (const width of [390, 768, 1440]) {
+          await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+          await page.open(`${BASE}/dashboard/kunden/${slaCustomer.id}`);
+          const shown = await page.eval(`document.querySelector("[data-contracts]")?.textContent ?? ""`);
+          check(`  Kundenseite K-10000: Vertrag SLA-2021-801 mit 24/7, Laufzeit und Standorten, ohne Querscrollen @${width}`, /SLA-2021-801/.test(shown) && shown.includes("SLA 24/7") && shown.includes("seit 01.03.2021") && await noScroll(), shown);
+          await shot(`kunde-sla-${width}.png`);
+          await page.open(`${BASE}/dashboard/kunden?ansicht=sla`);
+          await shot(`kunden-sla-${width}.png`);
+        }
+        await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      }
+
       await page.open(`${BASE}/dashboard/kunden`);
       check("  Kunde anlegen: kein Eingabefeld für die Kundennummer, Hinweis „Wird beim Anlegen vergeben“ (task-15-2)",
         await page.eval(`!document.querySelector('form [name="customer_number"]') && document.querySelector("[data-number-auto]")?.textContent.includes("Wird beim Anlegen vergeben")`));

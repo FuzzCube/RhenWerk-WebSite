@@ -25,3 +25,29 @@ export function contractHint(contract: ContractRow | null, postalCode: string, t
     ? { state: "valid_24_7", text: `Im Bestand: gültig${until}, mit 24/7-Notfall-SLA.` }
     : { state: "valid", text: `Im Bestand: gültig${until}, ohne 24/7-Notfall-SLA.` };
 }
+
+// Status of a contract on a day without a site (customer list and page, task-16-3); same date rules as contractHint
+export type ContractState = "valid_24_7" | "valid" | "expired" | "not_yet";
+type ContractTerm = Pick<ContractRow, "emergency_24_7" | "valid_from" | "valid_until">;
+
+export function contractState(contract: ContractTerm, today: string): ContractState {
+  if (contract.valid_from > today) return "not_yet";
+  if (contract.valid_until && contract.valid_until < today) return "expired";
+  return contract.emergency_24_7 ? "valid_24_7" : "valid";
+}
+
+export const isContractActive = (contract: ContractTerm, today: string) => contractState(contract, today).startsWith("valid");
+
+// Short label and badge tone: "SLA 24/7", "SLA", "SLA abgelaufen", "SLA ab 01.01.2027"
+export function contractBadge(contract: ContractTerm, today: string): { label: string; tone: "success" | "info" | "neutral" | "warning" } {
+  switch (contractState(contract, today)) {
+    case "valid_24_7": return { label: "SLA 24/7", tone: "success" };
+    case "valid": return { label: "SLA", tone: "info" };
+    case "expired": return { label: "SLA abgelaufen", tone: "neutral" };
+    default: return { label: `SLA ab ${dateDe(contract.valid_from)}`, tone: "warning" };
+  }
+}
+
+// "seit 01.03.2021" or "01.07.2020 – 30.06.2026"
+export const contractTerm = (contract: ContractTerm) =>
+  contract.valid_until ? `${dateDe(contract.valid_from)} – ${dateDe(contract.valid_until)}` : `seit ${dateDe(contract.valid_from)}`;

@@ -71,8 +71,11 @@ Simulation mit Demo-Weiterleitung (19.10.2026): `stillstand_tag` (Service Desk a
 
 Offen: ein Anruf mit Stimme (Freizeichen, Verbindung, Ansage der Demo-Weiterleitung) – Guthaben.
 
+Sprachtest mit Stimme (20.10.2026, Nutzer): vier Anrufe, darunter ein Neukunde mit Termin (Neckarauer Gießerei) und ein Produktionsstillstand nachts ohne SLA (Müller Technik, RIS-2026-02185) – Ablauf wie erwartet. Befund: im Notfallablauf fragte Mira nicht nach der Kundennummer, ein Bestandskunde wäre nicht verknüpft worden (Müller Technik war Neukunde, daher dort korrekt ohne Verknüpfung; der Kunde entsteht beim Abschluss der Erstbearbeitung).
+
+Kundennummer im Notfallablauf (task-16-2, 21.10.2026): Notfallregel im Systemprompt als Schrittfolge a–d (Kundennummer, kurze Aufnahme, Servicezeit, außerhalb mit/ohne SLA). Neues Szenario `notfall_bestand` (K-10000, nachts ohne SLA): `kunde_finden`, Anfrage mit Kundennummer und `production_stop`, ohne Adress- und E-Mail-Fragen. Nach der ersten, nur ergänzten Fassung riefen `notfall_bestand` und `notfall_ohne_sla` nachts `rueckruf_service_desk` bzw. `sla_pruefen` ohne Vertragsnummer auf (2 von 3 Läufen); mit der Schrittfolge 3/3 bzw. 3/3, danach alle 17 Szenarien bestanden.
+
 ## Offen
 
-- Sprachtests nach den Änderungen vom 19.10.2026: Szenarien 3 (Unterbrechen) und 13 (Stille), ein Gespräch über das Widget, Stichprobe der übrigen Szenarien mit Stimme – sobald wieder ElevenLabs-Guthaben vorhanden ist.
-- Löschung der Zusammenfassungen ohne Anfrage nach 12 Monaten ([datenschutz.md](datenschutz.md)) ist noch nicht umgesetzt.
+- Sprachtests mit Stimme noch offen: Szenarien 3 (Unterbrechen) und 13 (Stille), ein Gespräch über das Widget, ein Notfall eines Bestandskunden (task-16-2); ElevenLabs-Guthaben ist seit 20.10.2026 wieder vorhanden.
 - AV-Verträge und Prüfung der US-Übermittlung (ElevenLabs, OpenAI) vor einem echten Betrieb.
