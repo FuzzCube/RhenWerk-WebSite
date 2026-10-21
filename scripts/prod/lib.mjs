@@ -2,6 +2,8 @@
 //   repo/                 clone of origin (source of every release)
 //   releases/<commit>/    one built release per commit (git archive + npm ci + next build), release.json when complete
 //   current               symlink to the active release; the launchd service starts next start from it
+//   tools                 symlink to the newest built release; the update and request agents run their scripts from it,
+//                         so that a rollback of the app (current) does not bring back older update scripts
 //   shared/.env.local     one environment for all releases (each release links to it)
 //   logs/                 web.log (app service), release.log (switches), update.log (nightly run), build-<commit>.log
 // PROD_DIR (default ~/RheinWerk-Prod), PROD_PORT (default 3200), PROD_KEEP_RELEASES (default 3).
@@ -23,6 +25,7 @@ export const REQUESTS_LABEL = "online.rheinwerk.requests";
 export const REPO = path.join(PROD_DIR, "repo");
 export const RELEASES = path.join(PROD_DIR, "releases");
 export const CURRENT = path.join(PROD_DIR, "current");
+export const TOOLS = path.join(PROD_DIR, "tools");
 export const SHARED_ENV = path.join(PROD_DIR, "shared", ".env.local");
 export const LOGS = path.join(PROD_DIR, "logs");
 export const LAUNCH_AGENTS = path.join(homedir(), "Library", "LaunchAgents");
@@ -145,12 +148,12 @@ export function removeRelease(commit) {
   log(`Release ${commit.slice(0, 7)} verworfen`);
 }
 
-// Atomic switch: a new symlink is renamed over current, so the service never sees a missing link
-export function switchTo(commit) {
-  const temp = `${CURRENT}.tmp`;
+// Atomic switch: a new symlink is renamed over current (or tools), so no reader sees a missing link
+export function switchTo(commit, link = CURRENT) {
+  const temp = `${link}.tmp`;
   rmSync(temp, { force: true });
   symlinkSync(path.join(RELEASES, commit), temp);
-  renameSync(temp, CURRENT);
+  renameSync(temp, link);
 }
 
 export function serviceLoaded(label = LABEL) {
@@ -241,8 +244,14 @@ export async function rpc(name, args = {}) {
   }
 }
 
-// Mirror of releases/ for the dashboard (system_releases, system_status.current_commit)
+// Mirror of releases/ for the dashboard (system_releases, system_status.current_commit); tools follows the newest build
 export function syncReleases() {
+  const newest = listReleases()[0];
+  if (newest) {
+    let tools = null;
+    try { tools = path.basename(readlinkSync(TOOLS)); } catch { /* not yet there */ }
+    if (tools !== newest.commit) switchTo(newest.commit, TOOLS);
+  }
   const releases = listReleases().map(({ commit, subject, committed_at, built_at, last_migration }) =>
     ({ commit, subject, committed_at, built_at, last_migration }));
   return rpc("sync_system_releases", { releases, active_commit: currentCommit() });

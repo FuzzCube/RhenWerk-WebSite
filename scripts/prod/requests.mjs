@@ -1,6 +1,6 @@
 // Requests from the dashboard (task-17-6): "Jetzt aktualisieren" and "Wiederherstellen" are rows in update_requests;
 // the web app never runs commands. launchd online.rheinwerk.requests starts this script every minute:
-//   node --env-file=…/shared/.env.local …/current/scripts/prod/requests.mjs
+//   node --env-file=…/shared/.env.local …/tools/scripts/prod/requests.mjs
 // While another run holds the lock (nightly update, prod:release) the request waits for the next minute.
 // Without a request the script ends without any output.
 import { acquireLock, ensureLayout, log, releaseLock, rpc, syncReleases } from "./lib.mjs";

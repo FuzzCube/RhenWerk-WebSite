@@ -7,7 +7,7 @@
 // Then: npm run prod:release (builds origin/main and starts the service).
 import { chmodSync, copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { CURRENT, LABEL, LAUNCH_AGENTS, PORT, PROD_DIR, REPO, SHARED_ENV, REQUESTS_LABEL, UPDATE_LABEL, ensureLayout, run, serviceLoaded } from "./lib.mjs";
+import { CURRENT, LABEL, LAUNCH_AGENTS, PORT, PROD_DIR, REPO, SHARED_ENV, REQUESTS_LABEL, TOOLS, UPDATE_LABEL, ensureLayout, listReleases, run, serviceLoaded, switchTo } from "./lib.mjs";
 
 ensureLayout();
 
@@ -44,6 +44,9 @@ function installAgent(label, replacements) {
   }
   if (existsSync(CURRENT) && !serviceLoaded(label)) run("launchctl", ["bootstrap", `gui/${process.getuid()}`, file]);
 }
+
+// The update and request agents run their scripts from tools (newest build); later runs keep it current
+if (!existsSync(TOOLS) && listReleases()[0]) switchTo(listReleases()[0].commit, TOOLS);
 
 installAgent(LABEL, { __PROD_DIR__: PROD_DIR, __PORT__: String(PORT) });
 installAgent(UPDATE_LABEL, { __PROD_DIR__: PROD_DIR });

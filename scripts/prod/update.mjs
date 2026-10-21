@@ -1,6 +1,6 @@
 // Nightly update of the production copy (task-17-5, user decision 21.10.2026) and the same run by hand; the steps are in
 // scripts/prod/runs.mjs. launchd online.rheinwerk.update 02:00:
-//   node --env-file=…/shared/.env.local …/current/scripts/prod/update.mjs --nightly
+//   node --env-file=…/shared/.env.local …/tools/scripts/prod/update.mjs --nightly
 // npm run prod:update [-- --dry-run]       by hand (trigger cli), environment from ~/RheinWerk-Prod/shared/.env.local
 // npm run prod:update -- --ref <ref>       by hand: another ref of ~/RheinWerk-Prod/repo instead of origin/main
 import { PROD_DIR, acquireLock, ensureLayout, log, releaseLock, rpc, syncReleases } from "./lib.mjs";
