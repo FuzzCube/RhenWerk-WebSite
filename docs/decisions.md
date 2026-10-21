@@ -465,3 +465,21 @@ Nutzerentscheidung, task-17-17 (ersetzt den Abschnitt „Betrieb aus einer Produ
 - `~/RheinWerk-Prod` mit Releases je Commit, nächtlichem Code-Update aus `origin/main` und Rücksetzen ist entfernt (Papierkorb), ebenso die Dienste `online.rheinwerk.web`, `.update` und `.requests` und ihr Code (Git-Historie bis `284294f`, Vorlage für den Server).
 - Weiter automatisch, jetzt aus dem Entwicklungsordner: nächtliche Sicherung mit Wiederherstellungstest (`online.rheinwerk.backup`, 02:00) und Wächter (`online.rheinwerk.watchdog`, alle 5 Minuten). `node` und `zsh` brauchen dafür Festplattenvollzugriff, weil macOS LaunchAgents sonst nicht in `~/Documents` lesen lässt (Nutzerentscheidung statt Umzug des Projektordners).
 - Die Tabellen der Code-Updates (`system_releases`, `system_updates`, `update_requests`) bleiben vorerst ungenutzt in der Datenbank; Migrationen werden nicht zurückgenommen.
+
+## 2026-10-21: Deployment auf Vercel und einen VPS, Sicherung erst dort
+
+Nutzerentscheidung (Roadmap v22, Phase 18 „Deployment“): Nach Projektende kommt der Code auf GitHub, die Website auf Vercel (sofern der kostenlose Hobby-Tarif reicht; er erlaubt nur nicht-kommerzielle Nutzung, was für das Portfolio-Projekt passt), Supabase und n8n per Docker Compose auf einen VPS.
+
+- Code-Updates: Push auf `main` → GitHub Actions prüfen und spielen Migrationen ein → Vercel deployt; Rückweg über Instant Rollback in Vercel.
+- Versionen von Supabase und n8n stehen fest in `docker-compose.yml`; neue kommen als Renovate-PR und werden mit Sicherung, Selbsttest und automatischem Rückfall eingespielt (task-18-8, statt task-17-16 auf dem Rechner).
+- Datensicherung im Dashboard und Datenwiederherstellung werden erst auf dem VPS gebaut (task-18-6, task-18-7 statt task-17-13, task-17-14). Bis dahin läuft die nächtliche Sicherung auf dem Rechner weiter (`online.rheinwerk.backup`).
+- Für Vercel muss die Supabase-API öffentlich über HTTPS erreichbar sein (bisher nicht veröffentlicht); Absicherung wird in task-18-1 festgelegt.
+
+## 2026-10-21: Überwachung von n8n
+
+task-17-8: Der Wächter prüft n8n nur über dessen API (`N8N_API_KEY`) und die Datenbank, nie über die SQLite-Datei (am 20.10.2026 hing n8n dadurch zwei Stunden).
+
+- Fehlgeschlagene Läufe meldet der Error-Workflow „RheinWerk · Fehlermeldung“ als Warnung in die Datenbank; die E-Mail verschickt der Wächter, nicht n8n, damit sie auch ankommt, wenn Gmail in n8n ausgefallen ist. Eine solche Warnung schließt nach einer Stunde ohne neuen Fehlerlauf des Workflows.
+- n8n 2.x ruft einen Error-Workflow nur auf, wenn er veröffentlicht ist; der Wächter prüft ihn deshalb wie die übrigen Workflows.
+- Kritisch sind Ausfälle, die Kunden sofort merken (n8n aus, Workflow aus, Versandstau, Fehler in Formular, Versand und Mira-Werkzeugen); KI-Analysen und Zeitpläne, die von selbst nachholen, sind Warnungen.
+- Andere Workflows im selben n8n gehören nicht zum Projekt und werden weder geändert noch überwacht.

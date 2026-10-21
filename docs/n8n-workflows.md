@@ -12,7 +12,7 @@ Stand: 20.10.2026, n8n 2.40.7 im Docker-Container `n8n`, alle Angaben gegen das 
 
 ## 2. Die Workflows im Überblick
 
-Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei weitere gehören zum Telefonassistenten (Phase 13). Alle sind veröffentlicht (aktiv).
+Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei weitere gehören zum Telefonassistenten (Phase 13), dazu der Error-Workflow (task-17-8). Alle sind veröffentlicht (aktiv); andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
 
 | # | Workflow (Name in n8n) | ID | Auslöser | Aufgabe in einem Satz |
 | --- | --- | --- | --- | --- |
@@ -24,6 +24,7 @@ Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei wei
 | 6 | RheinWerk · Gmail Versand | `IlH4b7AKuSXyMiOd` | Zeitplan jede Minute | versendet freigegebene E-Mails (Bestätigung, Rückfrage, Rechnung, Erinnerung) genau einmal |
 | 7 | RheinWerk · Telefonassistent Werkzeuge | `rwAgentTools2026` | 12 Webhooks `POST /webhook/agent-*` | Werkzeuge der Telefonassistentin „Mira“ (Einsatzgebiet, freie Termine, Anfrage anlegen …) |
 | 8 | RheinWerk · Telefonassistent Auswertung | `rwCallAnalysis26` | Zeitplan alle 2 Minuten | holt beendete Gespräche aus ElevenLabs, fasst sie mit OpenAI zusammen und speichert sie |
+| 9 | RheinWerk · Fehlermeldung | `rwFehlerMeldung1` | Error Trigger (Error-Workflow von 1–8) | schreibt jeden fehlgeschlagenen Lauf als Warnung `n8n:fehler:<id>` über `raise_alert` (kritisch bei 1, 6, 7); die E-Mail schickt der Wächter (`n8n/generate_error_workflow.py`) |
 
 ## 3. Gesamtbild
 
@@ -83,7 +84,7 @@ Vorteil: Fällt ein Workflow aus, gehen keine Aufträge verloren; sie warten in 
 
 | Credential | Typ | Benutzt von | Einrichtung |
 | --- | --- | --- | --- |
-| RheinWerk Supabase Local | Supabase API (`service_role`, Host `http://host.docker.internal:54321`) | allen acht | `python3 n8n/bootstrap_credentials.py` |
+| RheinWerk Supabase Local | Supabase API (`service_role`, Host `http://host.docker.internal:54321`) | allen neun | `python3 n8n/bootstrap_credentials.py` |
 | RheinWerk Gmail (`rw46346a76655347`) | Gmail OAuth2 | 1 (Diagnose), 5, 6 | in n8n „Sign in with Google“; Google-Cloud-Projekt im Status *In production* (sonst läuft der Zugang nach 7 Tagen ab) |
 | OpenAI account 3 | OpenAI API | 3, 4, 8 | API-Schlüssel in n8n |
 | RheinWerk Agent-Secret (`rwAgentSecret001`) | Header Auth `x-agent-secret` | 7 (alle Webhooks) | `python3 n8n/bootstrap_agent_secret.py` |
@@ -316,12 +317,17 @@ Voraussetzung: Supabase läuft ([supabase-lokal.md](supabase-lokal.md)).
 5. **Gmail-Konto bestätigen:** Workflow 1 öffnen → *Verbindungen prüfen* manuell ausführen → beide Prüfungen grün.
 6. **Telefon (optional):** Cloudflare Tunnel und Access nach [telefonassistent/setup.md](telefonassistent/setup.md), danach `npm run agent:sync`.
 
+**Error-Workflow zuweisen** (task-17-8): nach dem Import `node --env-file=.env.local n8n/assign_error_workflow.mjs`. Das Skript veröffentlicht „RheinWerk · Fehlermeldung“ (n8n 2.x ruft einen Error-Workflow nur auf, wenn er veröffentlicht ist) und setzt `settings.errorWorkflow` bei 1–8 über die n8n-API und in den Exporten; wiederholbar. Braucht `N8N_API_KEY` (n8n → Settings → n8n API → Create an API key, ohne Ablauf) in `.env.local`, den auch der Wächter nutzt.
+
 **Änderungen an Workflows** werden im Repository gepflegt: Generator unter `n8n/generate_*.py` anpassen, ausführen, Export erneut importieren. So bleibt der Stand in Git nachvollziehbar und lässt sich nach einem Verlust des n8n-Ordners wiederherstellen.
 
 ## 8. Überwachung und typische Störungen
 
+**Wächter (task-17-8):** `scripts/ops/watchdog.mjs` (alle 5 Minuten, Prüfungen in `scripts/ops/n8n.mjs`) prüft nur über die n8n-API und die Datenbank, nie über `~/n8n/data/database.sqlite`: n8n erreichbar (`/healthz`, kritisch), Workflows 1–9 aktiv (kritisch; 7 und 8 nur mit `ELEVENLABS_API_KEY`), letzter Lauf von 6 (≤ 10 min), 3 (≤ 10 min) und 5 (≤ 30 min), Versandstau > 10 Minuten (kritisch, Regel wie der Dashboard-Hinweis), KI-Analysen > 15 Minuten offen (`monitor_n8n_queues`). Warnungen des Error-Workflows mailt der Wächter (`alerts_to_notify`) und schließt sie nach einer Stunde ohne neuen Fehlerlauf des Workflows. Ohne `N8N_API_KEY` nur Erreichbarkeit und Warteschlangen. Zustand im Dashboard-Bereich „System“ (Zeile „Automatisierung (n8n)“).
+
 | Wo sehen? | Was |
 | --- | --- |
+| E-Mail an `ALERT_EMAILS`, Bereich „System“ | Warnungen des Wächters und des Error-Workflows (task-17-8) |
 | n8n → *Executions* | jeder Lauf mit Status; rote Läufe zeigen den fehlerhaften Knoten |
 | Dashboard, Hinweis oben | „E-Mail-Versand hängt“, wenn freigegebene E-Mails > 10 Minuten warten |
 | Dashboard → Auswertung → Automatisierung | Anteil automatischer Erstbearbeitungen, Läufe mit Status |

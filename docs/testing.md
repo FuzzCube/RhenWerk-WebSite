@@ -22,7 +22,7 @@ Alle Prüfungen laufen gegen den lokalen Supabase-Stack. Voraussetzungen: Docker
 | `npm run demo:verify` | Konsistenz des Demo-Seeds (`scripts/demo/verify-seed.sql`) | Sekunden |
 | `supabase db lint` | Schema-Linter (plpgsql_check) | Sekunden |
 
-Nach Schemaänderungen zuerst `supabase db reset` (wendet alle Migrationen neu an), dann `npm run test:db`.
+Nach Schemaänderungen die neue Migration mit `supabase migration up` einspielen, dann `npm run test:db`. Nie `supabase db reset`: Es löscht die lokalen Daten (Demo-Nutzer, Anfragen, n8n-Bezüge), nur nach einer Sicherung und mit Absicht ([setup.md](setup.md#datenbank-zurücksetzen-und-schemaänderungen)).
 
 ## Datenbanktests (`npm run test:db`)
 
@@ -109,6 +109,7 @@ Laufen ohne App und Datenbank (`node --test` mit dem Test-Resolver `tests/unit/t
 Voraussetzung wie bei `test:auth` sowie Google Chrome (anderer Pfad über `CHROME_PATH`). Das Skript meldet die Demo-Rollen über das echte Login-Formular an und steuert Chrome über das DevTools-Protokoll:
 
 - alle Dashboard-Bereiche je Rolle sowie Anfrageliste, eine Anfrageseite (Manager, Techniker) und die Warteschlangen-Tabs (Dispatcher) bei 390×844, 768×1024 und 1440×900: Seitenbreite nicht größer als das Fenster;
+- Bereich „System“ (task-17-7 bis 17-10): Zusammenfassung wie die Anzahl offener Warnungen, Abschnitte Datensicherung, Zustand der Systeme (Zeilen n8n und Mira wie in `system_status.monitoring`), Guthaben, Systemversionen, Warnungen; Breite 1680 px; mit einer Testwarnung (vorab als gemailt markiert, damit der laufende Wächter keine E-Mail schickt, danach gelöscht): Hinweis oben auf der Übersicht für Manager bei 390/1440 mit Link, kein Hinweis für Dispatcher, Manager ohne „Erledigt“ bei 390/768/1440, Admin verschiebt sie mit „Erledigt“ nach „Behoben“. Gegen `next start` mit `APP_URL=http://localhost:…`, nicht `127.0.0.1` (der Passwort-Link leitet auf `localhost` um, das Sitzungs-Cookie fehlt dann).
 - Formular unter `/dashboard/bausteine`: Validierungsfehler und simulierter Versionskonflikt behalten alle Eingaben, markieren die Felder und setzen den Fokus; erfolgreiches Speichern zeigt „Gespeichert · HH:MM“.
 
 - Prüfaktionen (task-5-2) als temporärer Dispatcher auf eigener Testanfrage, jeweils gegen die Datenbank geprüft: Korrektur ohne Grund behält die Auswahl, Korrektur markiert den Analyse-Lauf; E-Mail vorbereiten erzeugt nur einen Entwurf; Entwurf bearbeiten und direkt danach in die Warteschlange stellen (zweite Aktion mit aktualisierter Version); `sent_at` bleibt leer und die Oberfläche zeigt „In Warteschlange, nicht versendet“; Freigabe setzt `processed`/`human_review` und die Planungs-Warteschlange; Versionskonflikt beim Ablehnen behält den Grund und ändert nichts; Ablehnung danach erfolgreich.

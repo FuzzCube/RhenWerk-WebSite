@@ -4,13 +4,13 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v21, 18 Phasen, 103 Tasks, Fortschritt 92,89 % (Gewicht 235 von 253).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v22, 19 Phasen, 109 Tasks, Fortschritt 90,91 % (Gewicht 240 von 264).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-**Phase 17 „Updates und Überwachung“** (Roadmap v21). Abgeschlossen: `task-17-1` bis `task-17-7`, `task-17-9`, `task-17-12`, `task-17-17`. Nutzerentscheidungen 21.10.2026 (`docs/decisions.md`): Bereich „System“ für den Inhaber ohne Code-Updates; bis Projektende läuft alles aus dem Entwicklungsordner, die Produktionskopie `~/RheinWerk-Prod` ist entfernt (Papierkorb). Dienste aus dem Entwicklungsordner (`npm run ops:install`, Protokolle `~/Library/Logs/RheinWerk/`): `online.rheinwerk.backup` (02:00, Sicherung mit Prüfung, Versionen) und `online.rheinwerk.watchdog` (alle 5 Minuten, Mira); node und zsh haben dafür Festplattenvollzugriff. Offen: Überwachung von n8n (`task-17-8`), Warnungen im Dashboard (`task-17-10`), Sicherungen im Dashboard (`task-17-13`), Datenwiederherstellung (`task-17-14`), Zustand der Systeme (`task-17-15`), Systemupdate von n8n und Supabase mit Rückfall (`task-17-16`), Gesamtprobe (`task-17-11`). E-Mails nur an `ALERT_EMAILS` in `.env.local`.
+**Phase 17 „Updates und Überwachung“** (Roadmap v22). Abgeschlossen: `task-17-1` bis `task-17-10`, `task-17-12`, `task-17-17`. Nutzerentscheidungen 21.10.2026 (`docs/decisions.md`): Bereich „System“ für den Inhaber ohne Code-Updates; bis Projektende läuft alles aus dem Entwicklungsordner, die Produktionskopie `~/RheinWerk-Prod` ist entfernt (Papierkorb). Dienste aus dem Entwicklungsordner (`npm run ops:install`, Protokolle `~/Library/Logs/RheinWerk/`): `online.rheinwerk.backup` (02:00, Sicherung mit Prüfung, Versionen) und `online.rheinwerk.watchdog` (alle 5 Minuten, Mira und n8n über die n8n-API mit `N8N_API_KEY`; Error-Workflow `rwFehlerMeldung1` für alle RheinWerk-Workflows); node und zsh haben dafür Festplattenvollzugriff. Offen in Phase 17: Zustand der Systeme (`task-17-15`), Gesamtprobe auf dem Rechner (`task-17-11`). Danach **Phase 18 „Deployment“** (Roadmap v22): Website auf Vercel, Supabase und n8n per Docker Compose auf einem VPS, GitHub Actions und Renovate; Sicherung im Dashboard, Datenwiederherstellung und Systemupdates mit Rückfall dort (`task-18-6` bis `18-8`, ersetzen `task-17-13`, `17-14`, `17-16`). E-Mails nur an `ALERT_EMAILS` in `.env.local`.
 
 Phasen 0–16 abgeschlossen (zuletzt Phase 16 „Datenschutz und Telefonassistent“, Phase 15 „Kundennummer sichtbar“, Phase 14 „Kundenstamm aus Anfragen“); Einzelheiten im `verification`-Objekt der Roadmap und in `docs/decisions.md`.
 
@@ -18,9 +18,9 @@ Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank 
 
 ## Zuletzt abgeschlossen
 
+- `task-17-10` (21.10.2026): Hinweis auf offene Warnungen oben auf jeder Seite für Manager und Admin, Liste offener und behobener Warnungen im Bereich „System“, „Erledigt“ nur Admin.
+- `task-17-8` (21.10.2026): Error-Workflow „RheinWerk · Fehlermeldung“ für alle RheinWerk-Workflows (`n8n/assign_error_workflow.mjs`), Wächter prüft n8n (Erreichbarkeit, aktive Workflows, Zeitpläne, Versand- und Analysestau) und mailt Fehlerläufe; Zeile „Automatisierung (n8n)“ im Bereich „System“.
 - `task-17-17` (21.10.2026): Produktionskopie entfernt; nächtliche Sicherung (`online.rheinwerk.backup`) und Wächter (`online.rheinwerk.watchdog`) laufen aus dem Entwicklungsordner (`scripts/ops/`, `npm run ops:install`).
-- `task-17-9` (21.10.2026): Wächter `scripts/prod/watchdog.mjs` (LaunchAgent alle 5 Minuten) prüft Mira: Agent, Guthaben (`MIRA_CREDIT_MIN`), Werkzeug-Webhook über Tunnel, überfällige Auswertungen, Werkzeugfehler; Warnung und E-Mail, Zustand und Guthaben im Bereich „System“ (`system_status.monitoring`).
-- `task-17-12` (21.10.2026): Bereich „System“ für den Inhaber: Zusammenfassung aus offenen Warnungen, Abschnitte Datensicherung, Zustand der Systeme, Guthaben, Systemversionen; keine Code-Updates im Dashboard mehr (`request_update`/`request_rollback` für Nutzer gesperrt, Migration `20261021170000`).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -54,4 +54,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 17 fortsetzen: `task-17-8`, `task-17-13`, `task-17-15` (startbar). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, Deployment nach Projektende (Domain, Server für Supabase und n8n), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 17 fortsetzen: `task-17-15`, `task-18-1` (startbar; `task-18-1` erst zum Umzug). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

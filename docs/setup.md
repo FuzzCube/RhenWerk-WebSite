@@ -29,7 +29,7 @@ In `.env.local` eintragen:
 | `SUPABASE_SECRET_KEY` | `Secret key` aus `supabase status`; nur serverseitig, nie mit `NEXT_PUBLIC_` |
 | `DEMO_USER_PASSWORD` | frei gewähltes Passwort für alle Demo-Nutzer, mindestens 12 Zeichen |
 
-Die übrigen Variablen (`N8N_WEBHOOK_URL`, `BLOB_READ_WRITE_TOKEN`, Turnstile, Make) sind nur für das Website-Formular und die Automatisierung nötig, siehe unten. Ohne sie läuft der Mitarbeiterbereich vollständig.
+Die übrigen Variablen (`N8N_WEBHOOK_URL`, `BLOB_READ_WRITE_TOKEN`, Turnstile, Make) sind nur für das Website-Formular und die Automatisierung nötig, siehe unten. Ohne sie läuft der Mitarbeiterbereich vollständig. Für die Dienste auf dem Rechner (`npm run ops:install`, [betrieb.md](betrieb.md#23-dauerbetrieb-des-rechners)): `BACKUP_PASSPHRASE`, `SMTP_USER`, `SMTP_APP_PASSWORD`, `ALERT_EMAILS` (unten), `N8N_API_KEY` (n8n → Settings → n8n API, für den Wächter und `n8n/assign_error_workflow.mjs`), optional `MIRA_CREDIT_MIN`; Beschreibung in `.env.example`.
 
 Verbindung prüfen:
 
@@ -92,7 +92,8 @@ Dependabot meldet Schwachstellen aus `package-lock.json`. Stand 13.10.2026 (task
 ## Datenbank zurücksetzen und Schemaänderungen
 
 ```bash
-supabase db reset                    # alle Migrationen neu, löscht alle Daten und Demo-Nutzer
+npm run backup                       # vorher sichern
+supabase db reset                    # alle Migrationen neu, löscht alle Daten und Demo-Nutzer (nur mit Absicht)
 npm run demo:users && npm run demo:seed
 npm run db:types                     # nach Schemaänderungen: lib/supabase/database.types.ts neu erzeugen
 ```
@@ -142,7 +143,7 @@ Warnungen aus Updates und Überwachung (Phase 17) gehen direkt per Gmail SMTP an
 
 ## Sicherung
 
-`npm run backup` sichert Datenbank, Dateien und n8n in ein Archiv und löscht Sicherungen, die älter als 14 Tage sind (die neueste bleibt immer), `npm run backup:check` prüft die Wiederherstellung in einer getrennten Datenbank. Vor `supabase db reset` und vor Updates ausführen. Einstellungen, Zeitplan und Wiederherstellung: [betrieb.md](betrieb.md#4-datensicherung).
+`npm run backup` sichert Datenbank, Dateien und n8n in ein Archiv und löscht Sicherungen, die älter als 14 Tage sind (die neueste bleibt immer), `npm run backup:check` prüft die Wiederherstellung in einer getrennten Datenbank. Vor `supabase db reset` und vor Updates ausführen; jede Nacht um 02:00 automatisch über `online.rheinwerk.backup` (`npm run nightly` von Hand). Einstellungen, Zeitplan und Wiederherstellung: [betrieb.md](betrieb.md#4-datensicherung).
 
 ## Ports des lokalen Stacks
 

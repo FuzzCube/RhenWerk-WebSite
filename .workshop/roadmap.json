@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 21,
+  "roadmapVersion": 22,
   "status": "active",
   "phases": [
     {
@@ -3032,7 +3032,7 @@
       "title": "Updates und Überwachung",
       "description": "Nutzerentscheidung 21.10.2026: tägliches automatisches Update um 02:00 aus origin/main mit Sicherung und automatischem Rückfall, Bereich „Updates“ (admin bedient, manager liest), npm/n8n-Updates nur als verfügbar anzeigen, Überwachung von n8n und Mira mit E-Mail an den Admin (Gmail SMTP) und Warnungen im Dashboard für admin und manager.",
       "order": 18,
-      "weight": 38,
+      "weight": 29,
       "status": "in_progress",
       "tasks": [
         {
@@ -3279,7 +3279,7 @@
           "description": "n8n-Error-Workflow für alle Workflows meldet fehlgeschlagene Läufe über raise_alert. Der Wächter aus task-17-9 (scripts/ops/watchdog.mjs, online.rheinwerk.watchdog alle 5 Minuten) prüft zusätzlich: n8n healthz, alle erwarteten Workflows aktiv, Stau in der Versandwarteschlange und bei KI-Analysen, keine neuen Läufe trotz wartender Arbeit. Neue Warnung → E-Mail an den Admin, Behebung → E-Mail „wieder in Ordnung“. Zugriff auf n8n nur über die API, nie auf database.sqlite.",
           "order": 8,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-17-2",
             "task-17-3",
@@ -3292,13 +3292,26 @@
             "Probe: n8n gestoppt → Warnung und E-Mail; gestartet → behoben",
             "n8n-workflows.md, betrieb.md 5, lint"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T18:31:14Z",
+          "completedAt": "2026-10-21T18:46:03Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Error-Workflow „RheinWerk · Fehlermeldung“ (rwFehlerMeldung1, n8n/generate_error_workflow.py, Export rheinwerk-error-alerts.workflow.json) schreibt fehlgeschlagene Läufe per raise_alert (n8n:fehler:<id>, kritisch für Serviceanfragen, Gmail Versand, Mira-Werkzeuge). n8n/assign_error_workflow.mjs veröffentlicht ihn (Befund: n8n 2.x ruft unveröffentlichte Error-Workflows nicht auf) und setzt settings.errorWorkflow bei allen 8 RheinWerk-Workflows über die API und in den Exporten; Generatoren agent-tools und call-analysis ergänzt (Ausgabe identisch). Andere Workflows im n8n unberührt. Wächter: scripts/ops/n8n.mjs (healthz, 9 Workflows aktiv, Zeitpläne, Versandstau > 10 min, Analysestau > 15 min, Schließen von Fehlerwarnungen nach 60 min ohne Fehlerlauf), lib.notifyDue (alerts_to_notify). Migration 20261021190000_n8n_monitoring.sql: private.send_backlog_counts (send_backlog darauf umgestellt), monitor_n8n_queues, alerts_to_notify, open_alerts. Bereich System: Zeile Automatisierung (n8n). Proben: temporärer Workflow mit absichtlichem Fehler per Webhook → Warnung mit Schritt, Fehler und Link, E-Mail durch den Wächter, nach Löschen behoben mit E-Mail; docker stop n8n → n8n:down und mira:webhook kritisch mit E-Mails, docker start → beide behoben mit E-Mails. Inaktiver Workflow, Versand- und Analysestau nur in Unit- und Datenbanktests geprüft. test:db 1120 bestanden (neu n8n_monitoring, send_backlog unverändert grün), test:unit 115/115 (neu n8n-monitor), test:ui gegen next start 437 bestanden (Zeilen n8n und Mira, 390/768/1440), Screenshot gesichtet; lint, typecheck, build bestanden. Doku: n8n-workflows.md 2, 7, 8; betrieb.md 5; database.md; architecture.md; decisions.md; .env.example.",
+            "commands": [
+              "supabase migration up",
+              "npm run test:db",
+              "npm run db:types",
+              "python3 n8n/generate_error_workflow.py",
+              "docker exec n8n n8n import:workflow",
+              "node --env-file=.env.local n8n/assign_error_workflow.mjs",
+              "npm run watchdog (normal, Probe-Workflow mit Fehler, docker stop/start n8n)",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "UI_SCREENSHOTS=… APP_URL=http://localhost:3202 npm run test:ui"
+            ],
+            "checkedAt": "2026-10-21T18:46:03Z"
           }
         },
         {
@@ -3344,7 +3357,7 @@
           "description": "Nutzerentscheidung 21.10.2026: E-Mails nur an den Admin, Warnungen im Dashboard für admin und manager. Hinweis oben auf jeder Seite bei offenen Warnungen (Muster send-backlog-alert), Liste offener und behobener Warnungen im Bereich „System“; admin kann eine Warnung als erledigt markieren.",
           "order": 10,
           "weight": 2,
-          "status": "planned",
+          "status": "completed",
           "dependsOn": [
             "task-17-8",
             "task-17-9",
@@ -3356,28 +3369,33 @@
             "Dispatcher und Techniker sehen nichts",
             "UI bei 390/768/1440, test:ui, test:api, lint, typecheck, build"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T18:49:56Z",
+          "completedAt": "2026-10-21T19:09:40Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Hinweis oben auf jeder Dashboard-Seite für Manager und Admin (components/dashboard/system-alert-banner.tsx, Layout, lib/dashboard/system-alerts.ts): Anzahl, schwerste Warnung mit Quelle und Beginn, rot bei kritischer, Link zur Liste; im Bereich System ausgeblendet. Bereich System: Karte Warnungen mit offenen (Schwere, Titel, Einzelheiten, Quelle, seit, wie oft, zuletzt gesehen) und in 30 Tagen behobenen Warnungen (automatisch oder erledigt von Name); nur Admin „Erledigt“ (Server-Action resolveAlert → resolve_alert). Zusammenfassung mit Link zur Liste. Keine Migration nötig (task-17-2). test:api: Testwarnung sichtbar für Manager und Admin, nicht für Dispatcher und Techniker; Manager 42501, Admin erledigt (manual mit Person), zweites Mal RW422. test:ui gegen next start 442 bestanden: Testwarnung in Zusammenfassung und Liste, Admin nur „Erledigt“-Schaltflächen, Manager ohne bei 390/768/1440, Hinweis auf der Übersicht für Manager bei 390/1440 mit Link, Dispatcher ohne Hinweis, „Erledigt“ verschiebt nach „Behoben“. Erster Lauf scheiterte an einem Testselektor (Tabelle nach Index; leere Liste rendert keine Tabelle), mit festen Containern behoben. Testwarnungen vorab als gemailt markiert und danach gelöscht. Sichtprüfung mit einer kritischen Testwarnung (System 1440, Übersicht 390). test:auth bestanden, test:unit 117/117, lint, typecheck, build. Doku: architecture.md, betrieb.md 5.",
+            "commands": [
+              "npm run test:unit",
+              "npm run test:api",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3202 npm run test:auth",
+              "UI_SCREENSHOTS=… APP_URL=http://localhost:3202 npm run test:ui"
+            ],
+            "checkedAt": "2026-10-21T19:09:40Z"
           }
         },
         {
           "id": "task-17-11",
           "title": "Gesamtprobe und Dokumentation",
-          "description": "Ende-zu-Ende-Probe: Nachtlauf mit Sicherung (auch mit absichtlich scheiternder Sicherung: Warnung und E-Mail), Sicherung und Wiederherstellung der Daten über das Dashboard, n8n-Ausfall mit Warnung und Behebung, Systemupdate mit absichtlich scheiterndem Selbsttest (automatischer Rückfall). Entscheidungen in decisions.md, Übergabe aktualisiert.",
+          "description": "Ende-zu-Ende-Probe auf dem Rechner: n8n-Ausfall mit Warnung, E-Mail und Behebung, Störung von Mira mit Warnung im Bereich „System“, scheiternde nächtliche Sicherung mit Warnung, Zustand der Systeme nach Ausfall eines Containers. Entscheidungen in decisions.md, Übergabe aktualisiert.",
           "order": 11,
           "weight": 1,
           "status": "planned",
           "dependsOn": [
             "task-17-10",
-            "task-17-13",
-            "task-17-14",
             "task-17-15",
-            "task-17-16",
             "task-17-17"
           ],
           "definitionOfDone": [
@@ -3434,10 +3452,10 @@
         {
           "id": "task-17-13",
           "title": "Datensicherungen im Dashboard",
-          "description": "Nutzerentscheidung 21.10.2026: Datensicherung einmal täglich genügt (Demo-Projekt); der bestehende Nachtlauf 02:00 bleibt. backup und backup:check melden jede Sicherung in die Datenbank (Zeitpunkt, Größe, Inhalt, Ergebnis des Wiederherstellungstests, Anlass: Nacht, manuell, vor Systemupdate, gelöscht nach Aufbewahrung). Der Bereich „System“ zeigt die letzte geprüfte Sicherung, die Liste der vorhandenen Sicherungen und ihren Inhalt (Anfragen, Kunden, Rechnungen, Dateien, n8n). Nur admin: „Jetzt sichern“ als Anfrage an den Anfrage-Dienst auf dem Rechner (LaunchAgent aus dem Entwicklungsordner, mit task-17-13 neu eingeführt). Warnung, wenn die letzte geprüfte Sicherung älter als 26 Stunden ist oder eine Sicherung scheitert.",
+          "description": "Nutzerentscheidung 21.10.2026: Datensicherung einmal täglich genügt (Demo-Projekt); der bestehende Nachtlauf 02:00 bleibt. backup und backup:check melden jede Sicherung in die Datenbank (Zeitpunkt, Größe, Inhalt, Ergebnis des Wiederherstellungstests, Anlass: Nacht, manuell, vor Systemupdate, gelöscht nach Aufbewahrung). Der Bereich „System“ zeigt die letzte geprüfte Sicherung, die Liste der vorhandenen Sicherungen und ihren Inhalt (Anfragen, Kunden, Rechnungen, Dateien, n8n). Nur admin: „Jetzt sichern“ als Anfrage an den Anfrage-Dienst auf dem Rechner (LaunchAgent aus dem Entwicklungsordner, mit task-17-13 neu eingeführt). Warnung, wenn die letzte geprüfte Sicherung älter als 26 Stunden ist oder eine Sicherung scheitert. Ersetzt durch task-18-6 (Roadmap v22, Nutzerentscheidung 21.10.2026: Sicherung, Wiederherstellung und Systemupdates erst mit dem Umzug auf den VPS).",
           "order": 13,
           "weight": 3,
-          "status": "ready",
+          "status": "superseded",
           "dependsOn": [
             "task-17-12",
             "task-17-17"
@@ -3460,10 +3478,10 @@
         {
           "id": "task-17-14",
           "title": "Daten aus einer Sicherung wiederherstellen",
-          "description": "Nutzerentscheidung 21.10.2026: Nur admin stellt die gesamte Datenbank samt Dateien aus einer geprüften Sicherung wieder her (keine Auswahl einzelner Datensätze). Rückfrage mit deutlichem Hinweis, dass alles nach dem Zeitpunkt der Sicherung verloren geht, Bestätigung durch Eingabe eines Wortes. Der Anfrage-Dienst auf dem Rechner sichert vorher den aktuellen Stand (damit die Wiederherstellung umkehrbar ist), hält n8n an (der Entwicklungsserver läuft im Terminal des Nutzers und wird vorher beendet), stellt Postgres und Storage wieder her, startet neu und prüft die Gesundheit. Ergebnis und Sicherungsliste werden nach der Wiederherstellung erneut eingetragen, weil die Systemtabellen mit zurückgesetzt werden.",
+          "description": "Nutzerentscheidung 21.10.2026: Nur admin stellt die gesamte Datenbank samt Dateien aus einer geprüften Sicherung wieder her (keine Auswahl einzelner Datensätze). Rückfrage mit deutlichem Hinweis, dass alles nach dem Zeitpunkt der Sicherung verloren geht, Bestätigung durch Eingabe eines Wortes. Der Anfrage-Dienst auf dem Rechner sichert vorher den aktuellen Stand (damit die Wiederherstellung umkehrbar ist), hält n8n an (der Entwicklungsserver läuft im Terminal des Nutzers und wird vorher beendet), stellt Postgres und Storage wieder her, startet neu und prüft die Gesundheit. Ergebnis und Sicherungsliste werden nach der Wiederherstellung erneut eingetragen, weil die Systemtabellen mit zurückgesetzt werden. Ersetzt durch task-18-7 (Roadmap v22, Nutzerentscheidung 21.10.2026: Sicherung, Wiederherstellung und Systemupdates erst mit dem Umzug auf den VPS).",
           "order": 14,
           "weight": 3,
-          "status": "planned",
+          "status": "superseded",
           "dependsOn": [
             "task-17-13"
           ],
@@ -3513,10 +3531,10 @@
         {
           "id": "task-17-16",
           "title": "Systemupdate von n8n und Supabase mit einer Schaltfläche",
-          "description": "Nutzerentscheidung 21.10.2026 (ersetzt für n8n und Supabase „Updates nur anzeigen“): Nur admin startet „Aktualisieren“ je System; der Dienst auf dem Rechner führt aus: 1. Systemsicherung (Image-Versionen, Datenbanken von Supabase und n8n samt Credentials und Schlüssel), 2. Update, 3. Selbsttest nur lesend (Supabase: Datenbank, Anmeldung eines Demo-Nutzers, Lesen mit Rollenrechten, Storage, Migrationen; n8n: healthz, erwartete Workflows aktiv, Credentials entschlüsselbar, Workflow „Selbsttest“ per Webhook mit Datenbankzugriff; App: /api/health, Anmelde- und Dashboardseite), 4. bei Fehler automatischer Rückfall auf vorherige Version und Daten aus der Systemsicherung, E-Mail an den Admin. Die Supabase CLI liegt in fester Version im Betriebsordner (nicht über brew), damit ein Rückfall möglich ist. Docker Desktop: nur Anzeige, Systemsicherung per Schaltfläche, manuelles Update, danach „System prüfen“. Verlauf mit Schritt, Ergebnis und Logauszug im Bereich „System“; letzte 3–5 Systemsicherungen bleiben.",
+          "description": "Nutzerentscheidung 21.10.2026 (ersetzt für n8n und Supabase „Updates nur anzeigen“): Nur admin startet „Aktualisieren“ je System; der Dienst auf dem Rechner führt aus: 1. Systemsicherung (Image-Versionen, Datenbanken von Supabase und n8n samt Credentials und Schlüssel), 2. Update, 3. Selbsttest nur lesend (Supabase: Datenbank, Anmeldung eines Demo-Nutzers, Lesen mit Rollenrechten, Storage, Migrationen; n8n: healthz, erwartete Workflows aktiv, Credentials entschlüsselbar, Workflow „Selbsttest“ per Webhook mit Datenbankzugriff; App: /api/health, Anmelde- und Dashboardseite), 4. bei Fehler automatischer Rückfall auf vorherige Version und Daten aus der Systemsicherung, E-Mail an den Admin. Die Supabase CLI liegt in fester Version im Betriebsordner (nicht über brew), damit ein Rückfall möglich ist. Docker Desktop: nur Anzeige, Systemsicherung per Schaltfläche, manuelles Update, danach „System prüfen“. Verlauf mit Schritt, Ergebnis und Logauszug im Bereich „System“; letzte 3–5 Systemsicherungen bleiben. Ersetzt durch task-18-8 (Roadmap v22, Nutzerentscheidung 21.10.2026: Sicherung, Wiederherstellung und Systemupdates erst mit dem Umzug auf den VPS).",
           "order": 16,
           "weight": 3,
-          "status": "planned",
+          "status": "superseded",
           "dependsOn": [
             "task-17-13",
             "task-17-15"
@@ -3572,6 +3590,232 @@
               "npm run build"
             ],
             "checkedAt": "2026-10-21T18:11:40Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-18",
+      "title": "Deployment",
+      "description": "Nutzerentscheidung 21.10.2026 nach Projektende: Code auf GitHub, Website auf Vercel, Supabase und n8n per Docker Compose auf einem VPS; Prüfung und Migrationen über GitHub Actions, Updates über Renovate; Datensicherung, Wiederherstellung und Systemupdates mit Rückfall auf dem VPS (aus Phase 17 verschoben).",
+      "order": 19,
+      "weight": 20,
+      "status": "planned",
+      "tasks": [
+        {
+          "id": "task-18-1",
+          "title": "Zielarchitektur und Kosten des Deployments",
+          "description": "Nutzerentscheidung 21.10.2026: Code auf GitHub, Website auf Vercel (sofern der kostenlose Hobby-Tarif reicht), Supabase und n8n per Docker Compose auf einem VPS. Klären und festhalten: Hobby-Tarif (nur nicht-kommerzielle Nutzung, Funktionslaufzeiten, Bandbreite) gegen den Bedarf, Wahl des VPS (Betriebskonzept 3: z. B. Hetzner CX32), Supabase-API über HTTPS öffentlich erreichbar für Vercel (bisher nicht veröffentlicht: Reverse Proxy, Schlüssel, Rate Limits), n8n hinter Cloudflare Access, DNS der Domain, Kosten je Monat.",
+          "order": 1,
+          "weight": 1,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Architektur und Kosten in betrieb.md 3 und decisions.md",
+            "Offene Risiken (Hobby-Tarif, öffentliche Supabase-API) mit Gegenmaßnahme benannt"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-2",
+          "title": "VPS mit Docker Compose",
+          "description": "VPS einrichten: SSH nur mit Schlüssel, Firewall, unattended-upgrades; docker-compose.yml im Repository mit fest gepinnten Versionen für Supabase (self-hosted), n8n und Reverse Proxy (TLS) bzw. cloudflared; Wächter und Dienste als systemd-Timer statt launchd (scripts/ops bleibt).",
+          "order": 2,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-1"
+          ],
+          "definitionOfDone": [
+            "Server neu aufsetzbar aus Repository und Anleitung",
+            "Alle Container mit fester Version und Neustart-Regel",
+            "Wächter läuft als systemd-Timer",
+            "betrieb.md 3"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-3",
+          "title": "Daten vom Rechner auf den VPS übernehmen",
+          "description": "Letzte Sicherung vom Rechner auf dem VPS wiederherstellen (Postgres, Storage, n8n mit Schlüssel, betrieb.md 4.5), Credentials in n8n prüfen, Webhook-URLs (Mira, Formular) umstellen, Probe aller Abläufe.",
+          "order": 3,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-2"
+          ],
+          "definitionOfDone": [
+            "Zeilenzahlen wie auf dem Rechner, n8n-Credentials entschlüsselbar",
+            "Mira, Formular und E-Mail-Versand gegen den VPS geprüft"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-4",
+          "title": "Website auf Vercel",
+          "description": "Vercel-Projekt aus dem GitHub-Repository: Umgebungsvariablen (Supabase auf dem VPS, Turnstile-Produktionsschlüssel, Blob, ElevenLabs), Domain rheinwerk-service.online, Supabase Auth site_url und Redirects, SMTP für Passwort-Mails; Rückweg über Instant Rollback.",
+          "order": 4,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-3"
+          ],
+          "definitionOfDone": [
+            "Website und Dashboard unter der Domain, Anmeldung und Passwort-Mail funktionieren",
+            "Grenzen des Hobby-Tarifs geprüft",
+            "setup.md, betrieb.md"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-5",
+          "title": "GitHub Actions: Prüfung und Migrationen",
+          "description": "Bei Pull Request und Push auf main: lint, typecheck, test:unit; vor dem Deployment Sicherung und supabase migration up gegen die Datenbank auf dem VPS (nur hinzufügende Migrationen); Vercel deployt nur nach grünen Prüfungen. Renovate bzw. Dependabot für npm-Pakete und Docker-Images.",
+          "order": 5,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-4"
+          ],
+          "definitionOfDone": [
+            "Roter Test verhindert das Deployment",
+            "Migration läuft vor dem Deployment, mit Sicherung",
+            "Update-PRs für npm und Images erscheinen"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-6",
+          "title": "Datensicherung auf dem VPS und im Dashboard",
+          "description": "Ersetzt task-17-13. Nächtliche Sicherung auf dem VPS mit Wiederherstellungstest und Kopie außer Haus (z. B. Storage Box); jede Sicherung in der Datenbank (Zeitpunkt, Größe, Inhalt, Prüfung, Anlass). Bereich „System“: letzte geprüfte Sicherung, Liste, Inhalt; nur admin „Jetzt sichern“ als Anfrage an einen Dienst auf dem VPS. Warnung bei Sicherung älter als 26 Stunden oder Fehler.",
+          "order": 6,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-3"
+          ],
+          "definitionOfDone": [
+            "Sicherung täglich, Kopie außer Haus, Prüfung",
+            "Liste im Dashboard, „Jetzt sichern“ nur admin (manager 42501)",
+            "Warnung bei veralteter oder fehlgeschlagener Sicherung",
+            "test:db, test:api, test:ui, betrieb.md 4"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-7",
+          "title": "Daten aus einer Sicherung wiederherstellen",
+          "description": "Ersetzt task-17-14. Nur admin stellt die gesamte Datenbank samt Dateien aus einer geprüften Sicherung wieder her (Nutzerentscheidung 21.10.2026, keine einzelnen Datensätze); Rückfrage mit Eingabe eines Wortes, vorher automatische Sicherung des aktuellen Stands, n8n angehalten, danach Gesundheitsprüfung und Rückkehr bei Fehler, E-Mail an den Admin.",
+          "order": 7,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-6"
+          ],
+          "definitionOfDone": [
+            "Nur über Anfrage an den Dienst, manager 42501",
+            "Vorher-Sicherung, Gesundheitsprüfung, Rückkehr bei Fehler",
+            "Probe auf einer Kopie",
+            "betrieb.md 4.5 und 7, decisions.md"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-8",
+          "title": "Systemupdates von n8n und Supabase mit Rückfall",
+          "description": "Ersetzt task-17-16. Neue Versionen kommen als Renovate-PR (Image-Version in docker-compose.yml); das Einspielen auf dem VPS: Systemsicherung, Update, nur lesender Selbsttest (Supabase: Datenbank, Anmeldung, Rollenrechte, Storage, Migrationen; n8n: healthz, aktive Workflows, Credentials, Workflow „Selbsttest“), bei Fehler automatischer Rückfall auf Version und Daten von vorher, E-Mail. Verlauf im Bereich „System“.",
+          "order": 8,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-5",
+            "task-18-6"
+          ],
+          "definitionOfDone": [
+            "Ablauf mit Rückfall für n8n und Supabase",
+            "Probe mit absichtlich scheiterndem Selbsttest",
+            "betrieb.md 6 und 7, decisions.md"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-9",
+          "title": "Gesamtprobe des Deployments",
+          "description": "Ende-zu-Ende: Push mit Migration bis Vercel, Rollback über Vercel, Systemupdate mit Rückfall, Wiederherstellung aus Sicherung, Ausfall von n8n auf dem VPS mit Warnung. Übergabe (HANDOFF.md) aktualisiert.",
+          "order": 9,
+          "weight": 1,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-7",
+            "task-18-8"
+          ],
+          "definitionOfDone": [
+            "Alle Proben im verification-Objekt beschrieben",
+            "HANDOFF.md, betrieb.md, testing.md aktuell"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
           }
         }
       ]

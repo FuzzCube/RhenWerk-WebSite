@@ -8,17 +8,17 @@ Für den Einstieg genügen `.workshop/CURRENT_STATE.md` und `npm run workshop:st
 
 | Datei | Inhalt | Lesen, wenn … |
 | --- | --- | --- |
-| [docs/HANDOFF.md](docs/HANDOFF.md) | Nächste Schritte nach Roadmap v18 | eine neue Arbeit auswählen |
+| [docs/HANDOFF.md](docs/HANDOFF.md) | Nächste Schritte nach Roadmap v22 | eine neue Arbeit auswählen |
 | [docs/setup.md](docs/setup.md) | Lokale Einrichtung, Umgebungsvariablen, Start, SMTP, Sicherheitsupdates | Umgebung einrichten oder starten |
 | [docs/supabase-lokal.md](docs/supabase-lokal.md) | Lokales Supabase Schritt für Schritt: Dienste und Ports, Schlüssel, Migrationen, Demodaten, pg_cron, Verbindung zu n8n, Fehlerbehebung | Datenbank einrichten oder Störung suchen |
-| [docs/architecture.md](docs/architecture.md) | Aufbau der App: Routen, Rollen, Bereiche, UI-Bausteine, Diagramme, Posteingang, Einsatzplanung, Anrufe | Dashboard-Code ändern |
+| [docs/architecture.md](docs/architecture.md) | Aufbau der App: Routen, Rollen, Bereiche, UI-Bausteine, Diagramme, Posteingang, Einsatzplanung, Anrufe, Bereich „System“ | Dashboard-Code ändern |
 | [docs/database.md](docs/database.md) | Tabellen, RLS, RPCs mit Fehlercodes, Warteschlangen, Cron-Jobs, Agent-Funktionen | Schema, Migrationen oder RPCs ändern |
 | [docs/decisions.md](docs/decisions.md) | Entscheidungen mit Begründung, chronologisch | vor Änderungen an Grundsätzlichem |
 | [docs/testing.md](docs/testing.md) | Testsuiten, was sie prüfen, Gesamtprüfung | Tests schreiben oder ausführen |
 | [docs/kpi-dictionary.md](docs/kpi-dictionary.md) | Kennzahlen, Formeln, Richtungen | Auswertung oder Übersicht ändern |
 | [docs/demo-data.md](docs/demo-data.md) | Demo-Nutzer, Demo-Seed, Prüfung `demo:verify` | Demodaten ändern |
 | [docs/betrieb.md](docs/betrieb.md) | Betriebskonzept: Stufe 1 (eigener Rechner, Cloudflare Tunnel, Domain, Dienste `npm run ops:install` für nächtliche Sicherung und Wächter), Stufe 2 (Server), Datensicherung mit `npm run backup`/`backup:check`, Wiederherstellung, Überwachung, Wartungsplan, Notfälle | Betrieb, Sicherung, Wartung oder Umzug |
-| [docs/n8n-workflows.md](docs/n8n-workflows.md) | Die acht n8n-Workflows: Gesamtbild, Steckbrief je Workflow, Verbindungen (Credentials, RPCs, Netzwerk), Abläufe als Sequenzdiagramme, Einrichtung von Grund auf, Störungen | n8n verstehen, einrichten oder Störung suchen |
+| [docs/n8n-workflows.md](docs/n8n-workflows.md) | Die neun n8n-Workflows (mit Error-Workflow): Gesamtbild, Steckbrief je Workflow, Verbindungen (Credentials, RPCs, Netzwerk), Abläufe als Sequenzdiagramme, Einrichtung von Grund auf, Störungen | n8n verstehen, einrichten oder Störung suchen |
 | [docs/n8n-contract.md](docs/n8n-contract.md) | n8n-Workflows, Formularpfad, Gmail, OpenAI, Integrations-RPCs | n8n oder E-Mail-Verarbeitung ändern |
 | [docs/website.md](docs/website.md) | Öffentliche Website, Formular, Demo-Anruf | Website ändern |
 | [docs/telefonassistent/setup.md](docs/telefonassistent/setup.md) | Einrichtung des Agenten, Werkzeuge, Tunnel, Demo-Anruf, Skripte | Telefonassistent einrichten oder ändern |
