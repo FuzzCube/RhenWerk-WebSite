@@ -646,6 +646,100 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"system_alerts": {
+                  Row: {
+                    "alert_key": string,"detail": string | null,"first_seen_at": string,"id": string,"last_seen_at": string,"notified_at": string | null,"notified_count": number,"occurrences": number,"resolved_at": string | null,"resolved_by": string | null,"resolved_reason": string | null,"severity": string,"source": string,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alert_key": string,"detail"?: string | null,"first_seen_at"?: string,"id"?: string,"last_seen_at"?: string,"notified_at"?: string | null,"notified_count"?: number,"occurrences"?: number,"resolved_at"?: string | null,"resolved_by"?: string | null,"resolved_reason"?: string | null,"severity": string,"source": string,"title": string
+                  }
+                  Update: {
+                    "alert_key"?: string,"detail"?: string | null,"first_seen_at"?: string,"id"?: string,"last_seen_at"?: string,"notified_at"?: string | null,"notified_count"?: number,"occurrences"?: number,"resolved_at"?: string | null,"resolved_by"?: string | null,"resolved_reason"?: string | null,"severity"?: string,"source"?: string,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "system_alerts_resolved_by_fkey"
+      columns: ["resolved_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"system_releases": {
+                  Row: {
+                    "built_at": string,"commit": string,"committed_at": string,"is_active": boolean,"last_migration": string | null,"subject": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "built_at": string,"commit": string,"committed_at": string,"is_active"?: boolean,"last_migration"?: string | null,"subject": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "built_at"?: string,"commit"?: string,"committed_at"?: string,"is_active"?: boolean,"last_migration"?: string | null,"subject"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"system_status": {
+                  Row: {
+                    "available_commit": string | null,"checked_at": string | null,"current_commit": string | null,"dependency_updates": NonNullable<Json>,"id": number,"pending_commits": NonNullable<Json>,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "available_commit"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Update: {
+                    "available_commit"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"system_updates": {
+                  Row: {
+                    "backup_file": string | null,"error": string | null,"finished_at": string | null,"from_commit": string | null,"id": string,"kind": string,"log_excerpt": string | null,"migrations": (string)[],"request_id": string | null,"requested_by": string | null,"started_at": string,"status": string,"to_commit": string | null,"trigger": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "backup_file"?: string | null,"error"?: string | null,"finished_at"?: string | null,"from_commit"?: string | null,"id"?: string,"kind": string,"log_excerpt"?: string | null,"migrations"?: (string)[],"request_id"?: string | null,"requested_by"?: string | null,"started_at"?: string,"status"?: string,"to_commit"?: string | null,"trigger": string
+                  }
+                  Update: {
+                    "backup_file"?: string | null,"error"?: string | null,"finished_at"?: string | null,"from_commit"?: string | null,"id"?: string,"kind"?: string,"log_excerpt"?: string | null,"migrations"?: (string)[],"request_id"?: string | null,"requested_by"?: string | null,"started_at"?: string,"status"?: string,"to_commit"?: string | null,"trigger"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "system_updates_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "update_requests"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "system_updates_requested_by_fkey"
+      columns: ["requested_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"update_requests": {
+                  Row: {
+                    "action": string,"created_at": string,"finished_at": string | null,"id": string,"picked_at": string | null,"requested_by": string,"status": string,"target_commit": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"created_at"?: string,"finished_at"?: string | null,"id"?: string,"picked_at"?: string | null,"requested_by": string,"status"?: string,"target_commit"?: string | null
+                  }
+                  Update: {
+                    "action"?: string,"created_at"?: string,"finished_at"?: string | null,"id"?: string,"picked_at"?: string | null,"requested_by"?: string,"status"?: string,"target_commit"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "update_requests_requested_by_fkey"
+      columns: ["requested_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"visit_holds": {
                   Row: {
                     "alternative": string | null,"conversation_id": string | null,"created_at": string,"decided_at": string | null,"decided_by": string | null,"ends_at": string,"expires_at": string,"id": string,"reject_reason": string | null,"request_id": string,"starts_at": string,"status": string,"technician_id": string,"updated_at": string,"visit_id": string | null
@@ -1493,6 +1587,26 @@ isOneToOne: false
 "claim_queued_messages":
 { Args: { "batch_limit"?: number,"lease_seconds"?: number }; Returns: Json[]
                            },
+"claim_update_request":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "action": string,
+"created_at": string,
+"finished_at": string | null,
+"id": string,
+"picked_at": string | null,
+"requested_by": string,
+"status": string,
+"target_commit": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "update_requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"clear_alert":
+{ Args: { "alert_key": string }; Returns: Json
+                           },
 "close_request":
 { Args: { "completion_summary": string,"expected_version": number,"request_id": string }; Returns: {
               "business_email": string,
@@ -2124,6 +2238,46 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"finish_system_update":
+{ Args: { "backup_file"?: string,"error"?: string,"log_excerpt"?: string,"migrations"?: (string)[],"status": string,"to_commit"?: string,"update_id": string }; Returns: {
+              "backup_file": string | null,
+"error": string | null,
+"finished_at": string | null,
+"from_commit": string | null,
+"id": string,
+"kind": string,
+"log_excerpt": string | null,
+"migrations": (string)[],
+"request_id": string | null,
+"requested_by": string | null,
+"started_at": string,
+"status": string,
+"to_commit": string | null,
+"trigger": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_updates"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"finish_update_request":
+{ Args: { "request_id": string,"succeeded": boolean }; Returns: {
+              "action": string,
+"created_at": string,
+"finished_at": string | null,
+"id": string,
+"picked_at": string | null,
+"requested_by": string,
+"status": string,
+"target_commit": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "update_requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "get_analysis_context":
 { Args: { "message_id"?: string,"request_id": string }; Returns: Json
                            },
@@ -2335,6 +2489,29 @@ isOneToOne: false
 "login_reset":
 { Args: { "email_hash": string }; Returns: undefined
                            },
+"mark_alert_notified":
+{ Args: { "alert_id": string }; Returns: {
+              "alert_key": string,
+"detail": string | null,
+"first_seen_at": string,
+"id": string,
+"last_seen_at": string,
+"notified_at": string | null,
+"notified_count": number,
+"occurrences": number,
+"resolved_at": string | null,
+"resolved_by": string | null,
+"resolved_reason": string | null,
+"severity": string,
+"source": string,
+"title": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_alerts"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "mark_awaiting_customer":
 { Args: { "expected_version": number,"note"?: string,"request_id": string }; Returns: {
               "business_email": string,
@@ -2528,6 +2705,9 @@ isOneToOne: false
 "purge_call_transcripts":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"purge_system_history":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "purge_unlinked_calls":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -2571,6 +2751,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"raise_alert":
+{ Args: { "alert_key": string,"detail"?: string,"severity": string,"source": string,"title": string }; Returns: Json
+                           },
 "record_incoming_message":
 { Args: { "payload": Json }; Returns: Json
                            },
@@ -2810,6 +2993,40 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"request_rollback":
+{ Args: { "target_commit": string }; Returns: {
+              "action": string,
+"created_at": string,
+"finished_at": string | null,
+"id": string,
+"picked_at": string | null,
+"requested_by": string,
+"status": string,
+"target_commit": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "update_requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"request_update":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "action": string,
+"created_at": string,
+"finished_at": string | null,
+"id": string,
+"picked_at": string | null,
+"requested_by": string,
+"status": string,
+"target_commit": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "update_requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "reschedule_visit":
 { Args: { "expected_version": number,"reason": string,"scheduled_end": string,"scheduled_start": string,"technician_id"?: string,"visit_id": string }; Returns: {
               "actual_end": string | null,
@@ -2831,6 +3048,29 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "visits"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"resolve_alert":
+{ Args: { "alert_id": string }; Returns: {
+              "alert_key": string,
+"detail": string | null,
+"first_seen_at": string,
+"id": string,
+"last_seen_at": string,
+"notified_at": string | null,
+"notified_count": number,
+"occurrences": number,
+"resolved_at": string | null,
+"resolved_by": string | null,
+"resolved_reason": string | null,
+"severity": string,
+"source": string,
+"title": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_alerts"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -3037,6 +3277,22 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"set_system_status":
+{ Args: { "payload": Json }; Returns: {
+              "available_commit": string | null,
+"checked_at": string | null,
+"current_commit": string | null,
+"dependency_updates": NonNullable<Json>,
+"id": number,
+"pending_commits": NonNullable<Json>,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "set_work_entry_status":
 { Args: { "expected_version": number,"new_status": Database["public"]['Enums']["work_item_status"],"work_entry_id": string }; Returns: {
               "author_id": string,
@@ -3066,6 +3322,29 @@ isOneToOne: false
 "start_automation_run":
 { Args: { "input_version"?: number,"message_id"?: string,"operation_key": string,"request_id"?: string,"step": Database["public"]['Enums']["automation_step"],"workflow_execution_id"?: string }; Returns: Json
                            },
+"start_system_update":
+{ Args: { "from_commit": string,"kind": string,"request_id"?: string,"to_commit": string,"trigger": string }; Returns: {
+              "backup_file": string | null,
+"error": string | null,
+"finished_at": string | null,
+"from_commit": string | null,
+"id": string,
+"kind": string,
+"log_excerpt": string | null,
+"migrations": (string)[],
+"request_id": string | null,
+"requested_by": string | null,
+"started_at": string,
+"status": string,
+"to_commit": string | null,
+"trigger": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_updates"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "start_visit":
 { Args: { "expected_version": number,"visit_id": string }; Returns: {
               "actual_end": string | null,
@@ -3090,6 +3369,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"sync_system_releases":
+{ Args: { "active_commit": string,"releases": Json }; Returns: number
+                           },
 "technician_busy_intervals":
 { Args: { "range_end": string,"range_start": string }; Returns: {
               "busy_kind": string,"ends_at": string,"starts_at": string,"technician_id": string

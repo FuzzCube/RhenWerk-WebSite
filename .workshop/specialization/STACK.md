@@ -28,8 +28,13 @@ Der technische Stack ergänzt den zentralen Workshop-Workflow und darf ihn nicht
 - `recharts` 3.10.1 (MIT, React 19 laut peerDependencies), nur in `components/dashboard/charts.tsx`
 - Kalender: eigene Komponente ohne Bibliothek (task-5-3)
 
+## Warn-E-Mails (Stand task-17-3)
+
+- `nodemailer` 10.0.14 (MIT-0, ohne eigene Abhängigkeiten, exakt gepinnt; neuere 10.1.x erst nach zwei Wochen Reifezeit), nur in `scripts/lib/notify.mjs`, nicht in der Web-App
+
 ## Externe Dienste
 
 - Make: Webhook für das Website-Formular (bestehend)
 - Cloudflare Turnstile: Bot-Schutz des Formulars
 - Vercel: Hosting und Blob-Speicher
+- Gmail SMTP (`smtp.gmail.com:465`, App-Passwort): Warn-E-Mails an den Betreiber, unabhängig von n8n

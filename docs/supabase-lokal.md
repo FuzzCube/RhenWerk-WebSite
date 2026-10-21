@@ -121,6 +121,7 @@ Geplante Aufträge in der Datenbank (pg_cron, Zeiten in UTC):
 | `call-transcripts-30-days` | täglich 02:30 | Gesprächstranskripte nach 30 Tagen löschen (Datenschutz) |
 | `calls-without-request-12-months` | täglich 02:40 | Anrufe ohne Anfrage 12 Monate nach Gesprächsende löschen (Datenschutz, task-16-1) |
 | `widget-sessions-90-days` | täglich 02:45 | Sitzungen des Web-Widgets nach 90 Tagen löschen |
+| `system-history-cleanup` | täglich 02:50 | Update-Läufe ohne Änderung nach 30 Tagen, behobene Warnungen nach 90 Tagen, übrige Läufe nach 12 Monaten löschen (task-17-2) |
 
 ## 7. Schemaänderungen
 

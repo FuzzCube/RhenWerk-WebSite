@@ -3071,25 +3071,33 @@
         {
           "id": "task-17-2",
           "title": "Datenmodell für Updates und Warnungen",
-          "description": "Tabellen system_updates (Version/Commit von→nach, Auslöser nightly/manual/rollback, ausgelöst von, Status, Beginn/Ende, Migrationen, Logauszug), update_requests (Aktion update/rollback, Ziel-Release, Status), system_alerts (Quelle n8n/mira/update/app, Schweregrad, Schlüssel zur Entdublierung, erstmals/zuletzt gesehen, behoben, zuletzt gemailt), alert_recipients (Start: andrejs.sadkovojs@gmail.com, Rolle admin). RLS: admin und manager lesen, nur admin erstellt Anfragen über RPC mit expected_version; Skripte und n8n schreiben über eigene service_role-Funktionen.",
+          "description": "Tabellen system_updates (Art update/rollback, Auslöser nightly/manual, ausgelöst von, Commit von→nach, Status, Beginn/Ende, Migrationen, Sicherung, Fehler, Logauszug), update_requests (Aktion update/rollback, Ziel-Commit, Status), system_releases (gebaute Releases auf der Platte, aktiv), system_status (eine Zeile: aktueller und verfügbarer Commit, neue Commits, verfügbare npm- und n8n-Updates), system_alerts (Quelle, Schweregrad, alert_key zur Entdublierung, erstmals/zuletzt gesehen, behoben, zuletzt gemailt). RLS: admin und manager lesen, nur admin erstellt Anfragen über RPC; Skripte und n8n schreiben über eigene service_role-Funktionen. Nutzerentscheidung 21.10.2026: E-Mail-Empfänger nicht in der Datenbank (öffentliches Repository), sondern ALERT_EMAILS in shared/.env.local.",
           "order": 2,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
-            "Migration mit vier Tabellen, RLS nur lesend für admin und manager",
-            "RPCs request_update/request_rollback (nur admin, RW422 bei laufendem Update), record_update_*, raise_alert/resolve_alert (nur service_role) mit Entdublierung über alert_key",
-            "Empfänger andrejs.sadkovojs@gmail.com als Admin hinterlegt; Manager erhalten keine E-Mails",
-            "pgTAP: Rechte je Rolle, Entdublierung, nur ein laufendes Update",
+            "Migration mit system_updates, update_requests, system_releases, system_status, system_alerts; RLS nur lesend für admin und manager",
+            "RPCs request_update/request_rollback/resolve_alert (nur admin; 42501 für andere Rollen, RW422 bei laufendem Lauf oder unbekanntem Release)",
+            "service_role-Funktionen für Anfragen, Läufe, Releases, Status sowie raise_alert/clear_alert mit Entdublierung über alert_key und E-Mail-Entscheidung (neu, Erinnerung nach 6 Stunden, behoben)",
+            "pg_cron-Aufräumen: no_change nach 30 Tagen, behobene Warnungen nach 90 Tagen, übrige Läufe nach 12 Monaten",
+            "pgTAP: Rechte je Rolle, nur ein Lauf gleichzeitig, Entdublierung, E-Mail-Entscheidung, Aufräumen",
             "database.md, db:types, test:db, lint, typecheck"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T14:13:09Z",
+          "completedAt": "2026-10-21T14:17:04Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-21T14:17:04Z",
+            "commands": [
+              "supabase migration up",
+              "npm run test:db",
+              "npm run db:types",
+              "supabase db lint",
+              "npm run lint",
+              "npm run typecheck"
+            ],
+            "summary": "Migration 20261021150000_system_updates.sql per supabase migration up: system_releases (höchstens eines aktiv), system_status (eine Zeile), update_requests (höchstens eine wartend/laufend), system_updates (trigger nightly/dashboard/cli, höchstens ein Lauf, Log letzte 20 000 Zeichen), system_alerts (eine offene je alert_key). RLS: nur manager und admin lesen (private.can_read_system), kein direktes Schreiben. Admin-RPCs request_update, request_rollback, resolve_alert (42501 andere Rollen, RW422 offen/unbekannt/aktiv/erledigt). service_role: claim/finish_update_request, start/finish_system_update, sync_system_releases, set_system_status, raise_alert/clear_alert/mark_alert_notified (neu, Erinnerung nach 6 h, Behebungs-Mail nur nach Warn-Mail), purge_system_history mit pg_cron system-history-cleanup 02:50. Empfänger als ALERT_EMAILS in der Umgebung (Nutzerentscheidung). test:db bestanden (46 Dateien, 1093 Prüfungen, neu system_updates.test.sql mit 39). db:types, supabase db lint ohne neue Meldung, lint, typecheck bestanden. Doku: database.md, supabase-lokal.md, decisions.md."
           }
         },
         {
@@ -3098,21 +3106,27 @@
           "description": "Nutzerentscheidung 21.10.2026: Warnungen gehen per Gmail SMTP (App-Passwort des Kontos rheinwerk.industrieservice@gmail.com) direkt aus den Skripten, unabhängig von n8n, damit ein Ausfall von n8n selbst gemeldet werden kann. Neue Abhängigkeit nodemailer, nur in Skripten auf dem Rechner.",
           "order": 3,
           "weight": 1,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
-            "scripts/lib/notify.mjs sendet Text-E-Mail an alert_recipients, Zugangsdaten nur in .env.local (SMTP_USER, SMTP_APP_PASSWORD), Namen in .env.example",
+            "scripts/lib/notify.mjs sendet Text-E-Mail an die Adressen aus ALERT_EMAILS (shared/.env.local), Zugangsdaten nur in .env.local (SMTP_USER, SMTP_APP_PASSWORD), Namen in .env.example",
             "npm run notify:test stellt eine Probe-E-Mail an andrejs.sadkovojs@gmail.com zu",
             "Fehler beim Versand landen im Log und brechen den aufrufenden Lauf nicht ab",
             "setup.md (App-Passwort einrichten), STACK.md, lint"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T14:26:14Z",
+          "completedAt": "2026-10-21T14:31:48Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-21T14:31:48Z",
+            "commands": [
+              "npm install --save-exact nodemailer@10.0.14",
+              "npm run notify:test",
+              "node --env-file=~/RheinWerk-Prod/shared/.env.local scripts/notify-test.mjs",
+              "npm run lint",
+              "npm run typecheck"
+            ],
+            "summary": "nodemailer 10.0.14 (MIT-0, ohne Abhängigkeiten, exakt gepinnt; 10.1.x wegen fünf Versionen am 18.10.2026 noch nicht). scripts/lib/notify.mjs: sendAlert({subject, text}) über smtp.gmail.com:465 von SMTP_USER an ALERT_EMAILS, Betreff [RheinWerk], wirft nie, liefert {ok:false, error} und protokolliert. npm run notify:test. Erster Versuch scheiterte mit 535 (App-Passwort aus einem anderen Konto), dabei Exit 1 und kein Absturz geprüft; nach neuem App-Passwort im Absenderkonto Probe-E-Mail an andrejs.sadkovojs@gmail.com angenommen, sowohl mit .env.local als auch mit ~/RheinWerk-Prod/shared/.env.local. Variablennamen in .env.example. lint, typecheck bestanden. Doku: setup.md (Warn-E-Mails, Fehler 535), STACK.md, decisions.md."
           }
         },
         {
@@ -3226,7 +3240,7 @@
           "description": "n8n-Error-Workflow für alle Workflows meldet fehlgeschlagene Läufe über raise_alert. Unabhängiger Wächter (scripts/watchdog.mjs, launchd alle 5 Minuten): n8n healthz, alle erwarteten Workflows aktiv, Stau in der Versandwarteschlange und bei KI-Analysen, keine neuen Läufe trotz wartender Arbeit. Neue Warnung → E-Mail an den Admin, Behebung → E-Mail „wieder in Ordnung“. Zugriff auf n8n nur über die API, nie auf database.sqlite.",
           "order": 8,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-17-2",
             "task-17-3"
@@ -3253,7 +3267,7 @@
           "description": "Wächter prüft den Telefonassistenten: Agent bei ElevenLabs abrufbar, Guthaben über Schwellwert, Werkzeug-Webhooks über den Tunnel erreichbar (mit Service Token), Gesprächsauswertungen ohne Fehler, keine Häufung fehlgeschlagener Werkzeugaufrufe. Warnungen und E-Mails wie bei n8n.",
           "order": 9,
           "weight": 2,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-17-2",
             "task-17-3"

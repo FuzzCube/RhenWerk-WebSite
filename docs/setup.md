@@ -122,6 +122,24 @@ sender_name = "RheinWerk Service Desk"
 
 Das App-Passwort gehört nur in die Umgebung, nie ins Repository. Ohne eigenen SMTP-Server begrenzt Supabase den Versand stark (`[auth.rate_limit] email_sent`). Im Betrieb außerdem `site_url` und `additional_redirect_urls` auf die echte Domain setzen, sonst verweist der Link auf eine lokale Adresse. Wer keinen Link nutzen kann, erhält vom Admin ein vorläufiges Passwort (Verwaltung → Person → Passwort).
 
+## Warn-E-Mails an den Betreiber (Gmail SMTP)
+
+Warnungen aus Updates und Überwachung (Phase 17) gehen direkt per Gmail SMTP an den Betreiber, nicht über n8n, damit auch ein Ausfall von n8n gemeldet werden kann (`scripts/lib/notify.mjs`, nur Skripte auf dem Rechner).
+
+1. Im Google-Konto **`rheinwerk.industrieservice@gmail.com`** (dem Absender, nicht dem Empfänger) die Bestätigung in zwei Schritten einschalten.
+2. Als dieses Konto angemeldet unter <https://myaccount.google.com/apppasswords> ein App-Passwort „RheinWerk Alerts“ erzeugen (16 Buchstaben).
+3. In `.env.local` und `~/RheinWerk-Prod/shared/.env.local` eintragen (Leerzeichen im Passwort sind erlaubt):
+
+   ```bash
+   SMTP_USER=rheinwerk.industrieservice@gmail.com
+   SMTP_APP_PASSWORD=xxxx xxxx xxxx xxxx
+   ALERT_EMAILS=andrejs.sadkovojs@gmail.com      # kommagetrennt; Nutzerentscheidung 21.10.2026: nur der Admin
+   ```
+
+4. Prüfen: `npm run notify:test` (im Betrieb: `cd ~/RheinWerk-Prod/current && npm run notify:test`).
+
+`535 5.7.8 Username and Password not accepted`: Das App-Passwort gehört zu einem anderen Konto als `SMTP_USER`, ist widerrufen oder wurde nach einer Passwortänderung ungültig; neues App-Passwort im Absenderkonto erzeugen. Ein fehlgeschlagener Versand bricht keine Prüfung ab; die Datenbank versucht die E-Mail bei der nächsten Prüfung erneut.
+
 ## Sicherung
 
 `npm run backup` sichert Datenbank, Dateien und n8n in ein Archiv und löscht Sicherungen, die älter als 14 Tage sind (die neueste bleibt immer), `npm run backup:check` prüft die Wiederherstellung in einer getrennten Datenbank. Vor `supabase db reset` und vor Updates ausführen. Einstellungen, Zeitplan und Wiederherstellung: [betrieb.md](betrieb.md#4-datensicherung).

@@ -402,3 +402,16 @@ Nutzerentscheidung, task-17-1 (Phase 17 „Updates und Überwachung“): Der Bet
 ## 2026-10-21: Sicherungen 14 Tage nach Alter aufbewahren
 
 Nutzerentscheidung, task-17-1: Sicherungen werden nach 14 Tagen gelöscht, gemessen am Zeitstempel im Dateinamen (`BACKUP_KEEP_DAYS`), statt der 14 neuesten Archive. Zusätzliche Sicherungen vor Updates oder Datenübernahmen verdrängen so keine Tagessicherungen. Die neueste Sicherung bleibt immer, auch wenn sie älter ist (etwa nach einem längeren Ausfall).
+
+## 2026-10-21: Updates und Warnungen in der Datenbank, Befehle nur auf dem Rechner
+
+Nutzerentscheidung, task-17-2: Das Dashboard liest Updates, Releases und Warnungen nur und legt Anfragen an („Jetzt aktualisieren“, „Wiederherstellen“); ausgeführt werden sie von einem Skript auf dem Rechner, nie von der Web-App. Nur admin darf anfragen und Warnungen erledigen, manager liest mit.
+
+- Empfänger der Warn-E-Mails stehen in `ALERT_EMAILS` (`~/RheinWerk-Prod/shared/.env.local`), nicht in einer Migration oder Tabelle: Das Repository ist öffentlich. Vorerst nur der Admin; Manager sehen Warnungen im Dashboard.
+- Ein Vorfall ist eine offene Warnung je `alert_key`. E-Mail beim ersten Auftreten, Erinnerung frühestens nach 6 Stunden, „wieder in Ordnung“ nur, wenn vorher gemailt wurde. Ob gemailt wird, entscheidet die Datenbank; als gemailt gilt eine Warnung erst nach erfolgreichem Versand.
+- Höchstens eine Anfrage wartet oder läuft und höchstens ein Lauf ist aktiv, durchgesetzt über Teilindizes statt nur im Skript.
+
+## 2026-10-21: Warn-E-Mails per Gmail SMTP, nicht über n8n
+
+Nutzerentscheidung, task-17-3: Warnungen gehen direkt aus den Skripten per Gmail SMTP (App-Passwort des Kontos `rheinwerk.industrieservice@gmail.com`) an `ALERT_EMAILS`. Über n8n ließe sich ein Ausfall von n8n selbst nicht melden. `nodemailer` ist exakt auf 10.0.14 gepinnt: Die 10.1.x-Reihe bekam am 18.10.2026 fünf Versionen an einem Tag, eine neue Abhängigkeit kommt erst nach zwei Wochen Reifezeit. Ausnahme vom Freigabegrundsatz für ausgehende E-Mails: Diese E-Mails gehen nur an den Betreiber, nie an Kunden.
+
