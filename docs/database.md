@@ -752,8 +752,8 @@ Migration `20261021150000_system_updates.sql` (Phase 17, Entscheidungen in [deci
 
 | Funktion | Wirkung | Fehler |
 | --- | --- | --- |
-| `request_update()` | Anfrage „Jetzt aktualisieren“ (neuester `origin/main`) | `RW422` wenn eine Anfrage wartet/läuft oder ein Lauf aktiv ist |
-| `request_rollback(target_commit)` | Anfrage „Wiederherstellen“ auf ein vorhandenes, nicht aktives Release (nur Code) | `RW422` unbekanntes oder aktives Release, Anfrage/Lauf offen |
+| `request_update()` | Anfrage „Jetzt aktualisieren“ (neuester `origin/main`); seit task-17-12 (`20261021170000_system_owner_area.sql`) ohne Ausführungsrecht für `authenticated`, Code-Updates nur nachts oder im Terminal | `42501` für alle Nutzer; sonst `RW422` wenn eine Anfrage wartet/läuft oder ein Lauf aktiv ist |
+| `request_rollback(target_commit)` | Anfrage „Wiederherstellen“ auf ein vorhandenes, nicht aktives Release (nur Code); seit task-17-12 wie `request_update` ohne Recht für Nutzer | `42501` für alle Nutzer; sonst `RW422` unbekanntes oder aktives Release, Anfrage/Lauf offen |
 | `resolve_alert(alert_id)` | Warnung von Hand erledigen; besteht die Ursache fort, eröffnet die nächste Prüfung einen neuen Vorfall | `RW422` bereits erledigt, `42501` unbekannt |
 
 **Funktionen für die Skripte** (nur `service_role`): `claim_update_request()` (älteste wartende → `running`, sonst leer), `finish_update_request(id, succeeded)`, `start_system_update(kind, trigger, from, to, request_id)` (`RW422` bei aktivem Lauf; Anfragender aus der Anfrage), `finish_system_update(id, status, to_commit, migrations, backup_file, error, log_excerpt)`, `sync_system_releases(releases, active_commit)` (Spiegel von `releases/`, nicht mehr vorhandene werden entfernt, setzt `system_status.current_commit`), `set_system_status(payload)`.

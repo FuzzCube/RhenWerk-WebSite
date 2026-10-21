@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 18,
+  "roadmapVersion": 20,
   "status": "active",
   "phases": [
     {
@@ -3032,7 +3032,7 @@
       "title": "Updates und Überwachung",
       "description": "Nutzerentscheidung 21.10.2026: tägliches automatisches Update um 02:00 aus origin/main mit Sicherung und automatischem Rückfall, Bereich „Updates“ (admin bedient, manager liest), npm/n8n-Updates nur als verfügbar anzeigen, Überwachung von n8n und Mira mit E-Mail an den Admin (Gmail SMTP) und Warnungen im Dashboard für admin und manager.",
       "order": 18,
-      "weight": 22,
+      "weight": 36,
       "status": "in_progress",
       "tasks": [
         {
@@ -3240,10 +3240,10 @@
         {
           "id": "task-17-7",
           "title": "Bereich „Updates“ im Dashboard",
-          "description": "Neuer Bereich für admin und manager (manager nur lesend): aktuelle Version mit Datum, verfügbarer Commit auf main mit Nachrichten, Verlauf der Updates mit Status und Logauszug, vorhandene Releases. Nur admin: Schaltflächen „Jetzt aktualisieren“ und „Wiederherstellen“ je Release mit Bestätigung. Abschnitt „Verfügbar, nicht installiert“ für npm-Pakete und n8n.",
+          "description": "Neuer Bereich „System“ (/dashboard/system, Nutzerentscheidung 21.10.2026; in task-17-10 kommen dort die Warnungen dazu) für admin und manager (manager nur lesend): aktuelle Version mit Datum, verfügbarer Commit auf main mit Nachrichten, Verlauf der Updates mit Status und Logauszug, vorhandene Releases. Nur admin: Schaltflächen „Jetzt aktualisieren“ und „Wiederherstellen“ je Release mit Bestätigung. Abschnitt „Verfügbar, nicht installiert“ für npm-Pakete und n8n.",
           "order": 7,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-17-2",
             "task-17-6"
@@ -3252,16 +3252,25 @@
             "Bereich in roles.ts für admin und manager, Zugriffsschutz in der Seite und über RLS",
             "Manager sieht keine Schaltflächen, Aufruf der RPC durch manager scheitert mit 42501",
             "Laufender Vorgang wird angezeigt und aktualisiert sich",
-            "UI bei 390/768/1440 geprüft, test:ui und test:api ergänzt, architecture.md",
+            "UI bei 390/768/1440 geprüft, test:ui, test:auth und test:api ergänzt, architecture.md",
             "lint, typecheck, build"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T15:45:51Z",
+          "completedAt": "2026-10-21T16:22:07Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Bereich System (/dashboard/system): app/(dashboard)/dashboard/system (Seite, Server-Actions nur über request_update/request_rollback), components/dashboard/system-actions.tsx (Bestätigung in der Zeile, RefreshWhileActive alle 5 s), lib/dashboard/system.ts, lib/system-updates.ts, roles.ts (manager, admin). test:unit 97/97 (neu system-updates.test.mjs), test:api bestanden (Manager liest system_status, Dispatcher/Techniker nicht; request_update/request_rollback/resolve_alert durch Manager und Dispatcher 42501), test:auth gegen next start bestanden (Admin mit Schaltflächen, Manager ohne, andere Rollen umgeleitet, no-store), test:ui gegen next start (APP_URL localhost) 438 Prüfungen bestanden, darunter Manager bei 390/768/1440 ohne Schaltflächen und ohne Querscrollen, Rückfrage Wiederherstellen und Abbrechen ohne Anfrage. Ein Lauf mit APP_URL 127.0.0.1 scheiterte am Passwort-Reset (Weiterleitung auf localhost, Cookie fehlt), kein Fehler der App. Banner bei laufendem Vorgang nur über Code und test:auth-Zweig geprüft, nicht live ausgelöst: eine echte Anfrage würde der Dienst auf dem Rechner ausführen. lint, typecheck, build bestanden. Doku: architecture.md, decisions.md.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run test:unit",
+              "npm run test:api",
+              "npm run build",
+              "npx next start -p 3202",
+              "APP_URL=http://127.0.0.1:3202 npm run test:auth",
+              "APP_URL=http://localhost:3202 npm run test:ui"
+            ],
+            "checkedAt": "2026-10-21T16:22:07Z"
           }
         },
         {
@@ -3294,7 +3303,7 @@
         {
           "id": "task-17-9",
           "title": "Überwachung von Mira",
-          "description": "Wächter prüft den Telefonassistenten: Agent bei ElevenLabs abrufbar, Guthaben über Schwellwert, Werkzeug-Webhooks über den Tunnel erreichbar (mit Service Token), Gesprächsauswertungen ohne Fehler, keine Häufung fehlgeschlagener Werkzeugaufrufe. Warnungen und E-Mails wie bei n8n.",
+          "description": "Wächter prüft den Telefonassistenten: Agent bei ElevenLabs abrufbar, Guthaben über Schwellwert, Werkzeug-Webhooks über den Tunnel erreichbar (mit Service Token), Gesprächsauswertungen ohne Fehler, keine Häufung fehlgeschlagener Werkzeugaufrufe. Warnungen und E-Mails wie bei n8n. Das Guthaben bei ElevenLabs steht zusätzlich im Bereich „System“.",
           "order": 9,
           "weight": 2,
           "status": "ready",
@@ -3304,6 +3313,7 @@
           ],
           "definitionOfDone": [
             "Prüfungen Agent, Guthaben (Schwellwert in .env.local), Webhook-Erreichbarkeit, Auswertungsfehler",
+            "Guthaben und Zustand von Mira im Bereich „System“ sichtbar (sobald task-17-12 abgeschlossen ist)",
             "Ohne ELEVENLABS_API_KEY: Prüfung übersprungen, keine Fehlwarnung",
             "Probe mit falschem Schlüssel bzw. gesperrtem Webhook erzeugt Warnung und E-Mail",
             "telefonassistent/setup.md, betrieb.md 5, lint"
@@ -3320,13 +3330,14 @@
         {
           "id": "task-17-10",
           "title": "Warnungen im Dashboard für Admin und Manager",
-          "description": "Nutzerentscheidung 21.10.2026: E-Mails nur an den Admin, Warnungen im Dashboard für admin und manager. Hinweis oben auf jeder Seite bei offenen Warnungen (Muster send-backlog-alert), Liste offener und behobener Warnungen im Bereich „Updates“; admin kann eine Warnung als erledigt markieren.",
+          "description": "Nutzerentscheidung 21.10.2026: E-Mails nur an den Admin, Warnungen im Dashboard für admin und manager. Hinweis oben auf jeder Seite bei offenen Warnungen (Muster send-backlog-alert), Liste offener und behobener Warnungen im Bereich „System“; admin kann eine Warnung als erledigt markieren.",
           "order": 10,
           "weight": 2,
           "status": "planned",
           "dependsOn": [
             "task-17-8",
-            "task-17-9"
+            "task-17-9",
+            "task-17-12"
           ],
           "definitionOfDone": [
             "Banner für admin und manager mit Anzahl und schwerster Warnung, Link zur Liste",
@@ -3346,20 +3357,164 @@
         {
           "id": "task-17-11",
           "title": "Gesamtprobe und Dokumentation",
-          "description": "Ende-zu-Ende-Probe: Update auf einen neuen Commit, Update mit absichtlich fehlerhaftem Build (automatischer Rückfall und E-Mail), Wiederherstellen über das Dashboard, n8n-Ausfall mit Warnung und Behebung. Entscheidungen in decisions.md, Übergabe aktualisiert.",
+          "description": "Ende-zu-Ende-Probe: Update auf einen neuen Commit, Update mit absichtlich fehlerhaftem Build (automatischer Rückfall und E-Mail), Sicherung und Wiederherstellung der Daten über das Dashboard, n8n-Ausfall mit Warnung und Behebung, Systemupdate mit absichtlich scheiterndem Selbsttest (automatischer Rückfall). Entscheidungen in decisions.md, Übergabe aktualisiert.",
           "order": 11,
           "weight": 1,
           "status": "planned",
           "dependsOn": [
             "task-17-5",
             "task-17-6",
-            "task-17-7",
-            "task-17-10"
+            "task-17-10",
+            "task-17-13",
+            "task-17-14",
+            "task-17-15",
+            "task-17-16"
           ],
           "definitionOfDone": [
             "Alle vier Proben durchgeführt und im verification-Objekt beschrieben",
             "decisions.md, betrieb.md, HANDOFF.md, testing.md aktuell",
             "lint, typecheck, build, test:db, test:api, test:ui"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-12",
+          "title": "Bereich „System“ für den Inhaber",
+          "description": "Nutzerentscheidung 21.10.2026 nach Sichtung von task-17-7: Der Bereich richtet sich an den Inhaber, nicht an die Entwicklung. Code-Updates verschwinden aus dem Dashboard (keine Commits, Releases, „Jetzt aktualisieren“, „Wiederherstellen“ der Version); das nächtliche Update und der Weg über das Terminal bleiben. Neuer Aufbau: Zusammenfassung oben („Alles in Ordnung“ / „N Punkte brauchen Aufmerksamkeit“), darunter Datensicherung, Zustand der Systeme, Guthaben externer Dienste, Systemversionen, Warnungen.",
+          "order": 12,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-17-7"
+          ],
+          "definitionOfDone": [
+            "Keine Commits, Releases oder Code-Schaltflächen mehr im Dashboard; request_update/request_rollback für admin entzogen (Migration), Terminal und Nacht unverändert",
+            "Zusammenfassung und Abschnitte mit leeren Zuständen, solange die Daten aus task-17-13/15 fehlen",
+            "Breite wie die übrigen Bereiche",
+            "UI bei 390/768/1440, test:ui, test:auth, test:api angepasst, architecture.md, decisions.md",
+            "lint, typecheck, build"
+          ],
+          "startedAt": "2026-10-21T16:48:15Z",
+          "completedAt": "2026-10-21T16:57:43Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Bereich System für den Inhaber: Seite neu (app/(dashboard)/dashboard/system/page.tsx) mit Zusammenfassung aus offenen system_alerts (lib/system-summary.ts, kritische zuerst), Abschnitten Datensicherung, Zustand der Systeme, Guthaben externer Dienste (leere Zustände bis task-17-13/15/9) und Systemversionen (npm, n8n, nur Anzeige). Code-Updates entfernt: Seite ohne Commits, Releases, Verlauf und Schaltflächen; actions.ts, system-actions.tsx, lib/system-updates.ts gelöscht; Migration 20261021170000_system_owner_area.sql entzieht authenticated request_update/request_rollback (Funktionen und update_requests bleiben für task-17-13 bis 17-16). Breite 1680 px wie die übrigen Bereiche. test:db 1099 bestanden (system_updates: Admin 42501, Ablauf als Eigentümer), test:unit 97/97 (neu system-summary.test.mjs), test:api bestanden (Admin request_update/request_rollback 42501, liest Warnungen), test:auth gegen next start bestanden, test:ui gegen next start (localhost) 435 bestanden, darunter Zusammenfassung wie Anzahl offener Warnungen, vier Abschnitte, keine Schaltflächen, 1680 px, Manager 390/768/1440 ohne Querscrollen; Screenshots gesichtet. Danach nur font-weight der Zusammenfassung geändert, build erneut bestanden. lint, typecheck, build bestanden. Doku: architecture.md, database.md, betrieb.md, decisions.md.",
+            "commands": [
+              "supabase migration up",
+              "npm run test:db",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run test:unit",
+              "npm run test:api",
+              "npm run build",
+              "npx next start -p 3202",
+              "APP_URL=http://localhost:3202 npm run test:auth",
+              "UI_SCREENSHOTS=… APP_URL=http://localhost:3202 npm run test:ui"
+            ],
+            "checkedAt": "2026-10-21T16:57:43Z"
+          }
+        },
+        {
+          "id": "task-17-13",
+          "title": "Datensicherungen im Dashboard",
+          "description": "Nutzerentscheidung 21.10.2026: Datensicherung einmal täglich genügt (Demo-Projekt); der bestehende Nachtlauf 02:00 bleibt. backup und backup:check melden jede Sicherung in die Datenbank (Zeitpunkt, Größe, Inhalt, Ergebnis des Wiederherstellungstests, Anlass: Nacht, manuell, vor Systemupdate, gelöscht nach Aufbewahrung). Der Bereich „System“ zeigt die letzte geprüfte Sicherung, die Liste der vorhandenen Sicherungen und ihren Inhalt (Anfragen, Kunden, Rechnungen, Dateien, n8n). Nur admin: „Jetzt sichern“ als Anfrage an den Dienst auf dem Rechner. Warnung, wenn die letzte geprüfte Sicherung älter als 26 Stunden ist oder eine Sicherung scheitert.",
+          "order": 13,
+          "weight": 3,
+          "status": "ready",
+          "dependsOn": [
+            "task-17-12"
+          ],
+          "definitionOfDone": [
+            "Sicherungen erscheinen nach nächtlichem Lauf, manueller Sicherung und Terminal-Aufruf",
+            "„Jetzt sichern“ nur admin, manager 42501, eine Anfrage zur Zeit",
+            "Sicherung älter als 26 Stunden oder fehlgeschlagen zeigt eine Warnung",
+            "test:db, test:api, test:ui, betrieb.md 4, lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-14",
+          "title": "Daten aus einer Sicherung wiederherstellen",
+          "description": "Nutzerentscheidung 21.10.2026: Nur admin stellt die gesamte Datenbank samt Dateien aus einer geprüften Sicherung wieder her (keine Auswahl einzelner Datensätze). Rückfrage mit deutlichem Hinweis, dass alles nach dem Zeitpunkt der Sicherung verloren geht, Bestätigung durch Eingabe eines Wortes. Der Dienst auf dem Rechner sichert vorher den aktuellen Stand (damit die Wiederherstellung umkehrbar ist), hält App und n8n an, stellt Postgres und Storage wieder her, startet neu und prüft die Gesundheit. Ergebnis und Sicherungsliste werden nach der Wiederherstellung erneut eingetragen, weil die Systemtabellen mit zurückgesetzt werden.",
+          "order": 14,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-13"
+          ],
+          "definitionOfDone": [
+            "Wiederherstellung nur über Anfrage an den Dienst, nie aus der Web-App; manager 42501",
+            "Vorher automatische Sicherung des aktuellen Stands, danach Gesundheitsprüfung; bei Fehler Rückkehr zum vorherigen Stand",
+            "Probe auf einer Kopie: Anfrage nach der Sicherung angelegt → nach Wiederherstellung verschwunden, Vorher-Sicherung stellt sie wieder her",
+            "E-Mail an den Admin über Beginn und Ergebnis",
+            "betrieb.md 4.5 und 7, decisions.md, test:api, lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-15",
+          "title": "Zustand der Systeme und Versionen",
+          "description": "Ein Prüfauftrag auf dem Rechner meldet regelmäßig den Zustand von Website, Datenbank (Supabase), n8n, Telefonassistent, Cloudflare-Tunnel, E-Mail-Versand (SMTP), Docker und freiem Speicherplatz sowie installierte und verfügbare Versionen von Docker, Supabase CLI und Images, n8n, Node.js und npm-Paketen. Der Bereich „System“ zeigt je System Zustand und letzte Prüfung, bei Versionen eine Empfehlung mit Link zu den Release Notes. Updates werden nur angezeigt, nie installiert (Nutzerentscheidung 21.10.2026). Nur admin: „System prüfen“ startet die Prüfung sofort (Anfrage an den Dienst), etwa nach einem manuellen Update von Docker Desktop.",
+          "order": 15,
+          "weight": 3,
+          "status": "ready",
+          "dependsOn": [
+            "task-17-12"
+          ],
+          "definitionOfDone": [
+            "Alle genannten Systeme mit Zustand und Zeitpunkt der letzten Prüfung",
+            "Versionen nur angezeigt; kein Installieren aus dem Dashboard",
+            "„System prüfen“ nur admin, manager 42501",
+            "Wenig Speicherplatz oder ausgefallenes System erzeugt eine Warnung (raise_alert)",
+            "UI bei 390/768/1440, test:ui, betrieb.md 5 und 6, lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-17-16",
+          "title": "Systemupdate von n8n und Supabase mit einer Schaltfläche",
+          "description": "Nutzerentscheidung 21.10.2026 (ersetzt für n8n und Supabase „Updates nur anzeigen“): Nur admin startet „Aktualisieren“ je System; der Dienst auf dem Rechner führt aus: 1. Systemsicherung (Image-Versionen, Datenbanken von Supabase und n8n samt Credentials und Schlüssel), 2. Update, 3. Selbsttest nur lesend (Supabase: Datenbank, Anmeldung eines Demo-Nutzers, Lesen mit Rollenrechten, Storage, Migrationen; n8n: healthz, erwartete Workflows aktiv, Credentials entschlüsselbar, Workflow „Selbsttest“ per Webhook mit Datenbankzugriff; App: /api/health, Anmelde- und Dashboardseite), 4. bei Fehler automatischer Rückfall auf vorherige Version und Daten aus der Systemsicherung, E-Mail an den Admin. Die Supabase CLI liegt in fester Version im Betriebsordner (nicht über brew), damit ein Rückfall möglich ist. Docker Desktop: nur Anzeige, Systemsicherung per Schaltfläche, manuelles Update, danach „System prüfen“. Verlauf mit Schritt, Ergebnis und Logauszug im Bereich „System“; letzte 3–5 Systemsicherungen bleiben.",
+          "order": 16,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-17-13",
+            "task-17-15"
+          ],
+          "definitionOfDone": [
+            "Ablauf Sicherung → Update → Selbsttest → Rückfall für n8n und Supabase, eine Anfrage zur Zeit, manager 42501",
+            "Selbsttest-Workflow in n8n/workflows exportiert, ändert keine Daten",
+            "Probe: Update auf neue Version bestanden; Update mit absichtlich scheiterndem Selbsttest → automatischer Rückfall, Daten und Version wie vorher, E-Mail",
+            "Docker Desktop: Systemsicherung per Schaltfläche, kein automatisches Update",
+            "betrieb.md 6 und 7, decisions.md, n8n-workflows.md, test:api, test:ui, lint, typecheck, build"
           ],
           "startedAt": null,
           "completedAt": null,

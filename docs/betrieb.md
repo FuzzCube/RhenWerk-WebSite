@@ -262,7 +262,7 @@ launchctl kickstart gui/$(id -u)/online.rheinwerk.update   # den Nachtlauf jetzt
 tail -f ~/RheinWerk-Prod/logs/update.log
 ```
 
-**Anfragen aus dem Dashboard (task-17-6).** „Jetzt aktualisieren“ und „Wiederherstellen“ (ab task-17-7) legen nur eine Zeile in `update_requests` an; die Web-App führt keine Befehle aus. LaunchAgent `online.rheinwerk.requests` startet jede Minute `scripts/prod/requests.mjs` aus `tools`: Sperre nehmen (hält ein anderer Lauf sie, wartet die Anfrage bis zur nächsten Minute), abgebrochene Läufe abschließen (`abandon_stale_runs`: Läufe und Anfragen in `running` ohne Prozess → `failed`), älteste Anfrage übernehmen.
+**Anfragen aus dem Dashboard (task-17-6).** Seit task-17-12 bietet das Dashboard keine Code-Updates mehr an (Nutzerentscheidung: der Bereich „System“ ist für den Inhaber); Code kommt nur nachts oder über das Terminal in den Betrieb. Der Dienst bleibt für Sicherung, Datenwiederherstellung und Systemupdates (task-17-13 bis 17-16). Anfragen legen nur eine Zeile in `update_requests` an; die Web-App führt keine Befehle aus. LaunchAgent `online.rheinwerk.requests` startet jede Minute `scripts/prod/requests.mjs` aus `tools`: Sperre nehmen (hält ein anderer Lauf sie, wartet die Anfrage bis zur nächsten Minute), abgebrochene Läufe abschließen (`abandon_stale_runs`: Läufe und Anfragen in `running` ohne Prozess → `failed`), älteste Anfrage übernehmen.
 
 - **Jetzt aktualisieren**: derselbe Ablauf wie nachts (mit Sicherung), `trigger = dashboard` mit der anfragenden Person.
 - **Wiederherstellen**: Umschalten auf ein vorhandenes Release ohne Build, Sicherung und Migrationen, Gesundheitsprüfung mit Rückfall. Jüngere Migrationen bleiben und stehen als Hinweis im Log. Der verlassene Commit wird danach nachts übersprungen (`skip-commit`), sonst holte das nächste Update ihn sofort zurück; ein neuer Commit auf `origin/main`, `npm run prod:update` oder „Jetzt aktualisieren“ heben das auf.
@@ -275,7 +275,7 @@ Geprüft am 21.10.2026 mit Anfragen über die RPCs als Admin: Manager abgewiesen
 2. Neue Migrationen nur hinzufügend schreiben (siehe oben) und im Entwicklungsordner mit `supabase migration up` prüfen (nie `supabase db reset`), danach `npm run db:types`.
 3. Nach `origin/main` pushen; die Nacht übernimmt Sicherung, Build, Migrationen und Umschalten. Sofort: `npm run prod:update`.
 4. Geänderte n8n-Workflows aus `n8n/workflows/` importieren (nicht Teil des Updates).
-5. Rückweg: `npm run prod:release -- --switch <commit>` (vorhandene Releases: `ls ~/RheinWerk-Prod/releases`, ab task-17-7 im Dashboard); bei Datenproblemen die Sicherung der Nacht nach 4.5.
+5. Rückweg: `npm run prod:release -- --switch <commit>` (vorhandene Releases: `ls ~/RheinWerk-Prod/releases`); bei Datenproblemen die Sicherung der Nacht nach 4.5.
 
 **Einmalige Datenübernahmen** laufen nach demselben Muster: Probelauf mit Bericht, Freigabe, Sicherung, Ausführung. Beispiel Kundenstamm (task-14-3): bearbeitete Live-Anfragen ohne Kunden nachträglich zuordnen.
 

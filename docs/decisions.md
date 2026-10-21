@@ -433,3 +433,19 @@ Nutzerentscheidung, task-17-6: Anfragen aus dem Dashboard führt ein LaunchAgent
 - Update- und Anfrage-Skripte laufen aus dem neuesten gebauten Release (`tools`), nicht aus dem aktiven: Ein Rücksetzen der App darf keine älteren Update-Skripte (ohne diese Regel) zurückbringen.
 - Ein abgebrochener Lauf blockiert höchstens bis zur nächsten Minute: Wer die Sperre hält, schließt verwaiste `running`-Einträge ab.
 
+
+## 2026-10-21: Bereich „System“ statt „Updates“
+
+Nutzerentscheidung, task-17-7: Updates, Versionen und später die Warnungen (task-17-10) stehen gemeinsam im Bereich „System“ (`/dashboard/system`) für admin und manager; manager sieht dieselben Inhalte ohne Schaltflächen.
+
+- „Jetzt aktualisieren“ und „Wiederherstellen“ der Code-Version wurden mit task-17-12 wieder entfernt (siehe unten).
+
+## 2026-10-21: Bereich „System“ für den Inhaber, Systemupdates mit Rückfall
+
+Nutzerentscheidung nach Sichtung von task-17-7 (Roadmap v19/v20): Der Bereich „System“ richtet sich an den Inhaber, nicht an die Entwicklung.
+
+- Code-Updates verschwinden aus dem Dashboard (keine Commits, Releases, „Jetzt aktualisieren“, „Wiederherstellen“ der Version). Das nächtliche Update aus `origin/main` und der Weg über das Terminal bleiben (task-17-12). Die Funktionen `request_update` und `request_rollback` bleiben, aber ohne Ausführungsrecht für Nutzer (Migration `20261021170000_system_owner_area.sql`); die Tabelle `update_requests` und der Dienst `online.rheinwerk.requests` tragen die künftigen Aktionen.
+- Datensicherung einmal täglich genügt für das Demo-Projekt; der Nachtlauf bleibt, das Dashboard zeigt die Sicherungen und bietet „Jetzt sichern“ (task-17-13).
+- Wiederherstellung der Daten nur als Ganzes aus einer geprüften Sicherung, nicht einzelner Datensätze; vorher sichert der Dienst den aktuellen Stand (task-17-14).
+- n8n und Supabase werden mit einer Schaltfläche aktualisiert: Systemsicherung, Update, nur lesender Selbsttest, bei Fehler automatischer Rückfall auf Version und Daten von vorher (task-17-16). Das ersetzt für diese beiden „Updates nur anzeigen“. Docker Desktop und npm-Pakete werden weiterhin nur angezeigt.
+- Wie bisher führt die Web-App keine Befehle aus; jede Aktion ist eine Anfrage an den Dienst auf dem Rechner.
