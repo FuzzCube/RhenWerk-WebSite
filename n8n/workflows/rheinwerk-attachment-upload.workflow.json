@@ -165,7 +165,8 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": true
+    "availableInMCP": true,
+    "errorWorkflow": "rwFehlerMeldung1"
   },
   "nodeGroups": [],
   "versionId": "f0c7b643-ba98-4329-8d6f-f488c18d3c0e",

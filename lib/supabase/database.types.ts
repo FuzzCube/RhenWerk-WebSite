@@ -1242,6 +1242,29 @@ isOneToOne: false
 "agent_service_hours":
 { Args: { "call_id": string }; Returns: Json
                            },
+"alerts_to_notify":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "alert_key": string,
+"detail": string | null,
+"first_seen_at": string,
+"id": string,
+"last_seen_at": string,
+"notified_at": string | null,
+"notified_count": number,
+"occurrences": number,
+"resolved_at": string | null,
+"resolved_by": string | null,
+"resolved_reason": string | null,
+"severity": string,
+"source": string,
+"title": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "system_alerts"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "analytics_automation":
 { Args: { "anchor"?: string,"as_of"?: string,"kind"?: string }; Returns: {
               "corrected": number,"decision": Database["public"]['Enums']["automation_decision"],"runs": number,"status": Database["public"]['Enums']["automation_status"],"step": Database["public"]['Enums']["automation_step"]
@@ -2676,6 +2699,32 @@ isOneToOne: false
 "monitor_call_analysis":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"monitor_n8n_queues":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"open_alerts":
+{ Args: { "key_prefix": string }; Returns: {
+              "alert_key": string,
+"detail": string | null,
+"first_seen_at": string,
+"id": string,
+"last_seen_at": string,
+"notified_at": string | null,
+"notified_count": number,
+"occurrences": number,
+"resolved_at": string | null,
+"resolved_by": string | null,
+"resolved_reason": string | null,
+"severity": string,
+"source": string,
+"title": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "system_alerts"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "pause_payment_reminders":
 { Args: { "expected_version": number,"invoice_id": string,"reason": string }; Returns: {
               "created_at": string,

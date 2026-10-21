@@ -267,6 +267,20 @@ console.log("\nSystem: Updates und Warnungen");
   check("Manager: resolve_alert abgewiesen", denied(await manager.client.rpc("resolve_alert", { alert_id: "00000000-0000-0000-0000-000000000000" })));
   check("Manager: raise_alert der Skripte abgewiesen", denied(await manager.client.rpc("raise_alert", { source: "app", alert_key: "test", severity: "warning", title: "x" })));
   check("Manager: kein direktes Anlegen von Anfragen", denied(await manager.client.from("update_requests").insert({ action: "update", requested_by: manager.id })));
+
+  // task-17-10: warning of a script, seen by manager and admin, closed by admin only. Marked as mailed at once, so that
+  // the running watchdog does not send an e-mail for it; removed at the end.
+  const key = `api-test:${Date.now()}`;
+  const raised = await admin.rpc("raise_alert", { source: "app", alert_key: key, severity: "warning", title: "API-Testwarnung" });
+  await admin.rpc("mark_alert_notified", { alert_id: raised.data.alert_id });
+  const visible = async (client) => (await client.from("system_alerts").select("id").eq("alert_key", key)).data?.length ?? 0;
+  check("Warnung: Manager und Admin sehen sie, Dispatcher und Techniker nicht",
+    (await visible(manager.client)) === 1 && (await visible(systemAdmin.client)) === 1 && (await visible(dispatcherA.client)) === 0 && (await visible(technicianA.client)) === 0);
+  check("Manager: Erledigen abgewiesen", denied(await manager.client.rpc("resolve_alert", { alert_id: raised.data.alert_id })));
+  const resolved = await systemAdmin.client.rpc("resolve_alert", { alert_id: raised.data.alert_id });
+  check("Admin erledigt die Warnung (manual, mit Person)", !resolved.error && resolved.data?.resolved_reason === "manual" && resolved.data?.resolved_by === systemAdmin.id, resolved.error?.message);
+  check("  zweites Erledigen: RW422", (await systemAdmin.client.rpc("resolve_alert", { alert_id: raised.data.alert_id })).error?.code === "RW422");
+  await admin.from("system_alerts").delete().eq("alert_key", key);
 }
 
 await deactivateTestAccounts(admin, createdAccounts);

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { ResolveAlertButton } from "@/components/dashboard/resolve-alert-button";
 import { Card } from "@/components/dashboard/ui/card";
+import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { StatusChip } from "@/components/dashboard/ui/status-chip";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { Icon } from "@/components/ui";
@@ -8,23 +10,56 @@ import { requireRole } from "@/lib/auth/session";
 import { loadSystemOverview } from "@/lib/dashboard/system";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import { creditView, monitorNotes, monitorStatus, type Credit, type MonitorEntry } from "@/lib/system-monitoring";
-import { alertSourceLabel, systemSummary } from "@/lib/system-summary";
+import { alertSourceLabel, resolvedLabel, severityStatus, systemSummary, type SystemAlertRow } from "@/lib/system-summary";
 
 export const metadata: Metadata = { title: "System" };
 
 // Area "System" for the owner (task-17-12): is the data safe, does everything run, is anything to update or top up?
 // Admin and manager read the same content. Code updates are not part of the dashboard (task-17-12;
-// since task-17-17 the code runs only from the development folder). The watchdog fills state and credit of the phone assistant (task-17-9); backups (task-17-13)
-// and the other systems (task-17-15) still show an empty state.
+// since task-17-17 the code runs only from the development folder). The watchdog fills the state of n8n (task-17-8)
+// and state and credit of the phone assistant (task-17-9); backups (task-18-6) and the other systems (task-17-15)
+// still show an empty state. Open and resolved warnings are listed at the end; only admin closes one (task-17-10).
 export default async function SystemPage() {
-  await requireRole(rolesFor("/dashboard/system"));
+  const employee = await requireRole(rolesFor("/dashboard/system"));
+  const isAdmin = employee.role === "admin";
   const system = await loadSystemOverview();
   const summary = systemSummary(system.alerts);
   const critical = summary.alerts.some((alert) => alert.severity === "critical");
   const npm = system.dependencies.npm;
   const n8n = system.dependencies.n8n;
   const mira = system.monitoring.mira;
+  const n8nMonitor = system.monitoring.n8n;
   const now = new Date();
+  const openAlerts = summary.alerts as SystemAlertRow[];
+
+  const alertColumn: Column<SystemAlertRow> = {
+    key: "alert", header: "Warnung", mobile: "title",
+    cell: (row) => (
+      <>
+        <span className="system-alert-title"><StatusChip status={severityStatus(row)} /> {row.title}</span>
+        {row.detail && (
+          <details className="system-details system-details--inline">
+            <summary>Einzelheiten</summary>
+            <p className="system-alert-detail">{row.detail}</p>
+          </details>
+        )}
+      </>
+    ),
+  };
+  const sourceColumn: Column<SystemAlertRow> = { key: "source", header: "Quelle", cell: (row) => alertSourceLabel(row.source) };
+  const sinceColumn: Column<SystemAlertRow> = {
+    key: "since", header: "Seit",
+    cell: (row) => <><span className="mono">{formatDateTime(row.first_seen_at)}</span>{row.occurrences > 1 && <span className="cell-sub">{row.occurrences}-mal</span>}</>,
+  };
+  const openColumns: Column<SystemAlertRow>[] = [
+    alertColumn, sourceColumn, sinceColumn,
+    { key: "seen", header: "Zuletzt gesehen", cell: (row) => <span className="mono">{formatDateTime(row.last_seen_at)}</span>, mobile: "hide" },
+    ...(isAdmin ? [{ key: "action", header: "Aktion", cell: (row: SystemAlertRow) => <ResolveAlertButton alertId={row.id} title={row.title} /> }] : []),
+  ];
+  const resolvedColumns: Column<SystemAlertRow>[] = [
+    alertColumn, sourceColumn, sinceColumn,
+    { key: "resolved", header: "Behoben", cell: (row) => <><span className="mono">{formatDateTime(row.resolved_at)}</span><span className="cell-sub">{resolvedLabel(row)}</span></> },
+  ];
 
   return (
     <div className="dash-page rw-page rw-page--tight system-page">
@@ -55,6 +90,7 @@ export default async function SystemPage() {
                   ))}
                 </ul>
               )}
+              {!summary.ok && <a className="system-summary__link" href="#system-warnungen">Zur Liste der Warnungen</a>}
             </div>
           </section>
 
@@ -66,9 +102,10 @@ export default async function SystemPage() {
 
             <Card stripe="neutral" title="Zustand der Systeme" id="system-zustand" headingLevel={2}
               description="Website, Datenbank, Automatisierung (n8n), Telefonassistent, E-Mail-Versand, Docker und Speicherplatz.">
-              {mira ? (
+              {mira || n8nMonitor ? (
                 <ul className="system-monitors">
-                  <MonitorRow label="Telefonassistent (Mira)" entry={mira} now={now} />
+                  {n8nMonitor && <MonitorRow label="Automatisierung (n8n)" entry={n8nMonitor} now={now} />}
+                  {mira && <MonitorRow label="Telefonassistent (Mira)" entry={mira} now={now} />}
                 </ul>
               ) : (
                 <EmptyState title="Noch keine Prüfung gemeldet." />
@@ -104,6 +141,21 @@ export default async function SystemPage() {
               )}
             </Card>
           </div>
+
+          <Card stripe={summary.ok ? "success" : critical ? "danger" : "attention"} title="Warnungen" count={openAlerts.length} id="system-warnungen" headingLevel={2} flush
+            description={isAdmin
+              ? "Offene Warnungen schließen sich selbst, sobald die nächste Prüfung besteht. „Erledigt“ schließt eine Warnung von Hand; besteht die Ursache fort, öffnet die nächste Prüfung sie neu."
+              : "Offene Warnungen schließen sich selbst, sobald die nächste Prüfung besteht. Von Hand erledigen kann nur die Rolle Admin."}>
+            <div className="system-alerts-open">
+              <DataTable caption="Offene Warnungen" columns={openColumns} rows={openAlerts} rowKey={(row) => row.id}
+                empty={<EmptyState title="Keine offenen Warnungen." tone="good" />} />
+            </div>
+            <h3 className="system-subheading">Behoben in den letzten 30 Tagen</h3>
+            <div className="system-alerts-resolved">
+              <DataTable caption="Behobene Warnungen" columns={resolvedColumns} rows={system.resolvedAlerts} rowKey={(row) => row.id}
+                empty={<EmptyState title="Keine behobenen Warnungen." />} />
+            </div>
+          </Card>
         </>
       )}
     </div>

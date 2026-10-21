@@ -1,0 +1,91 @@
+{
+  "id": "rwFehlerMeldung1",
+  "name": "RheinWerk · Fehlermeldung",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "32158414-ee89-500a-8e32-c1a524a87082",
+      "name": "Fehler in einem Workflow",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const e=$input.first().json;const wf=e.workflow??{};const ex=e.execution??{};\nconst critical=[\"lw1QxoJbeSU0H17E\", \"IlH4b7AKuSXyMiOd\", \"rwAgentTools2026\"];\nconst step=ex.lastNodeExecuted??e.trigger?.error?.node?.name??'unbekannt';\nconst message=String(ex.error?.message??e.trigger?.error?.message??'ohne Meldung').slice(0,1500);\nreturn [{json:{source:'n8n',alert_key:'n8n:fehler:'+(wf.id??'unbekannt'),severity:critical.includes(wf.id)?'critical':'warning',\n  title:'Automatisierung: „'+(wf.name??'Workflow')+'“ fehlgeschlagen',\n  detail:'Schritt: '+step+'\\nFehler: '+message+(ex.url?'\\nAusführung: '+ex.url:'')+'\\nIn n8n unter Executions den roten Lauf öffnen; die Warnung schließt sich, wenn der Workflow eine Stunde ohne Fehler läuft.'}}];"
+      },
+      "id": "3ed0c84a-9c2e-5406-a68a-d2d2254ebcf2",
+      "name": "Warnung aufbauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:54321/rest/v1/rpc/raise_alert",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "d62afa39-eadb-5d99-a56a-5d614d84cd6f",
+      "name": "Warnung speichern (raise_alert)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Fehler in einem Workflow": {
+      "main": [
+        [
+          {
+            "node": "Warnung aufbauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warnung aufbauen": {
+      "main": [
+        [
+          {
+            "node": "Warnung speichern (raise_alert)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "description": "Error-Workflow aller RheinWerk-Workflows (task-17-8): fehlgeschlagene Läufe als Warnung in system_alerts; E-Mail verschickt der Wächter."
+}

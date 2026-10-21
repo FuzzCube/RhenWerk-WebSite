@@ -1166,7 +1166,8 @@
     "executionOrder": "v1",
     "saveDataSuccessExecution": "none",
     "saveDataErrorExecution": "all",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "rwFehlerMeldung1"
   },
   "description": "Webhooks des Sprachagenten Mira (task-13-5): je Werkzeug ein POST /webhook/agent-<name> mit x-agent-secret."
 }

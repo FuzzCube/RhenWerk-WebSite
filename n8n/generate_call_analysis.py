@@ -132,7 +132,7 @@ workflow = {
     "active": False,
     "nodes": nodes,
     "connections": connections,
-    "settings": {"executionOrder": "v1", "saveDataSuccessExecution": "none", "saveDataErrorExecution": "all", "callerPolicy": "workflowsFromSameOwner"},
+    "settings": {"executionOrder": "v1", "saveDataSuccessExecution": "none", "saveDataErrorExecution": "all", "callerPolicy": "workflowsFromSameOwner", "errorWorkflow": "rwFehlerMeldung1"},
     "description": "Auswertung beendeter Gespräche von Mira (task-13-6): ElevenLabs-API alle 2 Minuten, OpenAI nach festem Schema, agent_record_call.",
 }
 (OUT / "rheinwerk-call-analysis.workflow.json").write_text(json.dumps(workflow, ensure_ascii=False, indent=2) + "\n")

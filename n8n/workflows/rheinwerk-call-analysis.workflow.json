@@ -346,7 +346,8 @@
     "executionOrder": "v1",
     "saveDataSuccessExecution": "none",
     "saveDataErrorExecution": "all",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "rwFehlerMeldung1"
   },
   "description": "Auswertung beendeter Gespräche von Mira (task-13-6): ElevenLabs-API alle 2 Minuten, OpenAI nach festem Schema, agent_record_call."
 }

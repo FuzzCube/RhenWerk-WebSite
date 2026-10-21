@@ -679,7 +679,8 @@
   "settings": {
     "executionOrder": "v1",
     "availableInMCP": true,
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "errorWorkflow": "rwFehlerMeldung1"
   },
   "nodeGroups": [],
   "versionId": "81fbd60c-ef91-42fb-966f-8b24e151e6d6",

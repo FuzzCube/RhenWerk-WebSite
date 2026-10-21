@@ -1,12 +1,20 @@
-// Results of the watchdog in the area "System" (task-17-9): state per system and the credit of external services.
+// Results of the watchdog in the area "System" (task-17-9, task-17-8): state per system and the credit of external
+// services.
 // The watchdog (scripts/ops/watchdog.mjs) writes system_status.monitoring every 5 minutes; an entry older than
 // 15 minutes means the watchdog itself does not run. Pure functions, shared by page and unit tests.
 import type { DisplayStatus } from "./display-status";
 
 export type MonitorCheck = { key: string; label: string; ok: boolean | null; severity: "warning" | "critical"; title: string | null; detail: string };
 export type Credit = { used: number; limit: number; remaining: number; min: number; tier: string; reset_at: string | null };
-export type MonitorEntry = { state: "off" | "ok" | "warning" | "critical"; checked_at: string; checks?: MonitorCheck[]; credit?: Credit | null };
-export type Monitoring = Partial<Record<"mira", MonitorEntry>>;
+// errors: open warnings of the n8n error workflow (failed executions), shown with the failed checks
+export type MonitorEntry = {
+  state: "off" | "ok" | "warning" | "critical";
+  checked_at: string;
+  checks?: MonitorCheck[];
+  credit?: Credit | null;
+  errors?: { title: string; severity: "warning" | "critical" }[];
+};
+export type Monitoring = Partial<Record<"mira" | "n8n", MonitorEntry>>;
 
 export const STALE_AFTER_MINUTES = 15;
 
@@ -26,11 +34,13 @@ export function monitorStatus(entry: MonitorEntry, now: Date): DisplayStatus {
   return isStale(entry, now) ? STATE.stale : STATE[entry.state];
 }
 
-// Failed checks first (title), then skipped ones with their reason; passing checks are not listed
+// Failed checks and failed executions first (title), then skipped checks with their reason; passing checks are not
+// listed
 export function monitorNotes(entry: MonitorEntry): { text: string; tone: "bad" | "muted" }[] {
   const checks = entry.checks ?? [];
   return [
     ...checks.filter((c) => c.ok === false).map((c) => ({ text: c.title ?? c.label, tone: "bad" as const })),
+    ...(entry.errors ?? []).map((e) => ({ text: e.title, tone: "bad" as const })),
     ...checks.filter((c) => c.ok === null).map((c) => ({ text: c.detail, tone: "muted" as const })),
   ];
 }

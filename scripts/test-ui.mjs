@@ -181,52 +181,92 @@ try {
     }
   }
 
-  // task-17-7/17-12: area "System" for the owner. Admin and manager see the same content; no code updates, no buttons.
-  console.log("\nSystem: Zusammenfassung, Datensicherung, Systeme, Guthaben, Versionen");
+  // task-17-7/17-12: area "System" for the owner. Admin and manager see the same content; no code updates. task-17-10:
+  // a test warning (marked as mailed, so that the running watchdog sends no e-mail) shows the banner on every page for
+  // manager and admin, the list, and "Erledigt" for admin only; it is removed at the end.
+  console.log("\nSystem: Zusammenfassung, Datensicherung, Systeme, Guthaben, Versionen, Warnungen");
   {
     const view = () => page.eval(`({
       nav: !!document.querySelector('.dash-nav a[href="/dashboard/system"]'),
       summary: document.querySelector(".system-summary__title")?.textContent ?? "",
       alerts: document.querySelectorAll(".system-alerts li").length,
       cards: [...document.querySelectorAll(".rw-card__title")].map((t) => t.textContent.replace(/\\s*\\d+$/, "")),
-      buttons: document.querySelectorAll(".system-page button").length,
-      monitor: document.querySelector(".system-monitors > li")?.textContent ?? "",
+      buttons: [...document.querySelectorAll(".system-page button")].map((b) => b.textContent),
+      openRows: [...document.querySelectorAll(".system-alerts-open tbody tr")].map((tr) => tr.textContent),
+      resolvedRows: [...document.querySelectorAll(".system-alerts-resolved tbody tr")].map((tr) => tr.textContent),
+      banner: !!document.querySelector(".system-alert-banner") && getComputedStyle(document.querySelector(".system-alert-banner")).display !== "none",
+      monitors: [...document.querySelectorAll(".system-monitors > li")].map((li) => li.textContent),
       credit: document.querySelector(".system-credit")?.textContent ?? "",
       mainWidth: getComputedStyle(document.querySelector(".dash-main")).maxWidth,
       scroll: document.documentElement.scrollWidth, width: innerWidth })`);
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+    const testKey = `ui-test:${Date.now()}`;
+    const testTitle = `UI-Testwarnung ${testKey.slice(8)}`;
+    const raised = await admin.rpc("raise_alert", { source: "app", alert_key: testKey, severity: "warning", title: testTitle, detail: "Nur für test:ui" });
+    await admin.rpc("mark_alert_notified", { alert_id: raised.data.alert_id });
     const { count: openAlerts } = await admin.from("system_alerts").select("id", { count: "exact", head: true }).is("resolved_at", null);
     const expected = openAlerts === 0 ? "Alles in Ordnung" : openAlerts === 1 ? "1 Punkt braucht Aufmerksamkeit" : `${openAlerts} Punkte brauchen Aufmerksamkeit`;
-    const sections = ["Datensicherung", "Zustand der Systeme", "Guthaben externer Dienste", "Systemversionen"];
+    const sections = ["Datensicherung", "Zustand der Systeme", "Guthaben externer Dienste", "Systemversionen", "Warnungen"];
     // Watchdog result (task-17-9): row of the phone assistant and its credit as stored in system_status.monitoring
     const { data: status } = await admin.from("system_status").select("monitoring").single();
     const mira = status.monitoring?.mira;
-    const miraFresh = mira && Date.now() - Date.parse(mira.checked_at) <= 15 * 60_000;
-    const miraLabel = !mira ? null : !miraFresh ? "Prüfung veraltet" : { ok: "In Ordnung", warning: "Warnung", critical: "Gestört", off: "Nicht eingerichtet" }[mira.state];
+    const stateLabel = (entry) => !entry ? null : Date.now() - Date.parse(entry.checked_at) > 15 * 60_000 ? "Prüfung veraltet"
+      : { ok: "In Ordnung", warning: "Warnung", critical: "Gestört", off: "Nicht eingerichtet" }[entry.state];
+    const miraLabel = stateLabel(mira);
+    const n8nLabel = stateLabel(status.monitoring?.n8n);
+    const row = (view, label) => view.monitors.find((text) => text.includes(label)) ?? "";
     const creditText = mira?.credit ? `${mira.credit.remaining.toLocaleString("de-DE")} von ${mira.credit.limit.toLocaleString("de-DE")} Credits übrig` : null;
     await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     await page.send("Network.clearBrowserCookies");
     await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
     await page.open(`${BASE}/dashboard/system`);
     const adminView = await view();
-    check(`Admin: „System“ in der Navigation, Zusammenfassung „${expected}“ mit ${openAlerts} Warnung(en), vier Abschnitte`,
+    check(`Admin: „System“ in der Navigation, Zusammenfassung „${expected}“ mit ${openAlerts} Warnung(en), fünf Abschnitte`,
       adminView.nav && adminView.summary === expected && adminView.alerts === openAlerts && sections.every((t) => adminView.cards.includes(t)), JSON.stringify(adminView));
-    check(`  Telefonassistent: ${miraLabel ?? "noch keine Prüfung"}${creditText ? `, ${creditText}` : ""}`,
-      miraLabel ? adminView.monitor.includes("Telefonassistent (Mira)") && adminView.monitor.includes(miraLabel) : adminView.monitor === "",
-      JSON.stringify({ monitor: adminView.monitor, credit: adminView.credit }));
+    check(`  Automatisierung (n8n): ${n8nLabel ?? "noch keine Prüfung"}; Telefonassistent: ${miraLabel ?? "noch keine Prüfung"}${creditText ? `, ${creditText}` : ""}`,
+      (n8nLabel ? row(adminView, "Automatisierung (n8n)").includes(n8nLabel) : !row(adminView, "Automatisierung (n8n)"))
+        && (miraLabel ? row(adminView, "Telefonassistent (Mira)").includes(miraLabel) : !row(adminView, "Telefonassistent (Mira)")),
+      JSON.stringify({ monitors: adminView.monitors, credit: adminView.credit }));
     if (creditText) check("  Guthaben wie gemeldet, mit Tarif und Schwellwert", adminView.credit.includes(creditText) && adminView.credit.includes("Warnung unter"), adminView.credit);
-    check("  keine Schaltflächen, keine Code-Updates, Breite wie die übrigen Bereiche (1680 px)",
-      adminView.buttons === 0 && !adminView.cards.some((t) => ["Versionen", "Verlauf", "Aktuelle Version"].includes(t)) && adminView.mainWidth === "1680px", JSON.stringify(adminView));
+    check("  nur „Erledigt“ je offener Warnung, keine Code-Updates, Breite wie die übrigen Bereiche (1680 px), Hinweis oben ausgeblendet",
+      adminView.buttons.length === openAlerts && adminView.buttons.every((b) => b === "Erledigt") && !adminView.cards.some((t) => ["Versionen", "Verlauf", "Aktuelle Version"].includes(t))
+        && adminView.mainWidth === "1680px" && !adminView.banner, JSON.stringify(adminView));
+    check("  Testwarnung in „Offene Warnungen“ mit Quelle", adminView.openRows.some((text) => text.includes(testTitle) && text.includes("Website und Dashboard")), JSON.stringify(adminView.openRows));
     await page.send("Network.clearBrowserCookies");
     await page.send("Network.setCookies", { cookies: await loginCookies("manager.demo@example.com") });
     for (const width of [390, 768, 1440]) {
       await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
       await page.open(`${BASE}/dashboard/system`);
       const managerView = await view();
-      check(`  Manager @${width}: gleiche Inhalte, kein Querscrollen`,
-        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons === 0 && managerView.scroll <= managerView.width, JSON.stringify(managerView));
+      check(`  Manager @${width}: gleiche Inhalte, ohne „Erledigt“, kein Querscrollen`,
+        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons.length === 0
+          && managerView.openRows.some((text) => text.includes(testTitle)) && managerView.scroll <= managerView.width, JSON.stringify(managerView));
+    }
+    // Banner on another page: manager yes, dispatcher no
+    const bannerOn = () => page.eval(`({ shown: !!document.querySelector(".system-alert-banner"), text: document.querySelector(".system-alert-banner")?.textContent ?? "",
+      link: document.querySelector(".system-alert-banner a")?.getAttribute("href") ?? "", scroll: document.documentElement.scrollWidth, width: innerWidth })`);
+    for (const width of [390, 1440]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/uebersicht`);
+      const banner = await bannerOn();
+      check(`  Manager @${width} auf der Übersicht: Hinweis mit Anzahl und Link zur Liste`,
+        banner.shown && banner.text.includes(openAlerts === 1 ? "1 Warnung im System" : `${openAlerts} Warnungen im System`) && banner.link === "/dashboard/system#system-warnungen" && banner.scroll <= banner.width, JSON.stringify(banner));
     }
     await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("dispo1.demo@example.com") });
+    await page.open(`${BASE}/dashboard/erstbearbeitung`);
+    check("  Dispatcher: kein Hinweis auf Systemwarnungen", !(await bannerOn()).shown);
+    // Admin closes the test warning by hand
+    await page.send("Network.clearBrowserCookies");
+    await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
+    await page.open(`${BASE}/dashboard/system`);
+    await page.eval(`document.querySelector('button[aria-label="Erledigt: ${testTitle}"]').click()`);
+    const moved = await page.until(`[...document.querySelectorAll(".system-alerts-resolved tbody tr")].some((tr) => tr.textContent.includes(${JSON.stringify(testTitle)}) && tr.textContent.includes("erledigt von"))
+      && ![...document.querySelectorAll(".system-alerts-open tbody tr")].some((tr) => tr.textContent.includes(${JSON.stringify(testTitle)}))`, 10000);
+    const { data: stored } = await admin.from("system_alerts").select("resolved_reason, resolved_by").eq("alert_key", testKey).single();
+    check("  Admin: „Erledigt“ verschiebt die Warnung nach „Behoben“ (von Hand, mit Person)", moved && stored?.resolved_reason === "manual" && Boolean(stored?.resolved_by), JSON.stringify(stored));
+    await admin.from("system_alerts").delete().eq("alert_key", testKey);
   }
 
   console.log("\nÜbersicht (Admin): Kennzahlen führen zu passenden Listen");

@@ -119,7 +119,7 @@ workflow = {
     "active": False,
     "nodes": nodes,
     "connections": connections,
-    "settings": {"executionOrder": "v1", "saveDataSuccessExecution": "none", "saveDataErrorExecution": "all", "callerPolicy": "workflowsFromSameOwner"},
+    "settings": {"executionOrder": "v1", "saveDataSuccessExecution": "none", "saveDataErrorExecution": "all", "callerPolicy": "workflowsFromSameOwner", "errorWorkflow": "rwFehlerMeldung1"},
     "description": "Webhooks des Sprachagenten Mira (task-13-5): je Werkzeug ein POST /webhook/agent-<name> mit x-agent-secret.",
 }
 (OUT / "rheinwerk-agent-tools.workflow.json").write_text(json.dumps(workflow, ensure_ascii=False, indent=2) + "\n")

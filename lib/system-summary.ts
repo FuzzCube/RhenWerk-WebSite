@@ -1,5 +1,7 @@
-// Summary at the top of the area "System" (task-17-12): open warnings decide whether everything is in order.
-// Pure functions, shared by page and unit tests.
+// Summary at the top of the area "System" (task-17-12) and banner on every page (task-17-10): open warnings decide
+// whether everything is in order. Pure functions, shared by page, layout and unit tests.
+import type { DisplayStatus } from "./display-status";
+
 export type SystemAlert = {
   id: string;
   source: "n8n" | "mira" | "update" | "backup" | "app";
@@ -9,6 +11,13 @@ export type SystemAlert = {
 };
 
 export type SystemSummary = { ok: boolean; title: string; alerts: SystemAlert[] };
+
+// Banner on every dashboard page for admin and manager (task-17-10): count and the most serious warning
+export function systemBanner(alerts: SystemAlert[]): { title: string; worst: SystemAlert; critical: boolean } | null {
+  if (alerts.length === 0) return null;
+  const [worst] = sortAlerts(alerts);
+  return { title: alerts.length === 1 ? "1 Warnung im System" : `${alerts.length} Warnungen im System`, worst, critical: worst.severity === "critical" };
+}
 
 const SEVERITY_RANK: Record<SystemAlert["severity"], number> = { critical: 0, warning: 1 };
 
@@ -32,3 +41,22 @@ const SOURCE_LABEL: Record<SystemAlert["source"], string> = {
 };
 
 export const alertSourceLabel = (source: SystemAlert["source"]): string => SOURCE_LABEL[source];
+
+// Full row for the list of warnings in the area "System" (task-17-10)
+export type SystemAlertRow = SystemAlert & {
+  detail: string | null;
+  last_seen_at: string;
+  occurrences: number;
+  resolved_at: string | null;
+  resolved_reason: "auto" | "manual" | null;
+  resolver: string | null;
+};
+
+export function severityStatus(alert: Pick<SystemAlert, "severity">): DisplayStatus {
+  return alert.severity === "critical" ? { key: "kritisch", label: "Kritisch", tone: "act" } : { key: "warnung", label: "Warnung", tone: "wait" };
+}
+
+// "automatisch behoben" (the next check passed) or "erledigt von <name>" (admin by hand)
+export function resolvedLabel(alert: Pick<SystemAlertRow, "resolved_reason" | "resolver">): string {
+  return alert.resolved_reason === "manual" ? `erledigt von ${alert.resolver ?? "Admin"}` : "automatisch behoben";
+}

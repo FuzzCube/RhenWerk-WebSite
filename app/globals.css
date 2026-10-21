@@ -1921,3 +1921,14 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .system-monitors__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .system-monitors__notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
 .system-monitors__note--bad { color: var(--rw-color-danger-700); }
+/* Banner of open warnings on every page (task-17-10); the area "System" shows them in its summary */
+.system-alert-banner { max-width: 1680px; margin: 0 auto 16px; align-items: flex-start; padding: 14px 16px; }
+.system-alert-banner > svg { flex: none; margin-top: 2px; }
+.system-alert-banner__text { flex: 1 1 240px; min-width: 0; display: grid; gap: 2px; overflow-wrap: anywhere; }
+.system-alert-banner__link { flex: none; }
+.dash-shell:has(.system-page) .system-alert-banner { display: none; }
+.system-summary__link { font-size: 14px; margin-top: 4px; }
+.system-alert-title { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; overflow-wrap: anywhere; }
+.system-details--inline { margin-top: 6px; }
+.system-alert-detail { margin: 6px 0 0; max-width: 640px; font-size: 13px; color: var(--rw-text-secondary); white-space: pre-line; overflow-wrap: anywhere; }
+.system-subheading { font-size: 15px; padding: 16px 20px 8px; border-top: 1px solid var(--rw-border-subtle); }

@@ -37,3 +37,15 @@ export async function report(source, check) {
   const mail = await sendAlert({ subject: check.title, text: `${check.detail}\n\n${alert.reason === "reminder" ? "Erinnerung: besteht seit mehr als 6 Stunden.\n\n" : ""}${DASHBOARD}` });
   if (mail.ok) await rpc("mark_alert_notified", { alert_id: alert.alert_id });
 }
+
+// E-mails still due (alerts_to_notify): warnings raised without e-mail by the n8n error workflow, sends that failed
+// and reminders after 6 hours. Runs after report(), whose e-mails are already marked.
+export async function notifyDue() {
+  for (const alert of (await rpc("alerts_to_notify")) ?? []) {
+    console.log(`${new Date().toISOString()} E-Mail: ${alert.alert_key}`);
+    const reminder = alert.notified_at ? "Erinnerung: besteht seit mehr als 6 Stunden.\n\n" : "";
+    const repeated = alert.occurrences > 1 ? `${alert.occurrences}-mal seit ${alert.first_seen_at}.\n\n` : "";
+    const mail = await sendAlert({ subject: alert.title, text: `${alert.detail ?? alert.title}\n\n${repeated}${reminder}${DASHBOARD}` });
+    if (mail.ok) await rpc("mark_alert_notified", { alert_id: alert.id });
+  }
+}
