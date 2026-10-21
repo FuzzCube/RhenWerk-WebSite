@@ -393,3 +393,6 @@
 {"timestamp":"2026-10-21T14:31:48Z","type":"task_ready","taskId":"task-17-8","summary":"task-17-8 ist startbar (task-17-2 und task-17-3 abgeschlossen)."}
 {"timestamp":"2026-10-21T14:31:48Z","type":"task_ready","taskId":"task-17-9","summary":"task-17-9 ist startbar (task-17-2 und task-17-3 abgeschlossen)."}
 {"timestamp":"2026-10-21T14:37:38Z","type":"task_started","taskId":"task-17-4","summary":"task-17-4 begonnen: /api/health mit Token für Einzelergebnisse; Prüfung nach dem Umschalten über Commit des Releases; Tests in test:auth statt test:api (HTTP)."}
+{"timestamp":"2026-10-21T14:41:26Z","type":"verification_passed","taskId":"task-17-4","summary":"/api/health geprüft: test:auth gegen next start, 503 bei falschem Datenbankschlüssel, echtes Produktionsupdate 767dd24 → b3cda09 mit Commit-Prüfung, Rücksetzen und zurück; lint, typecheck, build."}
+{"timestamp":"2026-10-21T14:41:26Z","type":"task_completed","taskId":"task-17-4","summary":"Gesundheitsprüfung /api/health mit HEALTH_TOKEN; prod:release prüft den Commit des neuen Releases."}
+{"timestamp":"2026-10-21T14:41:26Z","type":"task_ready","taskId":"task-17-5","summary":"task-17-5 ist startbar (task-17-1 bis task-17-4 abgeschlossen)."}

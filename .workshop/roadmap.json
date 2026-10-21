@@ -3135,7 +3135,7 @@
           "description": "Öffentlich nur Status ok/fehler ohne Details; mit Token (HEALTH_TOKEN, Authorization: Bearer) Einzelergebnisse: App-Version (Commit aus release.json), Datenbank erreichbar, n8n healthz erreichbar. 503 nur bei nicht erreichbarer Datenbank; n8n fällt nicht unter den Gesamtstatus (sonst würde ein n8n-Ausfall ein Update zurückrollen), seine Überwachung übernimmt task-17-8. Grundlage für die Prüfung nach einem Update und für den Wächter.",
           "order": 4,
           "weight": 1,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-17-1"
           ],
@@ -3146,12 +3146,21 @@
             "test:auth ergänzt (HTTP), lint, typecheck, build"
           ],
           "startedAt": "2026-10-21T14:37:38Z",
-          "completedAt": null,
+          "completedAt": "2026-10-21T14:41:26Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-21T14:41:26Z",
+            "commands": [
+              "curl /api/health (next dev, ohne/falscher/richtiger Token)",
+              "APP_URL=http://localhost:3300 npm run test:auth",
+              "SUPABASE_SECRET_KEY=falsch next start -p 3301 + curl",
+              "npm run prod:release",
+              "npm run prod:release -- --switch 767dd24 / b3cda09",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "summary": "app/api/health/route.ts: ohne gültigen Bearer-Token nur {status} (200 ok / 503 fehler), mit HEALTH_TOKEN (zeitkonstanter Vergleich) commit aus release.json (sonst dev), db (system_status über Service-Client) und n8n (/healthz am Host von N8N_WEBHOOK_URL) mit ok/ms/fehler, je 3 s Zeitlimit, no-store; Status nur von der Datenbank. HEALTH_TOKEN in beiden .env.local, Name in .env.example. test:auth gegen next start (3300) bestanden, neu 4 Prüfungen (ohne/falscher Token nur Status, no-store, mit Token Details). 503 mit falschem SUPABASE_SECRET_KEY auf 3301 geprüft (nicht in der Suite). prod:release wartet auf /api/health mit dem neuen Commit (ältere Releases ohne Route: /login): echtes Update 767dd24 → b3cda09 nach Push, Rücksetzen auf 767dd24 und zurück ohne Neubau. lint, typecheck, build bestanden. Doku: architecture.md, betrieb.md (2.3, 5), testing.md."
           }
         },
         {
@@ -3160,7 +3169,7 @@
           "description": "Nutzerentscheidung 21.10.2026: täglich 02:00 automatisch, Quelle ausschließlich origin/main. scripts/update.mjs: Sperre, git fetch, nichts tun ohne neuen Commit, Sicherung (npm run backup) vor dem Update, Release über scripts/prod/release.mjs bauen und umschalten (task-17-1), supabase migration up, /api/health prüfen. Bei Fehler: Symlink zurück, Neustart, Warnung und E-Mail. Zusätzlich nur anzeigen (nicht installieren): verfügbare npm-Updates (npm outdated) und neue n8n-Version. launchd ersetzt den bisherigen Sicherungsauftrag 02:00 (Sicherung läuft im Update-Lauf zuerst).",
           "order": 5,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-17-1",
             "task-17-2",
