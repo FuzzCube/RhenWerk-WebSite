@@ -2,7 +2,7 @@
 -- warnings, scripts write as service_role; one request/run at a time, one open warning per key with e-mail decision.
 -- Run with: supabase test db
 begin;
-select plan(39);
+select plan(43);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000017a1', 'admin17@x.test'),
@@ -103,6 +103,20 @@ select throws_ok($$select public.resolve_alert((select id from public.system_ale
 select pg_temp.as_user('a1');
 select is((select resolved_reason from public.resolve_alert((select id from public.system_alerts where alert_key = 'mira:credit'))), 'manual', 'admin resolves');
 select throws_ok($$select public.resolve_alert((select id from public.system_alerts where alert_key = 'mira:credit'))$$, 'RW422', null, 'already resolved');
+reset role;
+
+-- Leftovers of a crashed run (task-17-6): request and run in running are closed as failed
+select pg_temp.as_service();
+set local role service_role;
+create temp table stale as select * from public.start_system_update('update', 'nightly', null, null);
+grant select on stale to service_role;
+select ok((select status = 'running' from public.claim_update_request()), 'rollback request claimed and left running');
+select is(public.abandon_stale_runs(), 2, 'stale run and request closed');
+select ok((select status = 'failed' and finished_at is not null and error like 'Lauf abgebrochen%' from public.system_updates where id = (select id from stale)), 'run failed with reason');
+reset role;
+set local role authenticated;
+select pg_temp.as_user('a1');
+select throws_ok($$select public.abandon_stale_runs()$$, '42501', null, 'staff cannot close runs');
 reset role;
 
 -- Cleanup

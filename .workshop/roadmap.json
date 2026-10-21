@@ -3207,7 +3207,7 @@
           "description": "Die Web-App führt keine Befehle aus. Ein launchd-Auftrag prüft jede Minute update_requests und startet update.mjs für „Jetzt aktualisieren“ oder „Auf Release X zurück“. Rücksetzen schaltet nur den Code um; brachte ein späteres Release Migrationen, wird gewarnt, die Datenbank bleibt (Wiederherstellung nach betrieb.md 4.5 bleibt manuell).",
           "order": 6,
           "weight": 2,
-          "status": "ready",
+          "status": "in_progress",
           "dependsOn": [
             "task-17-5"
           ],
@@ -3215,9 +3215,10 @@
             "Anfrage wird innerhalb von etwa einer Minute übernommen, Status angefordert → läuft → erfolgreich/fehlgeschlagen",
             "Rücksetzen auf ein vorhandenes Release ohne Neubau; Hinweis bei dazwischenliegenden Migrationen",
             "Nie zwei Läufe gleichzeitig (Sperre gemeinsam mit dem Nachtlauf)",
-            "Fehler erzeugen Warnung und E-Mail; betrieb.md, lint"
+            "Fehler erzeugen Warnung und E-Mail; betrieb.md, lint",
+            "Abgebrochene Läufe: Anfragen und Läufe in running ohne aktiven Prozess werden beim nächsten Lauf als failed abgeschlossen (abandon_stale_runs)"
           ],
-          "startedAt": null,
+          "startedAt": "2026-10-21T15:18:40Z",
           "completedAt": null,
           "verification": {
             "status": "not_run",

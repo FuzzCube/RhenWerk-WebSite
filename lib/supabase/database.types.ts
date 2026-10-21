@@ -914,7 +914,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "acknowledge_call_callback":
+            "abandon_stale_runs":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"acknowledge_call_callback":
 { Args: { "call_id": string }; Returns: {
               "analysis": Json | null,
 "analyzed_at": string | null,

@@ -2,12 +2,12 @@
 // npm run prod:install
 //   1. ~/RheinWerk-Prod with repo/ (clone of origin), releases/, shared/, logs/
 //   2. shared/.env.local as a copy of the .env.local of this folder (only if missing; mode 600)
-//   3. LaunchAgents online.rheinwerk.web (app) and online.rheinwerk.update (02:00) from ops/launchd/, loaded once a
-//      release is active
+//   3. LaunchAgents online.rheinwerk.web (app), online.rheinwerk.update (02:00) and online.rheinwerk.requests (every
+//      minute) from ops/launchd/, loaded once a release is active
 // Then: npm run prod:release (builds origin/main and starts the service).
 import { chmodSync, copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { CURRENT, LABEL, LAUNCH_AGENTS, PORT, PROD_DIR, REPO, SHARED_ENV, UPDATE_LABEL, ensureLayout, run, serviceLoaded } from "./lib.mjs";
+import { CURRENT, LABEL, LAUNCH_AGENTS, PORT, PROD_DIR, REPO, SHARED_ENV, REQUESTS_LABEL, UPDATE_LABEL, ensureLayout, run, serviceLoaded } from "./lib.mjs";
 
 ensureLayout();
 
@@ -47,9 +47,11 @@ function installAgent(label, replacements) {
 
 installAgent(LABEL, { __PROD_DIR__: PROD_DIR, __PORT__: String(PORT) });
 installAgent(UPDATE_LABEL, { __PROD_DIR__: PROD_DIR });
+installAgent(REQUESTS_LABEL, { __PROD_DIR__: PROD_DIR });
 if (!existsSync(CURRENT)) {
   console.log("Noch kein Release aktiv. Weiter mit: npm run prod:release, danach npm run prod:install");
 } else {
   console.log(`App-Dienst ${LABEL} aus ${CURRENT} auf http://127.0.0.1:${PORT}`);
   console.log(`Nächtliches Update ${UPDATE_LABEL} täglich 02:00 (Protokoll ${path.join(PROD_DIR, "logs", "update.log")})`);
+  console.log(`Anfragen aus dem Dashboard ${REQUESTS_LABEL} jede Minute (Protokoll ${path.join(PROD_DIR, "logs", "requests.log")})`);
 }
