@@ -2682,7 +2682,7 @@
       "title": "Kundennummer sichtbar",
       "description": "Nutzerentscheidung 20.10.2026 nach einem Testanruf: Die Kundennummer ist im Dashboard kaum zu sehen (nur Untertitel der Kundenseite, Kundenliste, Anfrageseite) und erscheint in keiner E-Mail; der Kunde kennt sie daher nicht und kann sie Mira nicht nennen. Wie im papierbasierten Ablauf soll die Kundennummer überall dort stehen, wo Kunde, Anfrage und Rechnung zusammenkommen. Identifikation am Telefon bleibt bei Kundennummer + PLZ (Firma allein reicht aus Sicherheitsgründen nicht). Eine eigene Rechnungsanschrift je Kunde ist bewusst nicht Teil dieser Phase. Erweiterung 20.10.2026 (Nutzerentscheidung bei task-15-2): Die Kundennummer vergibt ausschließlich die Datenbank und sie ist der feste fachliche Schlüssel des Kunden; eine von Kunden genannte Nummer wird nur als „angegebene Kundennummer“ gespeichert und geprüft.",
       "order": 16,
-      "weight": 6,
+      "weight": 8,
       "status": "in_progress",
       "tasks": [
         {
@@ -2770,6 +2770,40 @@
             "pgTAP-Tests für mit und ohne Kunde",
             "docs/database.md bzw. betroffene Doku aktualisiert",
             "test:db, lint, typecheck"
+          ]
+        },
+        {
+          "weight": 2,
+          "startedAt": "2026-10-21T07:12:52Z",
+          "completedAt": "2026-10-21T07:32:21Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261021100000_phone_request_customer.sql (per supabase migration up, Nachkorrektur per psql): create_phone_request mit optionalem customer_id – Verknüpfung beim Anlegen mit aktivem Kunden, Standort nur bei gleicher Straße und PLZ, Ereignis customer_linked (by phone_form), inaktiver oder unbekannter Kunde RW422. UI: Feld Kundennummer hervorgehoben als erstes Feld der telefonischen Anfrage (components/dashboard/customer-number-lookup.tsx), Vorschlagsbereich kundenstandort (ein Vorschlag je aktivem Standort), Auswahl füllt Firma und Anschrift sowie leere Kontaktfelder, Hinweis Bestandskunde mit „Verknüpfung lösen“, Tippen löst die Verknüpfung. test:db bestanden (43 Dateien, 1035 Prüfungen, neu phone_request_customer.test.sql mit 12). test:unit 92 bestanden. test:ui gegen next start (Port 3100) alle Prüfungen bestanden, neu bei 390/768/1440 inkl. Verknüpfung in der Datenbank; Screenshots geprüft; Testanfragen storniert. lint, typecheck, build bestanden. Doku: database.md, architecture.md, testing.md.",
+            "commands": [
+              "npm run test:db",
+              "npm run test:unit",
+              "npm run test:ui",
+              "npm run typecheck",
+              "npm run lint",
+              "npm run build",
+              "npm run db:types"
+            ],
+            "checkedAt": "2026-10-21T07:32:21Z"
+          },
+          "id": "task-15-4",
+          "title": "Telefonische Anfrage: Bestandskunde über die Kundennummer übernehmen",
+          "order": 4,
+          "status": "completed",
+          "dependsOn": [],
+          "description": "Nutzerentscheidung 21.10.2026: Nennt ein Anrufer seine Kundennummer, tippt der Dispatcher sie im hervorgehobenen ersten Feld der Seite „Telefonische Anfrage“ ein; während des Tippens erscheinen passende aktive Kunden (je Standort ein Vorschlag, Suche nach Nummer, Firma, Ort). Die Auswahl füllt Firma und Anschrift, dazu Ansprechperson, E-Mail und Telefon, soweit noch leer; alle Felder bleiben änderbar. Die Anfrage wird beim Anlegen direkt mit dem Kunden verknüpft (create_phone_request mit customer_id, Standort aus der Anschrift), es entsteht kein neuer Kunde. Bei Neukunden bleibt das Feld leer; die Nummer vergibt die Datenbank beim Abschluss der Erstbearbeitung. Kein eigener Suchknopf.",
+          "definitionOfDone": [
+            "Feld Kundennummer als erstes Feld hervorgehoben, Vorschläge während des Tippens je Standort",
+            "Auswahl füllt Firma, Anschrift und leere Kontaktfelder; Verknüpfung sichtbar und lösbar; Änderung der Nummer löst sie",
+            "create_phone_request verknüpft mit aktivem Kunden, Standort nur bei passender Anschrift; ungültiger oder inaktiver Kunde → RW422",
+            "pgTAP-Tests mit und ohne Kunde",
+            "UI bei 390/768/1440 geprüft",
+            "docs/database.md und betroffene Doku aktualisiert",
+            "test:db, test:unit, test:ui, lint, typecheck, build"
           ]
         }
       ]

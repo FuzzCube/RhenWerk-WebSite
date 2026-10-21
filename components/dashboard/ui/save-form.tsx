@@ -2,6 +2,7 @@
 
 import { createContext, startTransition, useActionState, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { SearchSuggest } from "@/components/dashboard/ui/search-suggest";
+import type { Suggestion } from "@/lib/dashboard/suggestions";
 import { formatTime } from "@/lib/format";
 import { initialFormState, type FormState } from "@/lib/forms";
 
@@ -97,9 +98,9 @@ function useField(name: string) {
   return { error, pending, describedBy: error ? `${name}-error` : undefined };
 }
 
-function FieldFrame({ name, label, hint, required, error, children }: FieldProps & { error?: string; children: ReactNode }) {
+function FieldFrame({ name, label, hint, required, error, className, children }: FieldProps & { error?: string; className?: string; children: ReactNode }) {
   return (
-    <label className="field" htmlFor={`field-${name}`}>
+    <label className={`field${className ? ` ${className}` : ""}`} htmlFor={`field-${name}`}>
       <span>{label}<small>{required ? "Pflichtangabe" : "Optional"}</small></span>
       {children}
       {hint && <em>{hint}</em>}
@@ -118,11 +119,17 @@ export function TextField({ type = "text", inputMode, autoComplete, ...props }: 
 }
 
 // Text field with suggestions while typing (task-12-4); the chosen suggestion's value is written into the field
-export function SuggestField({ area, ...props }: FieldProps & { area: "kundennummer" }) {
+export function SuggestField({ area, className, placeholder, onPick, onType, ...props }: FieldProps & {
+  area: "kundennummer" | "kundenstandort";
+  className?: string;
+  placeholder?: string;
+  onPick?: (item: Suggestion) => void;
+  onType?: (value: string) => void;
+}) {
   const { error, describedBy } = useField(props.name);
   return (
-    <FieldFrame {...props} error={error}>
-      <SearchSuggest area={area} mode="fill" id={`field-${props.name}`} name={props.name} defaultValue={props.defaultValue} invalid={!!error} describedBy={describedBy} />
+    <FieldFrame {...props} className={className} error={error}>
+      <SearchSuggest area={area} mode="fill" id={`field-${props.name}`} name={props.name} defaultValue={props.defaultValue} placeholder={placeholder} invalid={!!error} describedBy={describedBy} onPick={onPick} onType={onType} />
     </FieldFrame>
   );
 }

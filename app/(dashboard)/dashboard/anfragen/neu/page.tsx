@@ -36,7 +36,7 @@ export default async function PhoneRequestPage() {
       <section className="phone-request__form" aria-label="Angaben zur Anfrage">
         <SaveForm action={createPhoneRequest} submitLabel="Anfrage anlegen">
           <HiddenField name="submission_id" value={crypto.randomUUID()} />
-          <RequestFields site values={{ requested_visit_date: addDays(berlinDayKey(new Date()), 7) }} />
+          <RequestFields site customerLookup values={{ requested_visit_date: addDays(berlinDayKey(new Date()), 7) }} />
           {chooseDispatcher && (
             <SelectField
               name="dispatcher_id"

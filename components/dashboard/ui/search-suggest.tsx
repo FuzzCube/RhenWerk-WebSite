@@ -2,8 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-
-type Suggestion = { id: string; title: string; meta: string; value: string; href: string | null };
+import type { Suggestion, SuggestArea } from "@/lib/dashboard/suggestions";
 
 const MIN_LENGTH = 2;
 const DELAY_MS = 200;
@@ -23,8 +22,10 @@ export function SearchSuggest({
   label,
   invalid,
   describedBy,
+  onPick,
+  onType,
 }: {
-  area: "anfragen" | "kunden" | "rechnungen" | "posteingang" | "kundennummer" | "anrufe";
+  area: SuggestArea;
   name: string;
   id: string;
   defaultValue?: string;
@@ -37,6 +38,10 @@ export function SearchSuggest({
   label?: string;
   invalid?: boolean;
   describedBy?: string;
+  // Called after a suggestion was taken over (fill mode), e.g. to fill further fields of the form
+  onPick?: (item: Suggestion) => void;
+  // Called on every typed change of the field
+  onType?: (value: string) => void;
 }) {
   const router = useRouter();
   const listId = useId();
@@ -81,6 +86,7 @@ export function SearchSuggest({
         // Lets forms that track unsaved input (SaveForm) notice the change
         input.dispatchEvent(new Event("input", { bubbles: true }));
       }
+      onPick?.(item);
       return;
     }
     router.push(item.href);
@@ -125,7 +131,10 @@ export function SearchSuggest({
         aria-expanded={expanded && items.length > 0}
         aria-controls={listId}
         aria-activedescendant={expanded && active >= 0 ? `${listId}-${active}` : undefined}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          onType?.(event.target.value);
+        }}
         onKeyDown={onKeyDown}
         onFocus={() => items.length > 0 && setOpen(true)}
         onBlur={() => setOpen(false)}

@@ -1,3 +1,4 @@
+import { CustomerNumberLookup } from "@/components/dashboard/customer-number-lookup";
 import { SelectField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import type { RequestFieldName } from "@/lib/request-fields";
 import { LABELS, label } from "@/lib/status";
@@ -11,12 +12,15 @@ type Props = {
   hints?: Partial<Record<RequestFieldName, string>>;
   // Standort (optional field of the website form); the inbox form leaves it out
   site?: boolean;
+  // Phone form (task-15-4): customer number first, with suggestions that fill the form and link the customer
+  customerLookup?: boolean;
   descriptionRows?: number;
 };
 
-export function RequestFields({ values, hints = {}, site = false, descriptionRows = 6 }: Props) {
+export function RequestFields({ values, hints = {}, site = false, customerLookup = false, descriptionRows = 6 }: Props) {
   return (
     <>
+      {customerLookup && <CustomerNumberLookup defaultValue={values.customer_number} />}
       <div className="form-grid">
         <TextField name="company_name" label="Firma" required defaultValue={values.company_name} hint={hints.company_name} />
         <TextField name="contact_name" label="Ansprechperson" required defaultValue={values.contact_name} hint={hints.contact_name} />
@@ -26,7 +30,7 @@ export function RequestFields({ values, hints = {}, site = false, descriptionRow
         <TextField name="postal_code" label="PLZ" inputMode="numeric" required defaultValue={values.postal_code} hint={hints.postal_code} />
         <TextField name="city" label="Ort" required defaultValue={values.city} hint={hints.city} />
         {site && <TextField name="site_label" label="Standort (Halle, Gebäude)" defaultValue={values.site_label} hint={hints.site_label} />}
-        <TextField name="customer_number" label="Kundennummer (vom Kunden genannt)" defaultValue={values.customer_number} hint={hints.customer_number ?? "Wird beim Abschluss der Erstbearbeitung mit dem Kundenstamm abgeglichen."} />
+        {!customerLookup && <TextField name="customer_number" label="Kundennummer (vom Kunden genannt)" defaultValue={values.customer_number} hint={hints.customer_number ?? "Wird beim Abschluss der Erstbearbeitung mit dem Kundenstamm abgeglichen."} />}
         <SelectField name="equipment_kind" label="Anlagenart" required defaultValue={values.equipment_kind} hint={hints.equipment_kind} options={options("equipment_kind")} />
         <TextField name="manufacturer" label="Hersteller" defaultValue={values.manufacturer} hint={hints.manufacturer} />
         <TextField name="model_type" label="Modell / Typ" defaultValue={values.model_type} hint={hints.model_type} />

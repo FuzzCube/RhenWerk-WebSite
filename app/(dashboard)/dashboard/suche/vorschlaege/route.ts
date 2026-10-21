@@ -4,7 +4,7 @@ import { mayUseArea, suggest, SUGGEST_AREAS, type SuggestArea } from "@/lib/dash
 
 const NO_STORE = { "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate" };
 
-// Suggestions for the search fields (task-12-4): ?bereich=anfragen|kunden|rechnungen|posteingang|kundennummer|anrufe&q=…
+// Suggestions for the search fields (task-12-4): ?bereich=anfragen|kunden|rechnungen|posteingang|kundennummer|kundenstandort|anrufe&q=…
 // Role of the area checked here, rows filtered by RLS like the lists.
 export async function GET(request: NextRequest) {
   const session = await getSession();

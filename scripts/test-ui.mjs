@@ -1384,6 +1384,59 @@ try {
       Boolean(createdPhone) && phoneRow.source === "phone" && phoneRow.dispatcher_id === dispoId && phoneRow.request_number.startsWith("RIS-") && phoneRow.site_label === "Halle 2" && receipts?.length === 0,
       JSON.stringify({ source: phoneRow?.source, number: phoneRow?.request_number, receipts }));
     check("  Weiterleitung auf die neue Anfrage", await waitFor(() => page.eval(`location.pathname === ${JSON.stringify(`/dashboard/anfragen/${phoneRow?.id}`)}`)));
+
+    // task-15-4: existing customer chosen by the customer number fills the form and is linked on creation
+    const { data: known } = await admin.from("customers").select("id, customer_number, company_name, customer_sites(street_house_number, postal_code, city, is_active, created_at)")
+      .eq("is_demo", true).eq("is_active", true).order("customer_number").limit(1).single();
+    const knownSite = known.customer_sites.filter((site) => site.is_active).sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
+    const lookup = "#field-customer_number";
+    const lookupOptions = () => page.eval(`(() => { const input = document.querySelector(${JSON.stringify(lookup)}); const list = input && document.getElementById(input.getAttribute("aria-controls")); return list && !list.hidden ? [...list.querySelectorAll('[role="option"]')].map((o) => o.textContent) : []; })()`);
+    const pickFirst = async () => {
+      await page.send("Input.dispatchKeyEvent", { type: "keyDown", key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 });
+      await page.send("Input.dispatchKeyEvent", { type: "keyUp", key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 });
+      await page.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+      await page.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+    };
+    const lookupState = () => page.eval(`(() => { const form = ${phoneForm}; const v = (n) => form.querySelector('[name="' + n + '"]').value;
+      return { first: form.querySelector(":scope > :not([type=hidden])")?.classList.contains("customer-lookup"), number: v("customer_number"), customer: v("customer_id"), company: v("company_name"),
+        street: v("street_house_number"), postal: v("postal_code"), city: v("city"), linked: form.querySelector(".customer-lookup__linked")?.textContent ?? null,
+        scroll: document.documentElement.scrollWidth, width: window.innerWidth }; })()`);
+    for (const width of [390, 768, 1440]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+      await page.open(`${BASE}/dashboard/anfragen/neu`);
+      await page.eval(`(() => { const el = document.querySelector(${JSON.stringify(lookup)}); el.focus(); })()`);
+      await page.send("Input.insertText", { text: known.customer_number });
+      const offered = await waitFor(async () => (await lookupOptions()).some((text) => text.includes(known.company_name) && text.includes(knownSite.postal_code)));
+      await pickFirst();
+      await waitFor(async () => (await lookupState()).customer === known.id);
+      const filled = await lookupState();
+      check(`Telefonische Anfrage @${width}: Kundennummer zuerst, Vorschläge je Standort, Auswahl füllt Firma und Anschrift, Bestandskunde angezeigt`,
+        offered && filled.first && filled.number === known.customer_number && filled.company === known.company_name && filled.postal === knownSite.postal_code
+          && filled.street === knownSite.street_house_number && filled.linked?.includes(known.customer_number) && filled.scroll <= filled.width, JSON.stringify(filled));
+      if (SHOTS) {
+        const shot = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(SHOTS, `telefon-bestandskunde-${width}.png`), Buffer.from(shot.data, "base64"));
+      }
+    }
+    await page.eval(`document.querySelector(".customer-lookup__linked button").click()`);
+    await waitFor(async () => (await lookupState()).linked === null);
+    const unlinked = await lookupState();
+    check("  „Verknüpfung lösen“ leert Nummer und Verknüpfung, Angaben bleiben",
+      unlinked.customer === "" && unlinked.linked === null && unlinked.number === "" && unlinked.company === known.company_name, JSON.stringify(unlinked));
+    await page.send("Input.insertText", { text: known.customer_number });
+    await waitFor(async () => (await lookupOptions()).length > 0);
+    await pickFirst();
+    await waitFor(async () => (await lookupState()).customer === known.id);
+    const caller = `UI-Bestandskunde ${runId}`;
+    await page.eval(`document.querySelector('[name="send_receipt"]').checked = false`);
+    await fillIn(phoneForm, { contact_name: caller, equipment_kind: "pump", service_kind: "diagnosis_repair", requested_visit_date: "2030-03-05",
+      customer_urgency: "zeitnah", safety_risk: "none_known", description: "Pumpe verliert Druck, Anzeige 2 bar statt 4 bar." });
+    let linkedRow = null;
+    await waitFor(async () => (linkedRow = (await admin.from("requests").select("*").eq("contact_name", caller).maybeSingle()).data));
+    if (linkedRow) await dispoClient.rpc("cancel_request", { request_id: linkedRow.id, expected_version: linkedRow.version, reason: "UI-Test der telefonischen Anfrage" });
+    check("  Anfrage direkt mit dem Bestandskunden verknüpft, Kundennummer aus dem Kundenstamm",
+      Boolean(linkedRow) && linkedRow.customer_id === known.id && linkedRow.customer_number === known.customer_number && linkedRow.customer_site_id !== null,
+      JSON.stringify({ customer: linkedRow?.customer_id, number: linkedRow?.customer_number, site: linkedRow?.customer_site_id }));
   }
 
   console.log("\nEinsatzplanung in der Plantafel");

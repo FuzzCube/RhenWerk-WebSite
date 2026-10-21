@@ -1817,6 +1817,11 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 
 /* Phone request form (task-11-4): readable width like the request page */
 .phone-request > * { max-width: 1080px; }
+/* Customer number first and highlighted (task-15-4) */
+.customer-lookup { display: grid; gap: 10px; margin-bottom: var(--rw-space-16); padding: 14px 16px; background: var(--rw-surface-page); border: 1px solid var(--rw-border-subtle); border-left: 3px solid var(--rw-color-lime-500); border-radius: var(--rw-radius-sm); }
+.customer-lookup .field--lead { max-width: 32rem; font-size: 15px; }
+.customer-lookup .field--lead input { font-size: 17px; border-color: var(--rw-color-steel-500); }
+.customer-lookup__linked { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; margin: 0; padding: 10px 12px; font-size: 14px; color: var(--rw-color-success-800); background: var(--rw-color-success-surface); border: 1px solid var(--rw-color-success-border); border-radius: var(--rw-radius-sm); }
 
 /* Mein Konto (task-11-5) */
 .account-page > * { max-width: 640px; }

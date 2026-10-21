@@ -4,22 +4,21 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v16, 16 Phasen, 78 Tasks, Fortschritt 99 % (Gewicht 201 von 203).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v16, 16 Phasen, 79 Tasks, Fortschritt 99 % (Gewicht 203 von 205).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Phasen 0–14 abgeschlossen; **Phase 15 „Kundennummer sichtbar“** geplant (Roadmap v16, Nutzerentscheidung 20.10.2026 nach Testanruf): Kundennummer in Stammdaten (`task-15-1`), Kundennummer nur aus dem Kundenstamm mit Prüfung der angegebenen Nummer und Anzeige in Listen, Rechnungen und Einsatz (`task-15-2`), beide abgeschlossen; offen `task-15-3` (E-Mails an Kunden), startbar, keine in Arbeit. Zuvor **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`).
+Phasen 0–14 abgeschlossen; **Phase 15 „Kundennummer sichtbar“** geplant (Roadmap v16, Nutzerentscheidung 20.10.2026 nach Testanruf): Kundennummer in Stammdaten (`task-15-1`), Kundennummer nur aus dem Kundenstamm mit Prüfung der angegebenen Nummer und Anzeige in Listen, Rechnungen und Einsatz (`task-15-2`), Bestandskunde in der telefonischen Anfrage über Vorschläge zur Kundennummer (`task-15-4`, Nutzerentscheidung 21.10.2026), alle abgeschlossen; offen `task-15-3` (E-Mails an Kunden), startbar, keine in Arbeit. Zuvor **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`).
 
 Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
 
 ## Zuletzt abgeschlossen
 
+- `task-15-4` (21.10.2026): Telefonische Anfrage – Feld Kundennummer hervorgehoben zuerst, Vorschläge je Standort (Bereich `kundenstandort`), Auswahl füllt Firma, Anschrift und leere Kontaktfelder; `create_phone_request(…, customer_id)` verknüpft beim Anlegen (Migration `20261021100000_phone_request_customer.sql`). Bei Neukunden bleibt das Feld leer.
 - `task-15-2` (20.10.2026): Migration `20261020170000_customer_number_key.sql` – `requests.customer_number` nur aus dem verknüpften Kunden (Trigger), genannte Nummer in `stated_customer_number`, Prüfung beim Abschluss der Erstbearbeitung (Vorschlag `nummer_passt_nicht`), `create_customer` ohne frei wählbare Nummer; Kundennummer in Anfragenliste, Rechnungsliste, Einsatz.
 - `task-15-1` (20.10.2026): Stammdaten der Kundenseite beginnen mit der Kundennummer (Kopieren, `components/dashboard/ui/copy-value.tsx`), danach Firma und Anschrift (ältester aktiver Standort).
-- `task-14-4` (20.10.2026): „Kunde anlegen“ mit Erklärtext und Warnung „Ähnlicher Kunde vorhanden“ (`find_similar_customers`), Herkunft `customers.origin_request_id` in Liste und Kundenseite (Migration `20261020160000_customer_origin.sql`).
-- `task-14-3` (20.10.2026): einmalige Nachzuordnung (Migration `20261020150000_customer_backfill.sql`, `npm run customers:backfill`): 1 Kunde angelegt, 0 verknüpft, 0 Vorschläge.
 
 ## Wo was dokumentiert ist (Telefonassistent)
 

@@ -7,9 +7,10 @@ import { createClient } from "@/lib/supabase/server";
 
 // Suggestions while typing (task-12-4). Read with the user's rights (RLS), with the same search columns as the
 // lists, so a suggestion never shows more than the list would. "value" is what a fill field takes over.
-export type Suggestion = { id: string; title: string; meta: string; value: string; href: string | null };
+// "fields" (only kundenstandort) are the other form fields the phone form fills from the chosen customer.
+export type Suggestion = { id: string; title: string; meta: string; value: string; href: string | null; fields?: Record<string, string> };
 
-export const SUGGEST_AREAS = ["anfragen", "kunden", "rechnungen", "posteingang", "kundennummer", "anrufe"] as const;
+export const SUGGEST_AREAS = ["anfragen", "kunden", "rechnungen", "posteingang", "kundennummer", "kundenstandort", "anrufe"] as const;
 export type SuggestArea = (typeof SUGGEST_AREAS)[number];
 
 export const SUGGEST_LIMIT = 8;
@@ -21,6 +22,7 @@ const AREA_ROLES: Record<SuggestArea, readonly EmployeeRole[]> = {
   rechnungen: rolesFor("/dashboard/rechnungen"),
   posteingang: rolesFor("/dashboard/posteingang"),
   kundennummer: ["dispatcher", "manager", "admin"],
+  kundenstandort: ["dispatcher", "manager", "admin"],
   anrufe: rolesFor("/dashboard/anrufe"),
 };
 
@@ -69,6 +71,44 @@ async function customerSuggestions(term: string, fill: boolean): Promise<Suggest
       href: fill ? null : `/dashboard/kunden/${row.id}`,
     };
   });
+}
+
+// Phone form (task-15-4): one suggestion per active site of an active customer, so choosing one fills company and
+// address in one step. Same search as customerSuggestions; fields carries what the form takes over.
+async function customerSiteSuggestions(term: string): Promise<Suggestion[]> {
+  const supabase = await createClient();
+  const { data: sites } = await supabase.from("customer_sites").select("customer_id")
+    .or(`street_house_number.ilike.*${term}*,postal_code.ilike.${term}*,city.ilike.*${term}*`).limit(200);
+  const ids = [...new Set((sites ?? []).map((row) => row.customer_id))];
+  const ors = ["customer_number", "company_name", "contact_name", "business_email"].map((column) => `${column}.ilike.*${term}*`);
+  if (ids.length > 0) ors.push(`id.in.(${ids.join(",")})`);
+  const { data } = await supabase.from("customers")
+    .select("id, customer_number, company_name, contact_name, business_email, phone_number, customer_sites(id, label, street_house_number, postal_code, city, is_active, created_at)")
+    .eq("is_active", true).or(ors.join(",")).order("company_name").limit(SUGGEST_LIMIT);
+  const lower = term.toLowerCase();
+  return (data ?? []).flatMap((row) => {
+    const active = row.customer_sites.filter((site) => site.is_active).sort((a, b) => a.created_at.localeCompare(b.created_at));
+    // A search for a place narrows the sites of the customer; otherwise all of them are offered
+    const matching = active.filter((site) => [site.street_house_number, site.postal_code, site.city].some((text) => text.toLowerCase().includes(lower)));
+    return (matching.length > 0 ? matching : active).map((site) => ({
+      id: `${row.id}:${site.id}`,
+      title: row.company_name,
+      meta: [row.customer_number, `${site.label ? `${site.label}, ` : ""}${site.street_house_number}, ${site.postal_code} ${site.city}`, row.contact_name].filter(Boolean).join(" · "),
+      value: row.customer_number,
+      href: null,
+      fields: {
+        customer_id: row.id,
+        company_name: row.company_name,
+        contact_name: row.contact_name ?? "",
+        business_email: row.business_email ?? "",
+        phone_number: row.phone_number ?? "",
+        street_house_number: site.street_house_number,
+        postal_code: site.postal_code,
+        city: site.city,
+        site_label: site.label ?? "",
+      },
+    }));
+  }).slice(0, SUGGEST_LIMIT);
 }
 
 async function invoiceSuggestions(term: string): Promise<Suggestion[]> {
@@ -128,6 +168,8 @@ export async function suggest(area: SuggestArea, q: string, message: string | nu
       return customerSuggestions(term, false);
     case "kundennummer":
       return customerSuggestions(term, true);
+    case "kundenstandort":
+      return customerSiteSuggestions(term);
     case "rechnungen":
       return invoiceSuggestions(term);
     case "anrufe":
