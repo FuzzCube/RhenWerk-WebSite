@@ -352,3 +352,10 @@
 {"timestamp":"2026-10-21T08:08:41Z","type":"roadmap_updated","summary":"task-15-6 nach Nutzerentscheidung ergänzt (Gewicht 2): Auswertung mit Zeitraum je Diagramm und Schalter 12/24 Monate."}
 {"timestamp":"2026-10-21T08:08:41Z","type":"task_started","taskId":"task-15-3","summary":"Kundennummer in E-Mails an Kunden nach Planbestätigung begonnen."}
 {"timestamp":"2026-10-21T08:14:42Z","type":"task_completed","taskId":"task-15-3","summary":"Kundennummer in Eingangsbestätigung, Rückfrage, Terminmails und Zahlungserinnerungen bei verknüpftem Kunden; test:db, test:unit, lint, typecheck, build bestanden."}
+{"timestamp":"2026-10-21T08:16:23Z","type":"task_started","taskId":"task-15-6","summary":"Auswertung: Zeitraum je Diagramm und Schalter 12/24 Monate begonnen."}
+{"timestamp":"2026-10-21T08:33:52Z","type":"task_completed","taskId":"task-15-6","summary":"Auswertung: Zeitraum in der gefilterten Karte, Schalter 12/24 Monate in den Monatsdiagrammen; test:ui (416), test:unit, lint, typecheck, build bestanden."}
+{"timestamp":"2026-10-21T08:33:52Z","type":"phase_completed","taskId":"task-15-6","summary":"Phase 15 Kundennummer sichtbar abgeschlossen; alle Tasks der Roadmap v16 abgeschlossen."}
+{"timestamp":"2026-10-21T08:44:56Z","type":"roadmap_updated","summary":"task-15-7 nach Nutzerentscheidung ergänzt (Gewicht 1): kompakte Zeitraum- und Monatsschalter überall, Karte „Eingänge kumuliert“ einzeilig."}
+{"timestamp":"2026-10-21T08:44:56Z","type":"task_started","taskId":"task-15-7","summary":"Kompakte Zeitraum- und Monatsschalter begonnen."}
+{"timestamp":"2026-10-21T08:56:00Z","type":"task_completed","taskId":"task-15-7","summary":"Kompakte Zeitraum- und Monatsschalter überall (32 px, Telefon 44 px), Karte „Eingänge kumuliert“ einzeilig; test:ui (417), lint, typecheck, build bestanden."}
+{"timestamp":"2026-10-21T08:56:00Z","type":"phase_completed","taskId":"task-15-7","summary":"Phase 15 Kundennummer sichtbar erneut abgeschlossen; alle Tasks der Roadmap v16 abgeschlossen."}

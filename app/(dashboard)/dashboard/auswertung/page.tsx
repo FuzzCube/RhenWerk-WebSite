@@ -36,19 +36,33 @@ type Area = (typeof AREAS)[number]["key"];
 
 const BASE = "/dashboard/auswertung";
 
+// Length of the monthly charts (?monate=12, task-15-6); 24 is the default and the length of the loaded series
+const MONTH_OPTIONS = [12, 24] as const;
+type Months = (typeof MONTH_OPTIONS)[number];
+
+function parseMonths(value: string | string[] | undefined): Months {
+  return (Array.isArray(value) ? value[0] : value) === "12" ? 12 : 24;
+}
+
 function parseArea(value: string | string[] | undefined): Area {
   const single = Array.isArray(value) ? value[0] : value;
   return AREAS.find((area) => area.key === single)?.key ?? "durchsatz";
 }
 
-// Link to an area that keeps the chosen period; default values stay out of the URL
-function areaHref(area: Area, period: PeriodParams) {
+// Link to an area that keeps the chosen period and months; default values stay out of the URL
+function areaHref(area: Area, period: PeriodParams, months: Months) {
   const params = new URLSearchParams();
   if (area !== "durchsatz") params.set("bereich", area);
   if (period.param !== PERIOD_OPTIONS[1].param || period.anchor) params.set("zeitraum", period.param);
   if (period.anchor) params.set("datum", period.anchor);
+  if (months !== 24) params.set("monate", String(months));
   const query = params.toString();
   return query ? `${BASE}?${query}` : BASE;
+}
+
+// Parameters besides the period that the links of the period control keep
+function extraQuery(area: Area, months: Months) {
+  return `${area !== "durchsatz" ? `&bereich=${area}` : ""}${months !== 24 ? `&monate=${months}` : ""}`;
 }
 
 // Charts and automation area (task-7-3, tabs since task-10-3). Every chart reads database data through the
@@ -59,6 +73,7 @@ export default async function InsightsPage({ searchParams }: Props) {
   const params = await searchParams;
   const period = parsePeriodParams(params);
   const area = parseArea(params.bereich);
+  const months = parseMonths(params.monate);
   const current = AREAS.find((entry) => entry.key === area)!;
   return (
     <div className="dash-page rw-page rw-page--tight side-page insights">
@@ -67,11 +82,12 @@ export default async function InsightsPage({ searchParams }: Props) {
           <h1 id="area-title" className="side-page__title">{current.label}</h1>
           <p className="side-page__desc">{current.description}</p>
         </div>
-        {(area === "durchsatz" || area === "automatisierung" || area === "telefon") && (
+        {/* Only Telefon filters the whole area by the period; elsewhere the control sits in the card it filters (task-15-6) */}
+        {area === "telefon" && (
           <div className="insights__period">
-            <span>{area === "durchsatz" ? "Vergleichszeitraum" : area === "telefon" ? "Zeitraum der Anrufe" : "Zeitraum der Läufe"}</span>
+            <span>Zeitraum der Anrufe</span>
             {/* The window comes with the data; the control itself only needs its bounds, loaded in the content */}
-            <Suspense fallback={null}><PeriodSlot period={period} area={area} /></Suspense>
+            <Suspense fallback={null}><PeriodSlot period={period} area={area} months={months} /></Suspense>
           </div>
         )}
       </header>
@@ -83,12 +99,12 @@ export default async function InsightsPage({ searchParams }: Props) {
           scope={["Langfristige Entwicklung aus den Datenbankdaten.", "Jedes Diagramm nennt seinen eigenen Zeitraum."]}
           groups={GROUPS.map((group) => ({
             title: group,
-            items: AREAS.filter((entry) => entry.group === group).map((entry) => ({ key: entry.key, label: entry.label, href: areaHref(entry.key, period), active: entry.key === area })),
+            items: AREAS.filter((entry) => entry.group === group).map((entry) => ({ key: entry.key, label: entry.label, href: areaHref(entry.key, period, months), active: entry.key === area })),
           }))}
         />
         <section className="side-page__main" aria-labelledby="area-title">
           <Suspense key={`${area}-${period.param}-${period.anchor ?? ""}`} fallback={<div className="insights-grid">{[1, 2, 3, 4].map((index) => <Card key={index} busy><LoadingState shape="chart" label="Diagramme werden geladen …" /></Card>)}</div>}>
-            <InsightsContent period={period} area={area} />
+            <InsightsContent period={period} area={area} months={months} />
           </Suspense>
         </section>
       </div>
@@ -100,24 +116,43 @@ export default async function InsightsPage({ searchParams }: Props) {
 const loadInsights = cache((key: string) => getInsights(JSON.parse(key) as PeriodParams));
 const insightsFor = (period: PeriodParams) => loadInsights(JSON.stringify({ kind: period.kind, param: period.param, anchor: period.anchor }));
 
-async function PeriodSlot({ period, area }: { period: PeriodParams; area: Area }) {
+async function PeriodSlot({ period, area, months }: { period: PeriodParams; area: Area; months: Months }) {
   const data = await insightsFor(period).catch(() => null);
   if (!data) return null;
-  return <PeriodControl basePath={BASE} period={period} window={data.window} extraQuery={area === "automatisierung" || area === "telefon" ? `&bereich=${area}` : ""} />;
+  return <PeriodControl basePath={BASE} period={period} window={data.window} extraQuery={extraQuery(area, months)} />;
+}
+
+// 12/24 months of the monthly charts; links keep area and period
+function MonthsControl({ area, period, months, label }: { area: Area; period: PeriodParams; months: Months; label: string }) {
+  return (
+    <div className="insights__period">
+      <nav className="rw-period" aria-label={`Monate: ${label}`}>
+        <ul className="rw-period__kinds">
+          {MONTH_OPTIONS.map((option) => (
+            <li key={option}><Link href={areaHref(area, period, option)} aria-current={option === months ? "page" : undefined} scroll={false}>{option} Monate</Link></li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  );
 }
 
 const slot = (index: number) => CHART_COLORS[index];
 
-async function InsightsContent({ period, area }: { period: PeriodParams; area: Area }) {
+async function InsightsContent({ period, area, months: monthCount }: { period: PeriodParams; area: Area; months: Months }) {
   let data: Insights;
   try {
     data = await insightsFor(period);
   } catch {
-    return <ErrorState title="Die Auswertung konnte nicht geladen werden." action={<Link className="rw-button-secondary" href={areaHref(area, period)}>Erneut versuchen</Link>}>Kennzahlen der Übersicht sind davon nicht betroffen.</ErrorState>;
+    return <ErrorState title="Die Auswertung konnte nicht geladen werden." action={<Link className="rw-button-secondary" href={areaHref(area, period, monthCount)}>Erneut versuchen</Link>}>Kennzahlen der Übersicht sind davon nicht betroffen.</ErrorState>;
   }
   const { window: w } = data;
   const months = data.months.map((row) => ({ ...row, month: monthLabel(row.bucket_start) }));
   const last12 = months.slice(-12);
+  // Monthly charts show the chosen months; "Auf einen Blick" keeps using the whole series
+  const shownMonths = months.slice(-monthCount);
+  const periodControl = <div className="insights__period"><PeriodControl basePath={BASE} period={period} window={w} extraQuery={extraQuery(area, monthCount)} /></div>;
+  const monthsControl = (label: string) => <MonthsControl area={area} period={period} months={monthCount} label={label} />;
 
   // 1 Flow: received, initial processing completed, completed (separate series by their own timestamps)
   const flowSeries: ChartSeries[] = [
@@ -155,8 +190,9 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
 
   // 6 Automation
   const automation = automationSeries(data.months);
-  const savedTotal = sum(automation.map((row) => row.savedMinutes));
-  const savedRequests = sum(automation.map((row) => row.savedRequests));
+  const shownAutomation = automation.slice(-monthCount);
+  const savedTotal = sum(shownAutomation.map((row) => row.savedMinutes));
+  const savedRequests = sum(shownAutomation.map((row) => row.savedRequests));
   const runs = data.automation;
   const runTotals = { all: sum(runs.map((row) => row.runs)), failed: sum(runs.filter((row) => row.status === "failed").map((row) => row.runs)), corrected: sum(runs.map((row) => row.corrected)) };
 
@@ -184,11 +220,11 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
   const paid12 = sum(last12.map((row) => row.payments_received));
   const glance = [
     peakQueue
-      ? { key: "warteschlangen", area: "Warteschlangen", value: formatNumber(peakQueue.today), text: `in „${peakQueue.label}“ – ${peakQueue.peak!.text}.`, href: areaHref("warteschlangen", period), warn: true }
-      : { key: "warteschlangen", area: "Warteschlangen", value: formatNumber(biggestQueue.today), text: `in „${biggestQueue.label}“, größte Warteschlange heute; kein Höchststand.`, href: areaHref("warteschlangen", period), warn: false },
-    lastMonth && { key: "durchsatz", area: "Durchsatz", value: formatNumber(lastMonth.received), text: `Eingänge im ${lastMonth.month}${record ? ` – ${record.text}` : ""}.`, href: areaHref("durchsatz", period), warn: false },
-    shareNow && shareNow.share !== null && { key: "automatisierung", area: "Automatisierung", value: formatPercent(shareNow.share), text: `automatisch im ${shareNow.month}${smallBaseHint(shareNow.total) ? ` – ${smallBaseHint(shareNow.total)!.text}, Wert schwankt noch` : ""}.`, href: areaHref("automatisierung", period), warn: false },
-    { key: "finanzen", area: "Finanzen", value: formatCurrency(Math.abs(issued12 - paid12)), text: `${issued12 >= paid12 ? "mehr ausgestellt als eingegangen" : "mehr eingegangen als ausgestellt"} in den letzten 12 Monaten.`, href: areaHref("finanzen", period), warn: false },
+      ? { key: "warteschlangen", area: "Warteschlangen", value: formatNumber(peakQueue.today), text: `in „${peakQueue.label}“ – ${peakQueue.peak!.text}.`, href: areaHref("warteschlangen", period, monthCount), warn: true }
+      : { key: "warteschlangen", area: "Warteschlangen", value: formatNumber(biggestQueue.today), text: `in „${biggestQueue.label}“, größte Warteschlange heute; kein Höchststand.`, href: areaHref("warteschlangen", period, monthCount), warn: false },
+    lastMonth && { key: "durchsatz", area: "Durchsatz", value: formatNumber(lastMonth.received), text: `Eingänge im ${lastMonth.month}${record ? ` – ${record.text}` : ""}.`, href: areaHref("durchsatz", period, monthCount), warn: false },
+    shareNow && shareNow.share !== null && { key: "automatisierung", area: "Automatisierung", value: formatPercent(shareNow.share), text: `automatisch im ${shareNow.month}${smallBaseHint(shareNow.total) ? ` – ${smallBaseHint(shareNow.total)!.text}, Wert schwankt noch` : ""}.`, href: areaHref("automatisierung", period, monthCount), warn: false },
+    { key: "finanzen", area: "Finanzen", value: formatCurrency(Math.abs(issued12 - paid12)), text: `${issued12 >= paid12 ? "mehr ausgestellt als eingegangen" : "mehr eingegangen als ausgestellt"} in den letzten 12 Monaten.`, href: areaHref("finanzen", period, monthCount), warn: false },
   ].filter((item): item is { key: Area; area: string; value: string; text: string; href: string; warn: boolean } => Boolean(item))
     .sort((a, b) => AREAS.findIndex((entry) => entry.key === a.key) - AREAS.findIndex((entry) => entry.key === b.key));
   const running = `${monthLabel(`${today.slice(0, 7)}-01`)} läuft noch (gestrichelt).`;
@@ -212,10 +248,10 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
       </section>}
 
       {area === "durchsatz" && <div className="insights-grid">
-        <Figure className="insights-grid__full" id="flow-chart" title="Eingang, Erstbearbeitung und Abschluss je Monat" chip="24 Monate" summary={`${last12Note} Jede Reihe zählt nach ihrem eigenen Zeitpunkt. ${running}`} table={table(months, "month", "Monat", flowSeries, "count")}>
-          <TimeChart kind="line" data={months} xKey="month" series={flowSeries} format="count" runningLast label="Liniendiagramm: Eingang, Erstbearbeitung und Abschluss je Monat" />
+        <Figure className="insights-grid__full" id="flow-chart" title="Eingang, Erstbearbeitung und Abschluss je Monat" control={monthsControl("Eingang, Erstbearbeitung und Abschluss")} summary={`${last12Note} Jede Reihe zählt nach ihrem eigenen Zeitpunkt. ${running}`} table={table(shownMonths, "month", "Monat", flowSeries, "count")}>
+          <TimeChart kind="line" data={shownMonths} xKey="month" series={flowSeries} format="count" runningLast label="Liniendiagramm: Eingang, Erstbearbeitung und Abschluss je Monat" />
         </Figure>
-        <Figure className="insights-grid__half" id="comparison-chart" title={`Eingänge ${periodTitle(period.kind, w.startDay)} kumuliert`} chip={`${elapsed} Tage`} summary={`Bis Tag ${elapsed}: ${formatNumber(currentTotal)} Eingänge; Vorzeitraum bis Tag ${elapsed}: ${formatNumber(previousSame)}.`} table={table(comparison, "label", "Tag", comparisonSeries, "count")}>
+        <Figure className="insights-grid__half" id="comparison-chart" title="Eingänge kumuliert" control={periodControl} summary={`Bis Tag ${elapsed}: ${formatNumber(currentTotal)} Eingänge; Vorzeitraum bis Tag ${elapsed}: ${formatNumber(previousSame)}.`} table={table(comparison, "label", "Tag", comparisonSeries, "count")}>
           <TimeChart kind="line" data={comparison} xKey="label" series={comparisonSeries} format="count" height={220} label="Liniendiagramm: Eingänge kumuliert, aktueller Zeitraum und Vorzeitraum" />
         </Figure>
         <Figure className="insights-grid__half" id="season-chart" title="Saisonalität: Eingänge je Kalendermonat" chip={`ab ${season.years.slice(-3)[0] ?? ""}`} summary={`Eingänge je Monat für ${season.years.slice(-3).join(", ")}; Monate ohne Daten bleiben leer.`} table={table(season.data, "month", "Monat", seasonSeries, "count")}>
@@ -264,23 +300,23 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
           className="insights-grid__half"
           id="share-chart"
           title="Anteil automatischer Erstbearbeitung"
-          chip="24 Monate"
+          control={monthsControl("Anteil automatischer Erstbearbeitung")}
           summary={`Später korrigierte automatische Ergebnisse zählen als automatisch. ${running}${shareNow ? ` ${shareNow.month}: ${formatNumber(shareNow.automatic)} von ${formatNumber(shareNow.total)} automatisch${smallBaseHint(shareNow.total) ? " – kleine Basis, Wert schwankt noch" : ""}.` : ""}`}
           lead={shareNow && shareNow.share !== null ? <p className="rw-figure mono">{formatPercent(shareNow.share)}</p> : undefined}
-          table={table(automation, "month", "Monat", [{ key: "share", label: "Anteil automatisch (%)", color: slot(0) }, { key: "automatic", label: "Automatisch", color: slot(0) }, { key: "corrected", label: "Davon korrigiert", color: slot(0) }, { key: "total", label: "Erstbearbeitungen", color: slot(0) }], "mixed")}
+          table={table(shownAutomation, "month", "Monat", [{ key: "share", label: "Anteil automatisch (%)", color: slot(0) }, { key: "automatic", label: "Automatisch", color: slot(0) }, { key: "corrected", label: "Davon korrigiert", color: slot(0) }, { key: "total", label: "Erstbearbeitungen", color: slot(0) }], "mixed")}
         >
-          <TimeChart kind="line" data={automation} xKey="month" series={[{ key: "share", label: "Anteil automatisch", color: slot(0) }]} format="percent" variant="share" runningLast label="Liniendiagramm: Anteil automatischer Erstbearbeitung je Monat" />
+          <TimeChart kind="line" data={shownAutomation} xKey="month" series={[{ key: "share", label: "Anteil automatisch", color: slot(0) }]} format="percent" variant="share" runningLast label="Liniendiagramm: Anteil automatischer Erstbearbeitung je Monat" />
         </Figure>
         <Figure
           className="insights-grid__half"
           id="savings-chart"
           title="Geschätzte Zeitersparnis"
-          chip="24 Monate"
+          control={monthsControl("Geschätzte Zeitersparnis")}
           summary={`${formatNumber(savedRequests)} automatisch und ohne Korrektur abgeschlossene Erstbearbeitungen × Basiswert der manuellen Bearbeitung. Schätzung, keine gemessene Zeit.`}
           lead={<p className="rw-figure mono">{formatMinutes(savedTotal)}</p>}
-          table={table(automation, "month", "Monat", [{ key: "savedHours", label: "Stunden", color: slot(0) }, { key: "savedRequests", label: "Anfragen", color: slot(0) }, { key: "baseline", label: "Basiswert (min)", color: slot(0) }], "mixed")}
+          table={table(shownAutomation, "month", "Monat", [{ key: "savedHours", label: "Stunden", color: slot(0) }, { key: "savedRequests", label: "Anfragen", color: slot(0) }, { key: "baseline", label: "Basiswert (min)", color: slot(0) }], "mixed")}
         >
-          <TimeChart kind="bar" data={automation} xKey="month" series={[{ key: "savedHours", label: "Zeitersparnis", color: slot(0) }]} format="hours" variant="savings" label="Säulendiagramm: geschätzte Zeitersparnis je Monat" />
+          <TimeChart kind="bar" data={shownAutomation} xKey="month" series={[{ key: "savedHours", label: "Zeitersparnis", color: slot(0) }]} format="hours" variant="savings" label="Säulendiagramm: geschätzte Zeitersparnis je Monat" />
         </Figure>
         <section className="rw-card rw-card--list rw-card--flush rw-card--meta insights-grid__full" id="runs" aria-labelledby="runs-title">
           <header className="rw-card__header">
@@ -292,7 +328,7 @@ async function InsightsContent({ period, area }: { period: PeriodParams; area: A
                 </p>
               </div>
             </div>
-            <PeriodChip>Zeitraum</PeriodChip>
+            {periodControl}
           </header>
           <DataTable
             caption="Automatisierungsläufe"
@@ -413,12 +449,13 @@ function tableValue(format: ChartFormat | "mixed", value: unknown): string {
 }
 
 // Chart card with the compact header bar of the list cards (Anfragen, Übersicht)
-function Figure({ id, title, summary, chip, table, lead, stripe = "neutral", className = "", children }: { id: string; title: string; summary: string; chip?: string; table: ReactNode; lead?: ReactNode; stripe?: "neutral" | "attention"; className?: string; children: ReactNode }) {
+// A control (period or months, task-15-6) replaces the chip and may wrap below the title
+function Figure({ id, title, summary, chip, control, table, lead, stripe = "neutral", className = "", children }: { id: string; title: string; summary: string; chip?: string; control?: ReactNode; table: ReactNode; lead?: ReactNode; stripe?: "neutral" | "attention"; className?: string; children: ReactNode }) {
   return (
     <figure className={`figure rw-card rw-card--list rw-card--flush rw-card--${stripe} ${className}`} id={id} data-chart={id}>
-      <figcaption className="rw-card__header">
+      <figcaption className={`rw-card__header${control ? " figure__head--control" : ""}`}>
         <h3 className="rw-card__title">{title}</h3>
-        {chip && <PeriodChip>{chip}</PeriodChip>}
+        {control ?? (chip && <PeriodChip>{chip}</PeriodChip>)}
       </figcaption>
       <div className="rw-card--list__pad figure__body">
         <p className="rw-card__note">{summary}</p>

@@ -856,19 +856,26 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .rw-legend__note { color: var(--rw-text-secondary); }
 .rw-period-chip { display: inline-flex; padding: 2px 8px; border: 1px solid var(--rw-color-steel-200); border-radius: var(--rw-radius-full); font-size: 12px; color: var(--rw-color-steel-700); background: var(--rw-color-steel-100); white-space: nowrap; }
 
-/* Period control at the block it filters (task-10-3) */
+/* Period control at the block it filters (task-10-3); compact since task-15-7 (32 px), 44 px touch targets on phones */
 .rw-period { display: flex; flex-wrap: wrap; align-items: center; gap: var(--rw-space-8); }
 .rw-period__kinds { display: inline-flex; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-default); border-radius: var(--rw-radius-sm); overflow: hidden; }
 .rw-period__kinds li + li { border-left: 1px solid var(--rw-border-subtle); }
-.rw-period__kinds a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 14px; font-weight: 500; color: var(--rw-text-primary); text-decoration: none; }
+.rw-period__kinds a { display: inline-flex; align-items: center; min-height: 32px; padding: 0 10px; font-size: 13px; font-weight: 500; color: var(--rw-text-primary); text-decoration: none; }
 .rw-period__kinds a:hover { background: var(--rw-action-secondary-bg-hover); }
 .rw-period__kinds a[aria-current="page"] { font-weight: 600; background: var(--rw-action-primary-bg); color: var(--rw-text-on-lime); }
-.rw-period__step { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-default); border-radius: var(--rw-radius-sm); color: var(--rw-text-brand); }
+.rw-period__step { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-default); border-radius: var(--rw-radius-sm); color: var(--rw-text-brand); }
 .rw-period__step:hover { background: var(--rw-action-secondary-bg-hover); }
+/* Same height as the buttons, so the row keeps its height when the link appears */
+.rw-period .rw-period__current { min-height: 32px; font-size: 13px; }
 .rw-period__step--disabled, .rw-period__step--disabled:hover { background: var(--rw-surface-disabled); border-color: var(--rw-action-disabled-border); color: var(--rw-text-disabled); }
 /* Period controls stay right-aligned even when wrapped below the title, so "Aktueller Zeitraum" (left of them) never moves the buttons;
    on phones they span the width and the link moves to its own row below them */
-@media (max-width: 639px) { .rw-period__current { order: 1; flex-basis: 100%; } }
+@media (max-width: 639px) {
+  .rw-period__current { order: 1; flex-basis: 100%; }
+  .rw-period__kinds a { min-height: 44px; font-size: 14px; }
+  .rw-period__step { width: 44px; height: 44px; }
+  .rw-period .rw-period__current { min-height: 44px; font-size: 14px; }
+}
 
 /* Overview (task-10-3) */
 /* Narrow screens: table rows become two-column blocks (header row hidden, cells keep their order);
@@ -1643,6 +1650,8 @@ details.tech-step[open] { padding-bottom: 20px; }
 }
 .insights .figure { padding: 0; gap: 0; background: var(--rw-surface-raised); }
 .insights .figure > .rw-card__header { display: flex; flex-wrap: nowrap; }
+/* Period or months control in the card it filters (task-15-6): wraps below the title, stays right-aligned */
+.insights .figure > .rw-card__header.figure__head--control { flex-wrap: wrap; }
 .insights .figure .rw-card__title { font-size: 15px; }
 .figure__body { flex: 1; }
 .figure__body > .figure__table { margin-top: auto; }
@@ -1666,8 +1675,8 @@ details.tech-step[open] { padding-bottom: 20px; }
   .insights__period { width: 100%; justify-content: flex-start; }
   .insights__period .rw-period { width: 100%; }
   .insights__period .rw-period__kinds { flex: 1 1 0; min-width: 0; }
-  .insights__period .rw-period__kinds li { flex: 1; }
-  .insights__period .rw-period__kinds a { justify-content: center; padding: 0 6px; }
+  .insights__period .rw-period__kinds li { flex: 1; display: flex; }
+  .insights__period .rw-period__kinds a { flex: 1; justify-content: center; padding: 0 6px; }
   .insights__period .rw-period__current { order: 1; flex-basis: 100%; }
 }
 

@@ -18,7 +18,7 @@ export function PeriodControl({ basePath, period, window, hash = "", extraQuery 
       {/* Left of the buttons (task-12-6): the controls are right-aligned, so they keep their place when it appears */}
       {period.anchor && <Link className="rw-link-btn rw-period__current" href={`${basePath}${periodQuery(period.param, null)}${extraQuery}${hash}`} scroll={false}>Aktueller Zeitraum</Link>}
       <Link className="rw-period__step" href={`${basePath}${periodQuery(period.param, previous)}${extraQuery}${hash}`} aria-label="Vorheriger Zeitraum" scroll={false}>
-        <Icon name="arrow-left" size={18} />
+        <Icon name="arrow-left" size={16} />
       </Link>
       <ul className="rw-period__kinds">
         {PERIOD_OPTIONS.map((option) => (
@@ -28,8 +28,8 @@ export function PeriodControl({ basePath, period, window, hash = "", extraQuery 
         ))}
       </ul>
       {window.is_complete
-        ? <Link className="rw-period__step" href={`${basePath}${periodQuery(period.param, next)}${extraQuery}${hash}`} aria-label="Nächster Zeitraum" scroll={false}><Icon name="arrow-right" size={18} /></Link>
-        : <span className="rw-period__step rw-period__step--disabled" aria-label="Nächster Zeitraum (liegt in der Zukunft)" role="img"><Icon name="arrow-right" size={18} /></span>}
+        ? <Link className="rw-period__step" href={`${basePath}${periodQuery(period.param, next)}${extraQuery}${hash}`} aria-label="Nächster Zeitraum" scroll={false}><Icon name="arrow-right" size={16} /></Link>
+        : <span className="rw-period__step rw-period__step--disabled" aria-label="Nächster Zeitraum (liegt in der Zukunft)" role="img"><Icon name="arrow-right" size={16} /></span>}
     </nav>
   );
 }

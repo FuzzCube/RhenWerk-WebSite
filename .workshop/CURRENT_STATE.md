@@ -4,21 +4,21 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v16, 16 Phasen, 81 Tasks, Fortschritt 99 % (Gewicht 206 von 208).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v16, 16 Phasen, 82 Tasks, Fortschritt 100 % (Gewicht 209 von 209).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-Phasen 0–14 abgeschlossen; **Phase 15 „Kundennummer sichtbar“** geplant (Roadmap v16, Nutzerentscheidung 20.10.2026 nach Testanruf): Kundennummer in Stammdaten (`task-15-1`), Kundennummer nur aus dem Kundenstamm mit Prüfung der angegebenen Nummer und Anzeige in Listen, Rechnungen und Einsatz (`task-15-2`), Bestandskunde in der telefonischen Anfrage über Vorschläge zur Kundennummer (`task-15-4`, Nutzerentscheidung 21.10.2026) und Übersicht als Startseite der Rolle Admin (`task-15-5`, Nutzerentscheidung 21.10.2026), Kundennummer in E-Mails an Kunden (`task-15-3`), alle abgeschlossen; offen `task-15-6` (Auswertung: Zeitraum je Diagramm, Schalter 12/24 Monate; Nutzerentscheidung 21.10.2026), startbar, keine in Arbeit. Zuvor **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`).
+Phasen 0–15 abgeschlossen; zuletzt **Phase 15 „Kundennummer sichtbar“** (Roadmap v16, Nutzerentscheidung 20.10.2026 nach Testanruf): Kundennummer in Stammdaten (`task-15-1`), Kundennummer nur aus dem Kundenstamm mit Prüfung der angegebenen Nummer und Anzeige in Listen, Rechnungen und Einsatz (`task-15-2`), Bestandskunde in der telefonischen Anfrage über Vorschläge zur Kundennummer (`task-15-4`, Nutzerentscheidung 21.10.2026) und Übersicht als Startseite der Rolle Admin (`task-15-5`, Nutzerentscheidung 21.10.2026), Kundennummer in E-Mails an Kunden (`task-15-3`), und Auswertung mit Zeitraum je Karte und Schalter 12/24 Monate (`task-15-6`) sowie kompakte Zeitraumschalter (`task-15-7`), alle abgeschlossen; keine Aufgabe offen. Zuvor **Phase 14 „Kundenstamm aus Anfragen“** (Regeln in `docs/decisions.md` und `docs/database.md`): Kunden entstehen beim Abschluss der Erstbearbeitung automatisch (`task-14-1`), unsichere Treffer erscheinen als Karte „Möglicher Bestandskunde“ (`task-14-2`), bestehende Anfragen sind nachgetragen (`task-14-3`, `npm run customers:backfill`), „Kunde anlegen“ warnt vor ähnlichen Kunden und jeder Kunde zeigt seine Herkunft (`task-14-4`).
 
 Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
 
 ## Zuletzt abgeschlossen
 
+- `task-15-7` (21.10.2026): Zeitraum- und Monatsschalter überall kompakt (32 px, Telefon 44 px); Karte „Eingänge kumuliert“ mit Titel und Schalter in einer Zeile.
+- `task-15-6` (21.10.2026): Auswertung – Zeitraumwahl in der Karte, die sie filtert (Durchsatz: „Eingänge … kumuliert“, Automatisierung: „Läufe“; Telefon weiter im Seitenkopf), Monatsdiagramme mit Schalter 12/24 Monate (`?monate=12`).
 - `task-15-3` (21.10.2026): Satz „Ihre Kundennummer: K-… – bitte bei Rückfragen und Anrufen angeben“ bei verknüpftem Kunden in Eingangsbestätigung, Rückfrage-Entwurf, Terminbestätigung/Absage und Zahlungserinnerungen (Platzhalter `{{customer_number_note}}` in `emails/`, Migrationen `20261021120000`–`20261021120200`). Keine eigene Rechnungs-E-Mail; das PDF zeigt die Nummer.
-- `task-15-5` (21.10.2026): Admin landet nach der Anmeldung auf der Übersicht statt auf der Verwaltung (`START_PAGES` in `lib/auth/roles.ts`); `test:auth` an mehr als 200 Konten und 1000 Anfragen angepasst.
-- `task-15-2` (20.10.2026): Migration `20261020170000_customer_number_key.sql` – `requests.customer_number` nur aus dem verknüpften Kunden (Trigger), genannte Nummer in `stated_customer_number`, Prüfung beim Abschluss der Erstbearbeitung (Vorschlag `nummer_passt_nicht`), `create_customer` ohne frei wählbare Nummer; Kundennummer in Anfragenliste, Rechnungsliste, Einsatz.
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -50,4 +50,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 15 abschließen (startbar `task-15-6`). Weitere mögliche Tasks nur nach Rücksprache: eigene Rechnungsanschrift je Kunde, Sprachtest von Mira nach neuem ElevenLabs-Guthaben, Löschung von Anrufzusammenfassungen ohne Anfrage nach 12 Monaten, Deployment (Supabase Cloud, öffentliche Website auf n8n und Demo-Anruf), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Alle Tasks der Roadmap v16 abgeschlossen; neue Aufgaben nur nach Rücksprache. Weitere mögliche Tasks nur nach Rücksprache: eigene Rechnungsanschrift je Kunde, Sprachtest von Mira nach neuem ElevenLabs-Guthaben, Löschung von Anrufzusammenfassungen ohne Anfrage nach 12 Monaten, Deployment (Supabase Cloud, öffentliche Website auf n8n und Demo-Anruf), SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

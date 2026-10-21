@@ -281,6 +281,36 @@ try {
       allShown.pressed === "true,true,true" && oneShown.pressed === "false,false,true" && oneShown.lines < allShown.lines && oneShown.top < allShown.top
         && oneShown.lastLocked === "true" && stillOne.pressed === "false,false,true" && restored.pressed === "true,true,true" && restored.lines === allShown.lines && oneShown.columns === allShown.columns,
       JSON.stringify({ allShown, oneShown, stillOne, restored }));
+    // task-15-6: the period control sits in the card it filters, monthly charts switch between 12 and 24 months
+    const controls = `({ head: !!document.querySelector(".side-page__head .rw-period"), comparison: !!document.querySelector("#comparison-chart .rw-period__step"), runs: !!document.querySelector("#runs .rw-period__step"), months: [...document.querySelectorAll('nav[aria-label^="Monate"] a[aria-current="page"]')].map((a) => a.textContent), rows: document.querySelectorAll("#flow-chart .figure__table tbody tr, #share-chart .figure__table tbody tr").length })`;
+    const durchsatz = await page.eval(controls);
+    check("  Durchsatz: Zeitraum in der Karte „kumuliert“, nicht im Seitenkopf; Monatsdiagramm 24 Monate", !durchsatz.head && durchsatz.comparison && durchsatz.months.join() === "24 Monate" && durchsatz.rows === 24, JSON.stringify(durchsatz));
+    // task-15-7: compact controls (32 px) keep title and period control of the card in one row at 1440 px
+    const row = await page.eval(`(() => { const box = (el) => el.getBoundingClientRect(); const title = box(document.querySelector("#comparison-chart .rw-card__title")); const nav = box(document.querySelector("#comparison-chart .rw-period")); const step = box(document.querySelector("#comparison-chart .rw-period__step")); return { title: document.querySelector("#comparison-chart .rw-card__title").textContent, sameRow: nav.top < title.bottom && title.top < nav.bottom, step: Math.round(step.height) }; })()`);
+    check("  Karte „Eingänge kumuliert“: Titel und kompakter Zeitraumschalter (32 px) in einer Zeile @1440", row.title === "Eingänge kumuliert" && row.sameRow && row.step === 32, JSON.stringify(row));
+    await page.eval(`[...document.querySelectorAll('#flow-chart nav[aria-label^="Monate"] a')].find((a) => a.textContent === "12 Monate").click()`);
+    await page.until(`location.search.includes("monate=12") && document.querySelectorAll("#flow-chart .figure__table tbody tr").length === 12`, 10000);
+    const kept = await page.eval(`({ rows: document.querySelectorAll("#flow-chart .figure__table tbody tr").length, step: document.querySelector("#comparison-chart .rw-period__step").getAttribute("href"), menu: document.querySelector('.side-menu--wide a[href*="bereich=automatisierung"]')?.getAttribute("href") })`);
+    check("  12 Monate: Tabelle mit 12 Zeilen; Zeitraum-Links und Bereiche behalten die Auswahl", kept.rows === 12 && kept.step.includes("monate=12") && kept.menu?.includes("monate=12"), JSON.stringify(kept));
+    await page.open(`${BASE}/dashboard/auswertung?bereich=automatisierung&monate=12`);
+    await page.until(`!!document.querySelector("#share-chart .recharts-surface")`, 10000);
+    const automation = await page.eval(controls);
+    check("  Automatisierung: Zeitraum in der Karte „Läufe“, Diagramme mit 12 Monaten", !automation.head && automation.runs && automation.months.join() === "12 Monate,12 Monate" && automation.rows === 12, JSON.stringify(automation));
+    if (SHOTS) {
+      for (const width of [390, 768, 1440]) {
+        await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+        for (const [name, url, anchor] of [["durchsatz", "/dashboard/auswertung?monate=12", "#flow-chart"], ["kumuliert", "/dashboard/auswertung", "#comparison-chart"], ["laeufe", "/dashboard/auswertung?bereich=automatisierung", "#runs"], ["uebersicht", "/dashboard/uebersicht", "section[aria-labelledby=z-period]"], ["telefon", "/dashboard/auswertung?bereich=telefon", ".side-page__head"]]) {
+          await page.open(`${BASE}${url}`);
+          await page.until(`!!document.querySelector("${anchor}")`, 10000);
+          await sleep(400);
+          // Below the sticky navigation so the card header with its control is visible
+          await page.eval(`window.scrollTo({ top: document.querySelector("${anchor}").getBoundingClientRect().top + window.scrollY - 130, behavior: "instant" })`);
+          const shot = await page.send("Page.captureScreenshot", { format: "png" });
+          await writeFile(path.join(SHOTS, `auswertung-${name}-${width}.png`), Buffer.from(shot.data, "base64"));
+        }
+      }
+      await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    }
     // Tooltip of the time savings shows count and baseline
     await page.open(`${BASE}/dashboard/auswertung?bereich=automatisierung`);
     await page.until(`!!document.querySelector("#savings-chart .recharts-surface")`, 10000);

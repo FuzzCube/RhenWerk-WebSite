@@ -2682,8 +2682,8 @@
       "title": "Kundennummer sichtbar",
       "description": "Nutzerentscheidung 20.10.2026 nach einem Testanruf: Die Kundennummer ist im Dashboard kaum zu sehen (nur Untertitel der Kundenseite, Kundenliste, Anfrageseite) und erscheint in keiner E-Mail; der Kunde kennt sie daher nicht und kann sie Mira nicht nennen. Wie im papierbasierten Ablauf soll die Kundennummer überall dort stehen, wo Kunde, Anfrage und Rechnung zusammenkommen. Identifikation am Telefon bleibt bei Kundennummer + PLZ (Firma allein reicht aus Sicherheitsgründen nicht). Eine eigene Rechnungsanschrift je Kunde ist bewusst nicht Teil dieser Phase. Erweiterung 20.10.2026 (Nutzerentscheidung bei task-15-2): Die Kundennummer vergibt ausschließlich die Datenbank und sie ist der feste fachliche Schlüssel des Kunden; eine von Kunden genannte Nummer wird nur als „angegebene Kundennummer“ gespeichert und geprüft.",
       "order": 16,
-      "weight": 11,
-      "status": "in_progress",
+      "weight": 12,
+      "status": "completed",
       "tasks": [
         {
           "weight": 1,
@@ -2842,18 +2842,24 @@
         },
         {
           "weight": 2,
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T08:16:23Z",
+          "completedAt": "2026-10-21T08:33:52Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "app/(dashboard)/dashboard/auswertung/page.tsx: Zeitraum-Schalter auf Durchsatz in der Karte „Eingänge … kumuliert“, auf Automatisierung in „Läufe“, nicht mehr im Seitenkopf; Telefon unverändert im Kopf. Schalter 12/24 Monate (MonthsControl, ?monate=12, Standard 24) in Eingang/Erstbearbeitung/Abschluss, Anteil automatisch und Zeitersparnis; Daten weiter 24 Monate, Anzeige gekürzt, „Auf einen Blick“ unverändert. areaHref und extraQuery behalten Bereich, Zeitraum und Monate. CSS: Kartenkopf mit Schalter darf umbrechen, Segmente auf dem Telefon füllen die Breite. test:ui gegen next start (PORT=3100): 416 Prüfungen bestanden, neu 3 Prüfungen (task-15-6) und Screenshots bei 390/768/1440 geprüft. test:unit 92, lint, typecheck, build bestanden. Doku: architecture.md, testing.md.",
+            "commands": [
+              "npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-21T08:33:52Z"
           },
           "id": "task-15-6",
           "title": "Auswertung: Zeitraum je Diagramm, 12/24 Monate",
           "order": 6,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "description": "Nutzerentscheidung 21.10.2026: Der Zeitraum-Schalter im Seitenkopf wirkt auf Durchsatz und Automatisierung nur auf ein Diagramm bzw. die Tabelle „Läufe“ und wirkt dadurch wie ein globaler Filter. Er wandert in den Kopf der Karte, die er steuert (Durchsatz: „Eingänge … kumuliert“; Automatisierung: „Läufe“). Monatsdiagramme (Eingang/Erstbearbeitung/Abschluss, Anteil automatisch, Zeitersparnis) erhalten statt des festen Chips „24 Monate“ einen Schalter 12/24 Monate (URL-Parameter monate, Standard 24, ohne zusätzliche Datenbankabfrage). Telefon behält den Zeitraum im Seitenkopf, da er dort die ganze Seite betrifft.",
           "definitionOfDone": [
@@ -2864,6 +2870,34 @@
             "UI bei 390/768/1440 geprüft",
             "docs/architecture.md aktualisiert",
             "test:unit, test:ui, lint, typecheck, build"
+          ]
+        },
+        {
+          "weight": 1,
+          "startedAt": "2026-10-21T08:44:56Z",
+          "completedAt": "2026-10-21T08:56:00Z",
+          "verification": {
+            "status": "passed",
+            "summary": "app/globals.css: .rw-period kompakt (Segmente min-height 32 px, Schrift 13 px, Abstand 10 px; Pfeile 32 × 32; „Aktueller Zeitraum“ 32 px, damit die Zeile ihre Höhe behält), unter 640 px weiter 44 px; Pfeil-Icons 16 px (period-bar.tsx). Gilt für Übersicht, Auswertung (Zeitraum in Karten, Telefon-Kopf) und den Schalter 12/24 Monate. Karte heißt „Eingänge kumuliert“. test:ui gegen next start (PORT=3100): 417 Prüfungen bestanden, neu: Titel und 32-px-Schalter bei 1440 px in einer Zeile; Zeitraumtasten bleiben beim Zurückblättern an ihrer Position (1440/768/390). Screenshots Übersicht, Auswertung, Telefon-Kopf bei 390/768/1440 geprüft. lint, typecheck, build bestanden. Doku: architecture.md, testing.md.",
+            "commands": [
+              "npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-21T08:56:00Z"
+          },
+          "id": "task-15-7",
+          "title": "Kompakte Zeitraum- und Monatsschalter",
+          "order": 7,
+          "status": "completed",
+          "dependsOn": [],
+          "description": "Nutzerentscheidung 21.10.2026: Die Schalter für Zeitraum (Woche/Monat/Quartal/Jahr mit Pfeilen) und 12/24 Monate sind zu wuchtig. Überall (Übersicht, Auswertung) kompakt: 32 px hoch, Schrift 13 px, Pfeile 32 × 32; auf Telefonen bleiben 44 px als Tippziel. Die Karte „Eingänge … kumuliert“ heißt „Eingänge kumuliert“ (Zeitraum steht in Legende und Schalter), damit Titel und Schalter bei 1440 px in einer Zeile stehen.",
+          "definitionOfDone": [
+            "Gemeinsame Klassen .rw-period kompakt, ab 640 px 32 px hoch; darunter 44 px",
+            "Karte „Eingänge kumuliert“: Titel und Schalter bei 1440 px in einer Zeile",
+            "Übersicht und Auswertung bei 390/768/1440 geprüft",
+            "test:ui, lint, typecheck, build"
           ]
         }
       ]
