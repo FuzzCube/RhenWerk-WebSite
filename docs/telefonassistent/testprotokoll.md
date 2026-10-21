@@ -5,10 +5,10 @@ Stand 19.10.2026. Szenarien aus [../telefonassistent-plan.md](../telefonassisten
 ## Methode
 
 - **Simulation** (`npm run agent:simulate`): echter Agent in ElevenLabs, der Anrufer ist ein zweites Sprachmodell mit Rollenbeschreibung, nur Text. Werkzeugantworten sind die echten Antworten der lokalen Webhooks; Lagen, die die Datenbank nicht auf Abruf liefert (kein freies Fenster, überfälliger Einsatz, gestörtes Werkzeug, Nacht), sind fest vorgegeben im Format des echten Webhooks. Geprüft werden erwartete und verbotene Werkzeuge, Parameter und bei einzelnen Fällen Aussagen. Es entstehen keine Anfragen und keine E-Mails.
-- **Live**: Gespräche im Browser über ElevenLabs (15. und 19.10.2026, 7 Gespräche), ausgewertet von `rwCallAnalysis26`; Liste im Dashboard unter „Anrufe“.
+- **Live**: Gespräche im Browser über ElevenLabs (15. und 19.10.2026, 7 Gespräche; 20.10.2026, 4 Gespräche), ausgewertet von `rwCallAnalysis26`; Liste im Dashboard unter „Anrufe“.
 - **Datenbank und Oberfläche**: `test:db` (pgTAP), `test:agent` (Webhooks), `test:ui`.
 
-Nicht geprüft werden konnte die Sprachebene der letzten Änderungen: das ElevenLabs-Guthaben ist seit 19.10.2026 aufgebraucht (Live-Gespräche und Web-Widget). Die Simulation lief weiter.
+Vom 19. bis 20.10.2026 war das ElevenLabs-Guthaben aufgebraucht; die Simulation lief weiter. Seit 20.10.2026 ist wieder Guthaben vorhanden (Sprachtest des Nutzers, siehe unten).
 
 ## Ergebnisse
 
@@ -69,7 +69,7 @@ Die Widget-Karte der Kontaktseite wurde durch einen simulierten Anruf über die 
 
 Simulation mit Demo-Weiterleitung (19.10.2026): `stillstand_tag` (Service Desk am Tag), `beschwerde` (Service Desk) und `notfall` (nachts mit SLA 24/7: Bereitschaft) rufen `weiterleiten` auf, lesen die Demo-Ansage vor und nehmen danach den Rückruf auf; `notfall_ohne_sla` und `spam` leiten nicht weiter. Dabei fiel `notfall_ohne_sla` erneut einmal in die Terminsuche zurück; die Notfallregel steht seitdem direkt im Schritt „Terminwunsch“ des Ablaufs, danach 5/5. Weiterleitung: `stillstand_tag`, `beschwerde` und `notfall` je 3/3.
 
-Offen: ein Anruf mit Stimme (Freizeichen, Verbindung, Ansage der Demo-Weiterleitung) – Guthaben.
+Offen: ein Anruf mit Stimme, der weitergeleitet wird (Freizeichen, Verbindung, Ansage der Demo-Weiterleitung); in den vier Gesprächen vom 20.10.2026 wurde nicht weitergeleitet.
 
 Sprachtest mit Stimme (20.10.2026, Nutzer): vier Anrufe, darunter ein Neukunde mit Termin (Neckarauer Gießerei) und ein Produktionsstillstand nachts ohne SLA (Müller Technik, RIS-2026-02185) – Ablauf wie erwartet. Befund: im Notfallablauf fragte Mira nicht nach der Kundennummer, ein Bestandskunde wäre nicht verknüpft worden (Müller Technik war Neukunde, daher dort korrekt ohne Verknüpfung; der Kunde entsteht beim Abschluss der Erstbearbeitung).
 

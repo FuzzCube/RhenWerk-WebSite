@@ -119,6 +119,7 @@ Geplante Aufträge in der Datenbank (pg_cron, Zeiten in UTC):
 | `visit-holds-expire` | stündlich :05 | Terminvormerkungen des Telefonassistenten nach zwei Werktagen freigeben |
 | `payment-reminders` | täglich 06:00 | Zahlungserinnerungen für überfällige Rechnungen in die Versand-Warteschlange |
 | `call-transcripts-30-days` | täglich 02:30 | Gesprächstranskripte nach 30 Tagen löschen (Datenschutz) |
+| `calls-without-request-12-months` | täglich 02:40 | Anrufe ohne Anfrage 12 Monate nach Gesprächsende löschen (Datenschutz, task-16-1) |
 | `widget-sessions-90-days` | täglich 02:45 | Sitzungen des Web-Widgets nach 90 Tagen löschen |
 
 ## 7. Schemaänderungen

@@ -8,7 +8,7 @@ Für den Einstieg genügen `.workshop/CURRENT_STATE.md` und `npm run workshop:st
 
 | Datei | Inhalt | Lesen, wenn … |
 | --- | --- | --- |
-| [docs/HANDOFF.md](docs/HANDOFF.md) | Nächste Schritte nach Roadmap v14 | eine neue Arbeit auswählen |
+| [docs/HANDOFF.md](docs/HANDOFF.md) | Nächste Schritte nach Roadmap v17 | eine neue Arbeit auswählen |
 | [docs/setup.md](docs/setup.md) | Lokale Einrichtung, Umgebungsvariablen, Start, SMTP, Sicherheitsupdates | Umgebung einrichten oder starten |
 | [docs/supabase-lokal.md](docs/supabase-lokal.md) | Lokales Supabase Schritt für Schritt: Dienste und Ports, Schlüssel, Migrationen, Demodaten, pg_cron, Verbindung zu n8n, Fehlerbehebung | Datenbank einrichten oder Störung suchen |
 | [docs/architecture.md](docs/architecture.md) | Aufbau der App: Routen, Rollen, Bereiche, UI-Bausteine, Diagramme, Posteingang, Einsatzplanung, Anrufe | Dashboard-Code ändern |

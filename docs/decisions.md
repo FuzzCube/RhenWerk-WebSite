@@ -365,3 +365,28 @@ Nutzerentscheidung, task-15-3: Kunden sollen ihre Kundennummer bei Rückfragen u
 - Zahlungserinnerungen nennen die Nummer der Rechnung (Snapshot beim Ausstellen), damit Erinnerung und Rechnung übereinstimmen; fehlt sie dort, die der Anfrage.
 - Eine eigene Rechnungs-E-Mail gibt es nicht; das Rechnungs-PDF zeigt die Kundennummer bereits. Eine Rechnungs-E-Mail wurde nicht neu eingeführt.
 - Die Vorlagen bleiben in `emails/`; der Satz kommt über den Platzhalter `{{customer_number_note}}`, der ohne Kunde leer bleibt.
+
+## 2026-10-21: Übersicht als Startseite der Rolle Admin
+
+Nutzerentscheidung, task-15-5: Admin landet nach der Anmeldung auf der Übersicht statt auf der Verwaltung; die Verwaltung bleibt über die Navigation erreichbar. Startseiten stehen weiter zentral in `lib/auth/roles.ts`.
+
+## 2026-10-21: Zeitraumwahl in der Karte, die sie filtert
+
+Nutzerentscheidung, task-15-6 bis 15-8: Ein Schalter im Seitenkopf wirkt wie ein globaler Filter. In der Auswertung steht die Zeitraumwahl deshalb in der Karte, die sie tatsächlich filtert („Eingänge kumuliert“, „Läufe“); nur beim Telefon betrifft sie den ganzen Bereich und bleibt im Kopf. Monatsdiagramme wählen 12 oder 24 Monate (`?monate=12`) aus den immer geladenen 24 Monaten. Alle Zeitraum- und Monatsschalter sind kompakt (32 px, auf Telefonen 44 px als Tippziel).
+
+- Ein Zeitraumwechsel baut die Seite nicht neu auf: der Zeitraum steht nicht im `Suspense`-Key, die Links navigieren per Transition (`components/dashboard/pending-nav.tsx`), der bisherige Inhalt bleibt bis zu den neuen Daten stehen und wird abgeblendet. Ladeplatzhalter nur beim ersten Laden und beim Bereichswechsel.
+
+## 2026-10-21: Anrufe ohne Anfrage nach 12 Monaten löschen
+
+Nutzerentscheidung, task-16-1: Die im Datenschutzkonzept genannte Frist wird umgesetzt. Gelöscht wird die ganze Zeile (Zusammenfassung, Kategorie, Kennzahlen), nicht nur einzelne Felder; Anrufe mit Anfrage bleiben wie die Anfrage. Folge: Telefon-Kennzahlen für Zeiträume älter als 12 Monate zählen solche Anrufe nicht mehr.
+
+## 2026-10-21: Kundennummer auch im Notfallablauf von Mira
+
+Befund aus dem Sprachtest vom 20.10.2026, task-16-2: Gerade bei Notfällen soll ein Bestandskunde verknüpft sein. Mira fragt im Notfall deshalb zuerst nach der Kundennummer (`kunde_finden`) und erfragt bei Treffer weder Firma noch Adresse oder E-Mail. Die Notfallregel steht als Schrittfolge im Systemprompt; die zunächst nur ergänzte Fassung führte in der Simulation nachts zu verbotenen Rückrufzusagen.
+
+- Mira sucht weiterhin nicht nach Firmennamen: ein Anrufer ohne Kundennummer wird wie ein Neukunde aufgenommen, der Kunde entsteht oder verknüpft sich beim Abschluss der Erstbearbeitung.
+
+## 2026-10-21: SLA-Verträge in Kundenliste und Kundenseite, nur lesend
+
+Nutzerentscheidung, task-16-3: Dispatcher, Manager und Admin sehen, welche Kunden einen SLA-Vertrag haben – Kennzeichen in der Kundenliste, Ansicht „Mit SLA-Vertrag“ (aktive Kunden mit heute gültigem Vertrag) und Vertragsangaben auf der Kundenseite. Zuordnung über die Kundennummer wie in `service_contracts`. Die Pflege der Verträge im Dashboard ist ein eigener, späterer Schritt.
+
