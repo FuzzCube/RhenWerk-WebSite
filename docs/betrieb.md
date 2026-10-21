@@ -91,21 +91,78 @@ Die Website läuft während der Entwicklung als `next dev` im Terminal (Port 300
 
 ## 3. Stufe 2: Umzug auf einen Server
 
-Auslöser für den Umzug: echte Kunden oder Mitarbeitende, Erreichbarkeit rund um die Uhr nötig, oder der Arbeitsrechner soll entlastet werden.
+Auslöser für den Umzug: Projektende (Phase 18), echte Kunden oder Mitarbeitende, Erreichbarkeit rund um die Uhr, oder der Arbeitsrechner soll entlastet werden. Zielbild nach Nutzerentscheidung 21.10.2026, ausgearbeitet in task-18-1 (Stand der Preise 21.10.2026, alle Beträge netto ohne MwSt.).
 
-| Variante | Kosten/Monat | Bewertung |
+### 3.1 Zielarchitektur
+
+```mermaid
+flowchart LR
+  Browser["Browser<br/>Kunden und Mitarbeitende"] -->|HTTPS| Vercel["Vercel (Hobby, Region fra1)<br/>Next.js: Website und /dashboard"]
+  Eleven["ElevenLabs (Mira)"] -->|Webhooks mit Access-Service-Token| CF
+  Vercel -->|"api.rheinwerk-service.online<br/>Access-Service-Token"| CF["Cloudflare<br/>DNS, Access, Tunnel"]
+  Vercel -->|"n8n.…/webhook/…<br/>Access-Service-Token"| CF
+  Admin["Betreiber"] -->|"n8n-Oberfläche<br/>Access mit E-Mail-Login"| CF
+  CF -->|"Tunnel (nur ausgehend)"| VPS
+  subgraph VPS["VPS in Deutschland, Docker Compose"]
+    cloudflared --> Kong["Supabase Kong (API)"]
+    cloudflared --> N8N["n8n"]
+    Kong --> Auth & Rest["PostgREST"] & Storage
+    Auth & Rest & Storage --> PG[("Postgres")]
+    N8N -->|Docker-Netz| Kong
+    Ops["Wächter, Sicherung<br/>(systemd-Timer)"] --> PG
+  end
+  Ops -->|"verschlüsselt, täglich"| Box["Storage Box<br/>(außer Haus)"]
+  GitHub["GitHub (Code, Actions, Renovate)"] -->|Deploy| Vercel
+```
+
+- **Code** auf GitHub (`FuzzCube/RhenWerk-WebSite`), Vercel baut jeden Push auf `main` (task-18-4), GitHub Actions prüfen und spielen Migrationen ein (task-18-5).
+- **Website und Dashboard** auf Vercel, Funktionen in Frankfurt (`regions: ["fra1"]`, nahe am Server). Die Domain `rheinwerk-service.online` und `www` zeigen per DNS auf Vercel.
+- **Supabase und n8n** per Docker Compose auf einem VPS. Kein offener Port außer SSH mit Schlüssel; die Dienste sind nur über den Cloudflare-Tunnel erreichbar (ausgehende Verbindung wie heute). Postgres, Studio und die Docker-Ports sind nie öffentlich; Studio bei Bedarf über `ssh -L`.
+- **Supabase-API** unter `api.rheinwerk-service.online` hinter Cloudflare Access: nur Anfragen mit Service-Token kommen durch. Das reicht, weil der Browser die API **nie** direkt aufruft (Prüfung task-18-1): alle Zugriffe laufen auf dem Server (Server-Komponenten, Server-Actions, Routen), Dateien über eigene Routen, und der Link zum Zurücksetzen des Passworts führt auf die Website (`/auth/bestaetigen` mit `token_hash`, `verifyOtp` auf dem Server). Realtime wird nicht genutzt.
+- **n8n** unter `n8n.rheinwerk-service.online` hinter Cloudflare Access: Oberfläche mit E-Mail-Login des Betreibers, Webhooks nur mit Service-Token (ElevenLabs wie heute, neu auch Vercel für das Anfrageformular und `/api/health`). n8n spricht Supabase im Docker-Netz direkt an, nicht über den Tunnel.
+- **Betrieb** auf dem VPS: Wächter, Sicherung und „System prüfen“ als systemd-Timer statt launchd; Sicherung täglich verschlüsselt auf eine Storage Box außer Haus (task-18-6). Warn-E-Mails wie bisher über Gmail SMTP.
+- **Bleibt bei externen Diensten:** OpenAI (n8n), ElevenLabs (Mira), Gmail (Versand und Eingang über n8n), Vercel Blob (Uploads des Formulars), Cloudflare Turnstile.
+
+### 3.2 Bedarf und Wahl des Servers
+
+Gemessen am 21.10.2026 auf dem Rechner: alle Container zusammen ca. 3,5 GB RAM, davon für den Betrieb nötig ca. 1,8 GB (Postgres 0,45, n8n 0,5, Kong, PostgREST, Auth, Storage, cloudflared; Studio, Analytics/Logflare, Vector, Inbucket und pg-meta entfallen auf dem Server). Daten: Postgres 68 MB, Dateien 44 MB, n8n 0,8 GB; Docker-Images ca. 15 GB, eine Sicherung ca. 100 MB. Ziel: 4 vCPU, 8 GB RAM (Platz für Sicherung mit Probewiederherstellung und Updates mit Rückfall, task-18-8), ab 80 GB SSD, Rechenzentrum in Deutschland (DSGVO).
+
+| Server | Leistung | Preis/Monat | Stand 21.10.2026 |
+| --- | --- | --- | --- |
+| **Hetzner Cloud CX33** (Nürnberg/Falkenstein) | 4 vCPU geteilt, 8 GB, 80 GB NVMe, 20 TB | 8,99 €, stündlich abgerechnet, monatlich kündbar | **empfohlen**, aber derzeit „nicht verfügbar“ (alle geteilten Hetzner-Tarife; Preise seit April 2026 deutlich gestiegen) |
+| netcup VPS 1000 G12.5 (Nürnberg) | 4 vCore, 8 GB, 128 GB | 14,50 € bei 12 Monaten Laufzeit | **Ausweichlösung**, bestellbar |
+| Hetzner CX23 | 2 vCPU, 4 GB, 40 GB | 5,99 € | zu knapp für Probewiederherstellung und Rückfall |
+| Supabase Cloud + n8n Cloud | verwaltet | ab ca. 25 € plus n8n Cloud | verworfen: zweite Datenhaltung, Sicherungen erst im bezahlten Tarif, n8n-Workflows müssten umziehen |
+
+Entscheidung beim Bestellen (task-18-2): CX33, wenn verfügbar; sonst netcup VPS 1000. Beide sind x86, die heutigen Images laufen unverändert.
+
+### 3.3 Kosten je Monat
+
+| Posten | Betrag | Bemerkung |
 | --- | --- | --- |
-| **A. Ein virtueller Server mit Docker Compose** (z. B. Hetzner CX32: 4 vCPU, 8 GB RAM, 80 GB, Rechenzentrum Deutschland) mit Supabase self-hosted, n8n, Next.js, cloudflared | ca. 7–8 € | **empfohlen**: gleiche Container wie heute, Umzug mit den vorhandenen Sicherungsskripten, Daten in Deutschland (DSGVO) |
-| B. Oracle Cloud „Always Free“ | 0 € | die kleinen AMD-Instanzen (1 GB RAM) reichen **nicht**; die Ampere-A1-Instanz (bis 4 Kerne, 24 GB RAM) würde reichen, ist aber oft nicht verfügbar, ARM-Images nötig, kein Support |
-| C. Verwaltete Dienste: Supabase Cloud (Region Frankfurt) + Vercel + n8n Cloud oder kleiner Server für n8n | 0 € im kostenlosen Umfang, ab ca. 25 € mit Sicherungen | wenig Pflege; kostenloses Supabase pausiert bei Inaktivität und hat keine täglichen Sicherungen |
+| VPS | 8,99 € (Hetzner CX33) oder 14,50 € (netcup) | |
+| Storage Box BX11 (1 TB, Hetzner) | 3,20 € | Kopie der Sicherungen außer Haus |
+| Vercel Hobby | 0 € | 100 GB Datenübertragung, 1 Mio. Funktionsaufrufe, 4 h aktive CPU, Laufzeit bis 300 s je Aufruf; bei Überschreitung pausiert das Projekt bis 30 Tage |
+| Cloudflare (DNS, Tunnel, Access bis 50 Nutzer) | 0 € | Service-Tokens laufen schon heute im kostenlosen Tarif (Mira) |
+| GitHub (öffentliches Repository, Actions, Renovate) | 0 € | |
+| **Summe Infrastruktur** | **ca. 12,20 €** (mit netcup ca. 17,70 €) | |
+| Domain `rheinwerk-service.online` | laut Rechnung des Registrars | jährlich (Abschnitt 6) |
+| OpenAI, ElevenLabs | nach Verbrauch und Tarif | unverändert gegenüber heute |
+| Bei kommerzieller Nutzung: Vercel Pro | 20 $ je Entwickler-Platz | enthält 20 $ Nutzungsguthaben |
 
-**Umzug nach Variante A** (mit den Werkzeugen aus Abschnitt 4):
+### 3.4 Risiken und Gegenmaßnahmen
 
-1. Server mit Docker, Firewall (nur SSH mit Schlüssel), automatischen Sicherheitsupdates (`unattended-upgrades`).
-2. Repository klonen, Supabase-Stack starten, n8n- und cloudflared-Container wie heute.
-3. Letzte Sicherung mit `npm run backup` erstellen, auf den Server kopieren, nach Abschnitt 4.5 wiederherstellen (Postgres, Storage, n8n-Datenbank **mit Schlüssel**).
-4. Im Cloudflare-Tunnel die Ziele auf den Server umstellen (oder dort einen neuen Tunnel mit denselben Hostnamen). DNS bleibt unverändert; der Wechsel dauert Minuten.
-5. Sicherung auf dem Server per `cron` täglich, Kopie außer Haus (z. B. Hetzner Storage Box, ca. 4 €).
+| Risiko | Gegenmaßnahme |
+| --- | --- |
+| **Vercel Hobby nur für nicht-kommerzielle, persönliche Nutzung.** Laut Vercel zählt schon das Bewerben einer Dienstleistung als kommerziell. RheinWerk ist ein fiktives Portfolio-Projekt mit Demodaten, die Website wirbt aber wie ein echter Betrieb. | Auf der Website deutlich als Portfolio- und Demoprojekt kennzeichnen (Hinweis im Fußbereich und im Impressum, task-18-4). Vor jeder echten Nutzung mit Kunden auf Vercel Pro (20 $/Monat) wechseln. |
+| **Hobby-Grenzen:** bei Überschreitung pausiert das Projekt bis zu 30 Tage; nur 1 Stunde Laufzeitprotokolle. | Erwartete Last liegt weit darunter (Demo, wenige Aufrufe am Tag; Rechnungs-PDF und Server-Actions brauchen Sekunden, nicht Minuten). Nutzung im Vercel-Dashboard monatlich prüfen (Wartungsplan 6), Bilder statisch. |
+| **Öffentliche Supabase-API.** Kong wäre mit dem öffentlichen Schlüssel für jeden erreichbar. | Die API wird nicht öffentlich: Cloudflare Access lässt nur Anfragen mit Service-Token durch (Kopfzeilen im Supabase-Client der Website, task-18-4). Dahinter bleiben RLS, Schreiben nur über RPCs und die Rate-Limits von Auth. Der geheime Schlüssel steht nur als verschlüsselte Umgebungsvariable in Vercel und in `.env` auf dem Server. Neue JWT-Schlüssel statt der Demo-Schlüssel des lokalen Stacks. Service-Token jährlich und bei Verdacht erneuern (Abschnitt 6 und 7). |
+| **n8n-Webhooks von Vercel** brauchen nach dem Umzug ebenfalls den Service-Token. | `/api/service-request` und `/api/health` senden die Access-Kopfzeilen mit (task-18-4); die Formular-Probe gehört zur Gesamtprobe (task-18-9). |
+| **Ein einzelner Server** ohne Ausfallreserve; Hetzner derzeit ohne freie geteilte Server. | Tägliche verschlüsselte Sicherung außer Haus, geprüfte Wiederherstellung (task-18-6, 18-7); netcup als zweiter Anbieter mit denselben Images; der Wächter meldet Ausfälle wie heute. |
+| **Selbst betriebenes Supabase** unterscheidet sich vom lokalen CLI-Stack (Compose-Datei, Schlüssel, SMTP für Auth-E-Mails, Versionen). | Eigene Compose-Datei im Repository mit festen Image-Versionen wie heute (`supabase services`), SMTP für echte Passwort-Mails (task-18-2); Updates nur mit Sicherung und Rückfall (task-18-8). |
+| **Latenz** Vercel ↔ Server über den Tunnel. | Region `fra1` und Server in Deutschland; nach dem Umzug im Dashboard messen (Gesamtprobe task-18-9). |
+
+**Umzug** (Einzelschritte in task-18-2 bis 18-4): Server mit Docker, Firewall (nur SSH mit Schlüssel) und `unattended-upgrades`; Compose-Stack mit Supabase, n8n und cloudflared; letzte Sicherung vom Rechner nach Abschnitt 4.5 wiederherstellen (Postgres, Storage, n8n-Datenbank **mit Schlüssel**); im Cloudflare-Tunnel die Ziele auf den Server umstellen; Website auf Vercel mit den Umgebungsvariablen; DNS der Domain auf Vercel. Danach Sicherung und Wächter auf dem Server (task-18-6).
 
 ## 4. Datensicherung
 

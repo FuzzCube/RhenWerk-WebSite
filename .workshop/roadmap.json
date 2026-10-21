@@ -3619,7 +3619,7 @@
       "description": "Nutzerentscheidung 21.10.2026 nach Projektende: Code auf GitHub, Website auf Vercel, Supabase und n8n per Docker Compose auf einem VPS; Prüfung und Migrationen über GitHub Actions, Updates über Renovate; Datensicherung, Wiederherstellung und Systemupdates mit Rückfall auf dem VPS (aus Phase 17 verschoben).",
       "order": 19,
       "weight": 20,
-      "status": "ready",
+      "status": "in_progress",
       "tasks": [
         {
           "id": "task-18-1",
@@ -3627,28 +3627,31 @@
           "description": "Nutzerentscheidung 21.10.2026: Code auf GitHub, Website auf Vercel (sofern der kostenlose Hobby-Tarif reicht), Supabase und n8n per Docker Compose auf einem VPS. Klären und festhalten: Hobby-Tarif (nur nicht-kommerzielle Nutzung, Funktionslaufzeiten, Bandbreite) gegen den Bedarf, Wahl des VPS (Betriebskonzept 3: z. B. Hetzner CX32), Supabase-API über HTTPS öffentlich erreichbar für Vercel (bisher nicht veröffentlicht: Reverse Proxy, Schlüssel, Rate Limits), n8n hinter Cloudflare Access, DNS der Domain, Kosten je Monat.",
           "order": 1,
           "weight": 1,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Architektur und Kosten in betrieb.md 3 und decisions.md",
             "Offene Risiken (Hobby-Tarif, öffentliche Supabase-API) mit Gegenmaßnahme benannt"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T20:13:39Z",
+          "completedAt": "2026-10-21T20:18:04Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Zielarchitektur, Serverwahl, Kosten und Risiken in betrieb.md 3 (3.1 bis 3.4, Schema mit mermaid-cli gerendert) und decisions.md. Preise am 21.10.2026 bei den Anbietern geprüft: Hetzner CX33 8,99 € (derzeit nicht verfügbar), netcup VPS 1000 G12.5 14,50 € (12 Monate), Storage Box BX11 3,20 €, Vercel Hobby 0 € (nicht-kommerziell, 100 GB, 1 Mio. Aufrufe, 4 h CPU, 300 s), Pro 20 $. Bedarf gemessen: ca. 1,8 GB RAM im Betrieb, Daten ca. 1 GB. Code geprüft: Browser ruft die Supabase-API nie auf (Browser-Client ungenutzt, Passwort-Link über /auth/bestaetigen mit verifyOtp), daher API hinter Cloudflare Access mit Service-Token statt öffentlich. Risiken mit Gegenmaßnahme: Hobby-Bedingung (Demo-Kennzeichnung, sonst Pro), Hobby-Grenzen, öffentliche API, n8n-Webhooks von Vercel, Einzelserver und Verfügbarkeit, self-hosted Supabase, Latenz. Folgerungen in task-18-2 und 18-4 ergänzt. Nur Dokumentation, keine Codeänderung.",
+            "commands": [
+              "docker stats --no-stream",
+              "mmdc (Schema betrieb.md 3.1)"
+            ],
+            "checkedAt": "2026-10-21T20:18:04Z"
           }
         },
         {
           "id": "task-18-2",
           "title": "VPS mit Docker Compose",
-          "description": "VPS einrichten: SSH nur mit Schlüssel, Firewall, unattended-upgrades; docker-compose.yml im Repository mit fest gepinnten Versionen für Supabase (self-hosted), n8n und Reverse Proxy (TLS) bzw. cloudflared; Wächter und Dienste als systemd-Timer statt launchd (scripts/ops bleibt).",
+          "description": "VPS einrichten: SSH nur mit Schlüssel, Firewall, unattended-upgrades; docker-compose.yml im Repository mit fest gepinnten Versionen für Supabase (self-hosted), n8n und Reverse Proxy (TLS) bzw. cloudflared; Wächter und Dienste als systemd-Timer statt launchd (scripts/ops bleibt). Nach task-18-1: Hetzner CX33, sonst netcup VPS 1000; nur SSH offen, Supabase-API und n8n ausschließlich über den Cloudflare-Tunnel (api. und n8n. hinter Access), Studio nur per SSH-Tunnel; neue JWT-Schlüssel statt der Demo-Schlüssel (betrieb.md 3).",
           "order": 2,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-1"
           ],
@@ -3693,7 +3696,7 @@
         {
           "id": "task-18-4",
           "title": "Website auf Vercel",
-          "description": "Vercel-Projekt aus dem GitHub-Repository: Umgebungsvariablen (Supabase auf dem VPS, Turnstile-Produktionsschlüssel, Blob, ElevenLabs), Domain rheinwerk-service.online, Supabase Auth site_url und Redirects, SMTP für Passwort-Mails; Rückweg über Instant Rollback.",
+          "description": "Vercel-Projekt aus dem GitHub-Repository: Umgebungsvariablen (Supabase auf dem VPS, Turnstile-Produktionsschlüssel, Blob, ElevenLabs), Domain rheinwerk-service.online, Supabase Auth site_url und Redirects, SMTP für Passwort-Mails; Rückweg über Instant Rollback. Nach task-18-1: Region fra1; Supabase-Client und n8n-Aufrufe (Anfrageformular, /api/health) senden die Cloudflare-Access-Kopfzeilen des Service-Tokens; Website sichtbar als Portfolio- und Demoprojekt gekennzeichnet (Bedingung des Hobby-Tarifs, betrieb.md 3.4).",
           "order": 4,
           "weight": 2,
           "status": "planned",

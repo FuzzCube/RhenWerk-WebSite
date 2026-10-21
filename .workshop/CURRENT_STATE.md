@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v22, 19 Phasen, 109 Tasks, Fortschritt 92,42 % (Gewicht 244 von 264).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v22, 19 Phasen, 109 Tasks, Fortschritt 92,80 % (Gewicht 245 von 264).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -18,8 +18,8 @@ Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank 
 
 ## Zuletzt abgeschlossen
 
+- `task-18-1` (21.10.2026): Zielarchitektur und Kosten des Deployments (`docs/betrieb.md` 3): Vercel Hobby in `fra1`, Supabase und n8n per Docker Compose auf Hetzner CX33 (derzeit nicht lieferbar) oder netcup VPS 1000, Supabase-API nur hinter Cloudflare Access mit Service-Token, Sicherung auf Storage Box; ca. 12–18 € im Monat. Hobby nur nicht-kommerziell: Website als Demo kennzeichnen.
 - `task-17-11` (21.10.2026): Gesamtprobe auf dem Rechner (n8n-Ausfall, Störung von Mira, scheiternde Sicherung, Ausfall eines Containers) jeweils mit Warnung, E-Mail und automatischer Behebung; Fehlwarnung direkt nach dem Start von n8n behoben (Anlaufzeit 3 Minuten).
-- `task-17-15` (21.10.2026): Zustand aller acht Systeme mit Prüfzeit im Bereich „System“, Warnung `system:*` mit E-Mail (`scripts/ops/systems.mjs`); Versionen von Docker Desktop, Supabase CLI und Images, n8n, Node.js und npm-Paketen mit Empfehlung und Release Notes, nur angezeigt (`scripts/ops/versions.mjs`); „System prüfen“ nur Admin.
 - `task-17-8` (21.10.2026): Error-Workflow „RheinWerk · Fehlermeldung“ für alle RheinWerk-Workflows (`n8n/assign_error_workflow.mjs`), Wächter prüft n8n (Erreichbarkeit, aktive Workflows, Zeitpläne, Versand- und Analysestau) und mailt Fehlerläufe; Zeile „Automatisierung (n8n)“ im Bereich „System“.
 
 ## Wo was dokumentiert ist (Telefonassistent)
@@ -55,4 +55,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 18 „Deployment“ zum Projektende mit `task-18-1` (startbar). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 18 „Deployment“ zum Projektende: nächster Task `task-18-2` (VPS mit Docker Compose, startbar; Server bestellen nach `docs/betrieb.md` 3.2). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

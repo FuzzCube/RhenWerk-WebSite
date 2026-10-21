@@ -496,3 +496,13 @@ task-17-8: Der Wächter prüft n8n nur über dessen API (`N8N_API_KEY`) und die 
 ## 2026-10-21: Anlaufzeit von n8n im Wächter (task-17-11)
 
 Die Gesamtprobe zeigte, dass n8n nach einem Start `/healthz` beantwortet, bevor API und Webhooks bereit sind. Der Wächter überspringt deshalb in den ersten 3 Minuten nach dem Containerstart die Prüfungen der n8n-API und der Werkzeuge von Mira, statt Warnungen mit E-Mail auszulösen. Ein abgelehnter Schlüssel (HTTP 401/403) und Cloudflare Access werden weiter sofort gemeldet. Läuft n8n danach nicht richtig, meldet der nächste Lauf den Fehler.
+
+## 2026-10-21: Zielarchitektur des Deployments (task-18-1)
+
+Nutzerentscheidung 21.10.2026, ausgearbeitet mit Preisen vom 21.10.2026 (Einzelheiten `docs/betrieb.md` 3):
+
+- Website und Dashboard auf **Vercel Hobby** in Region `fra1`; Supabase (self-hosted) und n8n per **Docker Compose auf einem VPS** in Deutschland: Hetzner CX33 (8,99 €/Monat), solange Hetzner keine geteilten Server liefert netcup VPS 1000 G12.5 (14,50 €/Monat, 12 Monate). Kopie der Sicherungen auf eine Hetzner Storage Box BX11 (3,20 €). Infrastruktur zusammen ca. 12–18 € im Monat.
+- Die Supabase-API wird **nicht öffentlich**: Sie liegt unter `api.rheinwerk-service.online` hinter Cloudflare Access, nur die Website auf Vercel kommt mit einem Service-Token durch. Das geht, weil der Browser die API nie direkt aufruft (alle Zugriffe auf dem Server, Passwort-Link über `/auth/bestaetigen`). Am Server ist außer SSH kein Port offen; alles läuft über den Cloudflare-Tunnel. Verworfen: Kong direkt öffentlich mit Reverse Proxy und Rate-Limits (größere Angriffsfläche, die Rate-Limit-Regeln im kostenlosen Cloudflare-Tarif sind sehr begrenzt).
+- n8n bleibt hinter Cloudflare Access; neben ElevenLabs sendet auch die Website ihre Webhook-Aufrufe mit Service-Token.
+- Der Hobby-Tarif erlaubt nur nicht-kommerzielle Nutzung. Für das Portfolio-Projekt reicht er, wenn die Website deutlich als Demo gekennzeichnet ist; vor echter Nutzung mit Kunden Wechsel auf Vercel Pro (20 $/Monat).
+- Verworfen: Supabase Cloud und n8n Cloud (zweite Datenhaltung, Sicherungen erst im bezahlten Tarif, Umzug der Workflows); Oracle „Always Free“ (Ampere-Instanzen selten verfügbar).
