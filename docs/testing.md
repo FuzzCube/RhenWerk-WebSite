@@ -155,6 +155,23 @@ Mit `UI_SCREENSHOTS=<Ordner>` wird je Seite und Breite ein Screenshot gespeicher
 | 7 Historie aus Ereignissen, Fristen, Wiedereröffnung, Stornierung | `intake_operations.test.sql`, `scenarios.test.sql` |
 | 8 Responsive-Prüfung | `test:ui` (alle Bereiche je Rolle bei 390/768/1440 px), Sichtprüfung je Rolle in der Gesamtprüfung (unten) |
 
+## Gesamtprobe der Überwachung 21.10.2026 (task-17-11)
+
+Auf dem Rechner gegen die laufenden Dienste (Supabase, n8n, Cloudflare-Tunnel, `next dev`, Wächter und Prüfdienst aus `npm run ops:install`). Jede Probe: Störung herbeiführen, Wächter oder „System prüfen“, Warnung, E-Mail und Bereich „System“ (1440 und 390 px) prüfen, Störung beheben, automatische Behebung prüfen. E-Mails an `ALERT_EMAILS`: in der Datenbank als versendet markiert (`notified_at`), keine Zeile „Warn-E-Mail nicht gesendet“ in den Protokollen; den Eingang bestätigt der Empfänger.
+
+| Probe | Ablauf | Ergebnis |
+| --- | --- | --- |
+| 1 n8n fällt aus | `docker stop n8n`, `npm run watchdog`; `docker start n8n`, Wächter | `n8n:down`, `mira:webhook` (Werkzeuge laufen über n8n) und `system:container` kritisch mit E-Mail, Hinweis „4 Warnungen im System“ oben, Zeilen n8n, Mira und Docker „Gestört“; nach dem Start alle drei automatisch behoben (47 s Ausfall) |
+| 2 Störung von Mira | `AGENT_WEBHOOK_SECRET=falsch… npm run watchdog` (nur für diesen Lauf, `.env.local` und ElevenLabs unverändert); danach normaler Lauf | `mira:webhook` kritisch mit E-Mail und Hinweis „n8n lehnt das Werkzeug-Secret ab“, Zeile „Telefonassistent (Mira)“ „Gestört“; nächster Lauf behebt sie |
+| 3 nächtliche Sicherung scheitert | `SUPABASE_DB_CONTAINER=gibt-es-nicht npm run nightly`; danach `npm run nightly` | `backup:failed` kritisch mit E-Mail, Hinweis „Tägliche Sicherung fehlgeschlagen“ (Quelle Datensicherung); der normale Lauf erstellt die Sicherung (97 MB, 12 s), „Sicherung ist wiederherstellbar“ und behebt die Warnung |
+| 4 Container fällt aus | `docker stop supabase_storage_…`, Admin klickt „System prüfen“; `docker start`, erneut „System prüfen“ | Knopf „Prüfung angefordert …“, nach 20 s fertig; `system:container` „Container supabase_storage_… gestört“ kritisch mit E-Mail, Zeile Docker „Gestört“; nach dem Start automatisch behoben |
+
+Gefunden und behoben:
+
+- Direkt nach einem Start von n8n antwortet `/healthz` schon, die API (HTTP 404) und die Webhooks aber noch nicht. Der Wächter meldete dann fälschlich „Wächter ohne Zugriff auf die n8n-API“ (mit dem irreführenden Hinweis, der Schlüssel werde abgelehnt) und „Werkzeuge nicht erreichbar“. Jetzt werden beide Prüfungen in den ersten 3 Minuten nach dem Containerstart übersprungen (`STARTUP_MINUTES` in `scripts/ops/n8n.mjs`, offene Warnungen bleiben dabei bestehen); „Schlüssel abgelehnt“ nur noch bei HTTP 401/403. Nachprobe mit `docker restart n8n`: keine Fehlwarnung.
+
+Weitere Prüfungen am selben Stand: `lint`, `typecheck`, `build`, `test:unit` 127/127, `test:db` 1133 Tests in 49 Dateien, `test:api` alle bestanden, `test:ui` alle bestanden.
+
 ## Gesamtprüfung 13.10.2026 (task-9-2)
 
 Stand: Commit `e8a6133` plus Migration `20261013120000_fix_mark_message_failed.sql`. Lokaler Supabase-Stack, Demodaten frisch geseedet, Dev-Server auf Port 3201, Produktionsserver (`next start`) auf Port 3202.

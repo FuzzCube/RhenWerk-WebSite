@@ -492,3 +492,7 @@ task-17-8: Der Wächter prüft n8n nur über dessen API (`N8N_API_KEY`) und die 
 - Speicherplatz in absoluten Gigabyte (Warnung unter 20 GB, kritisch unter 5 GB, einstellbar), weil Sicherung und Datenbank feste Mengen brauchen, nicht einen Anteil der Platte.
 - Versionen (Docker Desktop, Supabase CLI und Images, n8n, Node.js, npm-Pakete) werden nur mit Empfehlung und Link zu den Release Notes angezeigt, nie installiert (Nutzerentscheidung 21.10.2026). Empfehlung: gleiche Hauptversion „Update empfohlen“, neue Hauptversion erst nach den Release Notes.
 - „System prüfen“ (nur Admin) legt eine Anfrage in `system_status` an; der Dienst `online.rheinwerk.systemcheck` fragt alle 20 Sekunden mit einer kleinen Abfrage nach. Die Web-App führt weiterhin keine Befehle auf dem Rechner aus.
+
+## 2026-10-21: Anlaufzeit von n8n im Wächter (task-17-11)
+
+Die Gesamtprobe zeigte, dass n8n nach einem Start `/healthz` beantwortet, bevor API und Webhooks bereit sind. Der Wächter überspringt deshalb in den ersten 3 Minuten nach dem Containerstart die Prüfungen der n8n-API und der Werkzeuge von Mira, statt Warnungen mit E-Mail auszulösen. Ein abgelehnter Schlüssel (HTTP 401/403) und Cloudflare Access werden weiter sofort gemeldet. Läuft n8n danach nicht richtig, meldet der nächste Lauf den Fehler.

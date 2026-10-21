@@ -4,22 +4,22 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v22, 19 Phasen, 109 Tasks, Fortschritt 92,05 % (Gewicht 243 von 264).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v22, 19 Phasen, 109 Tasks, Fortschritt 92,42 % (Gewicht 244 von 264).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
 ## Aktive Phase und Aufgabe
 
-**Phase 17 „Updates und Überwachung“** (Roadmap v22). Abgeschlossen: `task-17-1` bis `task-17-10`, `task-17-12`, `task-17-15`, `task-17-17`. Nutzerentscheidungen 21.10.2026 (`docs/decisions.md`): Bereich „System“ für den Inhaber ohne Code-Updates; bis Projektende läuft alles aus dem Entwicklungsordner, die Produktionskopie `~/RheinWerk-Prod` ist entfernt (Papierkorb). Dienste aus dem Entwicklungsordner (`npm run ops:install`, Protokolle `~/Library/Logs/RheinWerk/`): `online.rheinwerk.backup` (02:00, Sicherung mit Prüfung, Versionen) und `online.rheinwerk.watchdog` (alle 5 Minuten: Mira, n8n über die n8n-API mit `N8N_API_KEY`, dazu Website, Datenbank, Tunnel, Docker, Speicherplatz, SMTP stündlich; Error-Workflow `rwFehlerMeldung1` für alle RheinWerk-Workflows) und `online.rheinwerk.systemcheck` (alle 20 Sekunden, „System prüfen“ aus dem Dashboard); node und zsh haben dafür Festplattenvollzugriff. Offen in Phase 17: Gesamtprobe auf dem Rechner (`task-17-11`, startbar). Danach **Phase 18 „Deployment“** (Roadmap v22): Website auf Vercel, Supabase und n8n per Docker Compose auf einem VPS, GitHub Actions und Renovate; Sicherung im Dashboard, Datenwiederherstellung und Systemupdates mit Rückfall dort (`task-18-6` bis `18-8`, ersetzen `task-17-13`, `17-14`, `17-16`). E-Mails nur an `ALERT_EMAILS` in `.env.local`.
+**Phase 17 „Updates und Überwachung“ abgeschlossen** (21.10.2026, Gesamtprobe `task-17-11`, Ergebnis in `docs/testing.md`). Nutzerentscheidungen 21.10.2026 (`docs/decisions.md`): Bereich „System“ für den Inhaber ohne Code-Updates, Versionen nur angezeigt; bis Projektende läuft alles aus dem Entwicklungsordner. Dienste aus dem Entwicklungsordner (`npm run ops:install`, Protokolle `~/Library/Logs/RheinWerk/`): `online.rheinwerk.backup` (02:00, Sicherung mit Prüfung, Versionen), `online.rheinwerk.watchdog` (alle 5 Minuten: Mira, n8n über die n8n-API mit `N8N_API_KEY`, Website, Datenbank, Tunnel, Docker, Speicherplatz, SMTP stündlich; 3 Minuten Anlaufzeit nach einem Start von n8n) und `online.rheinwerk.systemcheck` (alle 20 Sekunden, „System prüfen“). node und zsh haben Festplattenvollzugriff. Nächste Phase: **Phase 18 „Deployment“** (Roadmap v22): Website auf Vercel, Supabase und n8n per Docker Compose auf einem VPS, GitHub Actions und Renovate; Sicherung im Dashboard, Datenwiederherstellung und Systemupdates mit Rückfall dort (`task-18-6` bis `18-8`, ersetzen `task-17-13`, `17-14`, `17-16`). E-Mails nur an `ALERT_EMAILS` in `.env.local`.
 
-Phasen 0–16 abgeschlossen (zuletzt Phase 16 „Datenschutz und Telefonassistent“, Phase 15 „Kundennummer sichtbar“, Phase 14 „Kundenstamm aus Anfragen“); Einzelheiten im `verification`-Objekt der Roadmap und in `docs/decisions.md`.
+Phasen 0–17 abgeschlossen (zuletzt Phase 17 „Updates und Überwachung“, davor Phase 16 „Datenschutz und Telefonassistent“, Phase 15 „Kundennummer sichtbar“, Phase 14 „Kundenstamm aus Anfragen“); Einzelheiten im `verification`-Objekt der Roadmap und in `docs/decisions.md`.
 
 Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
 
 ## Zuletzt abgeschlossen
 
+- `task-17-11` (21.10.2026): Gesamtprobe auf dem Rechner (n8n-Ausfall, Störung von Mira, scheiternde Sicherung, Ausfall eines Containers) jeweils mit Warnung, E-Mail und automatischer Behebung; Fehlwarnung direkt nach dem Start von n8n behoben (Anlaufzeit 3 Minuten).
 - `task-17-15` (21.10.2026): Zustand aller acht Systeme mit Prüfzeit im Bereich „System“, Warnung `system:*` mit E-Mail (`scripts/ops/systems.mjs`); Versionen von Docker Desktop, Supabase CLI und Images, n8n, Node.js und npm-Paketen mit Empfehlung und Release Notes, nur angezeigt (`scripts/ops/versions.mjs`); „System prüfen“ nur Admin.
-- `task-17-10` (21.10.2026): Hinweis auf offene Warnungen oben auf jeder Seite für Manager und Admin, Liste offener und behobener Warnungen im Bereich „System“, „Erledigt“ nur Admin.
 - `task-17-8` (21.10.2026): Error-Workflow „RheinWerk · Fehlermeldung“ für alle RheinWerk-Workflows (`n8n/assign_error_workflow.mjs`), Wächter prüft n8n (Erreichbarkeit, aktive Workflows, Zeitpläne, Versand- und Analysestau) und mailt Fehlerläufe; Zeile „Automatisierung (n8n)“ im Bereich „System“.
 
 ## Wo was dokumentiert ist (Telefonassistent)
@@ -55,4 +55,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 17 abschließen: `task-17-11` (Gesamtprobe); `task-18-1` ist startbar, aber erst zum Umzug. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 18 „Deployment“ zum Projektende mit `task-18-1` (startbar). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

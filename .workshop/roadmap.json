@@ -3033,7 +3033,7 @@
       "description": "Nutzerentscheidung 21.10.2026: tägliches automatisches Update um 02:00 aus origin/main mit Sicherung und automatischem Rückfall, Bereich „Updates“ (admin bedient, manager liest), npm/n8n-Updates nur als verfügbar anzeigen, Überwachung von n8n und Mira mit E-Mail an den Admin (Gmail SMTP) und Warnungen im Dashboard für admin und manager.",
       "order": 18,
       "weight": 29,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-17-1",
@@ -3392,7 +3392,7 @@
           "description": "Ende-zu-Ende-Probe auf dem Rechner: n8n-Ausfall mit Warnung, E-Mail und Behebung, Störung von Mira mit Warnung im Bereich „System“, scheiternde nächtliche Sicherung mit Warnung, Zustand der Systeme nach Ausfall eines Containers. Entscheidungen in decisions.md, Übergabe aktualisiert.",
           "order": 11,
           "weight": 1,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-17-10",
             "task-17-15",
@@ -3403,13 +3403,23 @@
             "decisions.md, betrieb.md, HANDOFF.md, testing.md aktuell",
             "lint, typecheck, build, test:db, test:api, test:ui"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T19:52:39Z",
+          "completedAt": "2026-10-21T20:06:25Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Gesamtprobe auf dem Rechner gegen die laufenden Dienste. 1 n8n gestoppt: n8n:down, mira:webhook und system:container kritisch mit E-Mail, Hinweis oben und Zeilen im Bereich System Gestört; nach Start alle automatisch behoben. 2 Mira mit falschem AGENT_WEBHOOK_SECRET nur für einen Lauf: mira:webhook kritisch mit E-Mail, nächster Lauf behebt. 3 Sicherung mit nicht vorhandenem DB-Container: backup:failed kritisch mit E-Mail; normaler Lauf erstellt Sicherung (97 MB), wiederherstellbar, Warnung behoben. 4 supabase_storage gestoppt, System prüfen im Browser (20 s): system:container kritisch mit E-Mail, nach Start behoben. Screenshots 1440 und 390 px. Gefunden und behoben: Fehlwarnungen n8n:api (HTTP 404) und mira:webhook direkt nach dem Start von n8n; jetzt 3 Minuten Anlaufzeit (n8n.mjs, mira.mjs), Nachprobe mit docker restart ohne Fehlwarnung. E-Mails in der Datenbank als versendet markiert, Eingang bestätigt der Empfänger. lint, typecheck, build, test:unit 127/127, test:db PASS (1133), test:api und test:ui alle bestanden. Doku: testing.md, betrieb.md 7, decisions.md, HANDOFF.md.",
+            "commands": [
+              "npm run watchdog",
+              "npm run nightly",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:unit",
+              "npm run test:db",
+              "npm run test:api",
+              "npm run test:ui"
+            ],
+            "checkedAt": "2026-10-21T20:06:25Z"
           }
         },
         {
@@ -3609,7 +3619,7 @@
       "description": "Nutzerentscheidung 21.10.2026 nach Projektende: Code auf GitHub, Website auf Vercel, Supabase und n8n per Docker Compose auf einem VPS; Prüfung und Migrationen über GitHub Actions, Updates über Renovate; Datensicherung, Wiederherstellung und Systemupdates mit Rückfall auf dem VPS (aus Phase 17 verschoben).",
       "order": 19,
       "weight": 20,
-      "status": "planned",
+      "status": "ready",
       "tasks": [
         {
           "id": "task-18-1",
