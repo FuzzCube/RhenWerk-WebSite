@@ -3306,7 +3306,7 @@
           "description": "Wächter prüft den Telefonassistenten: Agent bei ElevenLabs abrufbar, Guthaben über Schwellwert, Werkzeug-Webhooks über den Tunnel erreichbar (mit Service Token), Gesprächsauswertungen ohne Fehler, keine Häufung fehlgeschlagener Werkzeugaufrufe. Warnungen und E-Mails wie bei n8n. Das Guthaben bei ElevenLabs steht zusätzlich im Bereich „System“.",
           "order": 9,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-17-2",
             "task-17-3"
@@ -3318,13 +3318,23 @@
             "Probe mit falschem Schlüssel bzw. gesperrtem Webhook erzeugt Warnung und E-Mail",
             "telefonassistent/setup.md, betrieb.md 5, lint"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-21T17:17:33Z",
+          "completedAt": "2026-10-21T17:30:22Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Wächter scripts/prod/watchdog.mjs mit Prüfungen in scripts/prod/mira.mjs, LaunchAgent ops/launchd/online.rheinwerk.watchdog.plist (alle 5 Minuten, in prod:install), npm run prod:watchdog. Prüft Agent (GET convai/agents), Guthaben (user/subscription, MIRA_CREDIT_MIN, Standard 10 %), Werkzeug-Webhook agent-anlage-pruefen über Tunnel mit Service Token und Secret, überfällige Auswertungen (monitor_call_analysis), ab 3 Werkzeugfehlern je Stunde (Gespräche bei ElevenLabs). Migration 20261021180000_system_monitoring.sql: system_status.monitoring, set_monitoring, monitor_call_analysis (service_role). Bereich System: Zeile Telefonassistent (Mira) und ElevenLabs-Guthaben (lib/system-monitoring.ts). Proben gegen echte Dienste: falscher ELEVENLABS_API_KEY → kritische Warnung mira:agent und E-Mail, nächster Lauf → behoben und E-Mail; falsches CF_ACCESS_CLIENT_SECRET → Warnung mira:webhook und E-Mail, danach behoben. Dabei Befund: Cloudflare antwortet bei falschem Secret mit 401 (nicht 403), die erste E-Mail nannte deshalb das Werkzeug-Secret als Ursache; korrigiert und für falsches Secret, falsche Client-ID und falsches Werkzeug-Secret ohne weitere E-Mail nachgeprüft. Ohne ELEVENLABS_API_KEY: Zustand off, keine Prüfung, keine Warnung. test:db 1110 bestanden (neu system_monitoring.test.sql, 11), test:unit 107/107 (neu mira-monitor, system-monitoring), test:ui gegen next start 437 bestanden (Zeile Mira, Guthaben, Manager 390/768/1440), Screenshots gesichtet; lint, typecheck, build bestanden. Der LaunchAgent läuft im Betrieb erst nach Push, neuem Release und npm run prod:install. Doku: telefonassistent/setup.md, betrieb.md 5, database.md, architecture.md, decisions.md, .env.example.",
+            "commands": [
+              "supabase migration up",
+              "npm run test:db",
+              "npm run db:types",
+              "node --env-file=.env.local scripts/prod/watchdog.mjs (normal, ELEVENLABS_API_KEY=falsch, CF_ACCESS_CLIENT_SECRET=falsch, ELEVENLABS_API_KEY leer)",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "UI_SCREENSHOTS=… APP_URL=http://localhost:3202 npm run test:ui"
+            ],
+            "checkedAt": "2026-10-21T17:30:22Z"
           }
         },
         {

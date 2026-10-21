@@ -190,12 +190,20 @@ try {
       alerts: document.querySelectorAll(".system-alerts li").length,
       cards: [...document.querySelectorAll(".rw-card__title")].map((t) => t.textContent.replace(/\\s*\\d+$/, "")),
       buttons: document.querySelectorAll(".system-page button").length,
+      monitor: document.querySelector(".system-monitors > li")?.textContent ?? "",
+      credit: document.querySelector(".system-credit")?.textContent ?? "",
       mainWidth: getComputedStyle(document.querySelector(".dash-main")).maxWidth,
       scroll: document.documentElement.scrollWidth, width: innerWidth })`);
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
     const { count: openAlerts } = await admin.from("system_alerts").select("id", { count: "exact", head: true }).is("resolved_at", null);
     const expected = openAlerts === 0 ? "Alles in Ordnung" : openAlerts === 1 ? "1 Punkt braucht Aufmerksamkeit" : `${openAlerts} Punkte brauchen Aufmerksamkeit`;
     const sections = ["Datensicherung", "Zustand der Systeme", "Guthaben externer Dienste", "Systemversionen"];
+    // Watchdog result (task-17-9): row of the phone assistant and its credit as stored in system_status.monitoring
+    const { data: status } = await admin.from("system_status").select("monitoring").single();
+    const mira = status.monitoring?.mira;
+    const miraFresh = mira && Date.now() - Date.parse(mira.checked_at) <= 15 * 60_000;
+    const miraLabel = !mira ? null : !miraFresh ? "Prüfung veraltet" : { ok: "In Ordnung", warning: "Warnung", critical: "Gestört", off: "Nicht eingerichtet" }[mira.state];
+    const creditText = mira?.credit ? `${mira.credit.remaining.toLocaleString("de-DE")} von ${mira.credit.limit.toLocaleString("de-DE")} Credits übrig` : null;
     await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     await page.send("Network.clearBrowserCookies");
     await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
@@ -203,6 +211,10 @@ try {
     const adminView = await view();
     check(`Admin: „System“ in der Navigation, Zusammenfassung „${expected}“ mit ${openAlerts} Warnung(en), vier Abschnitte`,
       adminView.nav && adminView.summary === expected && adminView.alerts === openAlerts && sections.every((t) => adminView.cards.includes(t)), JSON.stringify(adminView));
+    check(`  Telefonassistent: ${miraLabel ?? "noch keine Prüfung"}${creditText ? `, ${creditText}` : ""}`,
+      miraLabel ? adminView.monitor.includes("Telefonassistent (Mira)") && adminView.monitor.includes(miraLabel) : adminView.monitor === "",
+      JSON.stringify({ monitor: adminView.monitor, credit: adminView.credit }));
+    if (creditText) check("  Guthaben wie gemeldet, mit Tarif und Schwellwert", adminView.credit.includes(creditText) && adminView.credit.includes("Warnung unter"), adminView.credit);
     check("  keine Schaltflächen, keine Code-Updates, Breite wie die übrigen Bereiche (1680 px)",
       adminView.buttons === 0 && !adminView.cards.some((t) => ["Versionen", "Verlauf", "Aktuelle Version"].includes(t)) && adminView.mainWidth === "1680px", JSON.stringify(adminView));
     await page.send("Network.clearBrowserCookies");

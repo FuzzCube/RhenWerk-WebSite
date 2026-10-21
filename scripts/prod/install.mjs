@@ -2,12 +2,12 @@
 // npm run prod:install
 //   1. ~/RheinWerk-Prod with repo/ (clone of origin), releases/, shared/, logs/
 //   2. shared/.env.local as a copy of the .env.local of this folder (only if missing; mode 600)
-//   3. LaunchAgents online.rheinwerk.web (app), online.rheinwerk.update (02:00) and online.rheinwerk.requests (every
-//      minute) from ops/launchd/, loaded once a release is active
+//   3. LaunchAgents online.rheinwerk.web (app), online.rheinwerk.update (02:00), online.rheinwerk.requests (every
+//      minute) and online.rheinwerk.watchdog (every 5 minutes, task-17-9) from ops/launchd/, loaded once a release is active
 // Then: npm run prod:release (builds origin/main and starts the service).
 import { chmodSync, copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { CURRENT, LABEL, LAUNCH_AGENTS, PORT, PROD_DIR, REPO, SHARED_ENV, REQUESTS_LABEL, TOOLS, UPDATE_LABEL, ensureLayout, listReleases, run, serviceLoaded, switchTo } from "./lib.mjs";
+import { CURRENT, LABEL, LAUNCH_AGENTS, PORT, PROD_DIR, REPO, SHARED_ENV, REQUESTS_LABEL, TOOLS, UPDATE_LABEL, WATCHDOG_LABEL, ensureLayout, listReleases, run, serviceLoaded, switchTo } from "./lib.mjs";
 
 ensureLayout();
 
@@ -51,10 +51,12 @@ if (!existsSync(TOOLS) && listReleases()[0]) switchTo(listReleases()[0].commit, 
 installAgent(LABEL, { __PROD_DIR__: PROD_DIR, __PORT__: String(PORT) });
 installAgent(UPDATE_LABEL, { __PROD_DIR__: PROD_DIR });
 installAgent(REQUESTS_LABEL, { __PROD_DIR__: PROD_DIR });
+installAgent(WATCHDOG_LABEL, { __PROD_DIR__: PROD_DIR });
 if (!existsSync(CURRENT)) {
   console.log("Noch kein Release aktiv. Weiter mit: npm run prod:release, danach npm run prod:install");
 } else {
   console.log(`App-Dienst ${LABEL} aus ${CURRENT} auf http://127.0.0.1:${PORT}`);
   console.log(`Nächtliches Update ${UPDATE_LABEL} täglich 02:00 (Protokoll ${path.join(PROD_DIR, "logs", "update.log")})`);
   console.log(`Anfragen aus dem Dashboard ${REQUESTS_LABEL} jede Minute (Protokoll ${path.join(PROD_DIR, "logs", "requests.log")})`);
+  console.log(`Wächter ${WATCHDOG_LABEL} alle 5 Minuten (Protokoll ${path.join(PROD_DIR, "logs", "watchdog.log")})`);
 }

@@ -449,3 +449,11 @@ Nutzerentscheidung nach Sichtung von task-17-7 (Roadmap v19/v20): Der Bereich �
 - Wiederherstellung der Daten nur als Ganzes aus einer geprüften Sicherung, nicht einzelner Datensätze; vorher sichert der Dienst den aktuellen Stand (task-17-14).
 - n8n und Supabase werden mit einer Schaltfläche aktualisiert: Systemsicherung, Update, nur lesender Selbsttest, bei Fehler automatischer Rückfall auf Version und Daten von vorher (task-17-16). Das ersetzt für diese beiden „Updates nur anzeigen“. Docker Desktop und npm-Pakete werden weiterhin nur angezeigt.
 - Wie bisher führt die Web-App keine Befehle aus; jede Aktion ist eine Anfrage an den Dienst auf dem Rechner.
+
+## 2026-10-21: Überwachung von Mira durch den Wächter
+
+task-17-9: Ein Wächter auf dem Rechner (`online.rheinwerk.watchdog`, alle 5 Minuten) prüft Mira; n8n folgt in task-17-8 im selben Skript.
+
+- Die Werkzeugprobe ruft nur `agent-anlage-pruefen` auf (reiner Katalogabgleich in n8n): Werkzeuge mit `call_id` würden Gesprächszeilen in `phone_calls` anlegen.
+- Fehlgeschlagene Werkzeugaufrufe stehen nicht in der Datenbank; der Wächter liest sie aus den Gesprächen der letzten Stunde bei ElevenLabs (höchstens 30 Gespräche am Tag). Ab 3 Fehlern je Stunde gibt es eine Warnung, einzelne Ausreißer nicht.
+- Fehlt der Zugriff (Berechtigung „User: Read“ für das Guthaben, Secret, Datenbank), wird die Prüfung übersprungen statt gewarnt. Ohne Datenbank verschickt der Wächter keine E-Mail, sonst käme alle 5 Minuten eine; diesen Ausfall meldet `/api/health`.

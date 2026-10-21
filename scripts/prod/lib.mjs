@@ -22,6 +22,7 @@ export const KEEP_RELEASES = Number(process.env.PROD_KEEP_RELEASES ?? 3);
 export const LABEL = "online.rheinwerk.web";
 export const UPDATE_LABEL = "online.rheinwerk.update";
 export const REQUESTS_LABEL = "online.rheinwerk.requests";
+export const WATCHDOG_LABEL = "online.rheinwerk.watchdog";
 export const REPO = path.join(PROD_DIR, "repo");
 export const RELEASES = path.join(PROD_DIR, "releases");
 export const CURRENT = path.join(PROD_DIR, "current");

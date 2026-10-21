@@ -76,6 +76,20 @@ npm run test:calls                             # nach einem Lauf: alle Gespräch
 
 Benötigte Rechte des ElevenLabs-API-Schlüssels: Agents (Conversational AI) lesen/schreiben, Voices schreiben (Stimme aus der Bibliothek übernehmen), Pronunciation Dictionaries schreiben.
 
+## Überwachung (task-17-9)
+
+Der Wächter auf dem Rechner (`scripts/prod/watchdog.mjs`, Prüfungen in `scripts/prod/mira.mjs`, LaunchAgent `online.rheinwerk.watchdog` alle 5 Minuten, eingerichtet mit `npm run prod:install`) prüft Mira mit den Schlüsseln aus `shared/.env.local`:
+
+| Prüfung | Wie | Warnung |
+| --- | --- | --- |
+| Agent | `GET /v1/convai/agents/<agent_id>` | 401/403 Schlüssel abgelehnt, 404 Agent fehlt (kritisch); Netzfehler (Warnung) |
+| Guthaben | `GET /v1/user/subscription`, übrig = `character_limit − character_count` | unter `MIRA_CREDIT_MIN` (Standard 10 % des Kontingents) Warnung, aufgebraucht kritisch. Der Schlüssel braucht „User: Read“, sonst wird nur übersprungen |
+| Werkzeuge über den Tunnel | `POST /webhook/agent-anlage-pruefen` mit `x-agent-secret` und Service Token, Antwort `ok: true` | Seite „Cloudflare Access“ mit 401/403: Service Token; sonst 401/403: Secret; 404: Workflow `rwAgentTools2026` inaktiv; 5xx/keine Antwort: Tunnel oder n8n (alle kritisch) |
+| Gesprächsauswertung | `monitor_call_analysis()`: Gespräche ohne `analyzed_at` 30 Minuten nach Ende (letzte 7 Tage, ohne Demo) | Warnung |
+| Werkzeugaufrufe | Gespräche der letzten Stunde bei ElevenLabs, Werkzeugergebnisse mit `is_error` oder `ok: false` | ab 3 Fehlern Warnung |
+
+Warnungen erscheinen im Dashboard-Bereich „System“ (Zusammenfassung, Zeile „Telefonassistent (Mira)“, Guthaben mit Tarif, Schwellwert und nächstem Kontingent) und gehen per E-Mail an `ALERT_EMAILS`. Probe: `ELEVENLABS_API_KEY=falsch npm run prod:watchdog` bzw. `CF_ACCESS_CLIENT_SECRET=falsch …` erzeugt Warnung und E-Mail, der nächste normale Lauf schließt sie mit „Wieder in Ordnung“.
+
 ## Demo-Anruf über die Service-Desk-Nummer (task-13-8, task-13-11)
 
 RheinWerk ist ein Portfolio-Projekt ohne Telefonleitung (Nutzerentscheidung 19.10.2026). Jeder Link auf die Service-Desk-Nummer `tel:+4962100000` (Kopfzeile, Kontaktseite, untere Leiste auf dem Telefon, Formularhinweise) öffnet deshalb einen simulierten Anruf (`components/demo-call.tsx`, in `components/site-shell.tsx`); ohne JavaScript bleibt es ein normaler Telefonlink. Ablauf:

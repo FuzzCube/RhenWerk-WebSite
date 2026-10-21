@@ -1916,3 +1916,8 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .system-details summary { cursor: pointer; font-size: 14px; color: var(--rw-action-secondary-fg); white-space: nowrap; }
 .system-packages { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
 .system-packages li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; }
+.system-monitors { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.system-monitors > li, .system-credit { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.system-monitors__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.system-monitors__notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+.system-monitors__note--bad { color: var(--rw-color-danger-700); }

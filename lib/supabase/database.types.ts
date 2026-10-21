@@ -682,14 +682,14 @@ isOneToOne: false
                   ]
                 },"system_status": {
                   Row: {
-                    "available_commit": string | null,"checked_at": string | null,"current_commit": string | null,"dependency_updates": NonNullable<Json>,"id": number,"pending_commits": NonNullable<Json>,"updated_at": string
+                    "available_commit": string | null,"checked_at": string | null,"current_commit": string | null,"dependency_updates": NonNullable<Json>,"id": number,"monitoring": NonNullable<Json>,"pending_commits": NonNullable<Json>,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "available_commit"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
+                    "available_commit"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
                   }
                   Update: {
-                    "available_commit"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
+                    "available_commit"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -2673,6 +2673,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"monitor_call_analysis":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "pause_payment_reminders":
 { Args: { "expected_version": number,"invoice_id": string,"reason": string }; Returns: {
               "created_at": string,
@@ -3280,6 +3283,23 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"set_monitoring":
+{ Args: { "payload": Json,"system_key": string }; Returns: {
+              "available_commit": string | null,
+"checked_at": string | null,
+"current_commit": string | null,
+"dependency_updates": NonNullable<Json>,
+"id": number,
+"monitoring": NonNullable<Json>,
+"pending_commits": NonNullable<Json>,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "set_system_status":
 { Args: { "payload": Json }; Returns: {
               "available_commit": string | null,
@@ -3287,6 +3307,7 @@ isOneToOne: false
 "current_commit": string | null,
 "dependency_updates": NonNullable<Json>,
 "id": number,
+"monitoring": NonNullable<Json>,
 "pending_commits": NonNullable<Json>,
 "updated_at": string
             }
