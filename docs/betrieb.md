@@ -218,8 +218,17 @@ cd /opt/rheinwerk/app && ops/vps/compose.sh up -d && ops/vps/compose.sh ps
 | 54322 | rheinwerk | Postgres |
 | 54323 | rheinwerk | Studio (nur Profil `studio`) |
 | 5678 | rheinwerk | n8n |
+| 54331 | houseitems | Supabase-API (Envoy) |
+| 5679 | houseitems | n8n (Editor per `ssh -L 5679:127.0.0.1:5679 vps`, http://localhost:5679) |
 
 - Eigene systemd-Units mit Präfix `<projekt>-`.
+
+**Projekte auf dem Server** (außer RheinWerk liegen ihre Dateien nur auf dem Server, nicht in diesem Repository; Sicherung bis auf Weiteres nur durch den Anbieter):
+
+| Projekt | Ordner | Inhalt | Öffentlich |
+| --- | --- | --- | --- |
+| rheinwerk | `/opt/rheinwerk` | Supabase, n8n, Tunnel `rheinwerk-vps` | `n8n.rheinwerk-service.online` (Access) |
+| houseitems | `/opt/houseitems` (`docker compose` im Ordner, Geheimnisse in `.env`) | House Items Bot (persönlich, task-18-11): Postgres, PostgREST, Envoy, n8n 2.40.7, Tunnel `houseitems-vps`; ca. 0,6 GB RAM | `bot.rheinwerk-service.online`, nur Pfad `^/webhook/` (Telegram, ohne Access; n8n prüft das Secret-Token von Telegram) |
 
 ### 3.6 Umzug vom Rechner (task-18-3)
 

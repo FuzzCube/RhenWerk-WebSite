@@ -3887,7 +3887,7 @@
           "description": "Persönliches Projekt vom Oracle-Server: eigenes Compose-Projekt /opt/houseitems (Regeln betrieb.md 3.5) mit eigenem n8n und schlankem Supabase (db, rest, Gateway; Tabellen items, item_vectors, pending_actions, pgvector); Workflow „House Items Bot“ (Telegram, OpenAI) mit Credentials übernehmen. Telegram-Webhook über einen öffentlichen Hostnamen im Cloudflare-Tunnel nur für /webhook/* (bisher sslip.io mit Caddy und offenen Ports 80/443 auf Oracle), Vorschlag bot.rheinwerk-service.online.",
           "order": 11,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-18-2"
           ],
@@ -3896,13 +3896,20 @@
             "Keine offenen Ports außer SSH, Speichergrenzen gesetzt",
             "betrieb.md 3.5"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T10:09:16Z",
+          "completedAt": "2026-10-22T10:28:45Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "House Items Bot vom Oracle-Server in das eigene Compose-Projekt /opt/houseitems übernommen (Postgres 17.6.1.136, PostgREST, Envoy mit neuen Schlüsseln, n8n 2.40.7, Tunnel houseitems-vps; mem_limit je Dienst, ca. 0,6 GB RAM). Datenbank per pg_dump/pg_restore: items, item_vectors, pending_actions je 10 Zeilen wie auf Oracle, Funktionen match_documents und delete_expired_pending_actions; nur erwartete Realtime-Meldungen. n8n-Daten mit Schlüssel übernommen, Credential auf http://kong:8000 und neuen Schlüssel, RheinWerk-RAG-Workflows dort inaktiv. Bot auf Oracle deaktiviert (dort nur noch RheinWerk Local Assistant aktiv). Telegram getWebhookInfo: https://bot.rheinwerk-service.online/webhook/…, keine Fehler; Nutzer hat den Bot in Telegram geprüft (antwortet). Öffentlich nur ^/webhook/, offene Ports weiterhin nur 22.",
+            "commands": [
+              "pg_dump (Oracle) | pg_restore (VPS)",
+              "n8n export/import:credentials",
+              "n8n update:workflow --active=false (Oracle)",
+              "Telegram getWebhookInfo",
+              "ss -ltn",
+              "Probe in Telegram durch den Nutzer"
+            ],
+            "checkedAt": "2026-10-22T10:28:45Z"
           }
         },
         {
@@ -3911,7 +3918,7 @@
           "description": "Portfolio-Projekt vom Oracle-Server (Supabase-Stack personal-copilot, ca. 2 000 Zeilen: tasks, audit_events, evaluations, agent_memory): eigenes Compose-Projekt /opt/personal-copilot mit schlankem Supabase, Daten übernehmen; ohne öffentlichen Zugang (derzeit kein Client außer Scannern), bei Bedarf per ssh -L oder später über den Tunnel.",
           "order": 12,
           "weight": 1,
-          "status": "ready",
+          "status": "in_progress",
           "dependsOn": [
             "task-18-2"
           ],
@@ -3920,7 +3927,7 @@
             "Keine offenen Ports, Speichergrenzen gesetzt",
             "betrieb.md 3.5"
           ],
-          "startedAt": null,
+          "startedAt": "2026-10-22T10:28:45Z",
           "completedAt": null,
           "verification": {
             "status": "not_run",
