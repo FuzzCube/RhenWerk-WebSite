@@ -256,7 +256,7 @@ services:
   n8n:
     <<: *restart
     container_name: rheinwerk-n8n
-    image: n8nio/n8n:2.40.7
+    image: n8nio/n8n:2.44.4
     mem_limit: 1g
     ports:
       - 127.0.0.1:5678:5678
