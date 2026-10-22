@@ -3716,7 +3716,7 @@
           "description": "Vercel-Projekt aus dem GitHub-Repository: Umgebungsvariablen (Supabase auf dem VPS, Turnstile-Produktionsschlüssel, Blob, ElevenLabs), Domain rheinwerk-service.online, Supabase Auth site_url und Redirects, SMTP für Passwort-Mails; Rückweg über Instant Rollback. Nach task-18-1: Region cdg1 (Paris, nahe dem Server in Roubaix); Supabase-Client und n8n-Aufrufe (Anfrageformular, /api/health) senden die Cloudflare-Access-Kopfzeilen des Service-Tokens; Website sichtbar als Portfolio- und Demoprojekt gekennzeichnet (Bedingung des Hobby-Tarifs, betrieb.md 3.4); Datenschutzerklärung nennt Hosting bei OVHcloud in Frankreich und Vercel.",
           "order": 4,
           "weight": 2,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-18-3"
           ],
@@ -3726,12 +3726,22 @@
             "setup.md, betrieb.md"
           ],
           "startedAt": "2026-10-22T10:32:24Z",
-          "completedAt": null,
+          "completedAt": "2026-10-22T12:06:44Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Bestehendes Vercel-Projekt rheinwerk-industrieservice auf das Repository RhenWerk-WebSite umgestellt (Nutzerentscheidung), Funktionen in cdg1, Domain rheinwerk-service.online mit Zertifikat, www leitet mit 308 um. Supabase-Client, Proxy, Passwortprüfung, Formular und /api/health senden die Access-Kopfzeilen; api.rheinwerk-service.online (Tunnel rheinwerk-vps, kong:8000) und die Formular-Webhooks von n8n antworten ohne Token mit 403, mit Token 200 (vorher war die Formular-Anwendung Bypass). /api/health: Datenbank und n8n ok (ca. 150-170 ms). Seiten 200 in 0,2-0,5 s, Datenschutz nennt Hosting (Vercel, OVHcloud Frankreich, Cloudflare), Portfolio-Hinweis vorhanden. Anmeldung (API mit ES256-Token und durch den Nutzer im Browser), Passwort-Mail mit deutscher Vorlage und Link auf SITE_URL/auth/bestaetigen sowie Bestätigung der Änderung durch den Nutzer geprüft. Formular über die Website: RIS-2026-02762 (Turnstile ok); Datei-Upload nach Ersetzen von BLOB_READ_WRITE_TOKEN (alter Wert leer) mit Testdatei geprüft. Wächter prüft die Website (482 ms), alle Prüfungen ok. Hobby-Grenzen dokumentiert. Demo-Anruf von Mira auf der öffentlichen Website noch nicht durch den Nutzer bestätigt. lint, typecheck, test:unit 129/129, build.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run test:unit",
+              "npm run build",
+              "curl api./n8n. mit und ohne Access-Token",
+              "curl /api/health mit HEALTH_TOKEN",
+              "@vercel/blob upload über /api/upload",
+              "Passwort-Reset und Formular im Browser (Nutzer)",
+              "systemctl start rheinwerk-watchdog.service"
+            ],
+            "checkedAt": "2026-10-22T12:06:44Z"
           }
         },
         {
@@ -3740,7 +3750,7 @@
           "description": "Bei Pull Request und Push auf main: lint, typecheck, test:unit; vor dem Deployment Sicherung und supabase migration up gegen die Datenbank auf dem VPS (nur hinzufügende Migrationen); Vercel deployt nur nach grünen Prüfungen. Renovate bzw. Dependabot für npm-Pakete und Docker-Images.",
           "order": 5,
           "weight": 2,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-4"
           ],

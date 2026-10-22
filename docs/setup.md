@@ -123,6 +123,28 @@ sender_name = "RheinWerk Service Desk"
 
 Das App-Passwort gehört nur in die Umgebung, nie ins Repository. Ohne eigenen SMTP-Server begrenzt Supabase den Versand stark (`[auth.rate_limit] email_sent`). Im Betrieb außerdem `site_url` und `additional_redirect_urls` auf die echte Domain setzen, sonst verweist der Link auf eine lokale Adresse. Wer keinen Link nutzen kann, erhält vom Admin ein vorläufiges Passwort (Verwaltung → Person → Passwort).
 
+**Im Betrieb (seit 22.10.2026, task-18-4):** Supabase Auth auf dem VPS versendet über Gmail-SMTP (`SMTP_*` in `/opt/rheinwerk/.env`) und lädt die Vorlagen von der Website (`/auth-mail/…`, Kopien von `supabase/templates`, Test `tests/unit/auth-mail.test.mjs`). Der Link führt immer auf `SITE_URL` (`https://rheinwerk-service.online/auth/bestaetigen`); die Vercel-Adresse `*.vercel.app` steht nicht auf der Liste erlaubter Ziele.
+
+## Deployment auf Vercel
+
+Projekt `rheinwerk-industrieservice` (Team `fuzz-cube`), verbunden mit `FuzzCube/RhenWerk-WebSite`, Branch `main`: jeder Push wird gebaut und veröffentlicht. Funktionen in `cdg1` (Paris, `vercel.json`). Domain `rheinwerk-service.online` (DNS in Cloudflare: `A @ 216.198.79.1`, `CNAME www` auf Vercel, beide „DNS only“), `www` leitet mit 308 auf die Domain um. Lokaler Ordner per `vercel link` verbunden (`.vercel/`, nicht im Repository).
+
+Umgebungsvariablen (nur Production, alle „sensitive“, Werte nie ins Repository):
+
+| Variable | Wert |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://api.rheinwerk-service.online` (hinter Cloudflare Access) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | neue Schlüssel aus `/opt/rheinwerk/.env` |
+| `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | Service Token „ElevenLabs Mira“ (Supabase-API und n8n) |
+| `N8N_WEBHOOK_URL` | `https://n8n.rheinwerk-service.online/webhook/rheinwerk-service-request` |
+| `SITE_URL` | `https://rheinwerk-service.online` |
+| `ELEVENLABS_API_KEY`, `HEALTH_TOKEN` | wie `.env.local` |
+| `BLOB_READ_WRITE_TOKEN`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Blob-Speicher und Produktionsschlüssel von Turnstile |
+
+Setzen ohne Anzeige des Werts: `printf '%s' "$WERT" | vercel env add NAME production --force`, danach neu veröffentlichen (`vercel redeploy https://rheinwerk-service.online --target production`); Variablen gelten erst für neue Deployments. **Rückweg:** Vercel → Deployments → älteres Deployment → *Instant Rollback* (ohne neuen Build; Datenbankänderungen werden nicht zurückgedreht).
+
+**Grenzen des Hobby-Tarifs** (geprüft 22.10.2026): 100 GB Datenübertragung, 1 Mio. Funktionsaufrufe und 4 h aktive CPU im Monat, 1 Stunde Laufzeitprotokolle; bei Überschreitung pausiert das Projekt. Erwartete Last einer Portfolio-Demo liegt weit darunter (Seiten statisch, Dashboard-Seiten je wenige Abfragen); Nutzung monatlich unter Vercel → Usage prüfen. Nur nicht-kommerziell: die Website ist im Fußbereich und im Impressum als fiktives Portfolio-Projekt gekennzeichnet (betrieb.md 3.4).
+
 ## Warn-E-Mails an den Betreiber (Gmail SMTP)
 
 Warnungen aus Updates und Überwachung (Phase 17) gehen direkt per Gmail SMTP an den Betreiber, nicht über n8n, damit auch ein Ausfall von n8n gemeldet werden kann (`scripts/lib/notify.mjs`, nur Skripte auf dem Rechner).

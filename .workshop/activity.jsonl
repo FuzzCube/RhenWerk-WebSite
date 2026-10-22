@@ -452,3 +452,4 @@
 {"timestamp":"2026-10-22T10:28:45Z","type":"task_started","taskId":"task-18-12","summary":"Umzug von Personal Copilot vom Oracle-Server auf den VPS begonnen."}
 {"timestamp":"2026-10-22T10:30:12Z","type":"task_completed","taskId":"task-18-12","summary":"Personal Copilot als eigenes Projekt /opt/personal-copilot auf dem VPS (nur Datenbank mit REST-API, kein öffentlicher Zugang); Zeilenzahlen identisch mit Oracle."}
 {"timestamp":"2026-10-22T10:32:24Z","type":"task_started","taskId":"task-18-4","summary":"Website auf Vercel begonnen; Nutzer erlaubt Push nach GitHub und Vercel-CLI."}
+{"timestamp":"2026-10-22T12:06:44Z","type":"task_completed","taskId":"task-18-4","summary":"Website mit Dashboard auf Vercel unter rheinwerk-service.online (cdg1), Supabase-API und n8n nur mit Access-Service-Token, Passwort-Mails über Gmail mit deutschen Vorlagen, Formular mit Upload geprüft; Wächter prüft die Website."}
