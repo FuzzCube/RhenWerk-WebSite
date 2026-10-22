@@ -4435,6 +4435,37 @@
             ],
             "summary": "Produktion RIS-2026-02767: beide Entwürfe enthielten den Text; das Formular startete danach wieder mit der Vorlage. createDraft leitet jetzt auf #nachricht-<id> um (Entwurf offen, markiert, Hinweis „noch nicht versendet“); das Formular verweist auf vorhandene Entwürfe. withCurrentVersion/runVersioned für alle 14 Aktionen mit Version (seen_at in allen Formularen der Anfrage): Wiederholung nur bei ≥1 und ausschließlich Mail-Ereignissen der Automatisierung und höchstens so vielen Versionsschritten (test:ui fand, dass eine Änderung ohne Ereignis sonst übergangen würde). test:ui: Konfliktprüfungen bestehen, nur die 2 bekannten Fehler wegen lokal liegender Test-E-Mails."
           }
+        },
+        {
+          "id": "task-20-9",
+          "title": "Vormerkung beim Techniker mit dem kleinsten Monatsanteil",
+          "description": "Nutzerrückmeldung: Vormerkung RIS-2026-02768 ging an Dariusz (17 %), obwohl Anna (15 %) weniger ausgelastet war; dazu fehlte der linke Griff der Auswahl am Zeilenanfang.",
+          "order": 9,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-5"
+          ],
+          "definitionOfDone": [
+            "Auswahl nach Anteil wie auf der Plantafel (Abwesenheiten mindern die Kapazität)",
+            "Griff am Rand der Zeile sichtbar",
+            "pgTAP"
+          ],
+          "startedAt": "2026-10-22T21:00:00Z",
+          "completedAt": "2026-10-22T21:07:56Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-22T21:07:56Z",
+            "commands": [
+              "npx supabase test db (1220 Tests)",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3100 npm run test:ui (unter next dev)",
+              "Produktion: neue Funktionen in Transaktion mit Rollback geprüft"
+            ],
+            "summary": "Ursache: technician_for_window sortierte nach gebuchten Minuten; Dariusz hatte vor der Vormerkung 1860 min, Anna 1920 min, aber Dariusz ist am 22./23.10. abwesend (Kapazität 10800 statt 11880 min): Anteil 17,2 % gegen 16,2 %. Migration 20261022235800: private.month_capacity_minutes (Arbeitszeit des Monats minus Abwesenheiten), technician_for_window ordnet nach Anteil. Auf der Produktion probehalber: Anna 16,2 %, Dariusz 18,3 %, Tobias 20,2 %. Griff der Auswahl am Rand der Zeile nach innen (is-inside). test:ui nur die 2 bekannten Fehler wegen lokal liegender Test-E-Mails."
+          }
         }
       ]
     }

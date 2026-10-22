@@ -620,8 +620,9 @@ export function PlanBoard(props: Props) {
             onKeyDown={keyMove}
           >
             {(view === "tag" || toMinutes(pickHere.end) - toMinutes(pickHere.start) >= 120) && <span className="plan3__blk-text">{pickHere.start}–{pickHere.end}</span>}
-            <i className="plan3__handle plan3__handle--pick plan3__handle--start" aria-hidden="true" onPointerDown={(event) => startResize(event, "start", null)} />
-            <i className="plan3__handle plan3__handle--pick plan3__handle--end" aria-hidden="true" onPointerDown={(event) => startResize(event, "end", null)} />
+            {/* At the edge of the lane the handle moves inside, otherwise the lane would cut it off */}
+            <i className={`plan3__handle plan3__handle--pick plan3__handle--start${toMinutes(pickHere.start) <= bounds.from ? " is-inside" : ""}`} aria-hidden="true" onPointerDown={(event) => startResize(event, "start", null)} />
+            <i className={`plan3__handle plan3__handle--pick plan3__handle--end${toMinutes(pickHere.end) >= bounds.to ? " is-inside" : ""}`} aria-hidden="true" onPointerDown={(event) => startResize(event, "end", null)} />
           </span>
         )}
         {dragHere && (

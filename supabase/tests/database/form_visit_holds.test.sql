@@ -1,7 +1,7 @@
 -- task-19-3: the website form holds the wished window (least booked technician of the month), otherwise the next free
 -- one; manual planning queues the same Terminbestätigung. Run with: supabase test db
 begin;
-select plan(25);
+select plan(27);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'd1@x.test'),
@@ -128,6 +128,16 @@ set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-0000000000b1', 'role', 'authenticated')::text, true);
 select throws_ok($$select public.queue_visit_change((select id from public.visits where request_id = 'ddbb0000-0000-4000-8000-000000000004'), now(), now())$$, '42501', null, 'technician cannot');
 reset role;
+
+-- task-20-9: the share of the month decides, not the minutes; absences shorten the available time
+select is(private.month_capacity_minutes('00000000-0000-0000-0000-0000000000b1', pg_temp.day()),
+  (select count(*)::int * 480 from generate_series(date_trunc('month', pg_temp.day()), date_trunc('month', pg_temp.day()) + interval '1 month' - interval '1 day', interval '1 day') g(d)
+   where extract(isodow from d) <= 5), 'capacity: working hours of the month');
+insert into public.employee_availability (employee_id, kind, starts_at, ends_at, label)
+values ('00000000-0000-0000-0000-0000000000b2', 'absence', date_trunc('month', pg_temp.day())::timestamp at time zone 'Europe/Berlin', pg_temp.at('00:00'), 'Test'),
+  ('00000000-0000-0000-0000-0000000000b2', 'absence', pg_temp.at('00:00', 3), (date_trunc('month', pg_temp.day()) + interval '1 month')::timestamp at time zone 'Europe/Berlin', 'Test');
+select is(private.technician_for_window(pg_temp.at('10:00', 2), pg_temp.at('12:00', 2)), '00000000-0000-0000-0000-0000000000b1'::uuid,
+  'technician with absences and few minutes but a higher share does not get the window');
 
 select * from finish();
 rollback;

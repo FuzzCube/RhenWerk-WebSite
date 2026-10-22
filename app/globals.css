@@ -2028,6 +2028,8 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .plan3__handle--pick.plan3__handle--start { left: -9px; }
 .plan3__handle--pick.plan3__handle--end { right: -9px; }
 .plan3__handle--pick::after { inset: 30% 2px; }
+.plan3__handle--pick.plan3__handle--start.is-inside { left: 0; }
+.plan3__handle--pick.plan3__handle--end.is-inside { right: 0; }
 .plan3__handle--pick::after { border-color: var(--rw-color-white); }
 
 /* task-20-8: a saved draft is marked where the page jumps to it */
