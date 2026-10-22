@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v23, 19 Phasen, 113 Tasks, Fortschritt 92,59 % (Gewicht 250 von 270).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v23, 19 Phasen, 113 Tasks, Fortschritt 93,7 % (Gewicht 253 von 270).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -20,9 +20,9 @@ Roadmap v23 (22.10.2026): zusätzlich Umzug vom Oracle-Server (`ssh oracle-n8n`)
 
 ## Zuletzt abgeschlossen
 
+- `task-18-12` und `task-18-11` (22.10.2026): Personal Copilot (`/opt/personal-copilot`, nur Datenbank, kein öffentlicher Zugang) und House Items Bot (`/opt/houseitems`, eigenes n8n, Tunnel `houseitems-vps`, `bot.rheinwerk-service.online` nur `/webhook/`, in Telegram geprüft) vom Oracle-Server auf den VPS; Projekte und Ports in `docs/betrieb.md` 3.5. Auf Oracle läuft nur noch der RAG-Assistent der Website (bis task-18-10).
 - `task-18-3` (22.10.2026): **Produktivbetrieb auf dem VPS.** Daten des Rechners per `ops/vps/import-backup.sh` übernommen (Zeilenzahlen wie im Manifest), n8n (9 Workflows, Supabase über `http://kong:8000`) und Mira über Tunnel `rheinwerk-vps`, Formular-Webhook und Gmail-Versand geprüft, Wächter auf dem VPS mit E-Mails (`docs/betrieb.md` 3.6). Auf dem Rechner n8n gestoppt und launchd-Dienste entfernt; lokales Supabase nur noch Entwicklungsumgebung mit veraltetem Datenstand.
 - `task-18-2` (22.10.2026): VPS mit Docker Compose (`docs/betrieb.md` 3.5, `ops/vps/`): Server `ssh vps` (OVHcloud VPS-2, Ubuntu 26.04), Swap, Docker mit Ports nur auf 127.0.0.1, Node.js 24; Compose-Projekt `rheinwerk` (Supabase ohne Realtime, n8n 2.40.7, Tunnel `rheinwerk-vps`) mit festen Versionen und neuen Schlüsseln, 68 Migrationen eingespielt; Wächter und „System prüfen“ als systemd-Timer, ohne E-Mails bis task-18-3; Neustart geprüft. Weitere Projekte auf dem Server vorgesehen (Regeln in 3.5).
-- `task-18-1` (21.10.2026): Zielarchitektur und Kosten des Deployments (`docs/betrieb.md` 3): Vercel Hobby in `cdg1` (Paris), Supabase und n8n per Docker Compose auf OVHcloud VPS-2 in Roubaix (Frankreich; 8,58 € inkl. MwSt. bei 12 Monaten, im Konfigurator 10,10 €; Nutzerentscheidung 22.10.2026, tägliche Sicherung des Anbieters, keine Kopie außer Haus), Supabase-API nur hinter Cloudflare Access mit Service-Token. Hobby nur nicht-kommerziell: Website als Demo kennzeichnen.
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -57,4 +57,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 18 „Deployment“: Nutzer hat die Reihenfolge `task-18-11` (House Items Bot) und `task-18-12` (Personal Copilot) als Nächstes gewählt; startbar außerdem `task-18-4` (Website auf Vercel, legt `api.rheinwerk-service.online` mit Access an), `task-18-6` (Sicherung auf dem VPS, bis dahin **keine eigene tägliche Sicherung**, nur die des Anbieters) und `task-18-10` (RAG-Assistent). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 18 „Deployment“: startbar `task-18-4` (Website auf Vercel, legt `api.rheinwerk-service.online` mit Access an), `task-18-6` (Sicherung auf dem VPS, bis dahin **keine eigene tägliche Sicherung**, nur die des Anbieters) und `task-18-10` (RAG-Assistent). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

@@ -3918,7 +3918,7 @@
           "description": "Portfolio-Projekt vom Oracle-Server (Supabase-Stack personal-copilot, ca. 2 000 Zeilen: tasks, audit_events, evaluations, agent_memory): eigenes Compose-Projekt /opt/personal-copilot mit schlankem Supabase, Daten übernehmen; ohne öffentlichen Zugang (derzeit kein Client außer Scannern), bei Bedarf per ssh -L oder später über den Tunnel.",
           "order": 12,
           "weight": 1,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-18-2"
           ],
@@ -3928,12 +3928,17 @@
             "betrieb.md 3.5"
           ],
           "startedAt": "2026-10-22T10:28:45Z",
-          "completedAt": null,
+          "completedAt": "2026-10-22T10:30:12Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Personal Copilot vom Oracle-Server in das eigene Compose-Projekt /opt/personal-copilot übernommen (Postgres 17.6.1.136, PostgREST, Envoy mit neuen Schlüsseln; mem_limit, ca. 0,1 GB RAM). pg_dump/pg_restore ohne unerwartete Meldungen; exakte Zeilenzahlen aller 9 Tabellen identisch mit Oracle (u. a. audit_events 1074, task_state 344, evaluation_results 265, approval_requests 89, tasks 22). API nur auf 127.0.0.1:54341: mit Schlüssel 200, ohne 401; offene Ports weiterhin nur 22. Edge Function war nur die Vorlage, Vault leer: nicht übernommen. Workflows liegen inaktiv im n8n von RheinWerk.",
+            "commands": [
+              "pg_dump (Oracle) | pg_restore (VPS)",
+              "Zeilenzahlen per count(*) auf beiden Servern",
+              "curl /rest/v1/tasks mit und ohne Schlüssel",
+              "docker inspect RestartCount/OOMKilled"
+            ],
+            "checkedAt": "2026-10-22T10:30:12Z"
           }
         },
         {
