@@ -3750,7 +3750,7 @@
           "description": "Bei Pull Request und Push auf main: lint, typecheck, test:unit; vor dem Deployment Sicherung und supabase migration up gegen die Datenbank auf dem VPS (nur hinzufügende Migrationen); Vercel deployt nur nach grünen Prüfungen. Renovate bzw. Dependabot für npm-Pakete und Docker-Images.",
           "order": 5,
           "weight": 2,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-18-4"
           ],
@@ -3760,12 +3760,19 @@
             "Update-PRs für npm und Images erscheinen"
           ],
           "startedAt": "2026-10-22T12:16:45Z",
-          "completedAt": null,
+          "completedAt": "2026-10-22T12:32:41Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "GitHub Actions (.github/workflows/ci.yml): Prüfungen lint, typecheck, test:unit, build bei PR und Push; auf main danach Sicherung und neue Migrationen auf dem VPS über SSH-Schlüssel mit command=ops/vps/migrate.sh,restrict (Shell-Versuch abgewiesen) und Deployment mit vercel deploy --prod; Vercel-Git-Deployments abgeschaltet (vercel.json). Probe roter Test (PR #11): Prüfungen failure in test:unit, Deployment skipped, PR geschlossen. Erster Lauf 3dd3e19: alles grün, keine neuen Migrationen, live 3dd3e19. Probe-Migration 20261022123000_deployment_probe (Kommentar an system_status): Sicherung 20261022T123017Z-46fbcec.dump (4 MB) auf dem VPS, Migration eingespielt, danach Deployment, live 46fbcec. Dependabot: 10 Update-PRs (5 Images in ops/vps, npm-Gruppe, eslint 10, TypeScript 7, 2 Actions); Prüfungen grün außer eslint 10 und TypeScript 7 (rot, nicht gemergt). Nichts automatisch gemergt.",
+            "commands": [
+              "gh run watch (main 3dd3e19, 46fbcec)",
+              "PR #11 mit rotem Test",
+              "ssh mit Deploy-Schlüssel: Shell-Versuch und Commit",
+              "pg_dump vor Migration (/opt/rheinwerk/state/pre-migration)",
+              "gh pr checks 1-10",
+              "curl /api/health commit"
+            ],
+            "checkedAt": "2026-10-22T12:32:41Z"
           }
         },
         {
