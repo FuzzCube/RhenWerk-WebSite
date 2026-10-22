@@ -1,9 +1,9 @@
 // Backups in the area "System" (task-18-6): rows of public.backups (daily at 03:00, "Jetzt sichern", before a migration
-// of the deployment) and the state of the provider's backup (OVHcloud) from the watchdog. Pure functions, shared by
-// page and unit tests (tests/unit/backups-view.test.mjs).
+// of the deployment, before a restore) and the state of the provider's backup (OVHcloud) from the watchdog; restores
+// (task-18-7, public.restores). Pure functions, shared by page and unit tests (tests/unit/backups-view.test.mjs).
 import type { DisplayStatus } from "./display-status";
 
-export type BackupReason = "daily" | "manual" | "migration";
+export type BackupReason = "daily" | "manual" | "migration" | "pre_restore";
 export type BackupRow = {
   id: string;
   started_at: string;
@@ -19,7 +19,7 @@ export type BackupRow = {
 };
 export type ProviderBackup = { state?: string | null; schedule?: string | null; rotation?: number | null; restore_points?: number | null; last_restore_point?: string | null; error?: string };
 
-const REASON: Record<BackupReason, string> = { daily: "Täglich", manual: "Von Hand", migration: "Vor Migration" };
+const REASON: Record<BackupReason, string> = { daily: "Täglich", manual: "Von Hand", migration: "Vor Migration", pre_restore: "Vor Wiederherstellung" };
 export const backupReasonLabel = (reason: BackupReason): string => REASON[reason] ?? reason;
 
 export function backupStatus(row: Pick<BackupRow, "status" | "verified">): DisplayStatus {
@@ -61,4 +61,44 @@ export function providerView(provider: ProviderBackup | null | undefined): { sta
     status: { key: "in-ordnung", label: "Aktiv", tone: "done" },
     text: `Täglich${provider.schedule ? ` um ${provider.schedule.slice(0, 5)}` : ""} beim Anbieter (OVHcloud), ganzer Server${count === null ? "" : `; ${count === 1 ? "1 Sicherungspunkt" : `${count} Sicherungspunkte`}`}.`,
   };
+}
+
+// Restore (task-18-7): only admin, only a complete checked backup of the last 14 days (archives are kept 14 days on the
+// server) with the migration state of the database (request_restore checks the same)
+export const RESTORE_WORD = "WIEDERHERSTELLEN";
+export const RESTORE_DAYS = 14;
+export const confirmationMatches = (input: string): boolean => input.trim().toUpperCase() === RESTORE_WORD;
+
+export function restorable(row: BackupRow, migration: string | null, now: Date): boolean {
+  return row.status === "ok" && row.verified === true && row.reason !== "migration" && Boolean(row.file_name)
+    && migration !== null && row.contents.migration === migration
+    && now.getTime() - Date.parse(row.finished_at) <= RESTORE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+export type RestoreRow = {
+  id: string;
+  file_name: string;
+  backup_finished_at: string;
+  requested_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  status: "requested" | "running" | "ok" | "failed" | "rolled_back";
+  pre_backup_file: string | null;
+  error: string | null;
+  requester: string | null;
+};
+
+// Requested or running; the database gives up a request after an hour
+export function restoreActive(row: RestoreRow | null | undefined, now: Date): boolean {
+  return Boolean(row && (row.status === "requested" || row.status === "running") && now.getTime() - Date.parse(row.requested_at) < 60 * 60 * 1000);
+}
+
+export function restoreStatus(row: RestoreRow, now: Date): DisplayStatus {
+  if (row.status === "requested" || row.status === "running") {
+    if (!restoreActive(row, now)) return { key: "abgebrochen", label: "Nicht abgeschlossen", tone: "act" };
+    return row.status === "running" ? { key: "laeuft", label: "Läuft", tone: "run" } : { key: "angefordert", label: "Angefordert", tone: "wait" };
+  }
+  if (row.status === "ok") return { key: "wiederhergestellt", label: "Wiederhergestellt", tone: "done" };
+  if (row.status === "rolled_back") return { key: "zurueck", label: "Fehlgeschlagen, Stand davor zurück", tone: "act" };
+  return { key: "fehlgeschlagen", label: "Fehlgeschlagen", tone: "act" };
 }

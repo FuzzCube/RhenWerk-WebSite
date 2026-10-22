@@ -1,15 +1,22 @@
-// Requests of the dashboard (task-17-15, task-18-6): systemd timer rheinwerk-systemcheck every 20 seconds on the VPS.
-// "Jetzt sichern" (claim_backup_request) runs a backup with restore check (scripts/ops/backup-run.mjs), "System prüfen"
+// Requests of the dashboard (task-17-15, task-18-6, task-18-7): systemd timer rheinwerk-systemcheck every 20 seconds on
+// the VPS. "Wiederherstellen" (claim_restore_request) restores a backup (scripts/ops/restore-run.mjs), "Jetzt sichern" (claim_backup_request) runs a backup with restore check (scripts/ops/backup-run.mjs), "System prüfen"
 // (claim_system_check) all checks (scripts/ops/checks.mjs, SMTP and provider backup included) and the versions
 // (scripts/ops/versions.mjs). Without a request it ends after two small queries. By hand without request:
 // npm run system:check
 import { runBackup } from "./backup-run.mjs";
+import { runRestore } from "./restore-run.mjs";
 import { rpc } from "./lib.mjs";
 import { runChecks } from "./checks.mjs";
 import { refreshVersions } from "./versions-report.mjs";
 
 const now = process.argv.includes("--now");
 if (!now) {
+  const restore = await rpc("claim_restore_request");
+  if (restore?.id) {
+    await runRestore(restore);
+    // Afterwards the area "System" shows the state of every system again
+    await runChecks({ force: true });
+  }
   const requester = await rpc("claim_backup_request");
   if (requester) {
     try {

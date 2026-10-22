@@ -191,7 +191,8 @@ try {
       summary: document.querySelector(".system-summary__title")?.textContent ?? "",
       alerts: document.querySelectorAll(".system-alerts li").length,
       cards: [...document.querySelectorAll(".rw-card__title")].map((t) => t.textContent.replace(/\\s*\\d+$/, "")),
-      buttons: [...document.querySelectorAll(".system-page button")].map((b) => b.textContent),
+      buttons: [...document.querySelectorAll(".system-page button")].filter((b) => !b.closest(".system-backups")).map((b) => b.textContent),
+      restoreButtons: document.querySelectorAll('.system-backups button[aria-label^="Wiederherstellen:"]').length,
       check: document.querySelector(".system-check button")?.textContent ?? null,
       backup: document.querySelector(".system-backup-action button")?.textContent ?? null,
       backupCard: document.querySelector("#system-sicherung")?.closest(".rw-card")?.textContent ?? "",
@@ -260,8 +261,8 @@ try {
       await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
       await page.open(`${BASE}/dashboard/system`);
       const managerView = await view();
-      check(`  Manager @${width}: gleiche Inhalte (acht Systeme, Versionen, Sicherungen), ohne „Erledigt“, „System prüfen“ und „Jetzt sichern“, kein Querscrollen`,
-        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons.length === 0 && managerView.check === null && managerView.backup === null
+      check(`  Manager @${width}: gleiche Inhalte (acht Systeme, Versionen, Sicherungen), ohne „Erledigt“, „System prüfen“, „Jetzt sichern“ und „Wiederherstellen“, kein Querscrollen`,
+        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons.length === 0 && managerView.restoreButtons === 0 && managerView.check === null && managerView.backup === null
           && managerView.backupRows === adminView.backupRows
           && managerView.monitors.length === 8 && managerView.versions.length === versionLabels.length
           && managerView.openRows.some((text) => text.includes(testTitle)) && managerView.scroll <= managerView.width, JSON.stringify(managerView));
@@ -319,6 +320,50 @@ try {
     const { data: pendingBackup } = await admin.from("system_status").select("backup_requested_at, backup_requested_by").single();
     check("  Admin: „Jetzt sichern“ legt eine Anfrage an, Knopf gesperrt", backupRequested && Boolean(pendingBackup.backup_requested_at && pendingBackup.backup_requested_by), JSON.stringify(pendingBackup));
     await admin.from("system_status").update({ backup_requested_at: null, backup_requested_by: null, backup_started_at: null }).eq("id", 1);
+    // task-18-7: "Wiederherstellen" only on complete checked backups with the current migration state; the dialog needs
+    // the word WIEDERHERSTELLEN and files a request (the restore itself was tried on a copy, docs/betrieb.md 4.5), which
+    // the test withdraws again
+    const { data: migration } = await admin.rpc("current_migration");
+    const { data: backupRows } = await admin.from("backups").select("reason, status, verified, file_name, contents, finished_at")
+      .gte("finished_at", new Date(Date.now() - 14 * 86400_000).toISOString()).order("finished_at", { ascending: false }).limit(60);
+    const restorableRows = (backupRows ?? []).filter((b) => b.status === "ok" && b.verified === true && b.reason !== "migration" && b.file_name && b.contents?.migration === migration).length;
+    await admin.from("restores").delete().in("status", ["requested", "running"]);
+    await page.open(`${BASE}/dashboard/system`);
+    check(`  Admin: „Wiederherstellen“ an ${restorableRows} Sicherung(en) mit aktuellem Migrationsstand`, (await view()).restoreButtons === restorableRows, JSON.stringify({ restorableRows, migration }));
+    if (restorableRows > 0) {
+      const dialogState = () => page.eval(`(() => { const d = document.querySelector(".system-restore-dialog[open]"); const r = d?.getBoundingClientRect();
+        return { open: !!d, submit: d?.querySelector("button[type=submit]")?.disabled ?? null, text: d?.textContent ?? "", fits: !!r && r.left >= 0 && r.right <= innerWidth,
+          scroll: document.documentElement.scrollWidth, width: innerWidth }; })()`);
+      for (const width of [390, 1440]) {
+        await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+        await page.open(`${BASE}/dashboard/system`);
+        await page.eval(`document.querySelector('.system-backups button[aria-label^="Wiederherstellen:"]').click()`);
+        await page.until(`!!document.querySelector(".system-restore-dialog[open]")`, 5000);
+        const empty = await dialogState();
+        await page.eval(`document.querySelector(".system-restore-dialog[open] input").focus()`);
+        await page.send("Input.insertText", { text: "wiederherstelle" });
+        const wrong = await dialogState();
+        await page.send("Input.insertText", { text: "n" });
+        const right = await dialogState();
+        check(`  Admin @${width}: Rückfrage nennt Folgen und Sicherung davor, „Wiederherstellen“ erst nach dem Wort, passt in die Breite`,
+          empty.open && empty.submit === true && wrong.submit === true && right.submit === false && empty.text.includes("Vor Wiederherstellung") && empty.text.includes("nicht erreichbar")
+            && empty.fits && empty.scroll <= empty.width, JSON.stringify({ empty, wrong: wrong.submit, right: right.submit }));
+        if (SHOTS) {
+          const shot = await page.send("Page.captureScreenshot", { format: "png" });
+          await writeFile(path.join(SHOTS, `system-restore-${width}.png`), Buffer.from(shot.data, "base64"));
+        }
+        if (width === 1440) {
+          await page.eval(`document.querySelector(".system-restore-dialog[open] button[type=submit]").click()`);
+          const filed = await page.until(`!document.querySelector(".system-restore-dialog[open]") && (document.querySelector(".system-backup__restore")?.textContent ?? "").includes("Angefordert")
+            && [...document.querySelectorAll('.system-backups button[aria-label^="Wiederherstellen:"]')].every((b) => b.disabled)`, 10000);
+          const { data: pendingRestore } = await admin.from("restores").select("status, requested_by").eq("status", "requested").maybeSingle();
+          check("  Admin: Anfrage angelegt, Zustand „Angefordert“ in der Datensicherung, alle Knöpfe gesperrt", filed && pendingRestore?.status === "requested" && Boolean(pendingRestore?.requested_by), JSON.stringify(pendingRestore));
+          await admin.from("restores").delete().eq("status", "requested");
+        } else {
+          await page.eval(`document.querySelector(".system-restore-dialog[open] button[type=button]").click()`);
+        }
+      }
+    }
   }
 
   console.log("\nÜbersicht (Admin): Kennzahlen führen zu passenden Listen");

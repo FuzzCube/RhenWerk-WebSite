@@ -93,7 +93,7 @@ export async function reportWithoutDatabase(check) {
 export async function latestBackup() {
   try {
     const { data, error } = await db().from("backups").select("finished_at, reason, file_name, size_bytes")
-      .eq("status", "ok").eq("verified", true).in("reason", ["daily", "manual"])
+      .eq("status", "ok").eq("verified", true).in("reason", ["daily", "manual", "pre_restore"])
       .order("finished_at", { ascending: false }).limit(1).maybeSingle();
     if (error) throw new Error(error.message);
     return data;

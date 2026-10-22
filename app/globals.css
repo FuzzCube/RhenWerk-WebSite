@@ -1944,3 +1944,12 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .system-backup__contents li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--rw-border-subtle, #e6e8ec); padding: 2px 0; }
 .system-backup-action { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .system-backup-action .save-status:empty { display: none; }
+/* Restore from a backup (task-18-7) */
+.system-backup__restore { display: flex; flex-direction: column; gap: 4px; }
+.system-restore-dialog { margin: auto; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 20px; border: 0; border-radius: var(--rw-radius-md); background: white; color: var(--rw-text-primary); overflow-y: auto; }
+.system-restore-dialog::backdrop { background: rgb(5 15 30 / 0.6); }
+.system-restore-dialog form { display: flex; flex-direction: column; gap: 14px; }
+.system-restore-dialog h2 { margin: 0; font-size: 18px; line-height: 1.3; }
+.system-restore-dialog ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.system-restore-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+@media (max-width: 480px) { .system-restore-dialog__actions .button { flex: 1 1 100%; } }

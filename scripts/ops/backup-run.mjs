@@ -1,7 +1,8 @@
 // One backup with restore check (task-17-17, task-18-6), shared by the daily run (nightly.mjs, reason "daily") and
 // "Jetzt sichern" from the dashboard (check.mjs, reason "manual"): scripts/backup.mjs, then scripts/backup-check.mjs on
 // the new archive, then the row in public.backups for the area "System". A failure is the warning backup:failed with
-// e-mail, the next good backup closes it.
+// e-mail, the next good backup closes it. Returns the summary of the archive (file, file_name, …), null on failure; the
+// restore (restore-run.mjs, task-18-7) uses it for the backup before (reason pre_restore).
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -29,7 +30,7 @@ export async function runBackup({ reason, requestedBy = null }) {
       contents: summary.contents, verified: true, error: null, requested_by: requestedBy,
     });
     await report("backup", { key: "backup:failed", label: "Tägliche Sicherung", ok: true });
-    return true;
+    return summary;
   } catch (error) {
     const output = `${error.stdout ?? ""}${error.stderr ?? ""}`.trim() || error.message;
     const detail = [...lines, output].join("\n").slice(-3000);
@@ -42,7 +43,7 @@ export async function runBackup({ reason, requestedBy = null }) {
       key: "backup:failed", label: "Tägliche Sicherung", ok: false, severity: "critical", title: "Sicherung fehlgeschlagen",
       detail: `Die Sicherung oder ihre Probewiederherstellung ist fehlgeschlagen. Laufen alle Container (ops/vps/compose.sh ps)? Ist genug Speicherplatz frei (df -h)? Protokoll: journalctl -u rheinwerk-backup. Erneut: „Jetzt sichern“ im Bereich System oder sudo systemctl start rheinwerk-backup.service (docs/betrieb.md 4).\n\n${detail}`,
     });
-    return false;
+    return null;
   } finally {
     rmSync(work, { recursive: true, force: true });
   }

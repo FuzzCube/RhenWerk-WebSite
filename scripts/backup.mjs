@@ -47,6 +47,8 @@ try {
   run("docker", ["cp", `${DB}:/tmp/rheinwerk-backup.dump`, path.join(dir, "postgres.dump")]);
   run("docker", ["exec", DB, "rm", "-f", "/tmp/rheinwerk-backup.dump"]);
   const postgresVersion = psql("show server_version");
+  // Newest migration: a restore from the dashboard needs the same one (task-18-7)
+  const migration = psql("select max(version) from supabase_migrations.schema_migrations");
 
   // 2. Storage files (bucket contents live in the volume of the storage container, metadata in Postgres)
   const storageFiles = Number(run("docker", ["exec", STORAGE, "sh", "-c", `find ${STORAGE_PATH} -type f | wc -l`]).toString().trim());
@@ -78,7 +80,7 @@ try {
   }
 
   const files = Object.fromEntries(readdirSync(dir).map((file) => [file, { bytes: statSync(path.join(dir, file)).size, sha256: sha256(path.join(dir, file)) }]));
-  const manifest = { name, created_at: new Date().toISOString(), postgres_version: postgresVersion, counts, storage_files: storageFiles, n8n_workflows: n8nWorkflows, encrypted: Boolean(PASSPHRASE), secrets, files };
+  const manifest = { name, created_at: new Date().toISOString(), postgres_version: postgresVersion, migration, counts, storage_files: storageFiles, n8n_workflows: n8nWorkflows, encrypted: Boolean(PASSPHRASE), secrets, files };
   writeFileSync(path.join(dir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 
   // 4. One archive, encrypted when a passphrase is set (passed via the environment, not on the command line)
@@ -110,7 +112,7 @@ try {
   if (process.env.BACKUP_SUMMARY_FILE) {
     writeFileSync(process.env.BACKUP_SUMMARY_FILE, JSON.stringify({
       file: target, file_name: path.basename(target), size_bytes: statSync(target).size, encrypted: Boolean(PASSPHRASE),
-      contents: { ...counts, storage_files: storageFiles, n8n_workflows: n8nWorkflows, secrets },
+      contents: { ...counts, storage_files: storageFiles, n8n_workflows: n8nWorkflows, secrets, migration },
     }));
   }
 } finally {

@@ -31,6 +31,19 @@ export async function requestBackup(): Promise<Result> {
   return { ok: true };
 }
 
+// "Wiederherstellen" (task-18-7): only admin, with the confirmation word (request_restore checks role, word, backup and
+// migration state again, manager 42501); the service rheinwerk-systemcheck on the VPS backs up the current state first,
+// restores, checks the health and returns to the state before on a failure
+export async function requestRestore(backupId: string, confirmation: string): Promise<Result> {
+  await requireRole(["admin"]);
+  if (!UUID.test(backupId) || typeof confirmation !== "string" || confirmation.length > 40) return { ok: false, message: "Ungültige Eingabe. Bitte die Seite neu laden." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_restore", { backup_id: backupId, confirmation });
+  if (error) return { ok: false, message: databaseErrorMessage(error) };
+  refresh();
+  return { ok: true };
+}
+
 // "System prüfen" (task-17-15): only admin files a request (request_system_check checks it again); the service
 // online.rheinwerk.systemcheck on the host runs the checks
 export async function requestSystemCheck(): Promise<Result> {

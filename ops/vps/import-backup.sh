@@ -4,6 +4,8 @@
 # Supabase im Docker-Netz (http://kong:8000 statt http://host.docker.internal:54321) und das Credential
 # „RheinWerk Supabase Local“ nutzt den neuen geheimen Schlüssel aus /opt/rheinwerk/.env (ohne ihn auszugeben).
 #   sh ops/vps/import-backup.sh /opt/rheinwerk/state/import/rheinwerk-<zeit>
+# Achtung (gefunden in task-18-7): pg_restore verliert die revoke-Anweisungen der Migrationen (Standardrechte von
+# Supabase), danach die Rechte mit node scripts/restore.mjs --acl <archiv> neu setzen (docs/betrieb.md 4.5).
 # n8n bleibt danach gestoppt: erst starten, wenn n8n auf dem Rechner gestoppt ist (sonst laufen Gmail und Zeitpläne
 # doppelt).
 set -e

@@ -618,6 +618,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"restores": {
+                  Row: {
+                    "backup_finished_at": string,"backup_id": string,"error": string | null,"file_name": string,"finished_at": string | null,"id": string,"pre_backup_file": string | null,"requested_at": string,"requested_by": string | null,"started_at": string | null,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "backup_finished_at": string,"backup_id": string,"error"?: string | null,"file_name": string,"finished_at"?: string | null,"id"?: string,"pre_backup_file"?: string | null,"requested_at"?: string,"requested_by"?: string | null,"started_at"?: string | null,"status"?: string
+                  }
+                  Update: {
+                    "backup_finished_at"?: string,"backup_id"?: string,"error"?: string | null,"file_name"?: string,"finished_at"?: string | null,"id"?: string,"pre_backup_file"?: string | null,"requested_at"?: string,"requested_by"?: string | null,"started_at"?: string | null,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "restores_requested_by_fkey"
+      columns: ["requested_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"service_contracts": {
                   Row: {
                     "company_name": string,"contract_number": string,"created_at": string,"customer_number": string | null,"emergency_24_7": boolean,"id": string,"is_demo": boolean,"postal_codes": (string)[],"updated_at": string,"valid_from": string,"valid_until": string | null
@@ -1648,6 +1668,26 @@ isOneToOne: false
 "claim_queued_messages":
 { Args: { "batch_limit"?: number,"lease_seconds"?: number }; Returns: Json[]
                            },
+"claim_restore_request":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "backup_finished_at": string,
+"backup_id": string,
+"error": string | null,
+"file_name": string,
+"finished_at": string | null,
+"id": string,
+"pre_backup_file": string | null,
+"requested_at": string,
+"requested_by": string | null,
+"started_at": string | null,
+"status": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "restores"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "claim_system_check":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -2250,6 +2290,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"current_migration":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "demo_seed_apply":
 { Args: { "payload": Json }; Returns: Json
                            },
@@ -2322,6 +2365,26 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"finish_restore_request":
+{ Args: { "error": string,"pre_backup_file": string,"restore_id": string,"status": string }; Returns: {
+              "backup_finished_at": string,
+"backup_id": string,
+"error": string | null,
+"file_name": string,
+"finished_at": string | null,
+"id": string,
+"pre_backup_file": string | null,
+"requested_at": string,
+"requested_by": string | null,
+"started_at": string | null,
+"status": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "restores"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -3172,6 +3235,26 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"request_restore":
+{ Args: { "backup_id": string,"confirmation": string }; Returns: {
+              "backup_finished_at": string,
+"backup_id": string,
+"error": string | null,
+"file_name": string,
+"finished_at": string | null,
+"id": string,
+"pre_backup_file": string | null,
+"requested_at": string,
+"requested_by": string | null,
+"started_at": string | null,
+"status": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "restores"
         isOneToOne: true
         isSetofReturn: false
       } },

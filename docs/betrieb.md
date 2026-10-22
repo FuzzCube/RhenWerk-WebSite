@@ -272,10 +272,11 @@ Geheimnisse im Repository (Settings → Secrets): `VPS_HOST`, `VPS_KNOWN_HOSTS`,
 | Inhalt | wie 4.1, statt `.env.local` die Dateien `/opt/rheinwerk/.env` (im Archiv `env`) und `/opt/rheinwerk/ops.env` (`BACKUP_SECRET_FILES`); Storage aus `/var/lib/storage` (`SUPABASE_STORAGE_PATH`); `sqlite3` auf dem Server installiert |
 | Vor Migrationen | `ops/vps/migrate.sh` (Deployment, 3.8) sichert nur Postgres nach `/opt/rheinwerk/state/pre-migration/` (die letzten 10), in der Liste als „Vor Migration“ ohne Probewiederherstellung |
 | Liste | Tabelle `public.backups` (Zeitpunkt, Anlass, Größe, Inhalt, Prüfung, Fehler; 90 Tage), im Bereich „System“ die letzten 14 Tage; lesen nur admin und manager |
+| Wiederherstellen | im Bereich „System“ → Liste der Sicherungen → **Wiederherstellen** (nur admin; Manager 42501), Abschnitt 4.5 |
 | Warnungen | `backup:failed` (Sicherung oder Prüfung gescheitert, kritisch, E-Mail), `backup:stale` (letzte geprüfte Sicherung älter als 26 Stunden oder keine; Wächter alle 5 Minuten), `backup:provider` (Sicherung des Anbieters aus, kein Sicherungspunkt der letzten 48 Stunden oder API nicht abrufbar) |
 | Sicherung des Anbieters | OVHcloud sichert täglich den ganzen Server (im Tarif). Der Wächter fragt stündlich `GET /vps/vps-0fcb2edf.vps.ovh.net/automatedBackup` und `…/restorePoints` mit einem nur lesenden Schlüssel (`OVH_APPLICATION_KEY`, `OVH_APPLICATION_SECRET`, `OVH_CONSUMER_KEY` in `ops.env`, angelegt am 22.10.2026 über `eu.api.ovh.com/createToken` mit `GET` auf `…/automatedBackup`; das Recht auf `…/restorePoints` fehlt, weil das `*` im Link verloren ging, deshalb wird nur der Zustand geprüft: eingeschaltet, täglich 09:42, 1 Sicherungspunkt). Für die Prüfung des letzten Sicherungspunkts einen Schlüssel mit zusätzlich `GET /vps/vps-0fcb2edf.vps.ovh.net/automatedBackup/restorePoints` anlegen. Wiederherstellen des ganzen Servers nur im OVHcloud-Kundencenter (`POST …/automatedBackup/restore`, setzt den Server auf den Stand des Sicherungspunkts zurück) |
 
-Kopie außer Haus (4.4) entfällt nach Nutzerentscheidung 22.10.2026 (Demoprojekt); bei Bedarf ein Archiv per `scp vps:/opt/rheinwerk/backups/<datei> .` auf den Rechner holen. Wiederherstellung auf dem VPS: `ops/vps/import-backup.sh` (3.6), Probe in task-18-7.
+Kopie außer Haus (4.4) entfällt nach Nutzerentscheidung 22.10.2026 (Demoprojekt); bei Bedarf ein Archiv per `scp vps:/opt/rheinwerk/backups/<datei> .` auf den Rechner holen. Wiederherstellung auf dem VPS: im Dashboard (4.5, task-18-7); eine Sicherung des Rechners einmalig mit `ops/vps/import-backup.sh` (3.6).
 
 ### 4.1 Was gesichert wird
 
@@ -332,6 +333,28 @@ Ergebnis vom 20.10.2026: alle Prüfungen bestanden (829 Anfragen, 113 Konten, 2 
 Der Nachtlauf (`scripts/ops/nightly.mjs`, task-17-17; von task-17-5 bis 17-16 war er Teil des nächtlichen Code-Updates der Produktionskopie) sichert mit `backup` und prüft mit `backup:check`. Scheitert eins davon, bekommt der Admin eine Warnung mit E-Mail (`backup:failed`), der nächste gute Lauf behebt sie. Protokoll: `~/Library/Logs/RheinWerk/backup.log`.
 
 ### 4.5 Wiederherstellung
+
+**Auf dem VPS im Dashboard (seit 22.10.2026, task-18-7).** Bereich „System“ → „Sicherungen der letzten 14 Tage“ → **Wiederherstellen** in der Zeile der gewünschten Sicherung → Rückfrage lesen, `WIEDERHERSTELLEN` eingeben → **Wiederherstellen**. Der Knopf steht nur bei Sicherungen, die so wiederhergestellt werden können: geprüft, vollständig (täglich, von Hand oder vor einer Wiederherstellung), höchstens 14 Tage alt und mit demselben Migrationsstand wie die Datenbank. Nur die Rolle Admin sieht ihn.
+
+Ablauf (`scripts/ops/restore-run.mjs`, vom Dienst `rheinwerk-systemcheck` innerhalb von 20 Sekunden übernommen, Protokoll `journalctl -u rheinwerk-systemcheck`):
+
+| Schritt | Was passiert | Bei Fehler |
+| --- | --- | --- |
+| 1. Sicherung davor | geprüfte Sicherung des aktuellen Stands, in der Liste als „Vor Wiederherstellung“ | Abbruch, nichts verändert |
+| 2. Wiederherstellung (`scripts/restore.mjs`) | n8n angehalten; Auth, REST und Storage angehalten; `pg_restore --clean` über `postgres`; Rechte (GRANT/REVOKE) genau wie in der Sicherung (unten); Zeilenzahlen wie im Manifest; Storage-Ordner geleert und aus dem Archiv gefüllt; Datenbank und Schlüssel von n8n ersetzt, n8n gestartet | Rückkehr (Schritt 4) |
+| 3. Gesundheitsprüfung | Auth, REST und Storage antworten über das Gateway, n8n `/healthz` | Rückkehr (Schritt 4) |
+| 4. Rückkehr | dieselbe Wiederherstellung mit der Sicherung aus Schritt 1, danach dieselbe Prüfung | Warnung `restore:failed`: von Hand weiter (unten) |
+| 5. Ergebnis | E-Mail an den Admin; im Bereich „System“ „Letzte Wiederherstellung“ mit Zustand und Fehler; ein Fehlschlag ist die kritische Warnung `restore:failed`, die nächste gelungene Wiederherstellung schließt sie | – |
+
+Unverändert bleiben dabei die Tabellen `backups`, `restores`, `system_alerts` und `system_status` (Liste, Anfrage und Warnungen gehen nicht zurück) sowie `/opt/rheinwerk/.env` und `ops.env`. Website, Dashboard und n8n sind etwa eine Minute nicht erreichbar; wer sich nach der Sicherung angemeldet hat, muss sich neu anmelden. Während der Wiederherstellung (Datei `/opt/rheinwerk/state/restore.lock`, höchstens 30 Minuten) prüft der Wächter nicht und die tägliche Sicherung entfällt. Rückgängig machen: die Sicherung „Vor Wiederherstellung“ genauso wiederherstellen.
+
+**Rechte nach `pg_restore`:** `pg_restore` legt jedes Objekt als `supabase_admin` neu an, und die Standardrechte von Supabase geben `anon` und `authenticated` dabei alles; der Dump enthält nur die Abweichungen von den Grundrechten, die `revoke`-Anweisungen der Migrationen gingen also verloren (RLS schützt die Zeilen weiter, aber die zweite Schutzschicht fehlt). Gefunden am 22.10.2026: betroffen war der VPS seit dem Import (task-18-3, `import-backup.sh`). `scripts/restore.mjs` setzt deshalb nach `pg_restore` die Rechte aller neu angelegten Objekte (ohne Objekte von Erweiterungen) zurück und spielt die Rechte des Dumps ein; nur die Rechte im Schema `public` aus einer Sicherung mit gleichem Migrationsstand: `node --env-file=<env> scripts/restore.mjs --acl <archiv>`. Prüfen: `supabase test db` (lokal) bzw. `select has_table_privilege('authenticated', 'public.profiles', 'UPDATE')` muss `f` sein.
+
+Probe am 22.10.2026 auf einer Kopie (lokaler Supabase-Stack mit den Daten vom Rechner, n8n in einem eigenen Container ohne Netz): Testkonto und Testdatei nach der Sicherung wieder verschwunden, Liste und Anfrage erhalten, 40 Sekunden; mit absichtlichem Fehler nach `pg_restore` und nach Storage (`RESTORE_FAIL_AFTER=pg_restore|storage`) jeweils Rückkehr zum Stand davor, Zustand „Fehlgeschlagen, Stand davor zurück“, Warnung `restore:failed`. Nach Wiederherstellung und Rückkehr alle 1 170 pgTAP-Tests bestanden (Rechte unverändert).
+
+**Von Hand auf dem VPS** (Sicherung mit anderem Migrationsstand, Sicherung vor einer Migration oder nach `restore:failed`): zuerst „Jetzt sichern“ bzw. `sudo systemctl start rheinwerk-backup.service`. Eine vollständige Sicherung mit gleichem Migrationsstand: `cd /opt/rheinwerk/app && node --env-file=/opt/rheinwerk/ops.env scripts/restore.mjs /opt/rheinwerk/backups/<datei>` (ohne Gesundheitsprüfung und Rückkehr). Eine Sicherung vor einer Migration (`/opt/rheinwerk/state/pre-migration/*.dump`, nur Postgres): wie Schritt 1 unten mit `supabase_db_rheinwerk`, danach `ops/vps/compose.sh restart rest`. Bei einem älteren Migrationsstand danach die fehlenden Migrationen mit `sh ops/vps/migrate.sh <commit>` einspielen.
+
+**Auf dem Rechner (Stufe 1) und von Hand:**
 
 **Vorher:** App und n8n anhalten, damit niemand schreibt (`next dev` im Terminal beenden, `docker stop n8n`). Die aktuellen Daten zuerst selbst sichern (`npm run backup`), falls die Wiederherstellung rückgängig gemacht werden muss.
 
@@ -420,6 +443,8 @@ Ein zweiter Lauf findet nichts mehr (Anfragen mit offenem Vorschlag warten auf d
 | **Gmail-Zugang abgelaufen** (geschehen am 19.10.2026: Versand fiel aus, Eingangsbestätigungen blieben liegen) | Dashboard-Hinweis „E-Mail-Versand hängt“; Logs „needs to be reconnected“ | n8n über `https://n8n.rheinwerk-service.online` öffnen → Credentials → „RheinWerk Gmail“ → *Reconnect* | wartende E-Mails gehen innerhalb einer Minute automatisch raus; Google-Cloud-Projekt muss auf *In production* stehen (sonst Ablauf nach 7 Tagen) |
 | **Website nicht erreichbar** (erst nach dem Schalten der Domain, 2.2) | Uptime-Monitor | Rechner wach? `docker ps` (cloudflared läuft?), läuft die App? | App neu starten |
 | **Datenbank versehentlich zurückgesetzt** (`supabase db reset`) oder beschädigt | Dashboard leer, Anmeldung scheitert | App und n8n anhalten | Wiederherstellung 4.5 aus der letzten Sicherung |
+| **Daten versehentlich gelöscht oder verfälscht** (VPS) | Rückmeldung von Mitarbeitern, fehlende Anfragen oder Dateien | Zeitpunkt eingrenzen; nichts weiter ändern | Admin: „System“ → letzte Sicherung vor dem Fehler → **Wiederherstellen** (4.5). Alles danach Eingegebene geht verloren; es steht in der Sicherung „Vor Wiederherstellung“ |
+| **Wiederherstellung fehlgeschlagen** | E-Mail und kritische Warnung `restore:failed`; „Letzte Wiederherstellung“ im Bereich „System“ | Text der Warnung lesen: „Stand davor zurück“ heißt, das System läuft mit den Daten von vorher | Ursache aus dem Fehler und `journalctl -u rheinwerk-systemcheck` beheben, erneut wiederherstellen; ist die Rückkehr gescheitert: `ops/vps/compose.sh ps`, fehlende Container starten, Sicherung „Vor Wiederherstellung“ von Hand wiederherstellen (4.5) |
 | **Rechner defekt oder gestohlen** | – | Domain zeigt Fehlerseite von Cloudflare | Abschnitt 4.5 „Kompletter Verlust“ auf neuem Rechner oder direkt Stufe 2 |
 | **n8n-Credentials unbrauchbar** („could not decrypt“) | n8n-Fehler in allen Workflows | `~/n8n/data/config` aus der Sicherung zurückkopieren | Schlüssel nie neu erzeugen, solange alte Credentials gebraucht werden |
 | **KI-Analyse fällt aus** (OpenAI-Guthaben, Schlüssel) | Erstbearbeitungen bleiben „neu“ | Schlüssel/Guthaben prüfen | Zeitplan holt offene Analysen nach; bis dahin bearbeiten Dispatcher manuell |

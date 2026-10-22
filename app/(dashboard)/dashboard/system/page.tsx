@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BackupButton } from "@/components/dashboard/backup-button";
 import { ResolveAlertButton } from "@/components/dashboard/resolve-alert-button";
+import { RestoreButton, RestoreProgress } from "@/components/dashboard/restore-button";
 import { SystemCheckButton } from "@/components/dashboard/system-check-button";
 import { Card } from "@/components/dashboard/ui/card";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
@@ -9,7 +10,9 @@ import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
-import { backupContents, backupReasonLabel, backupStatus, formatBytes, latestVerified, providerView, type BackupRow } from "@/lib/backups";
+import {
+  backupContents, backupReasonLabel, backupStatus, formatBytes, latestVerified, providerView, restorable, restoreActive, restoreStatus, type BackupRow,
+} from "@/lib/backups";
 import { loadSystemOverview } from "@/lib/dashboard/system";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import {
@@ -25,7 +28,8 @@ export const metadata: Metadata = { title: "System" };
 // (n8n task-17-8, phone assistant and credit task-17-9, the others task-17-15), the nightly run the versions (only
 // shown, never installed); only admin starts a check at once ("System prüfen"). Backups (task-18-6): the newest checked
 // one, the backup of the provider and the list of 14 days; only admin starts one at once ("Jetzt sichern"). Open and
-// resolved warnings are listed at the end; only admin closes one (task-17-10).
+// resolved warnings are listed at the end; only admin closes one (task-17-10). Restore (task-18-7): only admin, from a
+// row of the list; the newest restore with its result in the card "Datensicherung".
 export default async function SystemPage() {
   const employee = await requireRole(rolesFor("/dashboard/system"));
   const isAdmin = employee.role === "admin";
@@ -40,6 +44,8 @@ export default async function SystemPage() {
   const latest = latestVerified(system.backups);
   const provider = providerView(system.provider);
   const openAlerts = summary.alerts as SystemAlertRow[];
+  const restoring = restoreActive(system.restore, now);
+  const backupColumns = backupColumnsFor(isAdmin ? { migration: system.migration, now, restoring } : null);
 
   const alertColumn: Column<SystemAlertRow> = {
     key: "alert", header: "Warnung", mobile: "title",
@@ -81,7 +87,11 @@ export default async function SystemPage() {
       </header>
 
       {system.error ? (
-        <ErrorState><p>Bitte die Seite neu laden.</p></ErrorState>
+        <ErrorState>
+          <p>Bitte die Seite neu laden.</p>
+          {/* During a restore the database is away for a moment: reload by itself until it answers again */}
+          {isAdmin && <RestoreProgress active />}
+        </ErrorState>
       ) : (
         <>
           <section className={`rw-banner ${summary.ok ? "rw-banner--good" : critical ? "rw-banner--danger" : "rw-banner--info"} system-summary`} aria-labelledby="system-zusammenfassung">
@@ -119,6 +129,23 @@ export default async function SystemPage() {
                   <EmptyState title="Noch keine geprüfte Sicherung." />
                 )}
                 <p className="system-backup__provider"><StatusChip status={provider.status} /> Sicherung des Anbieters: {provider.text}</p>
+                {system.restore && (
+                  <div className="system-backup__restore">
+                    <p>
+                      <StatusChip status={restoreStatus(system.restore, now)} /> Letzte Wiederherstellung: Sicherung vom <span className="mono">{formatDateTime(system.restore.backup_finished_at)}</span>
+                      <span className="cell-sub">angefordert <span className="mono">{formatDateTime(system.restore.requested_at)}</span>{system.restore.requester && <> von {system.restore.requester}</>}</span>
+                    </p>
+                    {restoring && <p className="cell-sub">Website, Dashboard und Automatisierung sind dabei einige Minuten nicht erreichbar. Die Seite lädt sich selbst neu.</p>}
+                    {system.restore.pre_backup_file && <p className="cell-sub">Stand davor gesichert: <span className="mono">{system.restore.pre_backup_file}</span></p>}
+                    {system.restore.error && (
+                      <details className="system-details system-details--inline">
+                        <summary>Fehler</summary>
+                        <p className="system-alert-detail">{system.restore.error}</p>
+                      </details>
+                    )}
+                    <RestoreProgress active={restoring} />
+                  </div>
+                )}
                 {isAdmin && <BackupButton state={backupState} />}
               </div>
             </Card>
@@ -144,7 +171,9 @@ export default async function SystemPage() {
           </div>
 
           <Card stripe="neutral" title="Sicherungen der letzten 14 Tage" count={system.backups.length} id="system-sicherungen" headingLevel={2} flush
-            description="Täglich, von Hand und vor jeder Datenbankänderung des Deployments. Wiederherstellung nach docs/betrieb.md 4.5.">
+            description={isAdmin
+              ? "Täglich, von Hand, vor jeder Datenbankänderung des Deployments und vor einer Wiederherstellung. Wiederherstellen lässt sich jede geprüfte vollständige Sicherung mit dem aktuellen Stand der Datenbank."
+              : "Täglich, von Hand, vor jeder Datenbankänderung des Deployments und vor einer Wiederherstellung. Wiederherstellen kann nur die Rolle Admin."}>
             <div className="system-backups">
               <DataTable caption="Sicherungen" columns={backupColumns} rows={system.backups} rowKey={(row) => row.id}
                 empty={<EmptyState title="Noch keine Sicherung in den letzten 14 Tagen." />} />
@@ -177,6 +206,16 @@ export default async function SystemPage() {
       )}
     </div>
   );
+}
+
+// restore: only for admin; the button only on rows that request_restore accepts, disabled while a restore runs
+function backupColumnsFor(restore: { migration: string | null; now: Date; restoring: boolean } | null): Column<BackupRow>[] {
+  return restore ? [...backupColumns, {
+    key: "action", header: "Aktion",
+    cell: (row) => restorable(row, restore.migration, restore.now)
+      ? <RestoreButton backupId={row.id} finishedAt={row.finished_at} disabled={restore.restoring} />
+      : <span className="cell-sub">–</span>,
+  }] : backupColumns;
 }
 
 const backupColumns: Column<BackupRow>[] = [

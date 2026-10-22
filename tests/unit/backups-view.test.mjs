@@ -1,8 +1,10 @@
-// Unit tests for the backups in the area "System" (task-18-6, lib/backups.ts).
+// Unit tests for the backups in the area "System" (task-18-6, lib/backups.ts) and the restore (task-18-7).
 // Run with: npm run test:unit
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { backupContents, backupStatus, formatBytes, latestVerified, providerView } from "../../lib/backups.ts";
+import {
+  backupContents, backupReasonLabel, backupStatus, confirmationMatches, formatBytes, latestVerified, providerView, restorable, restoreActive, restoreStatus,
+} from "../../lib/backups.ts";
 import { checkRequestState } from "../../lib/system-monitoring.ts";
 
 const row = (extra) => ({ id: "x", started_at: "2026-10-22T01:00:00Z", finished_at: "2026-10-22T01:01:00Z", reason: "daily", status: "ok", file_name: "a", size_bytes: 1, contents: {}, verified: true, error: null, requester: null, ...extra });
@@ -37,4 +39,33 @@ test("„Jetzt sichern“ verfällt erst nach 30 Minuten", () => {
   const request = { requested_at: "2026-10-22T11:45:00Z", started_at: "2026-10-22T11:45:10Z" };
   assert.equal(checkRequestState(request, now), "idle");
   assert.equal(checkRequestState(request, now, 30), "running");
+});
+
+test("Wiederherstellen nur aus vollständiger geprüfter Sicherung mit gleichem Migrationsstand der letzten 14 Tage", () => {
+  const now = new Date("2026-10-23T10:00:00Z");
+  const ok = row({ contents: { migration: "20261022160000" } });
+  assert.equal(restorable(ok, "20261022160000", now), true);
+  assert.equal(restorable(row({ reason: "pre_restore", contents: { migration: "20261022160000" } }), "20261022160000", now), true);
+  assert.equal(restorable(ok, "20261101000000", now), false, "andere Migration");
+  assert.equal(restorable(ok, null, now), false, "Migrationsstand unbekannt");
+  assert.equal(restorable(row({ contents: {} }), "20261022160000", now), false, "ältere Sicherung ohne Migrationsstand");
+  assert.equal(restorable(row({ reason: "migration", verified: null, contents: { migration: "20261022160000" } }), "20261022160000", now), false);
+  assert.equal(restorable(row({ verified: false, contents: { migration: "20261022160000" } }), "20261022160000", now), false);
+  assert.equal(restorable(ok, "20261022160000", new Date("2026-11-06T10:00:00Z")), false, "älter als 14 Tage");
+  assert.equal(backupReasonLabel("pre_restore"), "Vor Wiederherstellung");
+});
+
+test("Bestätigungswort und Zustand einer Wiederherstellung", () => {
+  assert.equal(confirmationMatches(" wiederherstellen "), true);
+  assert.equal(confirmationMatches("WIEDERHERSTELLE"), false);
+  const now = new Date("2026-10-23T10:00:00Z");
+  const restore = (extra) => ({ id: "r", file_name: "a", backup_finished_at: "2026-10-23T01:00:00Z", requested_at: "2026-10-23T09:50:00Z", started_at: null, finished_at: null, status: "requested", pre_backup_file: null, error: null, requester: null, ...extra });
+  assert.equal(restoreActive(restore(), now), true);
+  assert.equal(restoreStatus(restore(), now).label, "Angefordert");
+  assert.equal(restoreStatus(restore({ status: "running" }), now).label, "Läuft");
+  assert.equal(restoreActive(restore({ requested_at: "2026-10-23T08:30:00Z", status: "running" }), now), false, "nach einer Stunde aufgegeben");
+  assert.equal(restoreStatus(restore({ requested_at: "2026-10-23T08:30:00Z", status: "running" }), now).label, "Nicht abgeschlossen");
+  assert.equal(restoreStatus(restore({ status: "ok" }), now).tone, "done");
+  assert.equal(restoreStatus(restore({ status: "rolled_back", error: "x" }), now).label, "Fehlgeschlagen, Stand davor zurück");
+  assert.equal(restoreActive(null, now), false);
 });
