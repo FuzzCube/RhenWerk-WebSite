@@ -97,13 +97,13 @@ Auslöser für den Umzug: Projektende (Phase 18), echte Kunden oder Mitarbeitend
 
 ```mermaid
 flowchart LR
-  Browser["Browser<br/>Kunden und Mitarbeitende"] -->|HTTPS| Vercel["Vercel (Hobby, Region fra1)<br/>Next.js: Website und /dashboard"]
+  Browser["Browser<br/>Kunden und Mitarbeitende"] -->|HTTPS| Vercel["Vercel (Hobby, Region cdg1 Paris)<br/>Next.js: Website und /dashboard"]
   Eleven["ElevenLabs (Mira)"] -->|Webhooks mit Access-Service-Token| CF
   Vercel -->|"api.rheinwerk-service.online<br/>Access-Service-Token"| CF["Cloudflare<br/>DNS, Access, Tunnel"]
   Vercel -->|"n8n.…/webhook/…<br/>Access-Service-Token"| CF
   Admin["Betreiber"] -->|"n8n-Oberfläche<br/>Access mit E-Mail-Login"| CF
   CF -->|"Tunnel (nur ausgehend)"| VPS
-  subgraph VPS["VPS in Deutschland, Docker Compose"]
+  subgraph VPS["OVHcloud VPS-2 in Roubaix (Frankreich), Docker Compose"]
     cloudflared --> Kong["Supabase Kong (API)"]
     cloudflared --> N8N["n8n"]
     Kong --> Auth & Rest["PostgREST"] & Storage
@@ -116,7 +116,7 @@ flowchart LR
 ```
 
 - **Code** auf GitHub (`FuzzCube/RhenWerk-WebSite`), Vercel baut jeden Push auf `main` (task-18-4), GitHub Actions prüfen und spielen Migrationen ein (task-18-5).
-- **Website und Dashboard** auf Vercel, Funktionen in Frankfurt (`regions: ["fra1"]`, nahe am Server). Die Domain `rheinwerk-service.online` und `www` zeigen per DNS auf Vercel.
+- **Website und Dashboard** auf Vercel, Funktionen in Paris (`regions: ["cdg1"]`, wenige Millisekunden vom Server in Roubaix; die Seiten selbst liefert Vercel weiter vom nächsten Knoten aus, für Besucher in Deutschland ohne spürbaren Unterschied). Die Domain `rheinwerk-service.online` und `www` zeigen per DNS auf Vercel.
 - **Supabase und n8n** per Docker Compose auf einem VPS. Kein offener Port außer SSH mit Schlüssel; die Dienste sind nur über den Cloudflare-Tunnel erreichbar (ausgehende Verbindung wie heute). Postgres, Studio und die Docker-Ports sind nie öffentlich; Studio bei Bedarf über `ssh -L`.
 - **Supabase-API** unter `api.rheinwerk-service.online` hinter Cloudflare Access: nur Anfragen mit Service-Token kommen durch. Das reicht, weil der Browser die API **nie** direkt aufruft (Prüfung task-18-1): alle Zugriffe laufen auf dem Server (Server-Komponenten, Server-Actions, Routen), Dateien über eigene Routen, und der Link zum Zurücksetzen des Passworts führt auf die Website (`/auth/bestaetigen` mit `token_hash`, `verifyOtp` auf dem Server). Realtime wird nicht genutzt.
 - **n8n** unter `n8n.rheinwerk-service.online` hinter Cloudflare Access: Oberfläche mit E-Mail-Login des Betreibers, Webhooks nur mit Service-Token (ElevenLabs wie heute, neu auch Vercel für das Anfrageformular und `/api/health`). n8n spricht Supabase im Docker-Netz direkt an, nicht über den Tunnel.
@@ -125,23 +125,23 @@ flowchart LR
 
 ### 3.2 Bedarf und Wahl des Servers
 
-Gemessen am 21.10.2026 auf dem Rechner: alle Container zusammen ca. 3,5 GB RAM, davon für den Betrieb nötig ca. 1,8 GB (Postgres 0,45, n8n 0,5, Kong, PostgREST, Auth, Storage, cloudflared; Studio, Analytics/Logflare, Vector, Inbucket und pg-meta entfallen auf dem Server). Daten: Postgres 68 MB, Dateien 44 MB, n8n 0,8 GB; Docker-Images ca. 15 GB, eine Sicherung ca. 100 MB. Plattenbedarf auf dem Server ca. 15 GB: Images ca. 5,3 GB (Postgres 1,75, Storage 1,4, n8n 1,7, übrige 0,5), vorherige Versionen für den Rückfall ca. 3,5 GB, System ca. 4 GB, Daten 1 GB, eigene Sicherungen 14 × 0,1 GB. Ziel: 4 vCPU, 8 GB RAM (Platz für Sicherung mit Probewiederherstellung und Updates mit Rückfall, task-18-8), ab 40 GB SSD, Rechenzentrum in Deutschland (DSGVO). Auf jedem Server: 2 GB Swap, `shared_buffers` von Postgres begrenzen, Schwellen des Wächters `DISK_WARN_GB=8`, `DISK_CRITICAL_GB=3`.
+Gemessen am 21.10.2026 auf dem Rechner: alle Container zusammen ca. 3,5 GB RAM, davon für den Betrieb nötig ca. 1,8 GB (Postgres 0,45, n8n 0,5, Kong, PostgREST, Auth, Storage, cloudflared; Studio, Analytics/Logflare, Vector, Inbucket und pg-meta entfallen auf dem Server). Daten: Postgres 68 MB, Dateien 44 MB, n8n 0,8 GB; Docker-Images ca. 15 GB, eine Sicherung ca. 100 MB. Plattenbedarf auf dem Server ca. 15 GB: Images ca. 5,3 GB (Postgres 1,75, Storage 1,4, n8n 1,7, übrige 0,5), vorherige Versionen für den Rückfall ca. 3,5 GB, System ca. 4 GB, Daten 1 GB, eigene Sicherungen 14 × 0,1 GB. Ziel: 4 vCPU, 8 GB RAM (Platz für Sicherung mit Probewiederherstellung und Updates mit Rückfall, task-18-8), ab 40 GB SSD, Rechenzentrum in der EU (DSGVO verlangt EU oder ein Land mit Angemessenheitsbeschluss, nicht Deutschland). Auf jedem Server: 2 GB Swap, `shared_buffers` von Postgres begrenzen, Schwellen des Wächters `DISK_WARN_GB=8`, `DISK_CRITICAL_GB=3`.
 
 | Server | Leistung | Preis/Monat | Stand 21.10.2026 |
 | --- | --- | --- | --- |
-| **OVHcloud VPS-2** (Standort Deutschland beim Bestellen wählen) | 4 vCore, 8 GB, 75 GB NVMe, 1 Gbit/s, Traffic unbegrenzt, **tägliche Sicherung inklusive** | 8,58 € inkl. MwSt. (ca. 7,21 € netto) bei 12 Monaten Vorauszahlung | **gewählt** (Nutzer, 22.10.2026): günstigster Server mit 8 GB, Sicherung des Anbieters ersetzt den Speicher außer Haus |
+| **OVHcloud VPS-2** (Roubaix, Frankreich; angeboten außerdem Erith/UK und Warschau, kein deutscher Standort für dieses Angebot) | 4 vCore, 8 GB, 75 GB NVMe, 1 Gbit/s, Traffic unbegrenzt, **tägliche Sicherung inklusive** | 8,58 € inkl. MwSt. (ca. 7,21 € netto) laut Übersicht bei 12 Monaten Vorauszahlung; der Konfigurator zeigte am 22.10.2026 10,10 € inkl. MwSt. (vermutlich ohne Laufzeit), beim Bestellen Modell und Laufzeit prüfen | **gewählt** (Nutzer, 22.10.2026): günstigster Server mit 8 GB, Sicherung des Anbieters ersetzt den Speicher außer Haus |
 | OVHcloud VPS-1 | 2 vCore, 4 GB, 40 GB, 500 Mbit/s, tägliche Sicherung | 4,53 € inkl. MwSt. | reicht als Minimum (Betrieb ca. 2,1 GB RAM, Rückfall-Updates knapp); nur mit Swap |
 | Hetzner Cloud CX33 | 4 vCPU geteilt, 8 GB, 80 GB NVMe | 8,99 € netto | derzeit „nicht verfügbar“ (alle geteilten Hetzner-Tarife) |
 | netcup VPS 1000 G12.5 (Nürnberg) | 4 vCore, 8 GB, 128 GB | 14,50 € netto bei 12 Monaten | Ausweichlösung, bestellbar |
 | Supabase Cloud + n8n Cloud | verwaltet | ab ca. 25 € plus n8n Cloud | verworfen: zweite Datenhaltung, Sicherungen erst im bezahlten Tarif, n8n-Workflows müssten umziehen |
 
-Bestellung in task-18-2: OVHcloud VPS-2 mit Standort Deutschland; alle genannten Server sind x86, die heutigen Images laufen unverändert.
+Bestellung in task-18-2: OVHcloud VPS-2 in Roubaix (Nutzerentscheidung 22.10.2026; Frankreich ist EU, OVH ist ein französisches Unternehmen, Auftragsverarbeitungsvertrag beim Bestellen annehmen); alle genannten Server sind x86, die heutigen Images laufen unverändert.
 
 ### 3.3 Kosten je Monat
 
 | Posten | Betrag | Bemerkung |
 | --- | --- | --- |
-| VPS OVHcloud VPS-2 | ca. 7,21 € netto (8,58 € inkl. MwSt.) | 12 Monate im Voraus, tägliche Sicherung des Anbieters inklusive |
+| VPS OVHcloud VPS-2 (Roubaix) | ca. 7,21 € netto (8,58 € inkl. MwSt.), ohne Laufzeit bis 10,10 € inkl. MwSt. | 12 Monate im Voraus, tägliche Sicherung des Anbieters inklusive |
 | Vercel Hobby | 0 € | 100 GB Datenübertragung, 1 Mio. Funktionsaufrufe, 4 h aktive CPU, Laufzeit bis 300 s je Aufruf; bei Überschreitung pausiert das Projekt bis 30 Tage |
 | Cloudflare (DNS, Tunnel, Access bis 50 Nutzer) | 0 € | Service-Tokens laufen schon heute im kostenlosen Tarif (Mira) |
 | GitHub (öffentliches Repository, Actions, Renovate) | 0 € | |
@@ -162,7 +162,8 @@ Bestellung in task-18-2: OVHcloud VPS-2 mit Standort Deutschland; alle genannten
 | **Keine Kopie außer Haus** (Nutzerentscheidung 22.10.2026, Demoprojekt): fällt der Anbieter samt seiner Sicherung aus, sind die Daten weg. | Für Demodaten hingenommen; bei Bedarf eine Sicherung von Hand auf den eigenen Rechner kopieren (`scp`). Vor echter Nutzung einen Speicher außer Haus ergänzen (z. B. Hetzner Storage Box, 3,20 €). |
 | **4 GB RAM bei VPS-1** wären knapp. | VPS-2 mit 8 GB gewählt; auf jedem Server 2 GB Swap und begrenzte Postgres-Puffer. |
 | **Selbst betriebenes Supabase** unterscheidet sich vom lokalen CLI-Stack (Compose-Datei, Schlüssel, SMTP für Auth-E-Mails, Versionen). | Eigene Compose-Datei im Repository mit festen Image-Versionen wie heute (`supabase services`), SMTP für echte Passwort-Mails (task-18-2); Updates nur mit Sicherung und Rückfall (task-18-8). |
-| **Latenz** Vercel ↔ Server über den Tunnel. | Region `fra1` und Server in Deutschland; nach dem Umzug im Dashboard messen (Gesamtprobe task-18-9). |
+| **Latenz** Vercel ↔ Server über den Tunnel; jede Dashboard-Seite stellt mehrere Abfragen nacheinander. | Vercel-Region `cdg1` (Paris) nahe Roubaix statt `fra1`; nach dem Umzug im Dashboard messen (Gesamtprobe task-18-9). |
+| **Server nicht in Deutschland.** | Rechtlich unkritisch: Frankreich ist EU, die DSGVO verlangt keinen deutschen Standort. Hosting (OVHcloud, Frankreich) und Auftragsverarbeitung in der Datenschutzerklärung nennen (task-18-4). Den Standort UK (Erith) nicht wählen: kein EU-Land, nur Angemessenheitsbeschluss. |
 
 **Umzug** (Einzelschritte in task-18-2 bis 18-4): Server mit Docker, Firewall (nur SSH mit Schlüssel) und `unattended-upgrades`; Compose-Stack mit Supabase, n8n und cloudflared; letzte Sicherung vom Rechner nach Abschnitt 4.5 wiederherstellen (Postgres, Storage, n8n-Datenbank **mit Schlüssel**); im Cloudflare-Tunnel die Ziele auf den Server umstellen; Website auf Vercel mit den Umgebungsvariablen; DNS der Domain auf Vercel. Danach Sicherung und Wächter auf dem Server (task-18-6).
 

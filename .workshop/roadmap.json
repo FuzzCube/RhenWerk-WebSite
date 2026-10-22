@@ -3648,7 +3648,7 @@
         {
           "id": "task-18-2",
           "title": "VPS mit Docker Compose",
-          "description": "VPS einrichten: SSH nur mit Schlüssel, Firewall, unattended-upgrades; docker-compose.yml im Repository mit fest gepinnten Versionen für Supabase (self-hosted), n8n und Reverse Proxy (TLS) bzw. cloudflared; Wächter und Dienste als systemd-Timer statt launchd (scripts/ops bleibt). Nach task-18-1: OVHcloud VPS-2 (Nutzerentscheidung 22.10.2026) mit Standort Deutschland, 2 GB Swap, DISK_WARN_GB=8; nur SSH offen, Supabase-API und n8n ausschließlich über den Cloudflare-Tunnel (api. und n8n. hinter Access), Studio nur per SSH-Tunnel; neue JWT-Schlüssel statt der Demo-Schlüssel (betrieb.md 3).",
+          "description": "VPS einrichten: SSH nur mit Schlüssel, Firewall, unattended-upgrades; docker-compose.yml im Repository mit fest gepinnten Versionen für Supabase (self-hosted), n8n und Reverse Proxy (TLS) bzw. cloudflared; Wächter und Dienste als systemd-Timer statt launchd (scripts/ops bleibt). Nach task-18-1: OVHcloud VPS-2 in Roubaix (Nutzerentscheidung 22.10.2026), Auftragsverarbeitungsvertrag annehmen, 2 GB Swap, DISK_WARN_GB=8; nur SSH offen, Supabase-API und n8n ausschließlich über den Cloudflare-Tunnel (api. und n8n. hinter Access), Studio nur per SSH-Tunnel; neue JWT-Schlüssel statt der Demo-Schlüssel (betrieb.md 3).",
           "order": 2,
           "weight": 3,
           "status": "ready",
@@ -3696,7 +3696,7 @@
         {
           "id": "task-18-4",
           "title": "Website auf Vercel",
-          "description": "Vercel-Projekt aus dem GitHub-Repository: Umgebungsvariablen (Supabase auf dem VPS, Turnstile-Produktionsschlüssel, Blob, ElevenLabs), Domain rheinwerk-service.online, Supabase Auth site_url und Redirects, SMTP für Passwort-Mails; Rückweg über Instant Rollback. Nach task-18-1: Region fra1; Supabase-Client und n8n-Aufrufe (Anfrageformular, /api/health) senden die Cloudflare-Access-Kopfzeilen des Service-Tokens; Website sichtbar als Portfolio- und Demoprojekt gekennzeichnet (Bedingung des Hobby-Tarifs, betrieb.md 3.4).",
+          "description": "Vercel-Projekt aus dem GitHub-Repository: Umgebungsvariablen (Supabase auf dem VPS, Turnstile-Produktionsschlüssel, Blob, ElevenLabs), Domain rheinwerk-service.online, Supabase Auth site_url und Redirects, SMTP für Passwort-Mails; Rückweg über Instant Rollback. Nach task-18-1: Region cdg1 (Paris, nahe dem Server in Roubaix); Supabase-Client und n8n-Aufrufe (Anfrageformular, /api/health) senden die Cloudflare-Access-Kopfzeilen des Service-Tokens; Website sichtbar als Portfolio- und Demoprojekt gekennzeichnet (Bedingung des Hobby-Tarifs, betrieb.md 3.4); Datenschutzerklärung nennt Hosting bei OVHcloud in Frankreich und Vercel.",
           "order": 4,
           "weight": 2,
           "status": "planned",

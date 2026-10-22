@@ -13,11 +13,12 @@ Nächste Schritte (die mit Task-ID stehen in der Roadmap, die übrigen werden er
 
 1. Speicherplatz schaffen: auf dem Rechner sind nur etwa 12 GB frei, die Warnung „Wenig Speicherplatz“ ist offen (Schwelle 20 GB, `docker system df`, alte Container wie `n8n-old` entfernen).
 2. Updates nach den Empfehlungen im Bereich „System“ (Stand 21.10.2026: Docker Desktop, Supabase CLI, n8n, Node.js, 14 npm-Pakete), jeweils mit Sicherung vorher und „System prüfen“ danach.
-3. Phase 18 „Deployment“ zum Projektende: Website auf Vercel, Supabase und n8n per Docker Compose auf einem VPS, GitHub Actions und Renovate; Sicherung im Dashboard, Datenwiederherstellung und Systemupdates mit Rückfall dort (`task-18-1` bis `task-18-9`).
-4. Sprachtests mit Stimme, die noch fehlen (`docs/telefonassistent/testprotokoll.md`, Abschnitt „Offen“): Notfall eines Bestandskunden (task-16-2), Anruf mit Demo-Weiterleitung, Unterbrechen und Stille, ein Gespräch über das Widget.
-5. SLA-Verträge im Dashboard pflegen (anlegen, verlängern, beenden); bisher nur Migration und Demo-Seed.
-6. Eigene Rechnungsanschrift je Kunde (Rechnungen nehmen bisher die Anschrift der Anfrage).
-7. SMTP für echte Passwort-Mails (`docs/setup.md`), bei Phase 18 ohnehin nötig.
-8. Ideen: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+3. Server bestellen (Nutzer): OVHcloud VPS-2 in Roubaix, danach `task-18-2` (Zielbild, Kosten und Risiken in `docs/betrieb.md` 3, Entscheidungen 21./22.10.2026 in `docs/decisions.md`).
+4. Phase 18 „Deployment“ zum Projektende: Website auf Vercel (`cdg1`), Supabase und n8n per Docker Compose auf dem VPS, GitHub Actions und Renovate; Sicherung im Dashboard, Datenwiederherstellung und Systemupdates mit Rückfall dort (`task-18-1` bis `task-18-9`).
+5. Sprachtests mit Stimme, die noch fehlen (`docs/telefonassistent/testprotokoll.md`, Abschnitt „Offen“): Notfall eines Bestandskunden (task-16-2), Anruf mit Demo-Weiterleitung, Unterbrechen und Stille, ein Gespräch über das Widget.
+6. SLA-Verträge im Dashboard pflegen (anlegen, verlängern, beenden); bisher nur Migration und Demo-Seed.
+7. Eigene Rechnungsanschrift je Kunde (Rechnungen nehmen bisher die Anschrift der Anfrage).
+8. SMTP für echte Passwort-Mails (`docs/setup.md`), bei Phase 18 ohnehin nötig.
+9. Ideen: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
 
 Vor dem Start: Docker und `supabase start`, `next dev` läuft im Terminal des Nutzers; nie `supabase db reset` (neue Migrationen mit `supabase migration up`); Prüfungen gegen `next start` (z. B. `npx next start -p 3202` und `APP_URL=http://localhost:3202`, nicht `127.0.0.1`); `test:ui` und `test:api` hinterlassen Testdaten, `npm run demo:seed` räumt sie ab; Push nur auf Wunsch.
