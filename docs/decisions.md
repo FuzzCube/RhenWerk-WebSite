@@ -515,3 +515,8 @@ Nutzerentscheidungen 22.10.2026, ergänzen den Eintrag zu task-18-1:
 - **Keine Kopie der Sicherungen außer Haus** für das Demoprojekt: die tägliche Sicherung des Anbieters und die eigenen geprüften Sicherungen auf dem Server (14 Tage) reichen. Vor echter Nutzung nachrüsten (`docs/betrieb.md` 3.4).
 - Die Website wird sichtbar als Portfolio-Projekt gekennzeichnet (task-18-4).
 - Auf dem eigenen Rechner läuft die Sicherung `online.rheinwerk.backup` ab sofort um **09:00** statt 02:00, weil der Rechner nachts schläft.
+
+## 22.10.2026: Ein Server für alle Projekte (task-18-2, Roadmap v23)
+
+- Der VPS nimmt neben RheinWerk weitere Projekte auf; jedes Projekt hat einen eigenen Ordner `/opt/<projekt>`, ein eigenes Compose-Projekt mit eigenem Netz, Ports nur auf `127.0.0.1`, Speichergrenzen und eigene systemd-Units (`docs/betrieb.md` 3.5). Öffentlich nur über Cloudflare-Tunnel, `ufw` bleibt bei SSH.
+- Vom Oracle-Server ziehen um: der RAG-Assistent der Website **in RheinWerk** (Tabelle mit pgvector in der RheinWerk-Datenbank, Workflows im n8n von RheinWerk, Aufruf über `/api/assistant` statt direkt mit CORS), der **House Items Bot** und **Personal Copilot** jeweils als **eigenes Projekt** (persönliche bzw. eigene Portfolio-Daten getrennt von RheinWerk, unabhängig aktualisierbar). Danach werden Oracle und die alte Vercel-Website `rheinwerk-industrieservice` abgeschaltet.

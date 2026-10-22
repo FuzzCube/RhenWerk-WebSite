@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v22, 19 Phasen, 109 Tasks, Fortschritt 93,94 % (Gewicht 248 von 264).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16, lokales Supabase), dazu lokale n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v23, 19 Phasen, 113 Tasks, Fortschritt 91,85 % (Gewicht 248 von 270).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -15,6 +15,8 @@ Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main
 Phasen 0–17 abgeschlossen (zuletzt Phase 17 „Updates und Überwachung“, davor Phase 16 „Datenschutz und Telefonassistent“, Phase 15 „Kundennummer sichtbar“, Phase 14 „Kundenstamm aus Anfragen“); Einzelheiten im `verification`-Objekt der Roadmap und in `docs/decisions.md`.
 
 Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank (`~/n8n/data/database.sqlite`) zugreifen – am 20.10.2026 hing n8n dadurch zwei Stunden (Details `docs/betrieb.md`). Lesen nur über `docker cp` einer Kopie.
+
+Roadmap v23 (22.10.2026): zusätzlich Umzug vom Oracle-Server (`ssh oracle-n8n`): RAG-Assistent der Website in RheinWerk (`task-18-10`), House Items Bot (`task-18-11`) und Personal Copilot (`task-18-12`) als eigene Projekte auf dem VPS, danach Oracle und die alte Vercel-Website abschalten (`task-18-13`). Bestand Oracle: drei Supabase-Stacks (je 11–13 MB), n8n 2.37.10 mit 3 Workflows, Caddy mit sslip.io und offenen Ports 80/443.
 
 ## Zuletzt abgeschlossen
 

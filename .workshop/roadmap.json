@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 22,
+  "roadmapVersion": 23,
   "status": "active",
   "phases": [
     {
@@ -3839,6 +3839,105 @@
           "definitionOfDone": [
             "Alle Proben im verification-Objekt beschrieben",
             "HANDOFF.md, betrieb.md, testing.md aktuell"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-10",
+          "title": "RAG-Assistent der Website in RheinWerk übernehmen",
+          "description": "Vom Oracle-Server (ssh oracle-n8n, Supabase-Stack supabase, n8n 2.37.10): Tabelle rheinwerk (36 Abschnitte, pgvector, OpenAI-Embeddings) als Migration in die RheinWerk-Datenbank, Workflows „RheinWerk Local Assistant“ und „RheinWerk Documents Import“ samt Dokumenten (~/n8n/documents) in das n8n von RheinWerk. Website ruft den Assistenten über eine eigene Route /api/assistant auf (Access-Service-Token auf dem Server, kein CORS); bisher direkt https://rheinwerk-rag.130-61-221-231.sslip.io mit CORS nur für rheinwerk-industrieservice.vercel.app.",
+          "order": 10,
+          "weight": 2,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-3"
+          ],
+          "definitionOfDone": [
+            "Assistent antwortet auf der Website wie bisher, Quellen aus der RheinWerk-Datenbank",
+            "/api/assistant mit Begrenzung und Prüfung",
+            "test:unit, test:api, betrieb.md, n8n-workflows.md"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-11",
+          "title": "House Items Bot auf den VPS",
+          "description": "Persönliches Projekt vom Oracle-Server: eigenes Compose-Projekt /opt/houseitems (Regeln betrieb.md 3.5) mit eigenem n8n und schlankem Supabase (db, rest, Gateway; Tabellen items, item_vectors, pending_actions, pgvector); Workflow „House Items Bot“ (Telegram, OpenAI) mit Credentials übernehmen. Telegram-Webhook über einen öffentlichen Hostnamen im Cloudflare-Tunnel nur für /webhook/* (bisher sslip.io mit Caddy und offenen Ports 80/443 auf Oracle), Vorschlag bot.rheinwerk-service.online.",
+          "order": 11,
+          "weight": 2,
+          "status": "ready",
+          "dependsOn": [
+            "task-18-2"
+          ],
+          "definitionOfDone": [
+            "Bot antwortet in Telegram vom VPS, Daten vollständig",
+            "Keine offenen Ports außer SSH, Speichergrenzen gesetzt",
+            "betrieb.md 3.5"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-12",
+          "title": "Personal Copilot auf den VPS",
+          "description": "Portfolio-Projekt vom Oracle-Server (Supabase-Stack personal-copilot, ca. 2 000 Zeilen: tasks, audit_events, evaluations, agent_memory): eigenes Compose-Projekt /opt/personal-copilot mit schlankem Supabase, Daten übernehmen; ohne öffentlichen Zugang (derzeit kein Client außer Scannern), bei Bedarf per ssh -L oder später über den Tunnel.",
+          "order": 12,
+          "weight": 1,
+          "status": "ready",
+          "dependsOn": [
+            "task-18-2"
+          ],
+          "definitionOfDone": [
+            "Zeilenzahlen wie auf Oracle",
+            "Keine offenen Ports, Speichergrenzen gesetzt",
+            "betrieb.md 3.5"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-18-13",
+          "title": "Oracle-Server und alte Website abschalten",
+          "description": "Nach erfolgreichem Umzug von RAG, House Items Bot und Personal Copilot: letzte Sicherung der Oracle-Daten auf den VPS kopieren, Container auf Oracle stoppen, alte Vercel-Website rheinwerk-industrieservice abschalten oder auf die neue Domain umleiten, Repository archivieren.",
+          "order": 13,
+          "weight": 1,
+          "status": "planned",
+          "dependsOn": [
+            "task-18-9",
+            "task-18-10",
+            "task-18-11",
+            "task-18-12"
+          ],
+          "definitionOfDone": [
+            "Nichts läuft mehr auf Oracle, Sicherung liegt auf dem VPS",
+            "Alte Website leitet um oder ist abgeschaltet",
+            "betrieb.md, HANDOFF.md"
           ],
           "startedAt": null,
           "completedAt": null,
