@@ -472,3 +472,5 @@
 {"timestamp":"2026-10-22T19:50:00Z","type":"task_completed","taskId":"task-19-2","summary":"Admin hat den Bereich Einsatzplanung und den Knopf Zur Einsatzplanung in der Anfrage; lint, typecheck, build, test:auth (bis auf bekannte Cache-Prüfungen unter next dev) bestanden."}
 {"timestamp":"2026-10-22T19:55:00Z","type":"task_started","taskId":"task-19-3","summary":"Wunschtermin aus dem Formular vormerken und Terminbestätigung begonnen."}
 {"timestamp":"2026-10-22T20:30:00Z","type":"task_completed","taskId":"task-19-3","summary":"Formular merkt Wunschtermin oder nächsten freien Termin vor (Techniker nach Monatsauslastung), Bestätigung mit einem Klick, Terminbestätigung auch bei manueller Planung; test:db, test:unit, lint, typecheck, build bestanden."}
+{"timestamp":"2026-10-22T20:35:00Z","type":"task_started","taskId":"task-19-4","summary":"Plantafel: Einrasten auf Viertelstunden begonnen."}
+{"timestamp":"2026-10-22T20:55:00Z","type":"task_completed","taskId":"task-19-4","summary":"Gezogene Blöcke rasten animiert auf Viertelstunden ein; lint, typecheck, build bestanden."}

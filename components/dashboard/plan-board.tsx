@@ -63,10 +63,10 @@ const nextWorkday = (day: string, step: 1 | -1) => {
 };
 
 type Segment = { start: number; end: number; kind: "own" | "busy" | "absence" | "hold"; label: string; block: BusyBlock };
-// Dragging the selection (task-10-7) or a planned visit (task-10-8): the block follows the pointer exactly
-// (minute as float), the time it will get is the 15-minute grid position (snapped); x/y place the time tip next to
+// Dragging the selection (task-10-7) or a planned visit (task-10-8): the block snaps to the 15-minute grid and slides
+// there (task-19-4, CSS transition), so it always shows the time it will get (snapped); x/y place the time tip next to
 // the pointer. A moved visit is left out of the conflict check (ignore), it does not collide with itself.
-type Drag = { technicianId: string; day: string; exact: number; snapped: BoardPick; x: number; y: number; ignore: Ignore | null };
+type Drag = { technicianId: string; day: string; snapped: BoardPick; x: number; y: number; ignore: Ignore | null };
 type Ignore = { technicianId: string; start: number; end: number };
 // Visit dropped somewhere else, waiting for confirmation (old → new, reason)
 // error: message of a failed save, belongs to this move only (a new drag starts without it)
@@ -306,7 +306,7 @@ export function PlanBoard(props: Props) {
       if (!target) return;
       const exact = Math.min(Math.max(minuteIn(target, moveEvent.clientX) - offset, bounds.from), bounds.to - span);
       const start = Math.min(Math.max(Math.round(exact / DRAG_STEP) * DRAG_STEP, bounds.from), bounds.to - span);
-      current = { technicianId, day, exact, x: moveEvent.clientX, y: moveEvent.clientY, ignore, snapped: { technicianId, day, start: toTime(start), end: toTime(start + span) } };
+      current = { technicianId, day, x: moveEvent.clientX, y: moveEvent.clientY, ignore, snapped: { technicianId, day, start: toTime(start), end: toTime(start + span) } };
       setDrag(current);
     };
     const stop = (dropIt: boolean) => {
@@ -432,8 +432,10 @@ export function PlanBoard(props: Props) {
       let from = 0;
       if (clientX !== null) {
         const rect = target.getBoundingClientRect();
-        // Nearest half hour: a lane is only ~80 px wide in the week view, so one pixel is several minutes
-        from = Math.round((bounds.from + ((clientX - rect.left) / rect.width) * (bounds.to - bounds.from)) / 30) * 30;
+        // Nearest half hour in the week view (a lane is only ~80 px wide, one pixel is several minutes); quarter hour
+        // in the day view like dragging (task-19-4)
+        const step = view === "tag" ? DRAG_STEP : 30;
+        from = Math.round((bounds.from + ((clientX - rect.left) / rect.width) * (bounds.to - bounds.from)) / step) * step;
         const lastStart = Math.max(...hours.map((row) => toMinutes(row.end))) - duration;
         from = Math.min(from, lastStart);
       }
@@ -525,7 +527,9 @@ export function PlanBoard(props: Props) {
           </span>
         )}
         {dragHere && (
-          <span className={`plan3__blk ${dragHere.ignore ? "plan3__blk--own plan3__blk--moveto" : "plan3__blk--pick"} is-dragging${dragCheck?.ok ? "" : " is-conflict"}`} style={place(dragHere.exact, dragHere.exact + toMinutes(dragHere.snapped.end) - toMinutes(dragHere.snapped.start))} aria-hidden="true" />
+          <span className={`plan3__blk ${dragHere.ignore ? "plan3__blk--own plan3__blk--moveto" : "plan3__blk--pick"} is-dragging${dragCheck?.ok ? "" : " is-conflict"}`} style={place(toMinutes(dragHere.snapped.start), toMinutes(dragHere.snapped.end))} aria-hidden="true">
+            {(view === "tag" || toMinutes(dragHere.snapped.end) - toMinutes(dragHere.snapped.start) >= 120) && <span className="plan3__blk-text">{dragHere.snapped.start}–{dragHere.snapped.end}</span>}
+          </span>
         )}
       </div>
     );

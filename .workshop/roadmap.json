@@ -4133,19 +4133,25 @@
           "description": "Ziehen von Einsätzen in der Plantafel rastet animiert auf Viertelstunden ein.",
           "order": 4,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Einrasten mit Animation",
             "lint, typecheck, build"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T20:35:00Z",
+          "completedAt": "2026-10-22T20:55:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T20:55:00Z",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "Browser: Ziehen der Auswahl per Pointer-Events in der Tagesansicht, Position je Schritt protokolliert",
+              "kein horizontales Scrollen bei 390/768 px"
+            ],
+            "summary": "Plantafel: der gezogene Block (Auswahl und zu verschiebender Einsatz) steht immer auf dem 15-Minuten-Raster und gleitet per CSS-Übergang (140 ms, aus bei reduzierter Bewegung) von Raster zu Raster, mit Zeit im Block und leichtem Anheben; beim Loslassen kein Sprung mehr. Klick in der Tagesansicht wählt ebenfalls die Viertelstunde (Woche weiter 30 Minuten). Geprüft: zwölf Ziehschritte ergeben nur Rasterpositionen 09:15 … 10:45. test:ui nicht ausgeführt."
           }
         },
         {

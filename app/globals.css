@@ -1836,6 +1836,10 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .plan3__blk--moveto { z-index: 3; cursor: grab; touch-action: none; outline: 2px solid var(--rw-color-lime-500); outline-offset: -2px; }
 .plan3__blk--moveto.is-dragging { z-index: 4; cursor: grabbing; box-shadow: 0 2px 8px rgba(11, 31, 51, 0.25); }
 .plan3__blk--moveto.is-conflict { background: var(--rw-color-danger-surface); color: var(--rw-color-danger-700); outline-color: var(--rw-color-danger-700); }
+/* Snapping to quarter hours (task-19-4): the dragged block and the selection slide from slot to slot */
+.plan3__blk--pick, .plan3__blk--moveto { transition: left 140ms cubic-bezier(.2, .8, .2, 1), width 140ms cubic-bezier(.2, .8, .2, 1), background-color 140ms ease, outline-color 140ms ease, box-shadow 140ms ease; }
+.plan3__blk.is-dragging { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(11, 31, 51, 0.3); }
+@media (prefers-reduced-motion: reduce) { .plan3__blk--pick, .plan3__blk--moveto { transition: none; } .plan3__blk.is-dragging { transform: none; } }
 .plan3__move { display: grid; gap: 10px; margin-top: 12px; padding: 14px 16px; background: var(--rw-surface-page); border: 1px solid var(--rw-border-subtle); border-left: 3px solid var(--rw-color-lime-500); border-radius: var(--rw-radius-sm); }
 .plan3__move .plan3__eyebrow { margin: 0; }
 .plan3__move-change { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 0; font-size: 14px; line-height: 1.43; }
