@@ -465,3 +465,6 @@
 {"timestamp":"2026-10-22T16:45:00Z","type":"task_completed","taskId":"task-18-10","summary":"Website-Assistent läuft in RheinWerk: Wissensbasis rag_documents, Workflows Assistent und Import, Website über /api/assistant mit Begrenzung; Antworten wie auf Oracle."}
 {"timestamp":"2026-10-22T16:47:00Z","type":"task_started","taskId":"task-18-9","summary":"Gesamtprobe des Deployments begonnen (Push mit Migration, Rückfall Vercel, Systemupdate, Wiederherstellung, Ausfall n8n)."}
 {"timestamp":"2026-10-22T17:30:00Z","type":"task_completed","taskId":"task-18-9","summary":"Gesamtprobe des Deployments bestanden: alle fünf Proben gegen die Produktion, Ergebnis in docs/testing.md, HANDOFF.md neu."}
+{"timestamp":"2026-10-22T18:30:00Z","type":"roadmap_updated","taskId":null,"summary":"Roadmap v24: Phase 19 Feinschliff vor der Präsentation mit fünf Tasks nach Rundgang des Nutzers."}
+{"timestamp":"2026-10-22T18:30:00Z","type":"task_started","taskId":"task-19-1","summary":"Oberfläche: Posteingang, System, Anfragen, Ladeanzeigen begonnen."}
+{"timestamp":"2026-10-22T19:30:00Z","type":"task_completed","taskId":"task-19-1","summary":"Oberfläche nachgebessert: Posteingang Archivieren rot mit Werbung vorbelegt, Bereich System ohne Springen und mit eingeklappten Behobenen, Verknüpfung ändern einspaltig, Ladekreis in laufenden Knöpfen; lint, typecheck, build bestanden."}

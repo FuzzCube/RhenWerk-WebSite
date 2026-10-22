@@ -18,7 +18,7 @@ export function ResolveAlertButton({ alertId, title }: { alertId: string; title:
   });
   return (
     <div className="system-action">
-      <button type="button" className="button button--secondary" onClick={run} disabled={pending} aria-label={`Erledigt: ${title}`}>
+      <button type="button" className="button button--secondary" onClick={run} disabled={pending} aria-busy={pending} aria-label={`Erledigt: ${title}`}>
         {pending ? "Wird gespeichert …" : "Erledigt"}
       </button>
       {error && <p className="save-status save-status--error" role="alert">{error}</p>}

@@ -226,7 +226,7 @@ export function ServiceRequestForm() {
         {step === 5 && <StepFive values={values} errors={errors} update={update} files={files} edit={goTo} onTurnstile={onTurnstile} turnstileResetSignal={turnstileResetSignal} />}
         {step >= 3 && isCritical(values) && <Alert tone="danger" lead="Menschliche Prüfung erforderlich.">Dieser Fall wird als kritisch behandelt und muss durch einen Menschen geprüft werden. Bitte melden Sie ihn zusätzlich telefonisch unter +49 621 00000-0.</Alert>}
       </div>
-      <div className="form-actions">{step > 1 && <button className="button button--secondary" type="button" onClick={() => goTo(step - 1)}><Icon name="arrow-left" size={18} />Zurück</button>}<div />{step < 5 ? <button className="button button--primary" type="button" onClick={(event) => { event.preventDefault(); next(); }}>Weiter<Icon name="arrow-right" size={18} /></button> : <button className="button button--primary" type="submit" disabled={sending}>{sending ? "Wird gesendet" : "Anfrage senden"}<Icon name="arrow-right" size={18} /></button>}</div>
+      <div className="form-actions">{step > 1 && <button className="button button--secondary" type="button" onClick={() => goTo(step - 1)}><Icon name="arrow-left" size={18} />Zurück</button>}<div />{step < 5 ? <button className="button button--primary" type="button" onClick={(event) => { event.preventDefault(); next(); }}>Weiter<Icon name="arrow-right" size={18} /></button> : <button className="button button--primary" type="submit" disabled={sending} aria-busy={sending}>{sending ? "Wird gesendet …" : <>Anfrage senden<Icon name="arrow-right" size={18} /></>}</button>}</div>
     </form>
   </div></Container></Section>;
 }

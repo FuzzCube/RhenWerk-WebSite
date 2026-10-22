@@ -18,7 +18,7 @@ export function LoginForm() {
         <span>Passwort</span>
         <input id="login-password" name="password" type="password" autoComplete="current-password" required aria-invalid={!!state.error} />
       </label>
-      <button className="button button--primary" type="submit" disabled={pending}>{pending ? "Anmeldung läuft …" : "Anmelden"}</button>
+      <button className="button button--primary" type="submit" disabled={pending} aria-busy={pending}>{pending ? "Anmeldung läuft …" : "Anmelden"}</button>
     </form>
   );
 }

@@ -68,7 +68,7 @@ export function SaveForm({
       >
         {children}
         <div className="save-form__footer">
-          <button className={`button button--${submitVariant}`} type="submit" disabled={pending}>{pending ? "Wird gespeichert …" : submitLabel}</button>
+          <button className={`button button--${submitVariant}`} type="submit" disabled={pending} aria-busy={pending}>{pending ? "Wird gespeichert …" : submitLabel}</button>
           <SaveStatus state={state} pending={pending} dirty={dirty} />
         </div>
       </form>

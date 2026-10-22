@@ -43,7 +43,7 @@ export function RestoreButton({ backupId, finishedAt, disabled }: { backupId: st
           {error && <p className="save-status save-status--error" role="alert">{error}</p>}
           <div className="system-restore-dialog__actions">
             <button type="button" className="button button--secondary" onClick={() => dialog.current?.close()} disabled={pending}>Abbrechen</button>
-            <button type="submit" className="button button--danger" disabled={pending || !confirmationMatches(word)}>{pending ? "Wird angefordert …" : "Wiederherstellen"}</button>
+            <button type="submit" className="button button--danger" disabled={pending || !confirmationMatches(word)} aria-busy={pending}>{pending ? "Wird angefordert …" : "Wiederherstellen"}</button>
           </div>
         </form>
       </dialog>

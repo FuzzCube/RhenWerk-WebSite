@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v23, 19 Phasen, 113 Tasks, Fortschritt 99,63 % (Gewicht 269 von 270).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v24, 20 Phasen, 118 Tasks, Fortschritt 96,79 % (Gewicht 271 von 280).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -18,15 +18,15 @@ Achtung Betrieb: Nie mit Werkzeugen des Rechners auf die laufende n8n-Datenbank 
 
 Roadmap v23 (22.10.2026): zusätzlich Umzug vom Oracle-Server (`ssh oracle-n8n`): RAG-Assistent der Website in RheinWerk (`task-18-10`), House Items Bot (`task-18-11`) und Personal Copilot (`task-18-12`) als eigene Projekte auf dem VPS, danach Oracle und die alte Vercel-Website abschalten (`task-18-13`). Bestand Oracle: drei Supabase-Stacks (je 11–13 MB), n8n 2.37.10 mit 3 Workflows, Caddy mit sslip.io und offenen Ports 80/443.
 
+## Phase 19 „Feinschliff vor der Präsentation“ (Roadmap v24, 22.10.2026)
+
+Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (erledigt), `task-19-2` Einsatzplanung für Admin und Knopf aus der Anfrage, `task-19-3` Wunschtermin aus dem Formular vormerken und Terminbestätigung (auch bei manueller Planung), `task-19-4` Plantafel rastet animiert auf Viertelstunden ein, `task-19-5` Kosten von OpenAI im Bereich System (Costs-API mit Admin-Key; Restguthaben nur aus eingetragenem Guthaben, OpenAI hat keine Guthaben-API).
+
 ## Zuletzt abgeschlossen
 
+- `task-19-1` (22.10.2026): **Oberfläche**: Posteingang „Archivieren“ rot, Grund vorbelegt „Werbung“; Bereich „System“: Behobene eingeklappt, „Update einspielen“ in eigener Leiste, Tabellen springen beim Aufklappen nicht mehr; „Verknüpfung ändern“ einspaltig; laufende Knöpfe (`aria-busy`) zeigen einen Ladekreis.
 - `task-18-9` (22.10.2026): **Gesamtprobe des Deployments** gegen die Produktion bestanden: Push mit Migration bis Vercel (4,5 Minuten), Rückfall über Vercel, Systemupdate mit Rückfall (n8n 2.44.6), Wiederherstellung, Ausfall von n8n mit Warnung und E-Mail (`docs/testing.md`). Übergabe neu in `docs/HANDOFF.md`.
 - `task-18-10` (22.10.2026): **Website-Assistent in RheinWerk**: Wissensbasis `rag_documents` (nur service_role), Dokumente in `n8n/rag-documents`, Workflows „RheinWerk · Assistent“ und „Dokumente importieren“ (`ops/vps/rag-import.sh`), Website fragt über `/api/assistant` (Prüfung, Begrenzung, Access-Token; Pfad in Cloudflare Access „RheinWerk Webhook“). Oracle läuft bis task-18-13 weiter (`docs/n8n-workflows.md` 9).
-- `task-18-8` (22.10.2026): **Systemupdates auf dem VPS**: Dependabot-PR mergen → im Bereich „System“ „Images (Server): Update bereit“ → **Update einspielen** (nur admin): Sicherung, Schnappschuss der Volumes, neue Images, nur lesender Selbsttest (inkl. Workflow „RheinWerk · Selbsttest“), bei Fehler Rückfall mit Pin in `images.override.yml` (`docs/betrieb.md` 6). Eingespielt: envoy 1.40, Postgres 17.11.0.005, n8n 2.44.4, PostgREST v16.4, Storage v1.84.1. Offene Dependabot-PRs nur noch npm/Actions (#6–#10).
-- `task-18-7` (22.10.2026): **Wiederherstellen aus einer Sicherung** im Bereich „System“ (nur admin, Wort `WIEDERHERSTELLEN`, nur geprüfte vollständige Sicherung mit gleichem Migrationsstand): Sicherung davor, n8n angehalten, Gesundheitsprüfung, Rückkehr bei Fehler, E-Mail, Warnung `restore:failed` (`scripts/ops/restore-run.mjs`, `scripts/restore.mjs`, `docs/betrieb.md` 4.5). Gefunden und behoben: `pg_restore` verlor die `revoke`-Anweisungen der Migrationen (VPS seit task-18-3, am 22.10.2026 repariert). Echte Wiederherstellung auf dem VPS noch nicht ausgeführt (Nutzerwunsch).
-- `task-18-6` (22.10.2026): **Datensicherung auf dem VPS**: täglich 03:00 mit Probewiederherstellung (`rheinwerk-backup.timer`, `/opt/rheinwerk/backups`, 14 Tage), Tabelle `backups`, Bereich „System“ mit Liste und „Jetzt sichern“ (nur admin), Sicherungen vor Migrationen, Warnungen `backup:failed`/`backup:stale`/`backup:provider`, Sicherung von OVHcloud über die API geprüft (`docs/betrieb.md` 4).
-- `task-18-5` (22.10.2026): **Deployment nur über GitHub Actions**: Push auf `main` → Prüfungen → Sicherung und neue Migrationen auf dem VPS (`ops/vps/migrate.sh`, SSH-Schlüssel nur für dieses Skript) → `vercel deploy --prod`; Vercel baut Pushes nicht mehr selbst. Neue Migrationen nur hinzufügend (DROP bricht ab). Dependabot: offene Update-PRs #1–#10 (Images erst mit task-18-8; TypeScript 7 und eslint 10 rot). `docs/betrieb.md` 3.8.
-- `task-18-2` (22.10.2026): VPS mit Docker Compose (`docs/betrieb.md` 3.5, `ops/vps/`): Server `ssh vps` (OVHcloud VPS-2, Ubuntu 26.04), Swap, Docker mit Ports nur auf 127.0.0.1, Node.js 24; Compose-Projekt `rheinwerk` (Supabase ohne Realtime, n8n 2.40.7, Tunnel `rheinwerk-vps`) mit festen Versionen und neuen Schlüsseln, 68 Migrationen eingespielt; Wächter und „System prüfen“ als systemd-Timer, ohne E-Mails bis task-18-3; Neustart geprüft. Weitere Projekte auf dem Server vorgesehen (Regeln in 3.5).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -56,4 +56,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 18 „Deployment“: startbar `task-18-7` (Wiederherstellung aus einer Sicherung proben), `task-18-8` (Systemupdates mit Rückfall; offene Dependabot-PRs #1–#5 für Images) und `task-18-10` (RAG-Assistent). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 19: `task-19-2` bis `task-19-5` in dieser Reihenfolge. Danach: Phase 18 „Deployment“: startbar `task-18-7` (Wiederherstellung aus einer Sicherung proben), `task-18-8` (Systemupdates mit Rückfall; offene Dependabot-PRs #1–#5 für Images) und `task-18-10` (RAG-Assistent). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

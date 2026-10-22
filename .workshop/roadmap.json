@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 23,
+  "roadmapVersion": 24,
   "status": "active",
   "phases": [
     {
@@ -4022,6 +4022,130 @@
             "Nichts läuft mehr auf Oracle, Sicherung liegt auf dem VPS",
             "Alte Website leitet um oder ist abgeschaltet",
             "betrieb.md, HANDOFF.md"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-19",
+      "title": "Feinschliff vor der Präsentation",
+      "description": "Nutzerentscheidung 22.10.2026: Fehler und Unschönheiten aus dem Rundgang vor der Präsentation in fünf Blöcken beheben (Oberfläche, Einsatzplanung für Admin, Terminvorschlag und Bestätigung, Kalender, Kosten OpenAI).",
+      "order": 20,
+      "weight": 10,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-19-1",
+          "title": "Oberfläche: Posteingang, System, Anfragen, Ladeanzeigen",
+          "description": "Posteingang: archivierte Nachrichten rot hervorgehoben, Grund vorbelegt mit Werbung. System: Behobene der letzten Tage eingeklappt, Knopf Update einspielen sauber platziert, Versionen und Sicherungen ohne Springen beim Aufklappen. Anfragen: Verknüpfung ändern sauber. Formular der Website und System prüfen mit Ladekreis statt gesperrtem Mauszeiger.",
+          "order": 1,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Alle genannten Stellen behoben",
+            "Sichtprüfung 390/768/1440 px",
+            "lint, typecheck, build"
+          ],
+          "startedAt": "2026-10-22T18:30:00Z",
+          "completedAt": "2026-10-22T19:30:00Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-22T19:30:00Z",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "Sichtprüfung im headless Chrome (Bereich System, Posteingang, Anfrage) bei 1440 px",
+              "kein horizontales Scrollen bei 390/768 px mit aufgeklappten Details"
+            ],
+            "summary": "Posteingang: Archivieren rot hervorgehoben, Grund vorbelegt mit Werbung, Knopf rot. System: Behobene Warnungen eingeklappt mit Anzahl; Update einspielen in eigener Leiste mit Erklärung; Tabellen Versionen und Sicherungen mit festen Spalten und oben ausgerichteten Zellen (gemessen: Spalten und Zeilen bewegen sich beim Aufklappen nicht). Anfrage: Verknüpfung ändern einspaltig, Checkbox nicht mehr gestaucht (global flex: none). Laufende Aktionen: Knopf mit aria-busy zeigt Ladekreis und Mauszeiger progress (Formular der Website, System prüfen, Speichern, Sichern, Wiederherstellen, Update, Anmelden). Knopf Update einspielen lokal ohne neue Images nicht sichtbar, nur im Code geprüft. test:ui nicht ausgeführt."
+          }
+        },
+        {
+          "id": "task-19-2",
+          "title": "Einsatzplanung für Admin und Sprung aus der Anfrage",
+          "description": "Admin erhält den Bereich Einsatzplanung; Anfragen in der Lage Einsatzplanung zeigen einen Knopf zur Einsatzplanung.",
+          "order": 2,
+          "weight": 2,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Admin kann planen (Rechte in Datenbank geprüft)",
+            "Knopf in der Anfrage",
+            "lint, typecheck, build, test:api"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-19-3",
+          "title": "Wunschtermin aus dem Formular vormerken und Terminbestätigung",
+          "description": "Wunschtermin aus Formular und Telefon: freies Fenster beim am wenigsten belegten Techniker vormerken, sonst nächstes freies Fenster; Dispatcher bestätigt mit einem Klick, Kunde erhält Terminbestätigung, auch bei manueller Planung.",
+          "order": 3,
+          "weight": 3,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Vormerkung aus dem Formular",
+            "Terminbestätigung bei Bestätigung und manueller Planung",
+            "test:db, lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-19-4",
+          "title": "Kalender: Einrasten auf Viertelstunden",
+          "description": "Ziehen von Einsätzen in der Plantafel rastet animiert auf Viertelstunden ein.",
+          "order": 4,
+          "weight": 2,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Einrasten mit Animation",
+            "lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-19-5",
+          "title": "Kosten von OpenAI im Bereich System",
+          "description": "Verbrauch von OpenAI über die Costs-API (Admin-Key) im Bereich System anzeigen, Restguthaben aus eingetragenem Guthaben.",
+          "order": 5,
+          "weight": 1,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Anzeige im Bereich System",
+            "lint, typecheck, build"
           ],
           "startedAt": null,
           "completedAt": null,

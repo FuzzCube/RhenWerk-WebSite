@@ -312,13 +312,13 @@ function MessageView({ message, candidates, term, chosen, owner, names, senderNa
                 </SaveForm>
               </div>
             </details>
-            <details className="action">
+            <details className="action action--danger inbox-mail__archive">
               <summary>Archivieren (kein Auftrag)</summary>
               <div className="inbox-mail__action-body">
                 <p className="rw-card__note">Für Werbung, Lieferanten, Bewerbungen und alles ohne Auftragsbezug. Die E-Mail verschwindet aus „Offen“ und dem Zähler, bleibt aber im Archiv und lässt sich wiederherstellen.</p>
-                <SaveForm action={archiveMessage} submitLabel="Archivieren" submitVariant="secondary">
+                <SaveForm action={archiveMessage} submitLabel="Archivieren" submitVariant="danger">
                   <HiddenField name="message_id" value={message.id} />
-                  <SelectField name="reason" label="Grund" required options={Object.entries(ARCHIVE_REASONS).map(([value, text]) => ({ value, label: text }))} />
+                  <SelectField name="reason" label="Grund" required defaultValue="advertising" options={Object.entries(ARCHIVE_REASONS).map(([value, text]) => ({ value, label: text }))} />
                 </SaveForm>
               </div>
             </details>

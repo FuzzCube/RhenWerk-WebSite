@@ -193,6 +193,7 @@ export default async function SystemPage() {
             </div>
             {isAdmin && ((serverImages?.pending ?? 0) > 0 || updating) && (
               <div className="system-image-update-wrap">
+                <p className="cell-sub">{updating ? "Das Systemupdate läuft. Die Seite aktualisiert sich selbst." : "Für den Server liegen neue Versionen bereit. Vorher wird alles gesichert; scheitert der Selbsttest, läuft automatisch wieder der Stand von vorher."}</p>
                 <ImageUpdateButton changes={serverImages?.items?.map(({ name, current, latest }) => ({ name, current, latest })) ?? []} disabled={updating || restoring} />
               </div>
             )}
@@ -215,11 +216,14 @@ export default async function SystemPage() {
               <DataTable caption="Offene Warnungen" columns={openColumns} rows={openAlerts} rowKey={(row) => row.id}
                 empty={<EmptyState title="Keine offenen Warnungen." tone="good" />} />
             </div>
-            <h3 className="system-subheading">Behoben in den letzten 30 Tagen</h3>
-            <div className="system-alerts-resolved">
-              <DataTable caption="Behobene Warnungen" columns={resolvedColumns} rows={system.resolvedAlerts} rowKey={(row) => row.id}
-                empty={<EmptyState title="Keine behobenen Warnungen." />} />
-            </div>
+            {/* Resolved warnings only on request: the open ones are what matters day to day */}
+            <details className="system-resolved">
+              <summary className="system-subheading">Behoben in den letzten 30 Tagen <span className="mono">{formatNumber(system.resolvedAlerts.length)}</span></summary>
+              <div className="system-alerts-resolved">
+                <DataTable caption="Behobene Warnungen" columns={resolvedColumns} rows={system.resolvedAlerts} rowKey={(row) => row.id}
+                  empty={<EmptyState title="Keine behobenen Warnungen." />} />
+              </div>
+            </details>
           </Card>
         </>
       )}

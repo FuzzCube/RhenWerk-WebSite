@@ -21,7 +21,7 @@ export function ImageUpdateButton({ changes, disabled }: { changes: { name: stri
   });
   return (
     <div className="system-image-update">
-      <button type="button" className="button button--secondary" onClick={() => { setError(null); dialog.current?.showModal(); }} disabled={disabled}>
+      <button type="button" className="button button--secondary" onClick={() => { setError(null); dialog.current?.showModal(); }} disabled={disabled} aria-busy={disabled}>
         {disabled ? "Update läuft …" : "Update einspielen"}
       </button>
       <dialog ref={dialog} className="system-restore-dialog" aria-labelledby={`${id}-title`}>
@@ -38,7 +38,7 @@ export function ImageUpdateButton({ changes, disabled }: { changes: { name: stri
           {error && <p className="save-status save-status--error" role="alert">{error}</p>}
           <div className="system-restore-dialog__actions">
             <button type="button" className="button button--secondary" onClick={() => dialog.current?.close()} disabled={pending}>Abbrechen</button>
-            <button type="submit" className="button button--primary" disabled={pending}>{pending ? "Wird angefordert …" : "Update einspielen"}</button>
+            <button type="submit" className="button button--primary" disabled={pending} aria-busy={pending}>{pending ? "Wird angefordert …" : "Update einspielen"}</button>
           </div>
         </form>
       </dialog>
