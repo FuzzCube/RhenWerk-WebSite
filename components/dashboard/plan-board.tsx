@@ -9,7 +9,7 @@ import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTi
 import type { BusyBlock, Technician, WorkingHours } from "@/lib/dashboard/planning";
 import { initialFormState, type FormState } from "@/lib/forms";
 import { formatWeekdayDate, TIME_ZONE } from "@/lib/format";
-import { hoursOn, nextWorkingDays, SLOT_DURATIONS, slotReasonText, suggestSlots, type SlotBusy, type SlotExperience } from "@/lib/slot-suggestions";
+import { hoursOn, nextWorkingDays, slotReasonText, suggestSlots, type SlotBusy, type SlotExperience } from "@/lib/slot-suggestions";
 import type { MonthLoad } from "@/lib/technician-load";
 
 // Planning board of the Einsatzplanung (task-10-3, redesign after the user's dashboard draft
@@ -77,6 +77,12 @@ const RESIZE_REASON = "Dauer geändert auf der Plantafel";
 // Only the length changed (task-20-3): same technician, day and either start or end
 const onlyLength = (move: Move) => move.to.technicianId === move.from.technicianId && move.to.day === move.from.day && (move.to.start === move.from.start || move.to.end === move.from.end);
 const ignoreOf = (block: BusyBlock): Ignore => ({ technicianId: block.technicianId, start: Date.parse(block.start), end: Date.parse(block.end) });
+// Length of a selection in words (task-20-5: any length on the 15-minute grid): "2 h", "1 h 15 min", "45 min"
+const durationText = (minutes: number) => {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours === 0 ? `${rest} min` : rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+};
 
 export function PlanBoard(props: Props) {
   const { technicians, workingHours, busy, availability, view, days, anchor, focusDay, request } = props;
@@ -196,16 +202,6 @@ export function PlanBoard(props: Props) {
     startNavigation(() => router.push(href(target), { scroll: false }));
   }
 
-  function changeDuration(minutes: number) {
-    setDuration(minutes);
-    if (pick) {
-      const moved = { ...pick, end: toTime(Math.min(toMinutes(pick.start) + minutes, 23 * 60 + 30)) };
-      choose(moved, { nextDuration: minutes });
-    } else {
-      window.history.replaceState(null, "", href({ duration: minutes }));
-    }
-  }
-
   // Form edits update the board without remounting the form
   function onFormChange(event: FormEvent<HTMLDivElement>) {
     const form = event.currentTarget.closest("form");
@@ -217,6 +213,12 @@ export function PlanBoard(props: Props) {
       next.end = toTime(Math.min(toMinutes(next.start) + duration, 23 * 60 + 30));
       const end = form.elements.namedItem("end") as HTMLInputElement | null;
       if (end) end.value = next.end;
+    }
+    // A different end in the form changes the length like the handles (task-20-5)
+    const span = toMinutes(next.end) - toMinutes(next.start);
+    if (span >= 2 * DRAG_STEP && span !== duration) {
+      setDuration(span);
+      return choose(next, { syncForm: false, nextDuration: span });
     }
     choose(next, { syncForm: false });
   }
@@ -336,16 +338,16 @@ export function PlanBoard(props: Props) {
     document.body.classList.add("is-plan-dragging");
   }
 
-  // Handle of a chosen visit (task-20-3): drags its start or end on the 15-minute grid, at least 30 minutes long; the
-  // result goes to the same confirmation as a move
-  function startResize(event: ReactPointerEvent<HTMLElement>, visit: BusyBlock, edge: "start" | "end") {
+  // Handle of a chosen visit (task-20-3) or of the selection (task-20-5): drags its start or end on the 15-minute grid,
+  // at least 30 minutes long. A visit goes to the same confirmation as a move, the selection takes the new length
+  function startResize(event: ReactPointerEvent<HTMLElement>, edge: "start" | "end", visit: BusyBlock | null) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
     const laneElement = event.currentTarget.closest<HTMLElement>(".plan3__lane");
-    if (!laneElement || !visit.move) return;
+    if (!laneElement || (visit ? !visit.move : !pick)) return;
     event.preventDefault();
     event.stopPropagation();
-    const origin = move && move.visitId === visit.move.visitId ? move.to : pickOf(visit);
-    const ignore = ignoreOf(visit);
+    const origin = visit ? (move && move.visitId === visit.move!.visitId ? move.to : pickOf(visit)) : pick!;
+    const ignore = visit ? ignoreOf(visit) : null;
     const startX = event.clientX;
     let current: Drag | null = null;
     const move_ = (moveEvent: PointerEvent) => {
@@ -368,7 +370,9 @@ export function PlanBoard(props: Props) {
       if (!current) return;
       suppressClick.current = true;
       window.setTimeout(() => { suppressClick.current = false; }, 0);
-      if (dropIt) dropVisit(visit, current.snapped, true);
+      if (!dropIt) return;
+      if (visit) dropVisit(visit, current.snapped, true);
+      else resizePick(current.snapped);
     };
     const onUp = () => stop(true);
     const onCancel = () => stop(false);
@@ -384,7 +388,16 @@ export function PlanBoard(props: Props) {
     if (result.ok) return choose(candidate);
     const found = windowFrom(candidate.technicianId, candidate.day, toMinutes(candidate.start)) ?? windowFrom(candidate.technicianId, candidate.day, 0);
     if (found) return choose(found, { notice: `${result.message} Nächstes freies Fenster übernommen: ${found.start}–${found.end}.` });
-    choose(origin, { notice: `${result.message} Kein freies Fenster für ${duration / 60} h an diesem Tag – Auswahl unverändert.` });
+    choose(origin, { notice: `${result.message} Kein freies Fenster für ${durationText(duration)} an diesem Tag – Auswahl unverändert.` });
+  }
+
+  // Selection with a new length (task-20-5): free → taken, the suggestions follow the length; conflict → unchanged
+  function resizePick(candidate: BoardPick) {
+    const result = check(candidate);
+    if (!result.ok) return setNotice(`${result.message} Länge unverändert.`);
+    const span = toMinutes(candidate.end) - toMinutes(candidate.start);
+    setDuration(span);
+    choose(candidate, { nextDuration: span });
   }
 
   // Planned visit dropped: free target → confirmation; conflict → next free window of the same length that day
@@ -445,7 +458,14 @@ export function PlanBoard(props: Props) {
     if (event.key === "Enter" || event.key === " ") { event.stopPropagation(); event.preventDefault(); return; }
     const span = toMinutes(pick.end) - toMinutes(pick.start);
     let next: BoardPick | null = null;
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    if (event.shiftKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      // Shift + ←/→: length by 15 minutes (task-20-5), at least 30 minutes
+      const end = Math.min(Math.max(toMinutes(pick.end) + (event.key === "ArrowLeft" ? -DRAG_STEP : DRAG_STEP), toMinutes(pick.start) + 2 * DRAG_STEP), bounds.to);
+      event.preventDefault();
+      event.stopPropagation();
+      focusPick.current = true;
+      return resizePick({ ...pick, end: toTime(end) });
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       const start = Math.min(Math.max(toMinutes(pick.start) + (event.key === "ArrowLeft" ? -DRAG_STEP : DRAG_STEP), bounds.from), bounds.to - span);
       next = { ...pick, start: toTime(start), end: toTime(start + span) };
     } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -472,7 +492,7 @@ export function PlanBoard(props: Props) {
     const firstWindow = canPick && !absentAllDay ? windowFrom(technicianId, day, 0) : null;
     const name = techName(technicianId);
     const busyText = segments.filter((segment) => segment.kind !== "absence" && segment.kind !== "hold").map((segment) => `${toTime(segment.start)}–${toTime(segment.end)}`).join(", ");
-    const label = `${name}, ${shortDay(day)}: ${absentAllDay ? "nicht verfügbar" : `${busyText ? `belegt ${busyText}` : "frei"}${canPick ? (firstWindow ? `, frei ab ${firstWindow.start}` : `, kein freies Fenster für ${duration / 60} h`) : ""}`}`;
+    const label = `${name}, ${shortDay(day)}: ${absentAllDay ? "nicht verfügbar" : `${busyText ? `belegt ${busyText}` : "frei"}${canPick ? (firstWindow ? `, frei ab ${firstWindow.start}` : `, kein freies Fenster für ${durationText(duration)}`) : ""}`}`;
     const pickHere = !drag && pick && pick.technicianId === technicianId && pick.day === day ? pick : null;
     const dragHere = drag && drag.technicianId === technicianId && drag.day === day ? drag : null;
     const moveHere = !drag && move && move.to.technicianId === technicianId && move.to.day === day ? move : null;
@@ -495,7 +515,7 @@ export function PlanBoard(props: Props) {
       const exact = clientX !== null ? { technicianId, day, start: toTime(from), end: toTime(from + duration) } : null;
       if (exact && check(exact).ok) return choose(exact);
       const found = windowFrom(technicianId, day, from) ?? windowFrom(technicianId, day, 0);
-      if (!found) return setNotice(`${name} hat am ${shortDay(day)} kein freies Fenster für ${duration / 60} h.`);
+      if (!found) return setNotice(`${name} hat am ${shortDay(day)} kein freies Fenster für ${durationText(duration)}.`);
       choose(found, { notice: clientX !== null ? `Nächstes freies Fenster übernommen: ${found.start}–${found.end}.` : "" });
     };
 
@@ -557,8 +577,8 @@ export function PlanBoard(props: Props) {
               >
                 {text}
                 {chosen && <>
-                  <i className="plan3__handle plan3__handle--start" aria-hidden="true" onPointerDown={(event) => startResize(event, visit, "start")} />
-                  <i className="plan3__handle plan3__handle--end" aria-hidden="true" onPointerDown={(event) => startResize(event, visit, "end")} />
+                  <i className="plan3__handle plan3__handle--start" aria-hidden="true" onPointerDown={(event) => startResize(event, "start", visit)} />
+                  <i className="plan3__handle plan3__handle--end" aria-hidden="true" onPointerDown={(event) => startResize(event, "end", visit)} />
                 </>}
               </span>
             );
@@ -572,10 +592,21 @@ export function PlanBoard(props: Props) {
             onClick={(event) => event.stopPropagation()}
           >
             {view === "tag" && <span className="plan3__blk-text">{moveHere.block.requestNumber} · {moveHere.to.start}–{moveHere.to.end}</span>}
+            {/* The handles stay on the pending change (task-20-5), so a wrong length can be corrected at once */}
+            <i className="plan3__handle plan3__handle--start" aria-hidden="true" onPointerDown={(event) => startResize(event, "start", moveHere.block)} />
+            <i className="plan3__handle plan3__handle--end" aria-hidden="true" onPointerDown={(event) => startResize(event, "end", moveHere.block)} />
           </span>
         )}
         {ghosts.map(({ suggestion, rank }) => (
-          <span key={rank} className="plan3__blk plan3__blk--sug" style={place(toMinutes(suggestion.startTime), toMinutes(suggestion.endTime))} aria-hidden="true">{rank}</span>
+          // A click on a suggestion takes it exactly (task-20-5), wherever inside it the click lands
+          <span key={rank} className="plan3__blk plan3__blk--sug" style={place(toMinutes(suggestion.startTime), toMinutes(suggestion.endTime))} aria-hidden="true"
+            title={`Vorschlag ${rank}: ${suggestion.startTime}–${suggestion.endTime} übernehmen`}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (suppressClick.current) return;
+              setChosenVisit(null);
+              choose({ technicianId, day, start: suggestion.startTime, end: suggestion.endTime });
+            }}>{rank}</span>
         ))}
         {pickHere && (
           <span
@@ -583,12 +614,14 @@ export function PlanBoard(props: Props) {
             style={place(toMinutes(pickHere.start), toMinutes(pickHere.end))}
             role="button"
             tabIndex={0}
-            aria-label={`Auswahl ${name}, ${shortDay(day)} ${pickHere.start}–${pickHere.end}. Ziehen oder mit Pfeiltasten verschieben.`}
+            aria-label={`Auswahl ${name}, ${shortDay(day)} ${pickHere.start}–${pickHere.end}. Ziehen oder mit Pfeiltasten verschieben, Griffe an den Rändern oder Umschalt und Pfeiltasten ändern die Länge.`}
             onPointerDown={(event) => startDrag(event, pick)}
             onClick={(event) => event.stopPropagation()}
             onKeyDown={keyMove}
           >
             {(view === "tag" || toMinutes(pickHere.end) - toMinutes(pickHere.start) >= 120) && <span className="plan3__blk-text">{pickHere.start}–{pickHere.end}</span>}
+            <i className="plan3__handle plan3__handle--pick plan3__handle--start" aria-hidden="true" onPointerDown={(event) => startResize(event, "start", null)} />
+            <i className="plan3__handle plan3__handle--pick plan3__handle--end" aria-hidden="true" onPointerDown={(event) => startResize(event, "end", null)} />
           </span>
         )}
         {dragHere && (
@@ -624,13 +657,6 @@ export function PlanBoard(props: Props) {
               <button type="button" aria-pressed={view === "woche"} onClick={() => view !== "woche" && navigate({ view: "woche", anchor: focusDay })}>7 Arbeitstage</button>
               <button type="button" aria-pressed={view === "tag"} onClick={() => view !== "tag" && navigate({ view: "tag", day: pick && days.includes(pick.day) ? pick.day : days.includes(todayWorkday) ? todayWorkday : days[0] })}>Tag</button>
             </div>
-            {canPick && (
-              <div className="plan3__seg" role="group" aria-label="Dauer">
-                {SLOT_DURATIONS.map((minutes) => (
-                  <button key={minutes} type="button" aria-pressed={minutes === duration} onClick={() => changeDuration(minutes)}>{minutes / 60} h</button>
-                ))}
-              </div>
-            )}
           </div>
         </header>
 
@@ -688,7 +714,7 @@ export function PlanBoard(props: Props) {
         </div>
         <p className="plan3__hint">
           {canPick
-            ? <>Leere Fläche anklicken oder die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
+            ? <>Vorschlag oder leere Fläche anklicken, die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl) und ihre Länge an den Rändern ändern (aktuell {durationText(duration)}). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
             : "Links eine Anfrage wählen, dann lassen sich freie Flächen anklicken."}
           {hasMovable && " Geplante Einsätze: ziehen verschiebt; ein Klick wählt den Einsatz, dann ändern die Griffe an den Rändern die Länge (oder Umschalt + Pfeiltasten); Doppelklick oder Enter öffnet die Anfrage."}
         </p>
@@ -735,7 +761,7 @@ export function PlanBoard(props: Props) {
             <div className="plan3__panel-sec">
               <h3 className="plan3__eyebrow">Vorschläge</h3>
               {suggestions.length === 0 ? (
-                <p className="plan3__muted">Kein freies Fenster für {duration / 60} h in den nächsten 7 Arbeitstagen. Kürzere Dauer wählen oder eine spätere Woche öffnen.</p>
+                <p className="plan3__muted">Kein freies Fenster für {durationText(duration)} in den nächsten 7 Arbeitstagen. Im Termin unten ein früheres Ende eintragen oder eine spätere Woche öffnen.</p>
               ) : (
                 <ul className="plan3__sugs">
                   {suggestions.map((suggestion, index) => {

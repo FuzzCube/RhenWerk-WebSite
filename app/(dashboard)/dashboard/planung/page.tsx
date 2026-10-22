@@ -10,7 +10,7 @@ import { requireRole } from "@/lib/auth/session";
 import { getEmployeeNames } from "@/lib/dashboard/requests";
 import { loadAvailability, loadMonthLoads, loadPlanningDays, loadPlanningTarget, loadSelectedContext, type Availability, type WorkingHours } from "@/lib/dashboard/planning";
 import { formatCalendarDate, formatDate, formatDateTime, formatNumber, formatWeekdayDate } from "@/lib/format";
-import { hoursOn, nextWorkingDays, SLOT_DURATIONS } from "@/lib/slot-suggestions";
+import { hoursOn, nextWorkingDays } from "@/lib/slot-suggestions";
 import { label } from "@/lib/status";
 
 export const metadata: Metadata = { title: "Einsatzplanung" };
@@ -45,8 +45,9 @@ export default async function PlanningPage({ searchParams }: Props) {
   const data = await loadPlanningDays(employee, days, single(params.anfrage) || undefined);
   const durationParam = Number.parseInt(single(params.dauer), 10);
   const holdMinutes = target?.hold ? (Date.parse(target.hold.end) - Date.parse(target.hold.start)) / 60_000 : null;
-  const duration = (SLOT_DURATIONS as readonly number[]).includes(durationParam) ? durationParam
-    : holdMinutes && (SLOT_DURATIONS as readonly number[]).includes(holdMinutes) ? holdMinutes : 120;
+  // Any length on the 15-minute grid from 30 minutes to 10 hours (task-20-5: set with the handles of the selection)
+  const validDuration = (minutes: number | null) => minutes !== null && Number.isInteger(minutes) && minutes % 15 === 0 && minutes >= 30 && minutes <= 600;
+  const duration = validDuration(durationParam) ? durationParam : validDuration(holdMinutes) ? holdMinutes! : 120;
   const selected = data.selected;
   const [availability, context, names, monthLoads] = await Promise.all([
     loadAvailability(selected?.id ?? null, data.technicians, data.workingHours, duration),

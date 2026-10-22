@@ -2016,3 +2016,14 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .plan3__handle--end { right: -5px; }
 .plan3__handle::after { content: ""; position: absolute; inset: 30% 3px; border-left: 1px solid var(--rw-color-navy-950); border-right: 1px solid var(--rw-color-navy-950); }
 body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; user-select: none; }
+/* task-20-5: a click on a suggestion takes it; the selection and a pending change keep their handles (blue on the
+   lime selection), so a length can be corrected again right away */
+.plan3__blk--sug { pointer-events: auto; cursor: pointer; }
+.plan3__blk--sug:hover { background: var(--rw-color-blue-100); }
+.plan3__blk--pick, .plan3__blk--moveto { overflow: visible; }
+/* Outside the selection: in the week view a 2-hour selection is only ~18 px wide, the middle stays for dragging */
+.plan3__handle--pick { width: 8px; background: var(--rw-color-blue-600); border-color: var(--rw-color-navy-950); }
+.plan3__handle--pick.plan3__handle--start { left: -9px; }
+.plan3__handle--pick.plan3__handle--end { right: -9px; }
+.plan3__handle--pick::after { inset: 30% 2px; }
+.plan3__handle--pick::after { border-color: var(--rw-color-white); }

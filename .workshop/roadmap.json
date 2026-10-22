@@ -4312,6 +4312,37 @@
             ],
             "summary": "Ursache des Fehlers auf der Produktion (RIS-2026-02765): confirm_message_sent setzt updated_at der Anfrage und erhöht damit die Version 20 Sekunden nach Eingang; die offene Seite hatte die alte Version. completeIntake wiederholt bei RW409 mit der aktuellen Version, wenn seit dem updated_at der Seite nur message_queued/message_sent der Automatisierung geschahen und die Erstbearbeitung noch offen ist; sonst bleibt die Konfliktmeldung. Danach Weiterleitung nach /dashboard/planung?anfrage=… (Vormerkung als Auswahl). Karte Terminwunsch bei offener Erstbearbeitung entfernt, Zeile in Einsatz planen gekürzt. Geprüft: Versand während offener Seite → abgeschlossen (Version 4), Plantafel mit Auswahl Anna 28.10. 10:00–12:00. test:ui: neue Prüfung bestanden; 2 bekannte Fehler wegen lokal liegender Test-E-Mails."
           }
+        },
+        {
+          "id": "task-20-5",
+          "title": "Länge per Griffen auch für neue Termine",
+          "description": "Nutzerwunsch nach Test: Griffe bleiben nach dem Ziehen der Länge am geänderten Einsatz; Knöpfe 1–4 h entfallen, die Auswahl bekommt blaue Griffe; ein Klick auf einen Vorschlag übernimmt ihn genau.",
+          "order": 5,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-3"
+          ],
+          "definitionOfDone": [
+            "Griffe bleiben an der Änderung",
+            "Keine Dauer-Knöpfe, Griffe an der Auswahl",
+            "Klick auf Vorschlag übernimmt ihn genau",
+            "lint, typecheck, build, test:ui"
+          ],
+          "startedAt": "2026-10-22T19:50:00Z",
+          "completedAt": "2026-10-22T20:09:55Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-22T20:09:55Z",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3100 npm run test:ui (unter next dev)",
+              "Browser: Vorschlag rechts angeklickt, Griff der Auswahl gezogen, Einsatz zweimal nacheinander verlängert"
+            ],
+            "summary": "plan-board: startResize gilt für Einsatz und Auswahl; resizePick übernimmt die neue Länge (Vorschläge folgen, URL dauer), Konflikt lässt die Länge unverändert; Umschalt + ←/→ auf der Auswahl; Ende im Formular ändert die Länge ebenso. Ausstehende Änderung eines Einsatzes zeigt die Griffe weiter. Vorschlagsflächen anklickbar. Dauer-Knöpfe entfernt, planung/page akzeptiert jede Dauer im 15-Minuten-Raster von 30 min bis 10 h. Griffe der Auswahl blau und außen, damit die schmale Auswahl in der Wochenansicht ziehbar bleibt (test:ui fand das). Geprüft: Klick rechts in Vorschlag 2 → 07:00–09:00, Griff → 07:00–08:30 und dauer=90, Einsatz 2× verlängert (10:45, 11:30) mit Griffen. test:ui: nur die 2 bekannten Fehler wegen lokal liegender Test-E-Mails."
+          }
         }
       ]
     }
