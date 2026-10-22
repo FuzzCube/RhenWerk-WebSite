@@ -4076,20 +4076,26 @@
           "description": "Admin erhält den Bereich Einsatzplanung; Anfragen in der Lage Einsatzplanung zeigen einen Knopf zur Einsatzplanung.",
           "order": 2,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Admin kann planen (Rechte in Datenbank geprüft)",
             "Knopf in der Anfrage",
             "lint, typecheck, build, test:api"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T19:35:00Z",
+          "completedAt": "2026-10-22T19:50:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T19:50:00Z",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3100 npm run test:auth (unter next dev)",
+              "Sichtprüfung Anfrage und Einsatzplanung als Admin"
+            ],
+            "summary": "Admin sieht den Bereich Einsatzplanung (Navigation, Seite, Server-Aktionen schedule/reschedule); die Datenbankfunktionen schedule_visit, reschedule_visit und cancel_visit erlaubten admin bereits. Anfrage in der Lage Einsatzplanung zeigt dem Admin den Block Nächster Schritt mit Zur Einsatzplanung, auch ohne weitere Aktionen. test:auth: Navigation des Admins angepasst und bestanden bis auf die bekannten 6 Cache-Control-Prüfungen unter next dev (gegen next start nicht ausgeführt). test:api und test:ui nicht ausgeführt (keine Datenbankänderung)."
           }
         },
         {

@@ -12,7 +12,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Books a visit via schedule_visit (task-2-2). The database checks role, assignment, state,
 // working hours, absences, the past and overlaps (exclusion constraint, RW410) – also for concurrent bookings.
 export async function scheduleVisit(_previous: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(["dispatcher", "manager"]);
+  await requireRole(["dispatcher", "manager", "admin"]);
   const values = formValues(formData);
   const version = Number.parseInt(values.version ?? "", 10);
   if (!UUID.test(values.request_id ?? "") || !Number.isInteger(version)) return formError("Ungültige Anfrage. Bitte die Seite neu laden.", values);
@@ -50,7 +50,7 @@ const DEFAULT_RESCHEDULE_REASON = "Verschoben auf der Plantafel";
 // the request version, state (only scheduled visits of open requests), the past, working hours, absences and
 // overlaps (RW410). The reason is prefilled on the board and may be changed; empty falls back to the default.
 export async function rescheduleVisit(_previous: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(["dispatcher", "manager"]);
+  await requireRole(["dispatcher", "manager", "admin"]);
   const values = formValues(formData);
   const version = Number.parseInt(values.version ?? "", 10);
   if (!UUID.test(values.visit_id ?? "") || !Number.isInteger(version)) return formError("Ungültiger Einsatz. Bitte die Seite neu laden.", values);

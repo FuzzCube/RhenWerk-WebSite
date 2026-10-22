@@ -36,7 +36,7 @@ async function login(email, password) { const jar = new Jar(); const page = awai
 const path = (loc) => (loc ? new URL(loc, BASE).pathname : null);
 
 const roles = [
-  ["admin.demo@example.com", "Clara Becker", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung", "System"], "/dashboard/heute"],
+  ["admin.demo@example.com", "Clara Becker", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen", "Verwaltung", "System"], "/dashboard/heute"],
   ["manager.demo@example.com", "Jonas Hoffmann", "/dashboard/uebersicht", ["Übersicht", "Auswertung", "Einsatzplanung", "Anfragen", "Posteingang", "Rechnungen", "System"], "/dashboard/verwaltung"],
   ["dispo1.demo@example.com", "Lea Schneider", "/dashboard/erstbearbeitung", ["Erstbearbeitung", "Einsatzplanung", "Anfragen", "Posteingang"], "/dashboard/uebersicht"],
   ["technik1.demo@example.com", "Tobias Krüger", "/dashboard/heute", ["Mein Tag", "Kalender", "Anfragen"], "/dashboard/planung"],

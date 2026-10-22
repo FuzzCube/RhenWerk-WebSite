@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v24, 20 Phasen, 118 Tasks, Fortschritt 96,79 % (Gewicht 271 von 280).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v24, 20 Phasen, 118 Tasks, Fortschritt 97,5 % (Gewicht 273 von 280).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -20,13 +20,13 @@ Roadmap v23 (22.10.2026): zusätzlich Umzug vom Oracle-Server (`ssh oracle-n8n`)
 
 ## Phase 19 „Feinschliff vor der Präsentation“ (Roadmap v24, 22.10.2026)
 
-Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (erledigt), `task-19-2` Einsatzplanung für Admin und Knopf aus der Anfrage, `task-19-3` Wunschtermin aus dem Formular vormerken und Terminbestätigung (auch bei manueller Planung), `task-19-4` Plantafel rastet animiert auf Viertelstunden ein, `task-19-5` Kosten von OpenAI im Bereich System (Costs-API mit Admin-Key; Restguthaben nur aus eingetragenem Guthaben, OpenAI hat keine Guthaben-API).
+Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (erledigt), `task-19-2` Einsatzplanung für Admin und Knopf aus der Anfrage (erledigt), `task-19-3` Wunschtermin aus dem Formular vormerken und Terminbestätigung (auch bei manueller Planung), `task-19-4` Plantafel rastet animiert auf Viertelstunden ein, `task-19-5` Kosten von OpenAI im Bereich System (Costs-API mit Admin-Key; Restguthaben nur aus eingetragenem Guthaben, OpenAI hat keine Guthaben-API).
 
 ## Zuletzt abgeschlossen
 
+- `task-19-2` (22.10.2026): **Einsatzplanung für Admin**: Bereich in der Navigation, Server-Aktionen erlauben admin (Datenbank erlaubte es schon), Anfrage „Zu planen“ zeigt dem Admin „Zur Einsatzplanung“.
 - `task-19-1` (22.10.2026): **Oberfläche**: Posteingang „Archivieren“ rot, Grund vorbelegt „Werbung“; Bereich „System“: Behobene eingeklappt, „Update einspielen“ in eigener Leiste, Tabellen springen beim Aufklappen nicht mehr; „Verknüpfung ändern“ einspaltig; laufende Knöpfe (`aria-busy`) zeigen einen Ladekreis.
 - `task-18-9` (22.10.2026): **Gesamtprobe des Deployments** gegen die Produktion bestanden: Push mit Migration bis Vercel (4,5 Minuten), Rückfall über Vercel, Systemupdate mit Rückfall (n8n 2.44.6), Wiederherstellung, Ausfall von n8n mit Warnung und E-Mail (`docs/testing.md`). Übergabe neu in `docs/HANDOFF.md`.
-- `task-18-10` (22.10.2026): **Website-Assistent in RheinWerk**: Wissensbasis `rag_documents` (nur service_role), Dokumente in `n8n/rag-documents`, Workflows „RheinWerk · Assistent“ und „Dokumente importieren“ (`ops/vps/rag-import.sh`), Website fragt über `/api/assistant` (Prüfung, Begrenzung, Access-Token; Pfad in Cloudflare Access „RheinWerk Webhook“). Oracle läuft bis task-18-13 weiter (`docs/n8n-workflows.md` 9).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -56,4 +56,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 19: `task-19-2` bis `task-19-5` in dieser Reihenfolge. Danach: Phase 18 „Deployment“: startbar `task-18-7` (Wiederherstellung aus einer Sicherung proben), `task-18-8` (Systemupdates mit Rückfall; offene Dependabot-PRs #1–#5 für Images) und `task-18-10` (RAG-Assistent). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 19: `task-19-3` bis `task-19-5` in dieser Reihenfolge. Danach: Phase 18 „Deployment“: startbar `task-18-7` (Wiederherstellung aus einer Sicherung proben), `task-18-8` (Systemupdates mit Rückfall; offene Dependabot-PRs #1–#5 für Images) und `task-18-10` (RAG-Assistent). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

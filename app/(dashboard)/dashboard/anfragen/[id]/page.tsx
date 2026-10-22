@@ -61,7 +61,7 @@ export default async function RequestPage({ params }: Props) {
   const actions = availableActions(detail, employee);
   // Planning happens on the planning page; the request page points there as the next step
   const openHold = detail.holds.find((hold) => hold.status === "open") ?? null;
-  const canPlan = (employee.role === "dispatcher" || employee.role === "manager") && request.intake_status === "processed" && ["not_planned", "waiting_parts"].includes(request.work_status);
+  const canPlan = (employee.role === "dispatcher" || employee.role === "manager" || employee.role === "admin") && request.intake_status === "processed" && ["not_planned", "waiting_parts"].includes(request.work_status);
   const hasActions = Object.values(actions).some(Boolean);
   const closedFor = !technician ? null
     : request.work_status === "completed" ? "completed"
@@ -211,7 +211,7 @@ export default async function RequestPage({ params }: Props) {
               <button type="button" className="button button--primary" disabled>Rechnungsentwurf erstellen</button>
             </section>
           )}
-          {hasActions && (
+          {(hasActions || canPlan) && (
             <section id="aktionen" className="rw-card rw-card--action request-next" aria-labelledby="aktionen-title">
               <p className="request-next__eyebrow">Nächster Schritt</p>
               <h2 id="aktionen-title" className="sr-only">Aktionen</h2>
