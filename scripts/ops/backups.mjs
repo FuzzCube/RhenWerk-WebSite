@@ -1,9 +1,10 @@
 // State of the backups for the watchdog (task-18-6): the newest checked own backup (public.backups, daily at 03:00 or
 // "Jetzt sichern") must not be older than 26 hours, and the daily backup of the provider (OVHcloud, whole server) must
-// be enabled with a restore point of the last 48 hours. collectProvider asks the OVHcloud API (read-only key, at most
+// be enabled with a restore point of the last 48 hours (the restore points only when the key may read them). collectProvider asks the OVHcloud API (read-only key, at most
 // once an hour or on "System prüfen"), evaluateBackups is pure (unit tests in tests/unit/backups-monitor.test.mjs).
 //   OVH_APPLICATION_KEY, OVH_APPLICATION_SECRET, OVH_CONSUMER_KEY (eu.api.ovh.com/createToken, only GET on
-//   /vps/<name>/automatedBackup*), OVH_VPS_NAME (default vps-0fcb2edf.vps.ovh.net), OVH_ENDPOINT (default eu)
+//   /vps/<name>/automatedBackup and optionally /vps/<name>/automatedBackup/restorePoints), OVH_VPS_NAME (default
+//   vps-0fcb2edf.vps.ovh.net), OVH_ENDPOINT (default eu)
 import { createHash } from "node:crypto";
 
 export const BACKUP_MAX_HOURS = 26;
@@ -21,7 +22,7 @@ async function ovh(env, method, route) {
     headers: { "X-Ovh-Application": env.OVH_APPLICATION_KEY, "X-Ovh-Consumer": env.OVH_CONSUMER_KEY, "X-Ovh-Timestamp": time.trim(), "X-Ovh-Signature": `$1$${signature}` },
   });
   const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(`HTTP ${response.status}${body?.message ? `: ${body.message}` : ""}`);
+  if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}${body?.message ? `: ${body.message}` : ""}`), { status: response.status });
   return body;
 }
 
@@ -30,12 +31,16 @@ export async function collectProvider(env) {
   if (!env.OVH_APPLICATION_KEY || !env.OVH_APPLICATION_SECRET || !env.OVH_CONSUMER_KEY) return null;
   const vps = env.OVH_VPS_NAME ?? "vps-0fcb2edf.vps.ovh.net";
   try {
+    // Restore points need their own right on the key; without it (HTTP 403) only the state is checked
     const [service, points] = await Promise.all([
       ovh(env, "GET", `/vps/${vps}/automatedBackup`),
-      ovh(env, "GET", `/vps/${vps}/automatedBackup/restorePoints?state=available`),
+      ovh(env, "GET", `/vps/${vps}/automatedBackup/restorePoints?state=available`).catch((error) => { if (error.status === 403) return null; throw error; }),
     ]);
-    const sorted = (points ?? []).slice().sort();
-    return { state: service?.state ?? null, schedule: service?.schedule ?? null, restore_points: sorted.length, last_restore_point: sorted.at(-1) ?? null, checked_at: new Date().toISOString() };
+    const sorted = points ? points.slice().sort() : null;
+    return {
+      state: service?.state ?? null, schedule: service?.schedule ?? null, rotation: service?.rotation ?? null,
+      restore_points: sorted ? sorted.length : null, last_restore_point: sorted?.at(-1) ?? null, checked_at: new Date().toISOString(),
+    };
   } catch (error) {
     return { error: error.name === "TimeoutError" ? "Zeitüberschreitung" : error.message, checked_at: new Date().toISOString() };
   }
@@ -69,13 +74,13 @@ export function evaluateBackups({ latest, provider }, now = new Date()) {
     if (provider.state !== "enabled") {
       checks.push(check("backup:provider", "Sicherung des Anbieters", false, "warning", "Sicherung des Anbieters ausgeschaltet",
         `OVHcloud meldet für die automatische Sicherung den Zustand „${provider.state ?? "unbekannt"}“. Im OVHcloud-Kundencenter unter VPS → Automatische Sicherung einschalten.`));
-    } else if (pointAge === null || pointAge > PROVIDER_MAX_HOURS) {
+    } else if (provider.restore_points !== null && provider.restore_points !== undefined && (pointAge === null || pointAge > PROVIDER_MAX_HOURS)) {
       checks.push(check("backup:provider", "Sicherung des Anbieters", false, "warning", "Kein aktueller Sicherungspunkt beim Anbieter",
         `Der letzte Sicherungspunkt von OVHcloud ist ${provider.last_restore_point ? `vom ${provider.last_restore_point}` : "nicht vorhanden"} (erwartet täglich).`));
     } else {
       checks.push(check("backup:provider", "Sicherung des Anbieters", true));
     }
-    providerState = { state: provider.state, schedule: provider.schedule, restore_points: provider.restore_points, last_restore_point: provider.last_restore_point };
+    providerState = { state: provider.state, schedule: provider.schedule, rotation: provider.rotation ?? null, restore_points: provider.restore_points ?? null, last_restore_point: provider.last_restore_point ?? null };
   }
 
   const failed = checks.filter((c) => c.ok === false);

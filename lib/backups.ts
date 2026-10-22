@@ -17,7 +17,7 @@ export type BackupRow = {
   error: string | null;
   requester: string | null;
 };
-export type ProviderBackup = { state?: string | null; schedule?: string | null; restore_points?: number; last_restore_point?: string | null; error?: string };
+export type ProviderBackup = { state?: string | null; schedule?: string | null; rotation?: number | null; restore_points?: number | null; last_restore_point?: string | null; error?: string };
 
 const REASON: Record<BackupReason, string> = { daily: "Täglich", manual: "Von Hand", migration: "Vor Migration" };
 export const backupReasonLabel = (reason: BackupReason): string => REASON[reason] ?? reason;
@@ -55,9 +55,10 @@ export function providerView(provider: ProviderBackup | null | undefined): { sta
   if (!provider) return { status: { key: "nicht-eingerichtet", label: "Nicht abgefragt", tone: "closed" }, text: "Täglich beim Anbieter (OVHcloud), ganzer Server; Zustand wird ohne API-Schlüssel nicht abgefragt." };
   if (provider.error) return { status: { key: "warnung", label: "Nicht abrufbar", tone: "wait" }, text: `OVHcloud-API: ${provider.error}` };
   if (provider.state !== "enabled") return { status: { key: "warnung", label: "Ausgeschaltet", tone: "wait" }, text: `Automatische Sicherung bei OVHcloud: ${provider.state ?? "unbekannt"}.` };
-  const count = provider.restore_points ?? 0;
+  // Restore points only when the key may read them; otherwise the number the provider keeps (rotation)
+  const count = provider.restore_points ?? provider.rotation ?? null;
   return {
     status: { key: "in-ordnung", label: "Aktiv", tone: "done" },
-    text: `Täglich${provider.schedule ? ` um ${provider.schedule.slice(0, 5)} (UTC)` : ""} beim Anbieter, ganzer Server; ${count === 1 ? "1 Sicherungspunkt" : `${count} Sicherungspunkte`}.`,
+    text: `Täglich${provider.schedule ? ` um ${provider.schedule.slice(0, 5)}` : ""} beim Anbieter (OVHcloud), ganzer Server${count === null ? "" : `; ${count === 1 ? "1 Sicherungspunkt" : `${count} Sicherungspunkte`}`}.`,
   };
 }

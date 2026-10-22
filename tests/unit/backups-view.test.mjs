@@ -26,7 +26,8 @@ test("Größe und Inhalt lesbar, neueste geprüfte Sicherung", () => {
 
 test("Sicherung des Anbieters: ohne Schlüssel, aktiv, ausgeschaltet, Fehler", () => {
   assert.equal(providerView(null).status.label, "Nicht abgefragt");
-  assert.equal(providerView({ state: "enabled", schedule: "03:10:00", restore_points: 1 }).text, "Täglich um 03:10 (UTC) beim Anbieter, ganzer Server; 1 Sicherungspunkt.");
+  assert.equal(providerView({ state: "enabled", schedule: "03:10:00", restore_points: 1 }).text, "Täglich um 03:10 beim Anbieter (OVHcloud), ganzer Server; 1 Sicherungspunkt.");
+  assert.equal(providerView({ state: "enabled", schedule: "09:42:00", rotation: 1, restore_points: null }).text, "Täglich um 09:42 beim Anbieter (OVHcloud), ganzer Server; 1 Sicherungspunkt.");
   assert.equal(providerView({ state: "disabled" }).status.label, "Ausgeschaltet");
   assert.match(providerView({ error: "HTTP 403" }).text, /HTTP 403/);
 });

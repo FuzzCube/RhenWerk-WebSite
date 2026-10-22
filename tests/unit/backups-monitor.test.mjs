@@ -14,7 +14,7 @@ test("Sicherung von heute und Sicherung des Anbieters aktuell: alles in Ordnung"
   assert.equal(result.state, "ok");
   assert.equal(byKey(result)["backup:stale"].ok, true);
   assert.equal(byKey(result)["backup:provider"].ok, true);
-  assert.deepEqual(result.provider, { state: "enabled", schedule: "03:10:00", restore_points: 1, last_restore_point: "2026-10-22T01:10:00Z" });
+  assert.deepEqual(result.provider, { state: "enabled", schedule: "03:10:00", rotation: null, restore_points: 1, last_restore_point: "2026-10-22T01:10:00Z" });
 });
 
 test("Eigene Sicherung älter als 26 Stunden oder keine: kritisch", () => {
@@ -34,6 +34,8 @@ test("Anbieter: ohne Schlüssel übersprungen, ausgeschaltet, alter Sicherungspu
   const stale = evaluateBackups({ latest: latest(2), provider: provider({ last_restore_point: "2026-10-19T01:10:00Z" }) }, now);
   assert.equal(stale.state, "warning");
   assert.equal(byKey(stale)["backup:provider"].title, "Kein aktueller Sicherungspunkt beim Anbieter");
+  const noPoints = evaluateBackups({ latest: latest(2), provider: provider({ restore_points: null, last_restore_point: null, rotation: 1 }) }, now);
+  assert.equal(byKey(noPoints)["backup:provider"].ok, true, "ohne Recht auf die Sicherungspunkte zählt der Zustand");
   const failed = evaluateBackups({ latest: latest(2), provider: { error: "HTTP 403: This call has not been granted" } }, now);
   assert.match(byKey(failed)["backup:provider"].detail, /HTTP 403/);
   assert.deepEqual(failed.provider, { error: "HTTP 403: This call has not been granted" });
