@@ -63,4 +63,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 20 abgeschlossen (Push ausstehend). Phasen 18 und 19 abgeschlossen und deployt; OpenAI-Admin-Key auf dem VPS eintragen; Oracle-Instanz in der Oracle Cloud löschen, wenn nichts mehr gebraucht wird. Alle Tasks der Roadmap v24 erledigt. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 20 abgeschlossen und deployt (Workflow rwVisitReply2026 auf dem VPS aktiv). Phasen 18 und 19 abgeschlossen und deployt; OpenAI-Admin-Key auf dem VPS eintragen; Oracle-Instanz in der Oracle Cloud löschen, wenn nichts mehr gebraucht wird. Alle Tasks der Roadmap v25 erledigt. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

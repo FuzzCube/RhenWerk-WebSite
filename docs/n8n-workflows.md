@@ -327,7 +327,7 @@ Voraussetzung: Supabase läuft ([supabase-lokal.md](supabase-lokal.md)).
 
 ## 8. Überwachung und typische Störungen
 
-**Wächter (task-17-8):** `scripts/ops/watchdog.mjs` (alle 5 Minuten, Prüfungen in `scripts/ops/n8n.mjs`) prüft nur über die n8n-API und die Datenbank, nie über `~/n8n/data/database.sqlite`: n8n erreichbar (`/healthz`, kritisch), Workflows 1–9 aktiv (kritisch; 7 und 8 nur mit `ELEVENLABS_API_KEY`), letzter Lauf von 6 (≤ 10 min), 3 (≤ 10 min) und 5 (≤ 30 min), Versandstau > 10 Minuten (kritisch, Regel wie der Dashboard-Hinweis), KI-Analysen > 15 Minuten offen (`monitor_n8n_queues`). Warnungen des Error-Workflows mailt der Wächter (`alerts_to_notify`) und schließt sie nach einer Stunde ohne neuen Fehlerlauf des Workflows. Ohne `N8N_API_KEY` nur Erreichbarkeit und Warteschlangen. Zustand im Dashboard-Bereich „System“ (Zeile „Automatisierung (n8n)“).
+**Wächter (task-17-8):** `scripts/ops/watchdog.mjs` (alle 5 Minuten, Prüfungen in `scripts/ops/n8n.mjs`) prüft nur über die n8n-API und die Datenbank, nie über `~/n8n/data/database.sqlite`: n8n erreichbar (`/healthz`, kritisch), alle Workflows aus `n8n/workflows/` außer 12 aktiv (kritisch; 7 und 8 nur mit `ELEVENLABS_API_KEY`), letzter Lauf von 6 (≤ 10 min), 3 (≤ 10 min) und 5 (≤ 30 min), Versandstau > 10 Minuten (kritisch, Regel wie der Dashboard-Hinweis), KI-Analysen > 15 Minuten offen (`monitor_n8n_queues`). Warnungen des Error-Workflows mailt der Wächter (`alerts_to_notify`) und schließt sie nach einer Stunde ohne neuen Fehlerlauf des Workflows. Ohne `N8N_API_KEY` nur Erreichbarkeit und Warteschlangen. Zustand im Dashboard-Bereich „System“ (Zeile „Automatisierung (n8n)“).
 
 | Wo sehen? | Was |
 | --- | --- |
