@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 24,
+  "roadmapVersion": 25,
   "status": "active",
   "phases": [
     {
@@ -4185,6 +4185,88 @@
               "Sichtprüfung Bereich System mit Testwerten in system_status.monitoring.openai (danach entfernt), 390/768 px ohne horizontales Scrollen"
             ],
             "summary": "Wächter liest stündlich den Verbrauch des Monats über die OpenAI Costs-API (scripts/ops/openai.mjs, OPENAI_ADMIN_KEY) und schreibt ihn als monitoring.openai; Budget OPENAI_BUDGET_USD ergibt Rest und Warnschwelle (OPENAI_BUDGET_MIN_USD, sonst 10 %). Bereich System: Karte Guthaben externer Dienste zeigt ElevenLabs und OpenAI (Rest von Budget mit Balken, Verbrauch, Zeitpunkt; ohne Schlüssel Nicht eingerichtet). Keine Migration (set_monitoring nimmt jeden Schlüssel), keine E-Mail-Warnung. Nicht ausgeführt: Abruf gegen die echte OpenAI-API (kein Admin-Key vorhanden); auf dem VPS fehlen OPENAI_ADMIN_KEY und OPENAI_BUDGET_USD in /opt/rheinwerk/ops.env (docs/betrieb.md)."
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-20",
+      "title": "Rückmeldungen nach dem Rundgang",
+      "description": "Nutzerentscheidung 22.10.2026 nach einem zweiten Rundgang: Formular der Website, Weg von der Anfrage in die Einsatzplanung mit vorgemerktem Termin und Bedienung der Plantafel.",
+      "order": 21,
+      "weight": 6,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-20-1",
+          "title": "Formular: Auswahllisten, Uhrzeit, Dateien ziehen",
+          "description": "Pfeile der Auswahllisten mit Abstand zum Rand, Uhrzeit im 30-Minuten-Raster bis 14:00 mit Hinweis zur Einsatzdauer, Fotos und Dokumente per Drag and Drop.",
+          "order": 1,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Alle drei Punkte umgesetzt",
+            "Sichtprüfung 390/768/1440 px",
+            "lint, typecheck, build"
+          ],
+          "startedAt": "2026-10-22T18:50:02Z",
+          "completedAt": "2026-10-22T18:52:59Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-22T18:52:59Z",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "Browser: Formular Schritt 3 und 4 bei 1440/390/768 px, Ablegen einer Datei per DragEvent"
+            ],
+            "summary": "Auswahllisten (.field select, Website und Dashboard) mit eigenem Pfeil 16 px vom Rand, auch bei Fehlerzustand. Gewünschte Uhrzeit: 07:00 bis 14:00 im 30-Minuten-Raster (15 Zeiten) mit Hinweis, warum nicht später (Einsatz 2–3 h, Feierabend 16 Uhr). Dateien per Drag and Drop in die Ablagefläche (Hervorhebung beim Ziehen, gleiche Prüfung wie bei der Auswahl, Grenze drei Dateien). Geprüft: Ablegen fügt die Datei hinzu, kein horizontales Scrollen. Formularversand über n8n nicht erneut ausgeführt; preferred_time 07:30 usw. akzeptiert die Datenbank (HH:MM)."
+          }
+        },
+        {
+          "id": "task-20-2",
+          "title": "Anfrage führt in die Einsatzplanung mit Vormerkung",
+          "description": "Karte Termin bestätigen entfällt; Zur Einsatzplanung öffnet die Plantafel mit der Vormerkung oder dem Wunschtag als Auswahl; Planung schließt die offene Vormerkung ohne Absage an den Kunden.",
+          "order": 2,
+          "weight": 2,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Auswahl auf der Vormerkung",
+            "Vormerkung nach Planung geschlossen",
+            "test:db, lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-20-3",
+          "title": "Plantafel: Farben und Länge ändern",
+          "description": "Einsätze nach Zeit gefärbt (künftig, vorbei, fremd); Klick wählt einen Einsatz mit Griffen zum Ändern der Länge im 15-Minuten-Raster, Doppelklick öffnet die Anfrage.",
+          "order": 3,
+          "weight": 2,
+          "status": "ready",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Farben und Legende",
+            "Länge ändern und speichern",
+            "Doppelklick öffnet Anfrage",
+            "lint, typecheck, build"
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
           }
         }
       ]

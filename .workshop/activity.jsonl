@@ -481,3 +481,6 @@
 {"timestamp":"2026-10-22T18:09:16Z","type":"task_completed","taskId":"task-18-13","summary":"Oracle-Server still: letzte Sicherung verschlüsselt auf dem VPS, alle Container gestoppt, altes Repository archiviert; alte Adresse zeigt die neue Website."}
 {"timestamp":"2026-10-22T18:09:16Z","type":"phase_completed","taskId":null,"summary":"Phase 18 Deployment abgeschlossen; alle Tasks der Roadmap v24 erledigt."}
 {"timestamp":"2026-10-22T18:40:00Z","type":"issue_resolved","taskId":null,"summary":"Gmail-Versand hing für Mails an die Adresse der Warnmails: Duplikatsuche stieß an 100 Treffer. Suche auf Nachrichten seit Erstellung begrenzt (Workflow auf dem VPS und im Repository); zwei angehaltene Mails gesendet. Zeitstempel von Phase 19 und task-18-13 auf die tatsächlichen Zeiten korrigiert."}
+{"timestamp":"2026-10-22T18:50:02Z","type":"roadmap_updated","taskId":null,"summary":"Roadmap v25: Phase 20 Rückmeldungen nach dem Rundgang mit drei Tasks."}
+{"timestamp":"2026-10-22T18:50:02Z","type":"task_started","taskId":"task-20-1","summary":"Formular: Auswahllisten, Uhrzeit, Dateien ziehen begonnen."}
+{"timestamp":"2026-10-22T18:52:59Z","type":"task_completed","taskId":"task-20-1","summary":"Formular: Pfeile der Auswahllisten mit Abstand, Uhrzeit im 30-Minuten-Raster bis 14 Uhr mit Hinweis, Dateien per Drag and Drop; lint, typecheck, build bestanden."}

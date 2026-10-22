@@ -271,6 +271,9 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .field textarea { min-height: 150px; resize: vertical; }
 .field__static { display: flex; align-items: center; min-height: 48px; margin: 0; padding: 10px 12px; border: 1px dashed var(--rw-border-default); border-radius: var(--rw-radius-sm); color: var(--rw-text-secondary); font-weight: 500; }
 .field input[aria-invalid="true"], .field select[aria-invalid="true"], .field textarea[aria-invalid="true"] { border: 1.5px solid var(--rw-color-danger-700); background: var(--rw-color-danger-surface); }
+/* Own arrow with room to the edge instead of the native one pressed against it (task-20-1); after the error rule,
+   whose background shorthand would remove it */
+.field select { appearance: none; -webkit-appearance: none; padding-right: 44px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; background-size: 16px 16px; }
 .field em { color: var(--rw-text-secondary); font-size: 12px; font-style: normal; font-weight: 400; }
 .field > strong, .radio-field > strong, .field-error { color: var(--rw-color-danger-800); font-size: 13px; font-weight: 600; }
 .radio-field { padding: 0; border: 0; }
@@ -280,7 +283,10 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .radio-field label.selected { background: var(--rw-color-lime-100); border: 2px solid var(--rw-color-lime-500); }
 .radio-field label input { accent-color: var(--rw-color-blue-700); }
 .radio-field > strong { display: block; margin-top: 8px; }
-.upload-zone { padding: 24px; border: 1px dashed var(--rw-border-default); border-radius: var(--rw-radius-md); background: var(--rw-surface-page); text-align: center; }
+.upload-zone { position: relative; padding: 24px; border: 1px dashed var(--rw-border-default); border-radius: var(--rw-radius-md); background: var(--rw-surface-page); text-align: center; transition: border-color var(--rw-duration-fast) var(--rw-ease-standard), background var(--rw-duration-fast) var(--rw-ease-standard); }
+.upload-zone.is-over { border: 2px dashed var(--rw-color-lime-500); background: color-mix(in srgb, var(--rw-color-lime-500) 10%, white); }
+.upload-zone__drop { display: none; }
+.upload-zone.is-over .upload-zone__drop { position: absolute; inset: 0; display: grid; place-items: center; margin: 0 !important; font-size: 16px !important; font-weight: 600; color: var(--rw-text-primary) !important; background: color-mix(in srgb, var(--rw-color-lime-500) 18%, white); border-radius: inherit; pointer-events: none; }
 .upload-zone > input { position: absolute; opacity: 0; pointer-events: none; }
 .upload-zone > button { min-height: 48px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; background: white; color: var(--rw-text-link); border: 1.5px solid var(--rw-action-secondary-border); border-radius: var(--rw-radius-sm); font-weight: 600; cursor: pointer; }
 .upload-zone > p { margin-top: 10px; color: var(--rw-text-secondary); font-size: 13px; }
