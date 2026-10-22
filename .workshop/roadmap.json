@@ -4487,7 +4487,7 @@
           "completedAt": "2026-10-22T21:23:14Z",
           "verification": {
             "status": "passed",
-            "checkedAt": "2026-10-22T21:23:14Z",
+            "checkedAt": "2026-10-22T21:30:36Z",
             "commands": [
               "npx supabase test db (1236 Tests, neu visit_reply.test.sql 16)",
               "npm run test:unit",
@@ -4495,9 +4495,10 @@
               "npm run typecheck",
               "npm run build",
               "APP_URL=http://localhost:3100 npm run test:ui (unter next dev)",
-              "Browser: Absage simuliert (apply_visit_reply als service_role), Hinweiskarte und Status Zu planen"
+              "Browser: Absage simuliert (apply_visit_reply als service_role), Hinweiskarte und Status Zu planen",
+              "Produktion: rwVisitReply2026 importiert und aktiviert, erster Lauf"
             ],
-            "summary": "Ursache: reply_analysis startete nur bei awaiting_customer; Antworten auf geplante Anfragen (RIS-2026-02764, 02765) blieben liegen. Migrationen 20261023000000 (automation_step visit_reply, messages.system_template) und 20261023000100 (messages_approval_pair und claim_queued_messages für Systemvorlagen, private.queue_system_mail, visit_replies_pending, apply_visit_reply). Neuer Workflow rwVisitReply2026 (n8n/generate_visit_reply_workflow.py): Zeitplan 2 min, OpenAI gpt-4.1-mini mit Schema intent/confidence/summary. Storno nur bei cancel_visit ≥ 0,8 und Absender = E-Mail der Anfrage; sonst Ereignis visit_reply_analyzed (flagged) und Karte auf der Anfrageseite. n8n-monitor-Test erwartet 12 Workflows. Import und Aktivierung auf dem VPS erst nach dem Deploy der Migrationen."
+            "summary": "Ursache: reply_analysis startete nur bei awaiting_customer; Antworten auf geplante Anfragen (RIS-2026-02764, 02765) blieben liegen. Migrationen 20261023000000 (automation_step visit_reply, messages.system_template) und 20261023000100 (messages_approval_pair und claim_queued_messages für Systemvorlagen, private.queue_system_mail, visit_replies_pending, apply_visit_reply). Neuer Workflow rwVisitReply2026 (n8n/generate_visit_reply_workflow.py): Zeitplan 2 min, OpenAI gpt-4.1-mini mit Schema intent/confidence/summary. Storno nur bei cancel_visit ≥ 0,8 und Absender = E-Mail der Anfrage; sonst Ereignis visit_reply_analyzed (flagged) und Karte auf der Anfrageseite. n8n-monitor-Test erwartet 12 Workflows. Produktion: Workflow importiert und aktiv; erster Lauf stornierte RIS-2026-02764 (26.10. 07:00) und RIS-2026-02765 (27.10. 10:00), Konfidenz 1,0, Absender passend; beide Stornobestätigungen im selben Gmail-Verlauf versendet, Anfragen zurück auf not_planned."
           }
         }
       ]
