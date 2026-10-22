@@ -19,7 +19,7 @@ const checkOf = (result, key) => result.checks.find((c) => c.key === key);
 
 test("Erwartete Workflows aus dem Repository mit Error-Workflow, Mira nur wenn eingerichtet", () => {
   const all = expectedWorkflows(true).map((w) => w.id);
-  assert.equal(all.length, 11, "neun Workflows, Selbsttest (task-18-8) und Assistent (task-18-10)");
+  assert.equal(all.length, 12, "neun Workflows, Selbsttest (task-18-8), Assistent (task-18-10) und Kundenantwort zum Termin (task-20-10)");
   assert.ok(!all.includes("rwRagImport2026"), "Import der Wissensbasis nur von Hand");
   assert.ok(all.includes(ERROR_WORKFLOW));
   assert.ok(!expectedWorkflows(false).some((w) => w.id === "rwAgentTools2026" || w.id === "rwCallAnalysis26"));

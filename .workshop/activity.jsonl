@@ -502,3 +502,5 @@
 {"timestamp": "2026-10-22T20:54:31Z", "type": "task_completed", "taskId": "task-20-8", "summary": "Entwurf sichtbar nach dem Speichern, Konflikt durch Versand behoben; Prüfungen bestanden (test:ui bis auf 2 umgebungsbedingte Fehler)."}
 {"timestamp": "2026-10-22T21:07:56Z", "type": "roadmap_updated", "taskId": "task-20-9", "summary": "Nutzerrückmeldung: task-20-9 Techniker nach Monatsanteil ergänzt."}
 {"timestamp": "2026-10-22T21:07:56Z", "type": "task_completed", "taskId": "task-20-9", "summary": "Vormerkung nach Anteil des Monats statt Minuten, Griff am Rand; test:db, lint, typecheck, build, test:ui (bis auf 2 umgebungsbedingte Fehler)."}
+{"timestamp": "2026-10-22T21:23:14Z", "type": "roadmap_updated", "taskId": "task-20-10", "summary": "Nutzerwunsch: task-20-10 Termin per E-Mail-Antwort stornieren ergänzt (nur Einsatz, Nutzerentscheidung)."}
+{"timestamp": "2026-10-22T21:23:14Z", "type": "task_completed", "taskId": "task-20-10", "summary": "Absage per Antwort storniert den Termin, Verschiebewunsch markiert; Workflow rwVisitReply2026; Prüfungen bestanden (test:ui bis auf 2 umgebungsbedingte Fehler)."}

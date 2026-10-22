@@ -4466,6 +4466,39 @@
             ],
             "summary": "Ursache: technician_for_window sortierte nach gebuchten Minuten; Dariusz hatte vor der Vormerkung 1860 min, Anna 1920 min, aber Dariusz ist am 22./23.10. abwesend (Kapazität 10800 statt 11880 min): Anteil 17,2 % gegen 16,2 %. Migration 20261022235800: private.month_capacity_minutes (Arbeitszeit des Monats minus Abwesenheiten), technician_for_window ordnet nach Anteil. Auf der Produktion probehalber: Anna 16,2 %, Dariusz 18,3 %, Tobias 20,2 %. Griff der Auswahl am Rand der Zeile nach innen (is-inside). test:ui nur die 2 bekannten Fehler wegen lokal liegender Test-E-Mails."
           }
+        },
+        {
+          "id": "task-20-10",
+          "title": "Termin per E-Mail-Antwort stornieren",
+          "description": "Nutzerwunsch: antwortet der Kunde auf eine E-Mail der Anfrage (Verlauf oder RIS-Nummer) mit der Bitte um Stornierung, findet die Automatisierung den Termin und storniert ihn; nur der Einsatz, die Anfrage geht zurück in die Planung (Nutzerentscheidung).",
+          "order": 10,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-7"
+          ],
+          "definitionOfDone": [
+            "Eindeutige Absage von der Adresse der Anfrage storniert kommende Einsätze, Kunde erhält Bestätigung",
+            "Verschiebewunsch und unklare Fälle nur markiert, Hinweis auf der Anfrageseite",
+            "Jede Antwort genau einmal ausgewertet",
+            "pgTAP, Unit, Build, test:ui"
+          ],
+          "startedAt": "2026-10-22T21:10:00Z",
+          "completedAt": "2026-10-22T21:23:14Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-22T21:23:14Z",
+            "commands": [
+              "npx supabase test db (1236 Tests, neu visit_reply.test.sql 16)",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3100 npm run test:ui (unter next dev)",
+              "Browser: Absage simuliert (apply_visit_reply als service_role), Hinweiskarte und Status Zu planen"
+            ],
+            "summary": "Ursache: reply_analysis startete nur bei awaiting_customer; Antworten auf geplante Anfragen (RIS-2026-02764, 02765) blieben liegen. Migrationen 20261023000000 (automation_step visit_reply, messages.system_template) und 20261023000100 (messages_approval_pair und claim_queued_messages für Systemvorlagen, private.queue_system_mail, visit_replies_pending, apply_visit_reply). Neuer Workflow rwVisitReply2026 (n8n/generate_visit_reply_workflow.py): Zeitplan 2 min, OpenAI gpt-4.1-mini mit Schema intent/confidence/summary. Storno nur bei cancel_visit ≥ 0,8 und Absender = E-Mail der Anfrage; sonst Ereignis visit_reply_analyzed (flagged) und Karte auf der Anfrageseite. n8n-monitor-Test erwartet 12 Workflows. Import und Aktivierung auf dem VPS erst nach dem Deploy der Migrationen."
+          }
         }
       ]
     }

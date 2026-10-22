@@ -32,6 +32,8 @@ export const EVENT_LABELS: Record<string, string> = {
   stated_customer_number_unknown: "Angegebene Kundennummer unbekannt",
   customer_created_from_request: "Kunde aus der Anfrage angelegt",
   visit_hold_created: "Termin vom Telefonassistenten vorgemerkt",
+  // Customer reply about a planned visit (task-20-10); the value is what the system did
+  visit_reply_analyzed: "Kundenantwort zum Termin ausgewertet",
   visit_hold_confirmed: "Vorgemerkter Termin bestätigt",
   visit_hold_rejected: "Vorgemerkten Termin abgelehnt",
   visit_hold_expired: "Terminvormerkung abgelaufen",
@@ -73,6 +75,8 @@ const STATUS_OF_EVENT: Record<string, StatusKind> = {
 
 const FIELD_LABELS: Record<string, string> = { priority: "Priorität", intake_status: "Erstbearbeitung", service_kind: "Leistungsart", equipment_kind: "Anlage" };
 
+const VISIT_REPLY_ACTIONS: Record<string, string> = { cancelled: "Termin storniert", flagged: "Zur Prüfung markiert", none: "Keine Änderung" };
+
 type EventLike = { event_type: string; from_value: string | null; to_value: string | null };
 
 // "[2026-10-29T12:00:00Z,2026-10-29T15:00:00Z)" → formatted range
@@ -109,6 +113,7 @@ function formatValue(event: EventLike, value: string | null, names: Map<string, 
   if (kind) return statusInfo(kind, value).label;
   if (event.event_type === "dispatcher_assigned" || event.event_type === "technician_assigned" || event.event_type === "visit_reassigned") return names.get(value) ?? "Unbekannte Person";
   if (event.event_type === "intake_completed") return label("intake_mode", value);
+  if (event.event_type === "visit_reply_analyzed") return VISIT_REPLY_ACTIONS[value] ?? value;
   if (event.event_type.startsWith("visit_")) return formatRange(value) ?? value;
   if (event.event_type === "deadline_changed") return formatDateTime(value);
   if (event.event_type === "payment_reminder_queued") return REMINDER_STAGES[Number(value)] ?? value;

@@ -12,7 +12,7 @@ Stand: 20.10.2026, n8n 2.40.7 im Docker-Container `n8n`, alle Angaben gegen das 
 
 ## 2. Die Workflows im Überblick
 
-Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei weitere gehören zum Telefonassistenten (Phase 13), dazu der Error-Workflow (task-17-8), der Selbsttest für Systemupdates (task-18-8) und der Website-Assistent mit seinem Import (task-18-10). Alle sind veröffentlicht (aktiv); andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
+Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei weitere gehören zum Telefonassistenten (Phase 13), dazu der Error-Workflow (task-17-8), der Selbsttest für Systemupdates (task-18-8) und der Website-Assistent mit seinem Import (task-18-10) sowie die Auswertung von Kundenantworten zu geplanten Terminen (task-20-10). Alle sind veröffentlicht (aktiv); andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
 
 | # | Workflow (Name in n8n) | ID | Auslöser | Aufgabe in einem Satz |
 | --- | --- | --- | --- | --- |
@@ -27,6 +27,7 @@ Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei wei
 | 9 | RheinWerk · Fehlermeldung | `rwFehlerMeldung1` | Error Trigger (Error-Workflow von 1–8) | schreibt jeden fehlgeschlagenen Lauf als Warnung `n8n:fehler:<id>` über `raise_alert` (kritisch bei 1, 6, 7); die E-Mail schickt der Wächter (`n8n/generate_error_workflow.py`) |
 | 11 | RheinWerk · Assistent | `rwAssistent2026` | Webhook `POST /webhook/rheinwerk-assistant` | Website-Assistent: beantwortet Fragen aus der Wissensbasis `rag_documents` (Supabase Vector Store, `text-embedding-3-large`, Sprachmodell `gpt-5.6-luna`), Gesprächsverlauf je Besucher (`session_id`); Aufruf nur über `/api/assistant` der Website (task-18-10, Abschnitt 9) |
 | 12 | RheinWerk · Dokumente importieren | `rwRagImport2026` | von Hand (`sh ops/vps/rag-import.sh`) | leert `rag_documents` und schreibt die Abschnitte aus `n8n/rag-documents/*.md` mit Embedding und `metadata.file` neu; nicht veröffentlicht, vom Wächter nicht erwartet |
+| 13 | RheinWerk · Kundenantwort zum Termin | `rwVisitReply2026` | Zeitplan alle 2 Minuten | liest Antworten auf Anfragen mit kommendem Termin (`visit_replies_pending`), lässt OpenAI die Absicht erkennen und übergibt sie `apply_visit_reply`: eindeutige Absage storniert den Termin, Verschiebewunsch wird markiert (`n8n/generate_visit_reply_workflow.py`) |
 | 10 | RheinWerk · Selbsttest | `rwSelbsttest2026` | Webhook `GET /webhook/rheinwerk-selbsttest` | liest eine Zeile aus `system_status` mit dem Supabase-Credential und antwortet `{"ok": true}`; Selbsttest nach einem Systemupdate (task-18-8, `docs/betrieb.md` 6, `n8n/generate_selftest_workflow.py`) |
 
 ## 3. Gesamtbild

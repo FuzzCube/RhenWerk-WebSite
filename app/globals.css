@@ -2035,3 +2035,7 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 /* task-20-8: a saved draft is marked where the page jumps to it */
 .message:target { scroll-margin-top: 96px; outline: 2px solid var(--rw-color-lime-500); outline-offset: 2px; border-radius: var(--rw-radius-sm); }
 .message__draft-note { margin: 12px 0 0; font-size: 14px; font-weight: 600; color: var(--rw-text-primary); }
+
+/* task-20-10: customer reply about the visit (cancelled automatically or to be checked) */
+.request-next__links { margin: 0; font-size: 15px; }
+.request-next__links a { font-weight: 600; }

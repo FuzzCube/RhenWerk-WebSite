@@ -59,6 +59,11 @@ export default async function RequestPage({ params }: Props) {
   };
 
   const actions = availableActions(detail, employee);
+  // Customer reply about the visit (task-20-10): shown until a person plans, moves or cancels a visit afterwards
+  const lastReply = technician ? undefined : detail.events.find((event) => event.event_type === "visit_reply_analyzed");
+  const replyNotice = lastReply && ["cancelled", "flagged"].includes(lastReply.to_value ?? "")
+    && !detail.events.some((event) => event.actor_type === "user" && ["visit_scheduled", "visit_rescheduled", "visit_status_changed"].includes(event.event_type) && event.occurred_at > lastReply.occurred_at)
+    ? lastReply : undefined;
   // Planning happens on the planning page; the request page points there as the next step
   const openHold = detail.holds.find((hold) => hold.status === "open") ?? null;
   const canPlan = (employee.role === "dispatcher" || employee.role === "manager" || employee.role === "admin") && request.intake_status === "processed" && ["not_planned", "waiting_parts"].includes(request.work_status);
@@ -210,6 +215,7 @@ export default async function RequestPage({ params }: Props) {
               <button type="button" className="button button--primary" disabled>Rechnungsentwurf erstellen</button>
             </section>
           )}
+          {replyNotice && <VisitReplyNotice event={replyNotice} requestId={request.id} />}
           {(hasActions || canPlan) && (
             <section id="aktionen" className="rw-card rw-card--action request-next" aria-labelledby="aktionen-title">
               <p className="request-next__eyebrow">Nächster Schritt</p>
@@ -479,6 +485,23 @@ const WISHED_TIME: Record<string, string> = { any: "Uhrzeit beliebig", morning: 
 
 // Held window of the phone assistant (task-13-3) or the website form (task-19-3). Since task-20-2 it is planned on the
 // planning board, where it is the preselected slot; planning there closes it (also at another time).
+function VisitReplyNotice({ event, requestId }: { event: RequestDetail["events"][number]; requestId: string }) {
+  const cancelled = event.to_value === "cancelled";
+  return (
+    <section className="rw-card rw-card--attention request-next" aria-labelledby="kundenantwort-title">
+      <p className="request-next__eyebrow">Kundenantwort zum Termin · {formatDateTime(event.occurred_at)}</p>
+      <h2 id="kundenantwort-title" className="request-next__title">{cancelled ? "Termin auf Wunsch des Kunden storniert" : "Kunde möchte den Termin ändern – bitte prüfen"}</h2>
+      {event.note && <p className="rw-card__note">{event.note}</p>}
+      <p className="rw-card__note">
+        {cancelled
+          ? "Automatisch storniert, der Kunde hat eine Bestätigung erhalten. Die Anfrage ist wieder zu planen."
+          : "Nicht automatisch geändert. E-Mail unter Korrespondenz lesen und den Termin in der Einsatzplanung anpassen."}
+      </p>
+      <p className="request-next__links"><a href="#korrespondenz">Zur E-Mail</a> · <Link href={`/dashboard/planung?anfrage=${requestId}`}>Zur Einsatzplanung</Link></p>
+    </section>
+  );
+}
+
 function HoldNote({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
   const payload = request.raw_payload as { request?: { preferred_time?: string } } | null;
   const time = payload?.request?.preferred_time ?? "any";
