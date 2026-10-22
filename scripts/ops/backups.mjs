@@ -22,7 +22,7 @@ async function ovh(env, method, route) {
     headers: { "X-Ovh-Application": env.OVH_APPLICATION_KEY, "X-Ovh-Consumer": env.OVH_CONSUMER_KEY, "X-Ovh-Timestamp": time.trim(), "X-Ovh-Signature": `$1$${signature}` },
   });
   const body = await response.json().catch(() => null);
-  if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}${body?.message ? `: ${body.message}` : ""}`), { status: response.status });
+  if (!response.ok) throw Object.assign(new Error(`${route.split("?")[0].split("/").at(-1)}: HTTP ${response.status}${body?.message ? `: ${body.message}` : ""}`), { status: response.status });
   return body;
 }
 
@@ -31,9 +31,11 @@ export async function collectProvider(env) {
   if (!env.OVH_APPLICATION_KEY || !env.OVH_APPLICATION_SECRET || !env.OVH_CONSUMER_KEY) return null;
   const vps = env.OVH_VPS_NAME ?? "vps-0fcb2edf.vps.ovh.net";
   try {
-    // Restore points need their own right on the key; without it (HTTP 403) only the state is checked
+    // Restore points need their own right on the key; without it (HTTP 403) only the state is checked. The state is
+    // asked a second time after a failure: on 22.10.2026 the API once answered 403 for a granted call
+    const state = () => ovh(env, "GET", `/vps/${vps}/automatedBackup`);
     const [service, points] = await Promise.all([
-      ovh(env, "GET", `/vps/${vps}/automatedBackup`),
+      state().catch(async () => { await new Promise((resolve) => setTimeout(resolve, 5000)); return state(); }),
       ovh(env, "GET", `/vps/${vps}/automatedBackup/restorePoints?state=available`).catch((error) => { if (error.status === 403) return null; throw error; }),
     ]);
     const sorted = points ? points.slice().sort() : null;
