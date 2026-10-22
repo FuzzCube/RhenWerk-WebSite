@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v24, 20 Phasen, 118 Tasks, Fortschritt 99,64 % (Gewicht 279 von 280).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v24, 20 Phasen, 118 Tasks, Fortschritt 100 % (Gewicht 280 von 280).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -24,9 +24,9 @@ Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (er
 
 ## Zuletzt abgeschlossen
 
+- `task-18-13` (22.10.2026): **Oracle-Server still**: letzte Sicherung verschlüsselt auf dem VPS (`/opt/rheinwerk/backups/oracle-final/`), alle Container gestoppt ohne Neustart, altes Repository archiviert; alte Vercel-Adresse zeigt die neue Website (`docs/betrieb.md` 3.9).
 - `task-19-5` (22.10.2026): **Kosten von OpenAI** im Bereich „System“ (Wächter, Costs-API, Budget). Offen: `OPENAI_ADMIN_KEY` und `OPENAI_BUDGET_USD` in `/opt/rheinwerk/ops.env` eintragen (`docs/betrieb.md`).
 - `task-19-4` (22.10.2026): **Plantafel**: gezogene Blöcke rasten auf Viertelstunden ein und gleiten animiert; Klick in der Tagesansicht auf 15 Minuten.
-- `task-19-3` (22.10.2026): **Wunschtermin aus dem Formular**: Uhrzeit im Formular, Vormerkung beim im Monat am wenigsten belegten Techniker oder nächster freier Termin, „Termin bestätigen“ mit einem Klick (schließt offene Erstbearbeitung ab), Terminbestätigung auch bei manueller Planung (Migration `20261022230000_form_visit_holds.sql`, `docs/database.md`, Entscheidung in `docs/decisions.md`).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -56,4 +56,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 19 abgeschlossen; Änderungen pushen (Migration `20261022230000_form_visit_holds.sql` läuft über GitHub Actions), OpenAI-Admin-Key auf dem VPS eintragen. Offen in Phase 18: `task-18-13`. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phasen 18 und 19 abgeschlossen und deployt; OpenAI-Admin-Key auf dem VPS eintragen; Oracle-Instanz in der Oracle Cloud löschen, wenn nichts mehr gebraucht wird. Alle Tasks der Roadmap v24 erledigt. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.

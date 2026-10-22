@@ -477,3 +477,6 @@
 {"timestamp":"2026-10-22T21:00:00Z","type":"task_started","taskId":"task-19-5","summary":"Kosten von OpenAI im Bereich System begonnen."}
 {"timestamp":"2026-10-22T21:20:00Z","type":"task_completed","taskId":"task-19-5","summary":"Wächter liest Verbrauch von OpenAI über die Costs-API, Bereich System zeigt Rest vom Budget; test:unit, lint, typecheck, build bestanden; echter Abruf mangels Admin-Key nicht geprüft."}
 {"timestamp":"2026-10-22T21:20:00Z","type":"phase_completed","taskId":null,"summary":"Phase 19 Feinschliff vor der Präsentation abgeschlossen (fünf Tasks)."}
+{"timestamp":"2026-10-22T21:45:00Z","type":"task_started","taskId":"task-18-13","summary":"Oracle-Server abschalten begonnen: letzte Sicherung, Container stoppen, altes Repository archivieren."}
+{"timestamp":"2026-10-22T22:15:00Z","type":"task_completed","taskId":"task-18-13","summary":"Oracle-Server still: letzte Sicherung verschlüsselt auf dem VPS, alle Container gestoppt, altes Repository archiviert; alte Adresse zeigt die neue Website."}
+{"timestamp":"2026-10-22T22:15:00Z","type":"phase_completed","taskId":null,"summary":"Phase 18 Deployment abgeschlossen; alle Tasks der Roadmap v24 erledigt."}

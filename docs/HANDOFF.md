@@ -1,6 +1,6 @@
-# Übergabe (Stand 22.10.2026, Roadmap v23)
+# Übergabe (Stand 22.10.2026, Roadmap v24)
 
-Phase 18 „Deployment“ ist bis auf `task-18-13` (Oracle-Server und alte Website abschalten) abgeschlossen; die Gesamtprobe des Deployments (`task-18-9`) steht in `docs/testing.md`. Stand und Übersicht: `.workshop/CURRENT_STATE.md`, `npm run workshop:status`.
+Phase 18 „Deployment“ und Phase 19 „Feinschliff vor der Präsentation“ sind abgeschlossen; der Oracle-Server ist seit 22.10.2026 still (`task-18-13`, `docs/betrieb.md` 3.9). Die Gesamtprobe des Deployments (`task-18-9`) steht in `docs/testing.md`. Stand und Übersicht: `.workshop/CURRENT_STATE.md`, `npm run workshop:status`.
 
 ## So läuft es
 
@@ -39,7 +39,7 @@ Konten: GitHub, Cloudflare, Vercel, OVHcloud, Google Cloud/Gmail, OpenAI, Eleven
 
 ## Nächste Schritte
 
-1. `task-18-13`: Oracle-Server (`ssh oracle-n8n`) abschalten, wenn House Items Bot und Personal Copilot auf dem VPS bestätigt sind; alte Website auf Vercel und das alte Repository archivieren.
+1. Kosten von OpenAI im Bereich „System“: `OPENAI_ADMIN_KEY` und `OPENAI_BUDGET_USD` in `/opt/rheinwerk/ops.env` eintragen (`docs/betrieb.md` 3.5). Oracle-Instanz in der Oracle Cloud löschen, sobald nichts mehr davon gebraucht wird (Container gestoppt, letzte Sicherung auf dem VPS, `docs/betrieb.md` 3.9).
 2. Dependabot-PRs #6–#10: #6–#8 (Actions, npm-Minor) grün; #9 TypeScript 7 und #10 eslint 10 scheitern an den Prüfungen und brauchen Anpassungen.
 3. Vor echter Nutzung mit Kunden: Vercel Pro (Hobby nur nicht-kommerziell), Kopie der Sicherungen außer Haus (`docs/betrieb.md` 3.4), Begrenzung von `/api/assistant` über die Server-Instanz hinaus.
 4. Offen aus früheren Phasen: Sprachtests mit Stimme (`docs/telefonassistent/testprotokoll.md`, „Offen“), SLA-Verträge im Dashboard pflegen, eigene Rechnungsanschrift je Kunde, Ideen: KI-Vorbelegung im Posteingang, optionale E-Mail-Adresse bei telefonischen Anfragen.

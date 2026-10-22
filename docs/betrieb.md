@@ -262,6 +262,14 @@ Geheimnisse im Repository (Settings → Secrets): `VPS_HOST`, `VPS_KNOWN_HOSTS`,
 
 **Updates:** Dependabot (`.github/dependabot.yml`) öffnet montags gesammelte PRs für npm-Pakete und die Images in `ops/vps/docker-compose.yml`, monatlich für die Actions. Jeder PR durchläuft die Prüfungen; gemergt wird von Hand, Images nur mit Sicherung und Rückfall (task-18-8). Nach dem Merge eines Image-Updates zusätzlich auf dem VPS `ops/vps/compose.sh up -d` (das Deployment aktualisiert nur das Repository, nicht die Container).
 
+### 3.9 Oracle-Server abgeschaltet (task-18-13)
+
+Am 22.10.2026 nach dem Umzug von Website-Assistent (task-18-10), House Items Bot (task-18-11) und Personal Copilot (task-18-12) auf den VPS:
+
+- **Letzte Sicherung** auf dem VPS: `/opt/rheinwerk/backups/oracle-final/oracle-final-20261022.tar.enc` (9 MB, verschlüsselt wie die täglichen Sicherungen mit `BACKUP_PASSPHRASE`, Prüfsumme des Klartexts geprüft; die Aufbewahrung von 14 Tagen betrifft den Unterordner nicht). Inhalt: `pg_dumpall` der drei Supabase-Datenbanken (`supabase-db`, `house-items-db`, `personal-copilot-db`), das n8n-Volume (`n8n_n8n_data`, n8n vorher gestoppt) und die Projektordner mit `.env`, Compose-Dateien, Caddyfile und Storage (ohne Postgres-Datenordner). Lesen: `openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in <datei> -pass env:BACKUP_PASSPHRASE | tar xf -` als `ubuntu` (nicht mit `sudo`, das die Variable verwirft).
+- **Oracle** (`ssh oracle-n8n`): alle Container gestoppt (`docker compose stop` je Projekt), Neustart-Regel `no`, Ports 80/443 frei. Daten und Volumes liegen noch dort; Rückweg: `docker compose start` im jeweiligen Ordner. Die Instanz löscht der Inhaber in der Oracle Cloud, wenn nichts mehr gebraucht wird.
+- **Alte Website:** Das Vercel-Projekt `rheinwerk-industrieservice` ist dasselbe wie die neue Website; die alte Adresse `rheinwerk-industrieservice.vercel.app` zeigt deshalb bereits die neue Website. Das alte Repository `FuzzCube/rheinwerk-industrieservice` ist auf GitHub archiviert (nur lesend, Rückweg „Unarchive“).
+
 ## 4. Datensicherung
 
 **Seit 22.10.2026 auf dem VPS (task-18-6).** Die Abschnitte 4.1 bis 4.3 gelten unverändert (dieselben Skripte); Unterschiede auf dem Server:

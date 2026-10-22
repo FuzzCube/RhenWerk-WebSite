@@ -3619,7 +3619,7 @@
       "description": "Nutzerentscheidung 21.10.2026 nach Projektende: Code auf GitHub, Website auf Vercel, Supabase und n8n per Docker Compose auf einem VPS; Prüfung und Migrationen über GitHub Actions, Updates über Renovate; Datensicherung, Wiederherstellung und Systemupdates mit Rückfall auf dem VPS (aus Phase 17 verschoben).",
       "order": 19,
       "weight": 20,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-18-1",
@@ -4011,7 +4011,7 @@
           "description": "Nach erfolgreichem Umzug von RAG, House Items Bot und Personal Copilot: letzte Sicherung der Oracle-Daten auf den VPS kopieren, Container auf Oracle stoppen, alte Vercel-Website rheinwerk-industrieservice abschalten oder auf die neue Domain umleiten, Repository archivieren.",
           "order": 13,
           "weight": 1,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-18-9",
             "task-18-10",
@@ -4023,13 +4023,19 @@
             "Alte Website leitet um oder ist abgeschaltet",
             "betrieb.md, HANDOFF.md"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T21:45:00Z",
+          "completedAt": "2026-10-22T22:15:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T22:15:00Z",
+            "commands": [
+              "pg_dumpall je Supabase-Datenbank auf Oracle, tar des n8n-Volumes (n8n gestoppt) und der Projektordner",
+              "Übertragung auf den VPS, openssl-Verschlüsselung mit BACKUP_PASSPHRASE, Entschlüsselung und sha256-Vergleich",
+              "docker compose stop je Projekt, docker update --restart=no, docker ps (0 laufend), ss (80/443 frei)",
+              "gh repo archive FuzzCube/rheinwerk-industrieservice",
+              "curl rheinwerk-service.online, rheinwerk-industrieservice.vercel.app, /api/assistant (je 200)"
+            ],
+            "summary": "Letzte Sicherung von Oracle auf dem VPS: /opt/rheinwerk/backups/oracle-final/oracle-final-20261022.tar.enc (9 MB; Dumps von supabase-db, house-items-db, personal-copilot-db, n8n-Volume, Projektordner mit .env und Storage), verschlüsselt, Prüfsumme nach Entschlüsselung gleich. Vorher geprüft: 6 Stunden keine Anfragen über Caddy; House Items und Personal Copilot laufen auf dem VPS. Auf Oracle alle Container gestoppt, ohne Neustart, Ports 80/443 frei; Daten bleiben für einen Rückweg, Löschen der Instanz durch den Inhaber. Alte Website: dasselbe Vercel-Projekt, alte Adresse zeigt bereits die neue Website (200). Altes Repository rheinwerk-industrieservice archiviert. Website-Assistent antwortet nach dem Abschalten weiter (VPS). Doku: betrieb.md 3.9, HANDOFF.md."
           }
         }
       ]
