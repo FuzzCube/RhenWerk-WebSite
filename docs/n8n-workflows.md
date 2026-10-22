@@ -84,7 +84,7 @@ Vorteil: Fällt ein Workflow aus, gehen keine Aufträge verloren; sie warten in 
 
 | Credential | Typ | Benutzt von | Einrichtung |
 | --- | --- | --- | --- |
-| RheinWerk Supabase Local | Supabase API (`service_role`, Host `http://host.docker.internal:54321`) | allen neun | `python3 n8n/bootstrap_credentials.py` |
+| RheinWerk Supabase Local | Supabase API (geheimer Schlüssel, Host `http://kong:8000` im Docker-Netz des VPS; bis 22.10.2026 `http://host.docker.internal:54321` auf dem Rechner) | allen neun | `python3 n8n/bootstrap_credentials.py`, beim Umzug `ops/vps/import-backup.sh` |
 | RheinWerk Gmail (`rw46346a76655347`) | Gmail OAuth2 | 1 (Diagnose), 5, 6 | in n8n „Sign in with Google“; Google-Cloud-Projekt im Status *In production* (sonst läuft der Zugang nach 7 Tagen ab) |
 | OpenAI account 3 | OpenAI API | 3, 4, 8 | API-Schlüssel in n8n |
 | RheinWerk Agent-Secret (`rwAgentSecret001`) | Header Auth `x-agent-secret` | 7 (alle Webhooks) | `python3 n8n/bootstrap_agent_secret.py` |
@@ -109,9 +109,9 @@ Kein Schlüssel steht im Repository oder in Workflow-Parametern; n8n verschlüss
 
 | Von → Nach | Adresse | Warum so |
 | --- | --- | --- |
-| Next.js → n8n (Formular) | `N8N_WEBHOOK_URL` = `http://127.0.0.1:5678/webhook/rheinwerk-service-request` | beide auf demselben Rechner |
-| n8n → Supabase | `http://host.docker.internal:54321` | aus dem Container heraus ist das der Rechner |
-| ElevenLabs → n8n | `https://n8n.rheinwerk-service.online/webhook/agent-*` über Cloudflare Tunnel und Cloudflare Access (Service Token) | ElevenLabs braucht eine öffentliche HTTPS-Adresse; der Rechner hat keine offene Portfreigabe |
+| Next.js → n8n (Formular) | `N8N_WEBHOOK_URL` = `https://n8n.rheinwerk-service.online/webhook/rheinwerk-service-request` mit Access-Service-Token (ab task-18-4; bis dahin lokal `http://127.0.0.1:5678/…`) | n8n läuft seit 22.10.2026 auf dem VPS |
+| n8n → Supabase | `http://kong:8000` | beide im Compose-Projekt `rheinwerk` auf dem VPS (betrieb.md 3.5) |
+| ElevenLabs → n8n | `https://n8n.rheinwerk-service.online/webhook/agent-*` über Cloudflare Tunnel und Cloudflare Access (Service Token) | ElevenLabs braucht eine öffentliche HTTPS-Adresse; Tunnel `rheinwerk-vps` des Servers, keine offenen Ports |
 | n8n → Gmail, OpenAI, ElevenLabs | öffentliche HTTPS-APIs | ausgehend, keine Freigabe nötig |
 | Editor `n8n.rheinwerk-service.online` | Cloudflare Access mit Anmeldung | Editor nicht öffentlich |
 

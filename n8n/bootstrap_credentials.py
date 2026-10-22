@@ -8,7 +8,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 status = subprocess.run(["supabase", "status", "-o", "json"], cwd=ROOT, capture_output=True, text=True, check=True)
 values = json.loads(status.stdout)
 credential_id = "rw" + uuid.uuid4().hex[:14]
-data = [{"id": credential_id, "name": "RheinWerk Supabase Lokal", "type": "supabaseApi", "data": {"host": "http://host.docker.internal:54321", "serviceRole": values["SERVICE_ROLE_KEY"]}}]
+data = [{"id": credential_id, "name": "RheinWerk Supabase Lokal", "type": "supabaseApi", "data": {"host": "http://kong:8000", "serviceRole": values["SERVICE_ROLE_KEY"]}}]
 remote = "/tmp/rheinwerk-credential-" + uuid.uuid4().hex + ".json"
 try:
     subprocess.run(["docker", "exec", "-i", "n8n", "sh", "-c", "umask 077; cat > " + remote], input=json.dumps(data), text=True, capture_output=True, check=True)

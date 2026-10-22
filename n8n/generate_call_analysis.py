@@ -19,7 +19,7 @@ OUT = BASE / "workflows"
 WORKFLOW_ID = "rwCallAnalysis26"
 SUPA = {"supabaseApi": {"id": "rwdda8aefff1e947", "name": "RheinWerk Supabase Lokal"}}
 ELEVEN = {"httpHeaderAuth": {"id": "rwElevenLabs0001", "name": "RheinWerk ElevenLabs"}}
-RPC_URL = "http://host.docker.internal:54321/rest/v1/rpc/"
+RPC_URL = "http://kong:8000/rest/v1/rpc/"
 API = "https://api.elevenlabs.io/v1/convai/conversations"
 AGENT_ID = json.loads((ROOT / "docs/telefonassistent/elevenlabs.json").read_text())["agent_id"]
 

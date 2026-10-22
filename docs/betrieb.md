@@ -221,6 +221,19 @@ cd /opt/rheinwerk/app && ops/vps/compose.sh up -d && ops/vps/compose.sh ps
 
 - Eigene systemd-Units mit Präfix `<projekt>-`.
 
+### 3.6 Umzug vom Rechner (task-18-3)
+
+Durchgeführt am 22.10.2026, Unterbrechung von n8n und Mira ca. 15 Minuten. Ablauf (wiederholbar für einen neuen Server):
+
+1. Auf dem Rechner `npm run ops:install -- --remove` (Wächter, „System prüfen“ und Sicherung dort aus), `npm run backup`, sofort danach `docker update --restart=no n8n && docker stop n8n` (sonst laufen Gmail und Zeitpläne doppelt).
+2. Archiv per `scp` nach `/opt/rheinwerk/state/import/`, auf dem Server entschlüsseln (Passwort über die Standardeingabe, nicht als Argument) und `sh ops/vps/import-backup.sh <ordner>`: Postgres (`pg_restore --clean`, erwartete Meldungen im Skript erklärt), Storage-Dateien, n8n-Datenbank und Schlüsseldatei; Workflows auf `http://kong:8000`, Credential „RheinWerk Supabase Local“ auf den neuen geheimen Schlüssel. Dann `ops/vps/compose.sh up -d n8n` (fehlende Community-Knoten installiert n8n selbst nach).
+3. Cloudflare: Hostname `n8n.rheinwerk-service.online` im alten Tunnel des Rechners löschen und im Tunnel `rheinwerk-vps` mit `HTTP` → `n8n:5678` anlegen; die Access-Anwendung bleibt.
+4. `/opt/rheinwerk/ops.env` aus `env.local` der Sicherung ergänzen (SMTP, `N8N_API_KEY`, ElevenLabs, Access-Token, `HEALTH_TOKEN`, `BACKUP_PASSPHRASE`, zuletzt `ALERT_EMAILS`), entschlüsselte Kopie löschen.
+
+Ergebnis: Zeilenzahlen wie im Manifest (1 573 Anfragen, 87 Kunden, 3 197 Nachrichten, 377 Konten, 72 Storage-Objekte, 102 Dateien, 68 Migrationen, 7 pg_cron-Aufträge), 9 Workflows aktiv, `test:agent` über den Tunnel bestanden (150–400 ms je Werkzeug), Testanfrage über den Tunnel angelegt (`RIS-2026-02761`) mit Eingangsbestätigung per Gmail und KI-Entwurf. `api.rheinwerk-service.online` wird erst in task-18-4 zusammen mit seiner Access-Anwendung angelegt.
+
+**Danach auf dem Rechner:** n8n gestoppt (ohne Neustart-Regel), Dienste von launchd entfernt; das lokale Supabase bleibt als Entwicklungsumgebung, seine Daten sind ab dem 22.10.2026 nicht mehr aktuell. Der alte Tunnel (Container `sleepy_margulis`) hat keine Hostnamen mehr und wird in task-18-13 gelöscht.
+
 ## 4. Datensicherung
 
 ### 4.1 Was gesichert wird

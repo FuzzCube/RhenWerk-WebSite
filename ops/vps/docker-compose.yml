@@ -263,6 +263,8 @@ services:
       TZ: Europe/Berlin
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_PERSONALIZATION_ENABLED: "false"
+      # Community-Knoten aus der Sicherung (nur von inaktiven Workflows genutzt) beim Start nachinstallieren
+      N8N_REINSTALL_MISSING_PACKAGES: "true"
     volumes:
       - n8n-data:/home/node/.n8n
 

@@ -16,7 +16,7 @@ BASE = pathlib.Path(__file__).resolve().parent
 OUT = BASE / "workflows"
 WORKFLOW_ID = "rwFehlerMeldung1"
 SUPA = {"supabaseApi": {"id": "rwdda8aefff1e947", "name": "RheinWerk Supabase Lokal"}}
-RPC_URL = "http://host.docker.internal:54321/rest/v1/rpc/"
+RPC_URL = "http://kong:8000/rest/v1/rpc/"
 # Customers notice these at once (form, e-mails, phone); the others catch up on their next schedule
 CRITICAL = ["lw1QxoJbeSU0H17E", "IlH4b7AKuSXyMiOd", "rwAgentTools2026"]
 

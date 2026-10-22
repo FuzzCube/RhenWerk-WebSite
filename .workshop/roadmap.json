@@ -3685,7 +3685,7 @@
           "description": "Letzte Sicherung vom Rechner auf dem VPS wiederherstellen (Postgres, Storage, n8n mit Schlüssel, betrieb.md 4.5), Credentials in n8n prüfen, Webhook-URLs (Mira, Formular) umstellen, Probe aller Abläufe.",
           "order": 3,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-18-2"
           ],
@@ -3693,13 +3693,21 @@
             "Zeilenzahlen wie auf dem Rechner, n8n-Credentials entschlüsselbar",
             "Mira, Formular und E-Mail-Versand gegen den VPS geprüft"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T09:33:27Z",
+          "completedAt": "2026-10-22T10:08:32Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Sicherung des Rechners (22.10.2026 09:50 UTC) per ops/vps/import-backup.sh auf dem VPS wiederhergestellt: Zeilenzahlen wie im Manifest (1573 Anfragen, 87 Kunden, 3197 Nachrichten, 874 Termine, 575 Rechnungen, 336 Anrufe, 20354 Ereignisse, 377 Konten, 72 Storage-Objekte, 102 Dateien, 68 Migrationen, 7 pg_cron-Aufträge); pg_restore nur erwartete Meldungen (Realtime-Rolle, bestehende Schemas). n8n mit Schlüsseldatei: Credentials entschlüsselbar, 9 Workflows aktiv, Zeitpläne laufen erfolgreich gegen http://kong:8000 mit neuem geheimem Schlüssel. Hostname n8n.rheinwerk-service.online im Tunnel rheinwerk-vps. test:agent über den Tunnel bestanden (alle Werkzeuge, 150-400 ms); Formular-Webhook über den Tunnel mit Service-Token: RIS-2026-02761 angelegt, Eingangsbestätigung per Gmail nach 1 Minute versendet, KI-Entwurf erstellt. Wächter auf dem VPS: alle Prüfungen ok (Mira, n8n, SMTP, Tunnel, Docker, Datenbank), E-Mails eingeschaltet; auf dem Rechner n8n gestoppt und launchd-Dienste entfernt. test:unit 128/128.",
+            "commands": [
+              "npm run ops:install -- --remove",
+              "npm run backup",
+              "sh ops/vps/import-backup.sh",
+              "AGENT_BASE_URL=https://n8n.rheinwerk-service.online node scripts/test-agent.mjs",
+              "POST /webhook/rheinwerk-service-request über den Tunnel",
+              "systemctl start rheinwerk-watchdog.service",
+              "npm run test:unit"
+            ],
+            "checkedAt": "2026-10-22T10:08:32Z"
           }
         },
         {
@@ -3708,7 +3716,7 @@
           "description": "Vercel-Projekt aus dem GitHub-Repository: Umgebungsvariablen (Supabase auf dem VPS, Turnstile-Produktionsschlüssel, Blob, ElevenLabs), Domain rheinwerk-service.online, Supabase Auth site_url und Redirects, SMTP für Passwort-Mails; Rückweg über Instant Rollback. Nach task-18-1: Region cdg1 (Paris, nahe dem Server in Roubaix); Supabase-Client und n8n-Aufrufe (Anfrageformular, /api/health) senden die Cloudflare-Access-Kopfzeilen des Service-Tokens; Website sichtbar als Portfolio- und Demoprojekt gekennzeichnet (Bedingung des Hobby-Tarifs, betrieb.md 3.4); Datenschutzerklärung nennt Hosting bei OVHcloud in Frankreich und Vercel.",
           "order": 4,
           "weight": 2,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-3"
           ],
@@ -3756,7 +3764,7 @@
           "description": "Ersetzt task-17-13. Tägliche Sicherung auf dem VPS mit Wiederherstellungstest (14 Tage), dazu die tägliche Sicherung des Anbieters; keine Kopie außer Haus (Nutzerentscheidung 22.10.2026, Demoprojekt); jede Sicherung in der Datenbank (Zeitpunkt, Größe, Inhalt, Prüfung, Anlass). Bereich „System“: letzte geprüfte Sicherung, Liste, Inhalt; nur admin „Jetzt sichern“ als Anfrage an einen Dienst auf dem VPS. Warnung bei Sicherung älter als 26 Stunden oder Fehler.",
           "order": 6,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-3"
           ],
@@ -3855,7 +3863,7 @@
           "description": "Vom Oracle-Server (ssh oracle-n8n, Supabase-Stack supabase, n8n 2.37.10): Tabelle rheinwerk (36 Abschnitte, pgvector, OpenAI-Embeddings) als Migration in die RheinWerk-Datenbank, Workflows „RheinWerk Local Assistant“ und „RheinWerk Documents Import“ samt Dokumenten (~/n8n/documents) in das n8n von RheinWerk. Website ruft den Assistenten über eine eigene Route /api/assistant auf (Access-Service-Token auf dem Server, kein CORS); bisher direkt https://rheinwerk-rag.130-61-221-231.sslip.io mit CORS nur für rheinwerk-industrieservice.vercel.app.",
           "order": 10,
           "weight": 2,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-3"
           ],

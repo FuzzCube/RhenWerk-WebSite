@@ -16,7 +16,7 @@ OUT = BASE / "workflows"
 WORKFLOW_ID = "rwAgentTools2026"
 SUPA = {"supabaseApi": {"id": "rwdda8aefff1e947", "name": "RheinWerk Supabase Lokal"}}
 SECRET = {"httpHeaderAuth": {"id": "rwAgentSecret001", "name": "RheinWerk Agent-Secret"}}
-RPC_URL = "http://host.docker.internal:54321/rest/v1/rpc/"
+RPC_URL = "http://kong:8000/rest/v1/rpc/"
 FAILED = "{ok:false,fehler:'werkzeug_gestoert'}"
 catalog = json.loads((OUT / "catalog.json").read_text())
 
