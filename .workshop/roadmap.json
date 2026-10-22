@@ -3817,7 +3817,7 @@
           "description": "Ersetzt task-17-14. Nur admin stellt die gesamte Datenbank samt Dateien aus einer geprüften Sicherung wieder her (Nutzerentscheidung 21.10.2026, keine einzelnen Datensätze); Rückfrage mit Eingabe eines Wortes, vorher automatische Sicherung des aktuellen Stands, n8n angehalten, danach Gesundheitsprüfung und Rückkehr bei Fehler, E-Mail an den Admin.",
           "order": 7,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-18-6"
           ],
@@ -3827,13 +3827,23 @@
             "Probe auf einer Kopie",
             "betrieb.md 4.5 und 7, decisions.md"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T13:20:00Z",
+          "completedAt": "2026-10-22T14:10:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T14:10:00Z",
+            "commands": [
+              "npm run test:db",
+              "npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "node scripts/ops/check.mjs (Probe auf lokaler Kopie, RESTORE_FAIL_AFTER=pg_restore|storage)",
+              "pg_restore --clean in Hilfsdatenbank auf dem VPS",
+              "sh /tmp/repair-acl.sh (VPS)"
+            ],
+            "summary": "Wiederherstellen im Bereich System (nur admin, manager 42501, Wort WIEDERHERSTELLEN, nur geprüfte vollständige Sicherung mit gleichem Migrationsstand): Tabelle restores (Migration 20261022160000 über GitHub Actions eingespielt), Dienst rheinwerk-systemcheck mit Sicherung davor, n8n angehalten, Gesundheitsprüfung und Rückkehr, E-Mail und Warnung restore:failed. Probe auf einer Kopie (lokaler Stack, n8n ohne Netz): 40 s, Testdaten zurückgesetzt, Liste und Anfrage erhalten; Fehler nach pg_restore und nach Storage jeweils mit Rückkehr. Gefunden: pg_restore verliert die revoke-Anweisungen der Migrationen (Standardrechte von Supabase), betroffen VPS seit task-18-3; behoben in scripts/restore.mjs (Rechte aus dem Dump) und auf dem VPS repariert (authenticated update profiles t→f, anon-Rechte 224→59 wie lokal, Sicherung davor). Nach Wiederherstellung und Rückkehr test:db 51 Dateien/1170 Tests, test:ui 455, test:unit 139, lint, typecheck, build. Echte Wiederherstellung auf dem VPS auf Wunsch des Nutzers noch nicht ausgeführt."
           }
         },
         {
