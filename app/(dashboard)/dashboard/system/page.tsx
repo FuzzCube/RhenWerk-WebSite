@@ -18,7 +18,7 @@ import {
 import { loadSystemOverview } from "@/lib/dashboard/system";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import {
-  MONITORED_SYSTEMS, checkRequestState, creditView, monitorNotes, monitorStatus, versionStatus, type Credit, type MonitorEntry, type VersionRow,
+  MONITORED_SYSTEMS, checkRequestState, creditView, isStale, monitorNotes, monitorStatus, versionStatus, type Credit, type MonitorEntry, type OpenAIEntry, type VersionRow,
 } from "@/lib/system-monitoring";
 import { alertSourceLabel, resolvedLabel, severityStatus, systemSummary, type SystemAlertRow } from "@/lib/system-summary";
 
@@ -163,14 +163,17 @@ export default async function SystemPage() {
             </Card>
 
             <Card stripe="neutral" title="Guthaben externer Dienste" id="system-guthaben" headingLevel={2}
-              description="Guthaben des Telefonassistenten (ElevenLabs) mit Warnung unter dem Schwellwert.">
-              {mira?.credit ? (
-                <CreditMeter label="ElevenLabs (Telefonassistent)" credit={mira.credit} />
-              ) : (
-                <EmptyState title={mira && mira.state !== "off" ? "Guthaben nicht abrufbar." : "Noch keine Angaben gemeldet."}>
-                  {mira?.checks?.find((c) => c.key === "mira:credit" && c.ok === null) && <p>{mira.checks.find((c) => c.key === "mira:credit")!.detail}</p>}
-                </EmptyState>
-              )}
+              description="Guthaben des Telefonassistenten (ElevenLabs) und Kosten von OpenAI für die Automatisierung, mit Warnung unter dem Schwellwert.">
+              <div className="system-credits">
+                {mira?.credit ? (
+                  <CreditMeter label="ElevenLabs (Telefonassistent)" credit={mira.credit} />
+                ) : (
+                  <EmptyState title={mira && mira.state !== "off" ? "Guthaben nicht abrufbar." : "Noch keine Angaben gemeldet."}>
+                    {mira?.checks?.find((c) => c.key === "mira:credit" && c.ok === null) && <p>{mira.checks.find((c) => c.key === "mira:credit")!.detail}</p>}
+                  </EmptyState>
+                )}
+                <OpenAIMeter entry={system.monitoring.openai} now={now} />
+              </div>
             </Card>
 
           </div>
@@ -353,6 +356,55 @@ function MonitorRow({ label, entry, now }: { label: string; entry: MonitorEntry 
         </ul>
       )}
     </li>
+  );
+}
+
+const usd = (value: number) => value.toLocaleString("de-DE", { style: "currency", currency: "USD" });
+
+// Costs of OpenAI (task-19-5): spend of the month, with a budget also what is left of it
+function OpenAIMeter({ entry, now }: { entry: OpenAIEntry | undefined; now: Date }) {
+  const label = "OpenAI (Automatisierung n8n)";
+  if (!entry || entry.state === "off") {
+    return (
+      <div className="system-credit">
+        <div className="system-monitors__head"><strong>{label}</strong><StatusChip status={{ key: "nicht-eingerichtet", label: "Nicht eingerichtet", tone: "closed" }} /></div>
+        <span className="cell-sub">Für die Anzeige einen Admin-Key der OpenAI-Organisation (Leserecht für Kosten) als OPENAI_ADMIN_KEY und das Guthaben als OPENAI_BUDGET_USD beim Wächter eintragen (docs/betrieb.md).</span>
+      </div>
+    );
+  }
+  const costs = entry.costs;
+  const stale = isStale(entry, now);
+  const share = costs?.budget ? Math.min(1, Math.max(0, (costs.remaining ?? 0) / costs.budget)) : null;
+  const low = entry.state === "warning" || entry.state === "critical";
+  return (
+    <div className="system-credit">
+      <div className="system-monitors__head">
+        <strong>{label}</strong>
+        {stale ? <StatusChip status={{ key: "veraltet", label: "Prüfung veraltet", tone: "wait" }} />
+          : entry.state === "critical" ? <StatusChip status={{ key: "aufgebraucht", label: "Budget aufgebraucht", tone: "act" }} />
+          : low && costs ? <StatusChip status={{ key: "niedrig", label: "Niedrig", tone: "wait" }} /> : null}
+      </div>
+      {costs ? (
+        <>
+          <p>
+            {costs.budget !== null && costs.remaining !== null
+              ? <><span className="mono">{usd(costs.remaining)}</span> von <span className="mono">{usd(costs.budget)}</span> übrig</>
+              : <><span className="mono">{usd(costs.spent)}</span> verbraucht</>}
+          </p>
+          {share !== null && (
+            <span className={`rw-bars__track${low ? " rw-bars__track--warn" : ""}`} role="img" aria-label={`${Math.round(share * 100)} % übrig`}>
+              <span style={{ width: `${share * 100}%` }} />
+            </span>
+          )}
+          <span className="cell-sub">
+            Verbrauch {costs.month.slice(5, 7)}/{costs.month.slice(0, 4)}: <span className="mono">{usd(costs.spent)}</span>
+            {costs.min !== null && <> · Warnung unter <span className="mono">{usd(costs.min)}</span></>} · geprüft <span className="mono">{formatDateTime(entry.checked_at)}</span>
+          </span>
+        </>
+      ) : (
+        <span className="system-monitors__note--bad">{entry.detail}</span>
+      )}
+    </div>
   );
 }
 

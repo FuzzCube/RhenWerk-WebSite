@@ -8,6 +8,7 @@ import { PROVIDER_CHECK_MINUTES, collectProvider, evaluateBackups } from "./back
 import { latestBackup, notifyDue, pingDatabase, readMonitoring, report, reportWithoutDatabase, rpc } from "./lib.mjs";
 import { collectMira, evaluateMira } from "./mira.mjs";
 import { STARTUP_MINUTES, collectN8n, containerStartedAt, evaluateN8n } from "./n8n.mjs";
+import { OPENAI_CHECK_MINUTES, collectOpenAI, evaluateOpenAI } from "./openai.mjs";
 import { collectSystems, evaluateSystems } from "./systems.mjs";
 
 const strip = (checks) => checks.map(({ key, label, ok, severity, title, detail }) => ({ key, label, ok, severity, title: ok === false ? title : null, detail }));
@@ -16,10 +17,13 @@ export async function runChecks({ force = false } = {}) {
   const previous = await readMonitoring();
   const providerDue = force || !previous.backup?.provider_checked_at
     || Date.now() - Date.parse(previous.backup.provider_checked_at) > (PROVIDER_CHECK_MINUTES - 3) * 60_000;
-  const [miraRaw, n8nRaw, systemsRaw, latest, provider] = await Promise.all([
+  // Costs of OpenAI (task-19-5) once an hour; in between the last figures stay
+  const openaiDue = force || !previous.openai?.checked_at || Date.now() - Date.parse(previous.openai.checked_at) > (OPENAI_CHECK_MINUTES - 3) * 60_000;
+  const [miraRaw, n8nRaw, systemsRaw, latest, provider, openaiRaw] = await Promise.all([
     collectMira(process.env, rpc), collectN8n(process.env, rpc),
     collectSystems(process.env, { pingDatabase, previous, force }),
     latestBackup(), providerDue ? collectProvider(process.env) : previous.backup?.provider ?? null,
+    openaiDue ? collectOpenAI(process.env) : null,
   ]);
   const n8nStart = containerStartedAt(process.env);
   const n8nStarting = Boolean(n8nStart) && Date.now() - Date.parse(n8nStart) < STARTUP_MINUTES * 60_000;
@@ -42,6 +46,10 @@ export async function runChecks({ force = false } = {}) {
       state: backup.state, summary: backup.summary, checks: strip(backup.checks), provider: backup.provider,
       provider_checked_at: providerDue ? backup.provider_checked_at : previous.backup?.provider_checked_at ?? null,
     } });
+  }
+  if (openaiRaw) {
+    const openai = evaluateOpenAI(openaiRaw, { budget: process.env.OPENAI_BUDGET_USD, budgetMin: process.env.OPENAI_BUDGET_MIN_USD });
+    await rpc("set_monitoring", { system_key: "openai", payload: { ...openai, stale_after_minutes: OPENAI_CHECK_MINUTES * 2 + 15 } });
   }
   for (const [key, system] of Object.entries(systems)) {
     await rpc("set_monitoring", { system_key: key, payload: { ...system, checks: strip(system.checks) } });

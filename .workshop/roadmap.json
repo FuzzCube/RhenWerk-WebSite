@@ -4040,7 +4040,7 @@
       "description": "Nutzerentscheidung 22.10.2026: Fehler und Unschönheiten aus dem Rundgang vor der Präsentation in fünf Blöcken beheben (Oberfläche, Einsatzplanung für Admin, Terminvorschlag und Bestätigung, Kalender, Kosten OpenAI).",
       "order": 20,
       "weight": 10,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-19-1",
@@ -4160,19 +4160,25 @@
           "description": "Verbrauch von OpenAI über die Costs-API (Admin-Key) im Bereich System anzeigen, Restguthaben aus eingetragenem Guthaben.",
           "order": 5,
           "weight": 1,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Anzeige im Bereich System",
             "lint, typecheck, build"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T21:00:00Z",
+          "completedAt": "2026-10-22T21:20:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T21:20:00Z",
+            "commands": [
+              "npm run test:unit (150, neu openai-costs.test.mjs)",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "Sichtprüfung Bereich System mit Testwerten in system_status.monitoring.openai (danach entfernt), 390/768 px ohne horizontales Scrollen"
+            ],
+            "summary": "Wächter liest stündlich den Verbrauch des Monats über die OpenAI Costs-API (scripts/ops/openai.mjs, OPENAI_ADMIN_KEY) und schreibt ihn als monitoring.openai; Budget OPENAI_BUDGET_USD ergibt Rest und Warnschwelle (OPENAI_BUDGET_MIN_USD, sonst 10 %). Bereich System: Karte Guthaben externer Dienste zeigt ElevenLabs und OpenAI (Rest von Budget mit Balken, Verbrauch, Zeitpunkt; ohne Schlüssel Nicht eingerichtet). Keine Migration (set_monitoring nimmt jeden Schlüssel), keine E-Mail-Warnung. Nicht ausgeführt: Abruf gegen die echte OpenAI-API (kein Admin-Key vorhanden); auf dem VPS fehlen OPENAI_ADMIN_KEY und OPENAI_BUDGET_USD in /opt/rheinwerk/ops.env (docs/betrieb.md)."
           }
         }
       ]

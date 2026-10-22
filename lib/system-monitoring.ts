@@ -29,7 +29,11 @@ export const MONITORED_SYSTEMS = [
   { key: "docker", label: "Docker" },
   { key: "disk", label: "Speicherplatz" },
 ] as const;
-export type Monitoring = Partial<Record<(typeof MONITORED_SYSTEMS)[number]["key"], MonitorEntry>>;
+// Costs of OpenAI (task-19-5, scripts/ops/openai.mjs): spend of the month in USD; budget and remaining only when the
+// owner set OPENAI_BUDGET_USD (OpenAI has no API for the prepaid balance)
+export type OpenAICosts = { spent: number; month: string; budget: number | null; remaining: number | null; min: number | null };
+export type OpenAIEntry = Pick<MonitorEntry, "state" | "checked_at" | "stale_after_minutes"> & { costs: OpenAICosts | null; detail: string | null };
+export type Monitoring = Partial<Record<(typeof MONITORED_SYSTEMS)[number]["key"], MonitorEntry>> & { openai?: OpenAIEntry };
 
 export const STALE_AFTER_MINUTES = 15;
 
