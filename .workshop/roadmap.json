@@ -4023,11 +4023,11 @@
             "Alte Website leitet um oder ist abgeschaltet",
             "betrieb.md, HANDOFF.md"
           ],
-          "startedAt": "2026-10-22T21:45:00Z",
-          "completedAt": "2026-10-22T22:15:00Z",
+          "startedAt": "2026-10-22T17:58:00Z",
+          "completedAt": "2026-10-22T18:09:16Z",
           "verification": {
             "status": "passed",
-            "checkedAt": "2026-10-22T22:15:00Z",
+            "checkedAt": "2026-10-22T18:09:16Z",
             "commands": [
               "pg_dumpall je Supabase-Datenbank auf Oracle, tar des n8n-Volumes (n8n gestoppt) und der Projektordner",
               "Übertragung auf den VPS, openssl-Verschlüsselung mit BACKUP_PASSPHRASE, Entschlüsselung und sha256-Vergleich",
@@ -4061,11 +4061,11 @@
             "Sichtprüfung 390/768/1440 px",
             "lint, typecheck, build"
           ],
-          "startedAt": "2026-10-22T18:30:00Z",
-          "completedAt": "2026-10-22T19:30:00Z",
+          "startedAt": "2026-10-22T17:26:00Z",
+          "completedAt": "2026-10-22T17:34:59Z",
           "verification": {
             "status": "passed",
-            "checkedAt": "2026-10-22T19:30:00Z",
+            "checkedAt": "2026-10-22T17:34:59Z",
             "commands": [
               "npm run lint",
               "npm run typecheck",
@@ -4089,11 +4089,11 @@
             "Knopf in der Anfrage",
             "lint, typecheck, build, test:api"
           ],
-          "startedAt": "2026-10-22T19:35:00Z",
-          "completedAt": "2026-10-22T19:50:00Z",
+          "startedAt": "2026-10-22T17:35:30Z",
+          "completedAt": "2026-10-22T17:37:56Z",
           "verification": {
             "status": "passed",
-            "checkedAt": "2026-10-22T19:50:00Z",
+            "checkedAt": "2026-10-22T17:37:56Z",
             "commands": [
               "npm run lint",
               "npm run typecheck",
@@ -4117,11 +4117,11 @@
             "Terminbestätigung bei Bestätigung und manueller Planung",
             "test:db, lint, typecheck, build"
           ],
-          "startedAt": "2026-10-22T19:55:00Z",
-          "completedAt": "2026-10-22T20:30:00Z",
+          "startedAt": "2026-10-22T17:38:30Z",
+          "completedAt": "2026-10-22T17:47:22Z",
           "verification": {
             "status": "passed",
-            "checkedAt": "2026-10-22T20:30:00Z",
+            "checkedAt": "2026-10-22T17:47:22Z",
             "commands": [
               "supabase test db (54 Dateien, 1207 Tests, neu form_visit_holds.test.sql)",
               "npm run test:unit",
@@ -4145,11 +4145,11 @@
             "Einrasten mit Animation",
             "lint, typecheck, build"
           ],
-          "startedAt": "2026-10-22T20:35:00Z",
-          "completedAt": "2026-10-22T20:55:00Z",
+          "startedAt": "2026-10-22T17:48:00Z",
+          "completedAt": "2026-10-22T17:51:35Z",
           "verification": {
             "status": "passed",
-            "checkedAt": "2026-10-22T20:55:00Z",
+            "checkedAt": "2026-10-22T17:51:35Z",
             "commands": [
               "npm run lint",
               "npm run typecheck",
@@ -4172,11 +4172,11 @@
             "Anzeige im Bereich System",
             "lint, typecheck, build"
           ],
-          "startedAt": "2026-10-22T21:00:00Z",
-          "completedAt": "2026-10-22T21:20:00Z",
+          "startedAt": "2026-10-22T17:52:00Z",
+          "completedAt": "2026-10-22T17:55:17Z",
           "verification": {
             "status": "passed",
-            "checkedAt": "2026-10-22T21:20:00Z",
+            "checkedAt": "2026-10-22T17:55:17Z",
             "commands": [
               "npm run test:unit (150, neu openai-costs.test.mjs)",
               "npm run lint",

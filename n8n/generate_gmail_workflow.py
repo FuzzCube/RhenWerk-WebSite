@@ -25,7 +25,7 @@ const part=(type,s)=>'Content-Type: '+type+'; charset=UTF-8\r\nContent-Transfer-
 let body;if(m.body_html){const boundary='rw-alt-'+m.id;headers.push('Content-Type: multipart/alternative; boundary="'+boundary+'"');body=['--'+boundary,part('text/plain',m.body_text),'--'+boundary,part('text/html',m.body_html),'--'+boundary+'--',''].join('\r\n');}
 else{headers.push('Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64');body=b64(m.body_text);}
 const raw=Buffer.from(headers.join('\r\n')+'\r\n\r\n'+body).toString('base64url');
-return [{json:{message_id:m.id,mime_message_id:messageId,recipient:m.to_address,search_query:'in:sent to:'+m.to_address,send_body:{raw,...(m.gmail_thread_id?{threadId:m.gmail_thread_id}:{})}}}];"""
+return [{json:{message_id:m.id,mime_message_id:messageId,recipient:m.to_address,search_query:'in:sent to:'+m.to_address+(Date.parse(m.created_at)?' after:'+Math.floor(Date.parse(m.created_at)/1000-3600):''),send_body:{raw,...(m.gmail_thread_id?{threadId:m.gmail_thread_id}:{})}}}];"""
 sent_candidates = r"""const b=$input.first().json.body??{};
 if(b.nextPageToken)throw new Error('Mehr als 100 gesendete Kandidaten: manuelle Versandprüfung erforderlich, kein erneuter Versand');
 const messages=b.messages??[];return messages.length?messages.map(m=>({json:{candidate_id:m.id},pairedItem:{item:0}})):[{json:{skip_candidate:true},pairedItem:{item:0}}];"""
