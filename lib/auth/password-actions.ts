@@ -25,9 +25,11 @@ export async function requestPasswordReset(_previous: FormState, formData: FormD
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https");
   // Supabase only accepts redirect targets from its allow list (config.toml), so a forged host header cannot
-  // send the link elsewhere
+  // send the link elsewhere. In production SITE_URL fixes the domain (task-18-4: the form is also reachable under
+  // *.vercel.app, which is not on the list, and the link would then only lead to the home page)
+  const base = process.env.SITE_URL ?? `${protocol}://${host}`;
   const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${protocol}://${host}/auth/bestaetigen` });
+  await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${base}/auth/bestaetigen` });
   return formSuccess(RESET_SENT, { email });
 }
 
