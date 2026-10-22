@@ -26,7 +26,12 @@ echo "1. Repository auf $SHA"
 git -C "$APP" fetch -q origin main
 git -C "$APP" merge-base --is-ancestor "$SHA" origin/main || { echo "$SHA ist nicht in origin/main" >&2; exit 2; }
 LOCK_BEFORE=$(sha256sum "$APP/package-lock.json" | cut -c1-64)
+SELF_BEFORE=$(sha256sum "$APP/ops/vps/migrate.sh" | cut -c1-64)
 git -C "$APP" reset -q --hard "$SHA"
+# Das Skript hat sich mit dem Commit selbst geändert: die neue Fassung ausführen (die laufende Shell liest sonst die alte)
+if [ -z "${MIGRATE_REEXEC:-}" ] && [ "$(sha256sum "$APP/ops/vps/migrate.sh" | cut -c1-64)" != "$SELF_BEFORE" ]; then
+  MIGRATE_REEXEC=1 SSH_ORIGINAL_COMMAND="$SHA" exec sh "$APP/ops/vps/migrate.sh"
+fi
 if [ "$(sha256sum "$APP/package-lock.json" | cut -c1-64)" != "$LOCK_BEFORE" ]; then
   (cd "$APP" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund --loglevel=error)
   echo "   npm-Pakete für die Dienste aktualisiert"
