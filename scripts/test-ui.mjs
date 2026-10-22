@@ -364,6 +364,41 @@ try {
         }
       }
     }
+    // task-18-8: "Update einspielen" only with images of the server that differ from the repository (here a row of the
+    // versions set for the test, the Mac has none), only for admin; the request is withdrawn again
+    const { data: savedVersions } = await admin.from("system_status").select("dependency_updates").single();
+    const serverRow = { key: "server_images", label: "Images (Server)", notes: "https://github.com/FuzzCube/RhenWerk-WebSite/pulls", current: "7 Dienste", latest: "1 bereit",
+      level: "update", text: "Update bereit", how: "Update einspielen", pending: 1, items: [{ name: "n8n", current: "2.40.7", latest: "2.44.4" }] };
+    await admin.rpc("set_system_status", { payload: { dependency_updates: { ...savedVersions.dependency_updates, versions: [serverRow, ...(savedVersions.dependency_updates?.versions ?? [])] } } });
+    await admin.from("image_updates").delete().in("status", ["requested", "running"]);
+    try {
+      for (const width of [390, 1440]) {
+        await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
+        await page.open(`${BASE}/dashboard/system`);
+        await page.eval(`document.querySelector(".system-image-update button").click()`);
+        await page.until(`!!document.querySelector(".system-image-update dialog[open]")`, 5000);
+        const updateDialog = await page.eval(`(() => { const d = document.querySelector(".system-image-update dialog[open]"); const r = d.getBoundingClientRect();
+          return { text: d.textContent, fits: r.left >= 0 && r.right <= innerWidth, scroll: document.documentElement.scrollWidth, width: innerWidth }; })()`);
+        check(`  Admin @${width}: „Update einspielen“ nennt Dienst und Versionen, Sicherung und Rückfall, passt in die Breite`,
+          updateDialog.text.includes("n8n") && updateDialog.text.includes("2.40.7 → 2.44.4") && updateDialog.text.includes("Vor Systemupdate") && updateDialog.fits && updateDialog.scroll <= updateDialog.width, JSON.stringify(updateDialog));
+        if (width === 1440) {
+          await page.eval(`document.querySelector(".system-image-update dialog[open] button[type=submit]").click()`);
+          const filed = await page.until(`(document.querySelector(".system-image-updates")?.textContent ?? "").includes("Angefordert") && document.querySelector(".system-image-update > button")?.disabled === true`, 10000);
+          const { data: pendingUpdate } = await admin.from("image_updates").select("status, requested_by").eq("status", "requested").maybeSingle();
+          check("  Admin: Update angefordert, im Verlauf „Angefordert“, Knopf gesperrt", filed && Boolean(pendingUpdate?.requested_by), JSON.stringify(pendingUpdate));
+          await admin.from("image_updates").delete().eq("status", "requested");
+        } else {
+          await page.eval(`document.querySelector(".system-image-update dialog[open] button[type=button]").click()`);
+        }
+      }
+      await page.send("Network.clearBrowserCookies");
+      await page.send("Network.setCookies", { cookies: await loginCookies("manager.demo@example.com") });
+      await page.open(`${BASE}/dashboard/system`);
+      check("  Manager: Zeile „Images (Server)“ sichtbar, ohne „Update einspielen“", await page.eval(`document.querySelector(".system-versions")?.textContent.includes("Images (Server)") && !document.querySelector(".system-image-update")`));
+    } finally {
+      await admin.rpc("set_system_status", { payload: { dependency_updates: savedVersions.dependency_updates } });
+      await admin.from("image_updates").delete().in("status", ["requested", "running"]);
+    }
   }
 
   console.log("\nÜbersicht (Admin): Kennzahlen führen zu passenden Listen");

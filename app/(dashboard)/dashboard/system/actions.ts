@@ -44,6 +44,17 @@ export async function requestRestore(backupId: string, confirmation: string): Pr
   return { ok: true };
 }
 
+// "Update einspielen" (task-18-8): only admin (request_image_update checks it again, manager 42501); the service
+// rheinwerk-systemcheck on the VPS backs up, starts the new images, runs the self test and returns on a failure
+export async function requestImageUpdate(): Promise<Result> {
+  await requireRole(["admin"]);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_image_update");
+  if (error) return { ok: false, message: databaseErrorMessage(error) };
+  refresh();
+  return { ok: true };
+}
+
 // "System prüfen" (task-17-15): only admin files a request (request_system_check checks it again); the service
 // online.rheinwerk.systemcheck on the host runs the checks
 export async function requestSystemCheck(): Promise<Result> {

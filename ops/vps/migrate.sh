@@ -21,6 +21,13 @@ exec 9>/opt/rheinwerk/state/migrate.lock
 flock -w 600 9
 
 psql() { docker exec -i "$DB" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -qAt "$@"; }
+# Versionen im Bereich „System“ neu ermitteln (task-18-8): ein gemergter Dependabot-PR für ein Image zeigt dort sofort
+# „Update bereit“; eingespielt wird erst mit „Update einspielen“
+versions() {
+  (cd "$APP" && node --env-file=/opt/rheinwerk/ops.env --input-type=module \
+    -e 'const { refreshVersions } = await import("./scripts/ops/versions-report.mjs"); await refreshVersions();') > /dev/null 2>&1 \
+    && echo "   Versionen im Bereich System aktualisiert" || echo "   Versionen nicht aktualisiert (nächster Lauf um 03:00)"
+}
 
 echo "1. Repository auf $SHA"
 git -C "$APP" fetch -q origin main
@@ -44,6 +51,7 @@ for file in "$APP"/supabase/migrations/*.sql; do
 done
 if [ -z "$PENDING" ]; then
   echo "2. Keine neuen Migrationen"
+  versions
   exit 0
 fi
 
@@ -75,4 +83,5 @@ psql -c "insert into public.backups (started_at, reason, status, file_name, size
   select '$STARTED', 'migration', 'ok', '$(basename "$TARGET")', $(stat -c %s "$TARGET"),
     jsonb_build_object('commit', '$(echo "$SHA" | cut -c1-7)', 'migrations', $(echo "$PENDING" | wc -w))
   where to_regclass('public.backups') is not null"
+versions
 echo "Fertig: $(echo "$PENDING" | wc -w) Migration(en)"

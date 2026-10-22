@@ -248,6 +248,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"image_updates": {
+                  Row: {
+                    "changes": NonNullable<Json>,"error": string | null,"finished_at": string | null,"id": string,"pre_backup_file": string | null,"requested_at": string,"requested_by": string | null,"started_at": string | null,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "changes"?: NonNullable<Json>,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"pre_backup_file"?: string | null,"requested_at"?: string,"requested_by"?: string | null,"started_at"?: string | null,"status"?: string
+                  }
+                  Update: {
+                    "changes"?: NonNullable<Json>,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"pre_backup_file"?: string | null,"requested_at"?: string,"requested_by"?: string | null,"started_at"?: string | null,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "image_updates_requested_by_fkey"
+      columns: ["requested_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"invoice_items": {
                   Row: {
                     "created_at": string,"description": string,"gross_amount": number,"id": string,"invoice_id": string,"kind": Database["public"]['Enums']["work_entry_kind"],"net_amount": number,"position": number,"quantity": number,"tax_amount": number,"tax_rate": number,"unit": Database["public"]['Enums']["work_unit"],"unit_price": number,"work_entry_id": string | null
@@ -1665,6 +1685,24 @@ isOneToOne: false
 "claim_backup_request":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"claim_image_update":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "changes": NonNullable<Json>,
+"error": string | null,
+"finished_at": string | null,
+"id": string,
+"pre_backup_file": string | null,
+"requested_at": string,
+"requested_by": string | null,
+"started_at": string | null,
+"status": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "image_updates"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "claim_queued_messages":
 { Args: { "batch_limit"?: number,"lease_seconds"?: number }; Returns: Json[]
                            },
@@ -2365,6 +2403,24 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"finish_image_update":
+{ Args: { "changes": Json,"error": string,"pre_backup_file": string,"status": string,"update_id": string }; Returns: {
+              "changes": NonNullable<Json>,
+"error": string | null,
+"finished_at": string | null,
+"id": string,
+"pre_backup_file": string | null,
+"requested_at": string,
+"requested_by": string | null,
+"started_at": string | null,
+"status": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "image_updates"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -3235,6 +3291,24 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"request_image_update":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "changes": NonNullable<Json>,
+"error": string | null,
+"finished_at": string | null,
+"id": string,
+"pre_backup_file": string | null,
+"requested_at": string,
+"requested_by": string | null,
+"started_at": string | null,
+"status": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "image_updates"
         isOneToOne: true
         isSetofReturn: false
       } },

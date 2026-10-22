@@ -1,0 +1,94 @@
+{
+  "id": "rwSelbsttest2026",
+  "name": "RheinWerk · Selbsttest",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "rheinwerk-selbsttest",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson",
+        "options": {}
+      },
+      "id": "2ea60131-b93f-523e-81bc-26a02fa6f567",
+      "name": "Selbsttest aufrufen",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "fbb29078-c355-5a41-a293-ccf25c118760"
+    },
+    {
+      "parameters": {
+        "url": "http://kong:8000/rest/v1/system_status?select=id&limit=1",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "7872752b-263a-5a72-8c05-d0431ca28dd5",
+      "name": "Supabase lesen (system_status)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "rwdda8aefff1e947",
+          "name": "RheinWerk Supabase Lokal"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows=$input.all().filter((item)=>item.json&&item.json.id!==undefined).length;\nreturn [{json:{ok:rows===1,rows}}];"
+      },
+      "id": "ecee38df-df8c-5776-bc14-bdf2cc1814e6",
+      "name": "Ergebnis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Selbsttest aufrufen": {
+      "main": [
+        [
+          {
+            "node": "Supabase lesen (system_status)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase lesen (system_status)": {
+      "main": [
+        [
+          {
+            "node": "Ergebnis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "description": "Selbsttest nach einem Systemupdate (task-18-8): liest eine Zeile aus system_status mit dem Supabase-Credential."
+}

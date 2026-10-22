@@ -1,6 +1,6 @@
 // Shared helpers of the services on the host (task-17-17): database as service_role and warnings with e-mail. The
 // services run from the development folder with its .env.local (node --env-file=.env.local), see scripts/ops/install.mjs.
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
@@ -9,6 +9,22 @@ import { sendAlert } from "../lib/notify.mjs";
 export const DASHBOARD = "https://rheinwerk-service.online/dashboard/system";
 // OPS_LOG_DIR on the VPS (task-18-2: /opt/rheinwerk/state, logs in the journal of systemd)
 export const LOG_DIR = process.env.OPS_LOG_DIR ?? path.join(homedir(), "Library", "Logs", "RheinWerk");
+
+// Restore (task-18-7) or system update (task-18-8) running: the services are stopped on purpose, the watchdog and the
+// daily backup wait. A lock older than an hour is left over from a broken run and ignored.
+const MAINTENANCE_LOCK = path.join(LOG_DIR, "maintenance.lock");
+export function maintenanceRunning() {
+  try {
+    return existsSync(MAINTENANCE_LOCK) && Date.now() - statSync(MAINTENANCE_LOCK).mtimeMs < 60 * 60_000;
+  } catch {
+    return false;
+  }
+}
+export function startMaintenance(kind, id) {
+  mkdirSync(LOG_DIR, { recursive: true });
+  writeFileSync(MAINTENANCE_LOCK, JSON.stringify({ kind, id, started_at: new Date().toISOString() }));
+}
+export const endMaintenance = () => rmSync(MAINTENANCE_LOCK, { force: true });
 
 // Calls never throw: without the database the service goes on and only the record in the dashboard is missing
 let client = null;

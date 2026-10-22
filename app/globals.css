@@ -1953,3 +1953,7 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .system-restore-dialog ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .system-restore-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 @media (max-width: 480px) { .system-restore-dialog__actions .button { flex: 1 1 100%; } }
+/* System updates of the images on the VPS (task-18-8) */
+.system-image-update-wrap { padding: 12px 20px 0; }
+.system-image-update__list { list-style: none; padding-left: 0 !important; }
+.system-image-update__list li { display: flex; flex-wrap: wrap; gap: 8px; }

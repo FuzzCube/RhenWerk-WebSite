@@ -4,27 +4,16 @@
 //   3. health check: Auth, REST and Storage answer through the gateway, n8n /healthz
 //   4. on a failure in 2 or 3: the same restore with the backup of step 1 and its health check (status rolled_back)
 //   5. e-mail to the admin; a failure is the warning restore:failed (critical), the next good restore closes it
-// While it runs, the file restore.lock in OPS_LOG_DIR keeps the watchdog and the daily backup away (restoreRunning).
-import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+// While it runs, the maintenance lock (lib.mjs) keeps the watchdog and the daily backup away.
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { sendAlert } from "../lib/notify.mjs";
 import { restoreArchive, startAll, startN8n } from "../restore.mjs";
 import { runBackup } from "./backup-run.mjs";
-import { DASHBOARD, LOG_DIR, report, rpc } from "./lib.mjs";
+import { DASHBOARD, endMaintenance, report, rpc, startMaintenance } from "./lib.mjs";
 
-const LOCK = path.join(LOG_DIR, "restore.lock");
-const LOCK_MINUTES = 30;
 const BACKUP_DIR = process.env.BACKUP_DIR;
 const stamp = (message) => console.log(`${new Date().toISOString()} ${message}`);
-
-// A lock older than 30 minutes is left over from a broken run and ignored
-export function restoreRunning() {
-  try {
-    return existsSync(LOCK) && Date.now() - statSync(LOCK).mtimeMs < LOCK_MINUTES * 60_000;
-  } catch {
-    return false;
-  }
-}
 
 async function healthy() {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -51,8 +40,7 @@ async function healthy() {
 }
 
 export async function runRestore(request) {
-  mkdirSync(LOG_DIR, { recursive: true });
-  writeFileSync(LOCK, JSON.stringify({ restore_id: request.id, started_at: new Date().toISOString() }));
+  startMaintenance("restore", request.id);
   const steps = [];
   const log = (message) => { steps.push(message); stamp(`Wiederherstellung: ${message}`); };
   const archive = path.join(BACKUP_DIR ?? "", request.file_name);
@@ -91,7 +79,7 @@ export async function runRestore(request) {
       try { startAll(); startN8n(); } catch { /* reported below */ }
     }
   } finally {
-    rmSync(LOCK, { force: true });
+    endMaintenance();
   }
 
   const detail = steps.join("\n");

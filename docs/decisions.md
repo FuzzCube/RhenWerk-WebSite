@@ -528,3 +528,13 @@ Nutzerentscheidungen 22.10.2026, ergänzen den Eintrag zu task-18-1:
 - Die Tabellen `backups`, `restores`, `system_alerts` und `system_status` bleiben beim Wiederherstellen auf dem aktuellen Stand, sonst verschwänden die Anfrage selbst, die neuen Sicherungen und Warnungen. Die Schlüsseldateien auf dem Server (`.env`, `ops.env`) bleiben ebenfalls.
 - Aus dem Dashboard nur Sicherungen mit demselben Migrationsstand wie die Datenbank (seit task-18-7 im Manifest). Eine ältere Sicherung hätte ein anderes Schema, die beibehaltenen Tabellen passten nicht mehr, und das nächste Deployment würde Migrationen erneut einspielen. Solche Sicherungen und die Sicherungen vor einer Migration (nur Postgres) nur von Hand nach `docs/betrieb.md` 4.5.
 - Nach `pg_restore` werden die Rechte der neu angelegten Objekte auf die des Dumps zurückgesetzt (`applyDumpAcl` in `scripts/restore.mjs`). Ohne das gibt Supabase `anon` und `authenticated` beim Anlegen alle Rechte, und die `revoke`-Anweisungen der Migrationen gehen verloren; so war es auf dem VPS seit dem Import von task-18-3, behoben am 22.10.2026.
+
+## 2026-10-22: Systemupdates per Knopf, Rückfall über Schnappschüsse der Volumes (task-18-8)
+
+- Neue Image-Versionen kommen als Dependabot-PR; nach dem Merge legt das Deployment nur die Datei auf den Server. Eingespielt wird erst mit **Update einspielen** im Bereich „System“ (nur Admin), damit der Zeitpunkt bewusst gewählt ist und ein gescheitertes Update das Deployment nicht rot lässt.
+- Rückfall über **Schnappschüsse aller Volumes** bei angehaltenen Diensten statt über die Sicherung: neue Images ändern selbst Daten (Migrationen von Auth, Storage und n8n, Erweiterungen von Postgres), die ein `pg_restore` mit dem alten Image nicht sauber zurücknimmt. Die geprüfte Sicherung davor bleibt für den Fall, dass auch der Rückfall scheitert.
+- Nach einem Rückfall bleiben die geänderten Dienste in `images.override.yml` auf dem alten Image gepinnt, bis ein Update gelingt; die Compose-Datei im Repository zeigt weiter die neue Version.
+- Der Selbsttest liest nur; Schreibproben (Testanfrage, Anmeldung mit Sitzung) würden Produktionsdaten erzeugen. Die Anmeldung wird über die Admin-API von Auth geprüft, die Credentials von n8n über den Workflow „RheinWerk · Selbsttest“.
+- Wiederherstellung und Update schließen sich gegenseitig aus (`request_restore`, `request_image_update`) und teilen die Sperre `maintenance.lock` für Wächter und tägliche Sicherung.
+- Dependabot-PR #3 (PostgREST v14 → v16) geprüft: keine der Änderungen betrifft RheinWerk (`jwt-role-claim-key` nicht gesetzt, `db-schemas` ohne `pg_catalog`, kein `Prefer: timezone`).
+

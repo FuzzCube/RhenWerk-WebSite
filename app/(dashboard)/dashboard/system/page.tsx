@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BackupButton } from "@/components/dashboard/backup-button";
+import { ImageUpdateButton } from "@/components/dashboard/image-update-button";
 import { ResolveAlertButton } from "@/components/dashboard/resolve-alert-button";
 import { RestoreButton, RestoreProgress } from "@/components/dashboard/restore-button";
 import { SystemCheckButton } from "@/components/dashboard/system-check-button";
@@ -11,7 +12,8 @@ import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import {
-  backupContents, backupReasonLabel, backupStatus, formatBytes, latestVerified, providerView, restorable, restoreActive, restoreStatus, type BackupRow,
+  backupContents, backupReasonLabel, backupStatus, formatBytes, imageChanges, imageUpdateActive, imageUpdateStatus, latestVerified, providerView,
+  restorable, restoreActive, restoreStatus, type BackupRow, type ImageUpdateRow,
 } from "@/lib/backups";
 import { loadSystemOverview } from "@/lib/dashboard/system";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
@@ -29,7 +31,8 @@ export const metadata: Metadata = { title: "System" };
 // shown, never installed); only admin starts a check at once ("System prüfen"). Backups (task-18-6): the newest checked
 // one, the backup of the provider and the list of 14 days; only admin starts one at once ("Jetzt sichern"). Open and
 // resolved warnings are listed at the end; only admin closes one (task-17-10). Restore (task-18-7): only admin, from a
-// row of the list; the newest restore with its result in the card "Datensicherung".
+// row of the list; the newest restore with its result in the card "Datensicherung". System updates of the images on the
+// VPS (task-18-8): "Update einspielen" (only admin) when the repository has newer images, the last five runs below.
 export default async function SystemPage() {
   const employee = await requireRole(rolesFor("/dashboard/system"));
   const isAdmin = employee.role === "admin";
@@ -45,6 +48,8 @@ export default async function SystemPage() {
   const provider = providerView(system.provider);
   const openAlerts = summary.alerts as SystemAlertRow[];
   const restoring = restoreActive(system.restore, now);
+  const updating = imageUpdateActive(system.imageUpdates[0], now);
+  const serverImages = versions.find((row) => row.key === "server_images");
   const backupColumns = backupColumnsFor(isAdmin ? { migration: system.migration, now, restoring } : null);
 
   const alertColumn: Column<SystemAlertRow> = {
@@ -186,6 +191,20 @@ export default async function SystemPage() {
               <DataTable caption="Systemversionen" columns={versionColumns} rows={versions} rowKey={(row) => row.key}
                 empty={<EmptyState title="Noch nicht geprüft. Die Versionen werden jeden Tag um 09:00 ermittelt." />} />
             </div>
+            {isAdmin && ((serverImages?.pending ?? 0) > 0 || updating) && (
+              <div className="system-image-update-wrap">
+                <ImageUpdateButton changes={serverImages?.items?.map(({ name, current, latest }) => ({ name, current, latest })) ?? []} disabled={updating || restoring} />
+              </div>
+            )}
+            {system.imageUpdates.length > 0 && (
+              <>
+                <h3 className="system-subheading">Letzte Systemupdates</h3>
+                <div className="system-image-updates">
+                  <DataTable caption="Letzte Systemupdates" columns={imageUpdateColumns(now)} rows={system.imageUpdates} rowKey={(row) => row.id} empty={null} />
+                </div>
+                <RestoreProgress active={updating} />
+              </>
+            )}
           </Card>
 
           <Card stripe={summary.ok ? "success" : critical ? "danger" : "attention"} title="Warnungen" count={openAlerts.length} id="system-warnungen" headingLevel={2} flush
@@ -250,6 +269,27 @@ const backupColumns: Column<BackupRow>[] = [
     },
   },
 ];
+
+function imageUpdateColumns(now: Date): Column<ImageUpdateRow>[] {
+  return [
+    { key: "time", header: "Zeitpunkt", mobile: "title", cell: (row) => <><span className="mono">{formatDateTime(row.requested_at)}</span>{row.requester && <span className="cell-sub">{row.requester}</span>}</> },
+    { key: "changes", header: "Versionen", cell: (row) => <span className="mono">{imageChanges(row)}</span> },
+    {
+      key: "result", header: "Ergebnis",
+      cell: (row) => (
+        <>
+          <StatusChip status={imageUpdateStatus(row, now)} />
+          {row.error && (
+            <details className="system-details system-details--inline">
+              <summary>Fehler</summary>
+              <p className="system-alert-detail">{row.error}</p>
+            </details>
+          )}
+        </>
+      ),
+    },
+  ];
+}
 
 const versionColumns: Column<VersionRow>[] = [
   { key: "system", header: "System", mobile: "title", cell: (row) => <strong>{row.label}</strong> },

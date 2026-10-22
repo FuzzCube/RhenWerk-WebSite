@@ -3,7 +3,7 @@
 // (task-18-7, public.restores). Pure functions, shared by page and unit tests (tests/unit/backups-view.test.mjs).
 import type { DisplayStatus } from "./display-status";
 
-export type BackupReason = "daily" | "manual" | "migration" | "pre_restore";
+export type BackupReason = "daily" | "manual" | "migration" | "pre_restore" | "pre_update";
 export type BackupRow = {
   id: string;
   started_at: string;
@@ -19,7 +19,7 @@ export type BackupRow = {
 };
 export type ProviderBackup = { state?: string | null; schedule?: string | null; rotation?: number | null; restore_points?: number | null; last_restore_point?: string | null; error?: string };
 
-const REASON: Record<BackupReason, string> = { daily: "Täglich", manual: "Von Hand", migration: "Vor Migration", pre_restore: "Vor Wiederherstellung" };
+const REASON: Record<BackupReason, string> = { daily: "Täglich", manual: "Von Hand", migration: "Vor Migration", pre_restore: "Vor Wiederherstellung", pre_update: "Vor Systemupdate" };
 export const backupReasonLabel = (reason: BackupReason): string => REASON[reason] ?? reason;
 
 export function backupStatus(row: Pick<BackupRow, "status" | "verified">): DisplayStatus {
@@ -102,3 +102,34 @@ export function restoreStatus(row: RestoreRow, now: Date): DisplayStatus {
   if (row.status === "rolled_back") return { key: "zurueck", label: "Fehlgeschlagen, Stand davor zurück", tone: "act" };
   return { key: "fehlgeschlagen", label: "Fehlgeschlagen", tone: "act" };
 }
+
+// System updates of the images on the VPS (task-18-8, public.image_updates)
+export type ImageUpdateRow = {
+  id: string;
+  requested_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  status: "requested" | "running" | "ok" | "no_change" | "failed" | "rolled_back";
+  changes: { service: string; from: string | null; to: string | null }[];
+  pre_backup_file: string | null;
+  error: string | null;
+  requester: string | null;
+};
+
+export function imageUpdateActive(row: ImageUpdateRow | null | undefined, now: Date): boolean {
+  return Boolean(row && (row.status === "requested" || row.status === "running") && now.getTime() - Date.parse(row.requested_at) < 60 * 60 * 1000);
+}
+
+export function imageUpdateStatus(row: ImageUpdateRow, now: Date): DisplayStatus {
+  if (row.status === "requested" || row.status === "running") {
+    if (!imageUpdateActive(row, now)) return { key: "abgebrochen", label: "Nicht abgeschlossen", tone: "act" };
+    return row.status === "running" ? { key: "laeuft", label: "Läuft", tone: "run" } : { key: "angefordert", label: "Angefordert", tone: "wait" };
+  }
+  if (row.status === "ok") return { key: "eingespielt", label: "Eingespielt", tone: "done" };
+  if (row.status === "no_change") return { key: "unveraendert", label: "Nichts zu tun", tone: "closed" };
+  if (row.status === "rolled_back") return { key: "zurueck", label: "Fehlgeschlagen, Stand von vorher läuft", tone: "act" };
+  return { key: "fehlgeschlagen", label: "Fehlgeschlagen", tone: "act" };
+}
+
+export const imageChanges = (row: Pick<ImageUpdateRow, "changes">): string =>
+  row.changes.length ? row.changes.map((change) => `${change.service} ${change.from ?? "?"} → ${change.to ?? "?"}`).join(", ") : "–";

@@ -27,7 +27,7 @@ const N8N = process.env.N8N_CONTAINER ?? "n8n";
 const N8N_HOME = "/home/node/.n8n";
 const STORAGE_PATH = process.env.SUPABASE_STORAGE_PATH ?? "/mnt";
 const SERVICES = ["auth", "rest", "storage"].map((service) => DB.replace(/^supabase_db_/, `supabase_${service}_`));
-export const KEEP_TABLES = ["public.backups", "public.restores", "public.system_alerts", "public.system_status"];
+export const KEEP_TABLES = ["public.backups", "public.restores", "public.image_updates", "public.system_alerts", "public.system_status"];
 
 const run = (command, args, options = {}) => execFileSync(command, args, { maxBuffer: 1024 * 1024 * 1024, stdio: ["pipe", "pipe", "pipe"], ...options });
 const sha256 = (file) => createHash("sha256").update(readFileSync(file)).digest("hex");

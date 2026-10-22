@@ -4,12 +4,12 @@
 //      days); a failure is the warning backup:failed with e-mail, the next good run closes it
 //   2. installed and available versions for the area "System" (scripts/ops/versions.mjs, only shown, never installed)
 import { runBackup } from "./backup-run.mjs";
-import { restoreRunning } from "./restore-run.mjs";
+import { maintenanceRunning } from "./lib.mjs";
 import { refreshVersions } from "./versions-report.mjs";
 
-// Not during a restore (task-18-7): it makes its own backup before, and a backup now would catch a half-restored state
-if (restoreRunning()) {
-  console.log(`${new Date().toISOString()} Wiederherstellung läuft, Sicherung ausgelassen (nächster Lauf morgen oder „Jetzt sichern“)`);
+// Not during a restore or system update (task-18-7, task-18-8): they make their own backup before, and a backup now would catch a half-restored state
+if (maintenanceRunning()) {
+  console.log(`${new Date().toISOString()} Wiederherstellung oder Update läuft, Sicherung ausgelassen (nächster Lauf morgen oder „Jetzt sichern“)`);
   process.exit(0);
 }
 const ok = await runBackup({ reason: "daily" });

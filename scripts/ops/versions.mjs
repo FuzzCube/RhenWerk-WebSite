@@ -1,9 +1,12 @@
 // Installed and available versions for the area "System" (task-17-15): Docker Desktop, Supabase CLI and images, n8n,
 // Node.js and the npm packages. Only shown with a recommendation and the release notes, never installed (user decision
 // 21.10.2026). Runs in the nightly job and on "System prüfen". collectVersions asks the host and the registries,
-// versionRows turns the answers into rows (pure, unit tests in tests/unit/systems-monitor.test.mjs).
+// versionRows turns the answers into rows (pure, unit tests in tests/unit/systems-monitor.test.mjs). On the VPS
+// (task-18-8) the images of the Compose project replace Docker Desktop and the Supabase CLI: version in the repository
+// against the running one, installed with "Update einspielen" (scripts/ops/update-run.mjs).
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { onServer, pendingImages } from "./images.mjs";
 
 const exec = promisify(execFile);
 const N8N = process.env.N8N_CONTAINER ?? "n8n";
@@ -62,7 +65,16 @@ export async function collectVersions() {
       .filter((entry) => entry.current && entry.current !== entry.latest);
   } catch { /* npm failed */ }
 
+  let server = null;
+  if (onServer()) {
+    try {
+      const { services, running } = pendingImages();
+      server = { images: services.filter((entry) => running[entry.service]).map((entry) => ({ service: entry.service, running: running[entry.service], wanted: entry.image })) };
+    } catch { server = { images: null }; }
+  }
+
   return {
+    server,
     docker: { current: desktop?.match(/Docker Desktop ([\d.]+)/)?.[1] ?? null, latest: appcast?.match(/<title>Version ([\d.]+)/)?.[1] ?? null },
     supabaseCli: { current: first(cli), latest: first(cliLatest) },
     // Image versions the installed CLI expects, against the images of the running containers
@@ -98,7 +110,8 @@ const NPM_NOTES = (name) => `https://www.npmjs.com/package/${name}?activeTab=ver
 
 export function versionRows(raw) {
   const row = (key, label, current, latest, notes, how, extra = {}) => ({ key, label, current, latest, notes, how, ...advise(current, latest), ...extra });
-  const rows = [
+  const tagOf = (image) => (image ?? "").split(":").slice(1).join(":");
+  const rows = raw.server ? [] : [
     row("docker", "Docker Desktop", raw.docker.current, raw.docker.latest, "https://docs.docker.com/desktop/release-notes/",
       "Docker Desktop → Check for updates; vorher Sicherung (npm run backup)"),
     row("supabase_cli", "Supabase CLI", raw.supabaseCli.current, raw.supabaseCli.latest, "https://github.com/supabase/cli/releases",
@@ -106,7 +119,19 @@ export function versionRows(raw) {
   ];
 
   const images = raw.supabaseImages;
-  if (images === null) {
+  if (raw.server) {
+    const list = raw.server.images;
+    const differ = (list ?? []).filter((image) => image.running !== image.wanted);
+    rows.push({
+      key: "server_images", label: "Images (Server)", notes: "https://github.com/FuzzCube/RhenWerk-WebSite/pulls",
+      current: list ? `${list.length} Dienste` : null, latest: list ? (differ.length ? `${differ.length} bereit` : "wie im Repository") : null,
+      level: list === null ? "unknown" : differ.length ? "update" : "current",
+      text: list === null ? "Nicht geprüft" : differ.length ? "Update bereit" : "Aktuell",
+      how: "Neue Versionen kommen als Dependabot-PR; nach dem Merge „Update einspielen“ (Sicherung, Selbsttest, Rückfall bei Fehler; docs/betrieb.md 6)",
+      pending: differ.length,
+      items: differ.map((image) => ({ name: image.service, current: tagOf(image.running), latest: tagOf(image.wanted) })),
+    });
+  } else if (images === null) {
     rows.push(row("supabase_images", "Supabase-Images", null, null, "https://github.com/supabase/cli/releases", ""));
   } else {
     const differ = images.filter((image) => image.running !== image.expected);
@@ -119,8 +144,9 @@ export function versionRows(raw) {
     });
   }
 
-  rows.push(row("n8n", "n8n", raw.n8n.current, raw.n8n.latest, "https://docs.n8n.io/release-notes/",
-    "Neues Image ziehen und Container neu anlegen (docs/betrieb.md 6, vierteljährlich); vorher Sicherung, danach Executions prüfen"));
+  rows.push(row("n8n", "n8n", raw.n8n.current, raw.n8n.latest, "https://docs.n8n.io/release-notes/", raw.server
+    ? "Dependabot-PR für n8nio/n8n mergen, danach „Update einspielen“ (docs/betrieb.md 6)"
+    : "Neues Image ziehen und Container neu anlegen (docs/betrieb.md 6, vierteljährlich); vorher Sicherung, danach Executions prüfen"));
 
   const node = row("node", "Node.js", raw.node.current, raw.node.latest,
     raw.node.latest ? `https://nodejs.org/en/blog/release/v${raw.node.latest}` : "https://nodejs.org/en/blog/release",

@@ -84,6 +84,8 @@ export type VersionRow = {
   how: string;
   hint?: string;
   items?: VersionItem[];
+  // Images (Server, task-18-8): services whose image in the repository differs from the running one
+  pending?: number;
 };
 
 const LEVEL: Record<VersionLevel, DisplayStatus> = {
