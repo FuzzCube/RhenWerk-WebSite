@@ -1,6 +1,7 @@
 import { issueSignedToken, presignUrl } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { requiresHumanReview, validatePayload, type Attachment, type InvalidField, type ServiceRequestPayload } from "@/lib/form-contract";
+import { accessHeaders } from "@/lib/supabase/access";
 
 const windows = new Map<string, { count: number; resetAt: number }>();
 const RATE_WINDOW_MS = 10 * 60 * 1000;
@@ -95,7 +96,8 @@ export async function POST(request: Request) {
   };
   try {
     const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json" };
-    if (!n8nWebhookUrl && process.env.MAKE_API_KEY) headers["x-make-apikey"] = process.env.MAKE_API_KEY;
+    if (n8nWebhookUrl) Object.assign(headers, accessHeaders());
+    else if (process.env.MAKE_API_KEY) headers["x-make-apikey"] = process.env.MAKE_API_KEY;
     const integrationResponse = await fetch(webhookUrl, { method: "POST", headers, body: JSON.stringify(integrationPayload), cache: "no-store", signal: AbortSignal.timeout(175_000) });
     const responseText = await integrationResponse.text();
     let responseBody: unknown;

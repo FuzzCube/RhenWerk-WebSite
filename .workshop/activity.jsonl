@@ -451,3 +451,4 @@
 {"timestamp":"2026-10-22T10:28:45Z","type":"task_completed","taskId":"task-18-11","summary":"House Items Bot als eigenes Projekt /opt/houseitems auf dem VPS (Supabase schlank, n8n, Tunnel houseitems-vps mit bot.rheinwerk-service.online nur /webhook/); Daten wie auf Oracle, Bot in Telegram geprüft."}
 {"timestamp":"2026-10-22T10:28:45Z","type":"task_started","taskId":"task-18-12","summary":"Umzug von Personal Copilot vom Oracle-Server auf den VPS begonnen."}
 {"timestamp":"2026-10-22T10:30:12Z","type":"task_completed","taskId":"task-18-12","summary":"Personal Copilot als eigenes Projekt /opt/personal-copilot auf dem VPS (nur Datenbank mit REST-API, kein öffentlicher Zugang); Zeilenzahlen identisch mit Oracle."}
+{"timestamp":"2026-10-22T10:32:24Z","type":"task_started","taskId":"task-18-4","summary":"Website auf Vercel begonnen; Nutzer erlaubt Push nach GitHub und Vercel-CLI."}

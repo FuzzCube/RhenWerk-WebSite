@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Passwort geändert</title>
+</head>
+<!-- task-11-5: Supabase Auth notification after every password change (own change, reset link or admin). -->
+<body style="margin: 0; padding: 0; background: #F2F5F7; font-family: Inter, Arial, Helvetica, sans-serif; color: #0B1F33;">
+<div style="display: none; max-height: 0; overflow: hidden;">Das Passwort Ihres RheinWerk-Kontos wurde geändert.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #F2F5F7;">
+  <tbody><tr><td align="center" style="padding: 32px 16px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 100%;">
+      <tbody>
+      <tr><td style="background: #0B1F33; padding: 24px 40px; font-family: Manrope, Arial, Helvetica, sans-serif; font-size: 24px; line-height: 28px; font-weight: 700; color: #FFFFFF;">RheinWerk</td></tr>
+      <tr><td style="background: #B7D83D; height: 4px; font-size: 0; line-height: 0;"></td></tr>
+      <tr><td style="background: #FCFBF7; border: 1px solid #E5EAEE; border-top: 0; padding: 36px 40px;">
+        <h1 style="margin: 0 0 20px 0; font-family: Manrope, Arial, Helvetica, sans-serif; font-size: 24px; line-height: 30px; font-weight: 700; color: #0B1F33;">Ihr Passwort wurde geändert</h1>
+        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 26px;">Guten Tag,</p>
+        <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 26px;">das Passwort für {{ .Email }} im RheinWerk-Mitarbeiterbereich wurde soeben geändert.</p>
+        <p style="margin: 0; font-size: 16px; line-height: 26px;">Waren Sie das nicht, wenden Sie sich bitte sofort an die Administration.</p>
+      </td></tr>
+      <tr><td style="padding: 20px 40px; font-size: 13px; line-height: 20px; color: #526574;">RheinWerk Industrieservice · Service Desk</td></tr>
+      </tbody>
+    </table>
+  </td></tr></tbody>
+</table>
+</body>
+</html>

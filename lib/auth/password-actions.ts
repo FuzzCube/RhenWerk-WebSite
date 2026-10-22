@@ -9,6 +9,7 @@ import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { isFreshRecovery, newPasswordErrors } from "./password";
 import { resetFailures } from "./throttle-server";
+import { accessHeaders } from "@/lib/supabase/access";
 
 // Password reset and change (task-11-5). Passwords are only passed to Supabase Auth: they are never stored,
 // logged or sent back to the browser (error states return no values for password fields).
@@ -67,7 +68,7 @@ export async function changeOwnPassword(_previous: FormState, formData: FormData
   Object.assign(fieldErrors, newPasswordErrors(password, password_repeat, current_password || undefined));
   if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", {}, fieldErrors);
 
-  const check = createPlainClient(getSupabaseUrl(), getSupabasePublishableKey(), { auth: { persistSession: false, autoRefreshToken: false } });
+  const check = createPlainClient(getSupabaseUrl(), getSupabasePublishableKey(), { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: accessHeaders() } });
   const { error: wrong } = await check.auth.signInWithPassword({ email: employee.email, password: current_password });
   if (wrong) return formError("Bitte die markierten Felder prüfen.", {}, { current_password: "Das aktuelle Passwort ist nicht korrekt." });
   await check.auth.signOut({ scope: "local" });

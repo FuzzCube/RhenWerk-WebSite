@@ -97,7 +97,8 @@ services:
       timeout: 5s
       interval: 5s
       retries: 3
-    # Entspricht supabase/config.toml [auth]; SMTP und E-Mail-Vorlagen für echte Passwort-Mails folgen in task-18-4
+    # Entspricht supabase/config.toml [auth]. Passwort-Mails (task-18-4) über Gmail-SMTP; die Vorlagen liefert die Website
+    # unter /auth-mail/ (Kopien von supabase/templates, tests/unit/auth-mail.test.mjs)
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
@@ -133,6 +134,11 @@ services:
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
+      GOTRUE_MAILER_SUBJECTS_RECOVERY: "RheinWerk: Neues Passwort festlegen"
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: ${SITE_URL}/auth-mail/passwort-zuruecksetzen.html
+      GOTRUE_MAILER_NOTIFICATIONS_PASSWORD_CHANGED_ENABLED: "true"
+      GOTRUE_MAILER_SUBJECTS_PASSWORD_CHANGED_NOTIFICATION: "RheinWerk: Ihr Passwort wurde geändert"
+      GOTRUE_MAILER_TEMPLATES_PASSWORD_CHANGED_NOTIFICATION: ${SITE_URL}/auth-mail/passwort-geaendert.html
 
   rest:
     <<: *restart

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { accessHeaders } from "./access";
 import { getSupabasePublishableKey, getSupabaseUrl } from "./env";
 
 // Refreshes the auth session and writes updated cookies to request and response.
@@ -8,6 +9,7 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    global: { headers: accessHeaders() },
     cookies: {
       getAll() {
         return request.cookies.getAll();

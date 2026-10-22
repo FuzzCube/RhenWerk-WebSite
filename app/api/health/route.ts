@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { accessHeaders } from "@/lib/supabase/access";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Health check (task-17-4) for monitors and the watchdog. Public: only
@@ -13,9 +14,9 @@ const TIMEOUT_MS = 3000;
 
 type Check = { ok: boolean; ms: number; fehler?: string };
 
-// Commit of a built release (release.json of a later deployment on a server); "dev" in the development folder
-// (task-17-17: no production copy on this computer)
+// Commit of the deployment (Vercel, task-18-4) or of a built release (release.json); "dev" in the development folder
 function releaseCommit(): string {
+  if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA.slice(0, 7);
   try {
     return (JSON.parse(readFileSync(path.join(process.cwd(), "release.json"), "utf8")) as { commit: string }).commit;
   } catch {
@@ -54,7 +55,7 @@ function checkN8n(): Promise<Check> | Check {
   const webhook = process.env.N8N_WEBHOOK_URL;
   if (!webhook) return { ok: false, ms: 0, fehler: "N8N_WEBHOOK_URL fehlt" };
   return timed(async (signal) => {
-    const response = await fetch(new URL("/healthz", webhook), { signal, cache: "no-store" });
+    const response = await fetch(new URL("/healthz", webhook), { headers: accessHeaders(), signal, cache: "no-store" });
     return response.ok ? null : `HTTP ${response.status}`;
   });
 }

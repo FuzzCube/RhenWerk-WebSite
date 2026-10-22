@@ -67,7 +67,7 @@ N8N_HOST=n8n.rheinwerk-service.online
 # Tunnel des Servers: Token aus Cloudflare Zero Trust → Networks → Tunnels (betrieb.md 3.5)
 CLOUDFLARE_TUNNEL_TOKEN=
 
-# SMTP für Passwort-Mails von Supabase Auth (task-18-4)
+# SMTP für Passwort-Mails von Supabase Auth (task-18-4): Gmail mit App-Passwort, Absender = SMTP_USER
 SMTP_ADMIN_EMAIL=
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587

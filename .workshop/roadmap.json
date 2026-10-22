@@ -3716,7 +3716,7 @@
           "description": "Vercel-Projekt aus dem GitHub-Repository: Umgebungsvariablen (Supabase auf dem VPS, Turnstile-Produktionsschlüssel, Blob, ElevenLabs), Domain rheinwerk-service.online, Supabase Auth site_url und Redirects, SMTP für Passwort-Mails; Rückweg über Instant Rollback. Nach task-18-1: Region cdg1 (Paris, nahe dem Server in Roubaix); Supabase-Client und n8n-Aufrufe (Anfrageformular, /api/health) senden die Cloudflare-Access-Kopfzeilen des Service-Tokens; Website sichtbar als Portfolio- und Demoprojekt gekennzeichnet (Bedingung des Hobby-Tarifs, betrieb.md 3.4); Datenschutzerklärung nennt Hosting bei OVHcloud in Frankreich und Vercel.",
           "order": 4,
           "weight": 2,
-          "status": "ready",
+          "status": "in_progress",
           "dependsOn": [
             "task-18-3"
           ],
@@ -3725,7 +3725,7 @@
             "Grenzen des Hobby-Tarifs geprüft",
             "setup.md, betrieb.md"
           ],
-          "startedAt": null,
+          "startedAt": "2026-10-22T10:32:24Z",
           "completedAt": null,
           "verification": {
             "status": "not_run",
