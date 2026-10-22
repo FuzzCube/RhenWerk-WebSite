@@ -198,7 +198,8 @@
     "binaryMode": "separate",
     "saveDataSuccessExecution": "none",
     "saveDataErrorExecution": "all",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "rwFehlerMeldung1"
   },
   "description": "Wissensbasis des Website-Assistenten neu aufbauen (task-18-10): ops/vps/rag-import.sh."
 }

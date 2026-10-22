@@ -12,7 +12,7 @@ Stand: 20.10.2026, n8n 2.40.7 im Docker-Container `n8n`, alle Angaben gegen das 
 
 ## 2. Die Workflows im Überblick
 
-Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei weitere gehören zum Telefonassistenten (Phase 13), dazu der Error-Workflow (task-17-8) und der Selbsttest für Systemupdates (task-18-8). Alle sind veröffentlicht (aktiv); andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
+Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei weitere gehören zum Telefonassistenten (Phase 13), dazu der Error-Workflow (task-17-8), der Selbsttest für Systemupdates (task-18-8) und der Website-Assistent mit seinem Import (task-18-10). Alle sind veröffentlicht (aktiv); andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
 
 | # | Workflow (Name in n8n) | ID | Auslöser | Aufgabe in einem Satz |
 | --- | --- | --- | --- | --- |
@@ -25,6 +25,8 @@ Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei wei
 | 7 | RheinWerk · Telefonassistent Werkzeuge | `rwAgentTools2026` | 12 Webhooks `POST /webhook/agent-*` | Werkzeuge der Telefonassistentin „Mira“ (Einsatzgebiet, freie Termine, Anfrage anlegen …) |
 | 8 | RheinWerk · Telefonassistent Auswertung | `rwCallAnalysis26` | Zeitplan alle 2 Minuten | holt beendete Gespräche aus ElevenLabs, fasst sie mit OpenAI zusammen und speichert sie |
 | 9 | RheinWerk · Fehlermeldung | `rwFehlerMeldung1` | Error Trigger (Error-Workflow von 1–8) | schreibt jeden fehlgeschlagenen Lauf als Warnung `n8n:fehler:<id>` über `raise_alert` (kritisch bei 1, 6, 7); die E-Mail schickt der Wächter (`n8n/generate_error_workflow.py`) |
+| 11 | RheinWerk · Assistent | `rwAssistent2026` | Webhook `POST /webhook/rheinwerk-assistant` | Website-Assistent: beantwortet Fragen aus der Wissensbasis `rag_documents` (Supabase Vector Store, `text-embedding-3-large`, Sprachmodell `gpt-5.6-luna`), Gesprächsverlauf je Besucher (`session_id`); Aufruf nur über `/api/assistant` der Website (task-18-10, Abschnitt 9) |
+| 12 | RheinWerk · Dokumente importieren | `rwRagImport2026` | von Hand (`sh ops/vps/rag-import.sh`) | leert `rag_documents` und schreibt die Abschnitte aus `n8n/rag-documents/*.md` mit Embedding und `metadata.file` neu; nicht veröffentlicht, vom Wächter nicht erwartet |
 | 10 | RheinWerk · Selbsttest | `rwSelbsttest2026` | Webhook `GET /webhook/rheinwerk-selbsttest` | liest eine Zeile aus `system_status` mit dem Supabase-Credential und antwortet `{"ok": true}`; Selbsttest nach einem Systemupdate (task-18-8, `docs/betrieb.md` 6, `n8n/generate_selftest_workflow.py`) |
 
 ## 3. Gesamtbild
@@ -343,3 +345,23 @@ Voraussetzung: Supabase läuft ([supabase-lokal.md](supabase-lokal.md)).
 | Analysen bleiben aus | OpenAI-Guthaben/Schlüssel | Executions von Workflow 3 ansehen; nach Behebung holt der Zeitplan alles nach |
 | Mira sagt „Werkzeug gestört“ | Tunnel, Access oder Datenbank | `AGENT_BASE_URL=https://n8n.rheinwerk-service.online npm run test:agent` |
 | Anrufe erscheinen nicht im Dashboard | ElevenLabs-Schlüssel oder Workflow 8 inaktiv | Executions von Workflow 8 |
+
+## 9. Website-Assistent (task-18-10)
+
+Bis 22.10.2026 lief der Assistent der Website auf dem Oracle-Server (n8n „RheinWerk Local Assistant“, Tabelle `rheinwerk` mit 36 Abschnitten, Aufruf direkt aus dem Browser über `rheinwerk-rag.130-61-221-231.sslip.io` mit CORS). Seitdem in RheinWerk:
+
+| Teil | Wo |
+| --- | --- |
+| Dokumente | `n8n/rag-documents/*.md` (sieben fiktive Unternehmensdokumente, unverändert vom Oracle-Server) |
+| Wissensbasis | Tabelle `rag_documents` (pgvector, 3 072 Dimensionen, kein Index nötig) und `match_rag_documents`; nur `service_role` (Migration `20261022200000`) |
+| Systemprompt | `n8n/assistant_prompt.md` (unverändert vom Oracle-Server) |
+| Workflows | `n8n/generate_assistant_workflows.py` → 11 und 12 |
+| Website | `components/assistant.tsx` → `POST /api/assistant` (`app/api/assistant/route.ts`): Frage 1–500 Zeichen, `session_id` je Browser-Tab, 20 Fragen je Besucher in 10 Minuten; weiter an n8n mit Access-Service-Token (`N8N_ASSISTANT_URL`, sonst `/webhook/rheinwerk-assistant` auf dem Host von `N8N_WEBHOOK_URL`) |
+| Cloudflare Access | Pfad `n8n.rheinwerk-service.online/webhook/rheinwerk-assistant` in der Anwendung „RheinWerk Webhook“ (Service Auth) |
+
+Behoben beim Umzug: Der Gesprächsverlauf auf Oracle hatte einen festen Schlüssel (`rheinwerk-test`) für alle Besucher; jetzt eigener Verlauf je Browser-Tab. Die Quelldatei steht in `metadata.file` (auf Oracle nur `blob`).
+
+**Dokument ändern:** Datei unter `n8n/rag-documents/` bearbeiten, committen und pushen; nach dem Deployment auf dem VPS `sh /opt/rheinwerk/app/ops/vps/rag-import.sh` (leert die Wissensbasis und baut sie neu auf, etwa 5 Sekunden; Ausgabe: Abschnitte je Datei). Stand 22.10.2026: 29 Abschnitte aus 7 Dateien.
+
+Vergleich am 22.10.2026 (gleiche Fragen an Oracle und RheinWerk: Preis einer Inspektion, Notfallkanal, betreute Anlagen, kritische Fälle, Geschäftsführung, themenfremde Frage): inhaltlich gleiche Antworten, 1–7 Sekunden.
+

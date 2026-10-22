@@ -24,7 +24,9 @@ OPENAI = {"openAiApi": {"id": "qK86QY5Bm6EfR9Zz", "name": "OpenAI account 3"}}
 CHAT_MODEL = {"__rl": True, "value": "gpt-5.6-luna", "mode": "list", "cachedResultName": "gpt-5.6-luna"}
 EMBEDDINGS = "text-embedding-3-large"
 TABLE = {"__rl": True, "value": "rag_documents", "mode": "list", "cachedResultName": "rag_documents"}
-SETTINGS = {"executionOrder": "v1", "binaryMode": "separate", "saveDataSuccessExecution": "none", "saveDataErrorExecution": "all", "callerPolicy": "workflowsFromSameOwner"}
+# Failed runs become a warning (error workflow "RheinWerk · Fehlermeldung", task-17-8)
+SETTINGS = {"executionOrder": "v1", "binaryMode": "separate", "saveDataSuccessExecution": "none", "saveDataErrorExecution": "all",
+            "callerPolicy": "workflowsFromSameOwner", "errorWorkflow": "rwFehlerMeldung1"}
 
 
 def stable_id(workflow, name):

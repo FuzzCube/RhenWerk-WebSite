@@ -43,7 +43,8 @@ workflow = {
     "active": False,
     "nodes": nodes,
     "connections": connections,
-    "settings": {"executionOrder": "v1", "saveDataSuccessExecution": "none", "saveDataErrorExecution": "all", "callerPolicy": "workflowsFromSameOwner"},
+    "settings": {"executionOrder": "v1", "saveDataSuccessExecution": "none", "saveDataErrorExecution": "all", "callerPolicy": "workflowsFromSameOwner",
+                 "errorWorkflow": "rwFehlerMeldung1"},
     "description": "Selbsttest nach einem Systemupdate (task-18-8): liest eine Zeile aus system_status mit dem Supabase-Credential.",
 }
 (OUT / "rheinwerk-selftest.workflow.json").write_text(json.dumps(workflow, ensure_ascii=False, indent=2) + "\n")

@@ -88,7 +88,8 @@
     "executionOrder": "v1",
     "saveDataSuccessExecution": "none",
     "saveDataErrorExecution": "all",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "rwFehlerMeldung1"
   },
   "description": "Selbsttest nach einem Systemupdate (task-18-8): liest eine Zeile aus system_status mit dem Supabase-Credential."
 }

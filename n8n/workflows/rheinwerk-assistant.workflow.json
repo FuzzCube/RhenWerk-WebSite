@@ -216,7 +216,8 @@
     "binaryMode": "separate",
     "saveDataSuccessExecution": "none",
     "saveDataErrorExecution": "all",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "rwFehlerMeldung1"
   },
   "description": "Website-Assistent (task-18-10): beantwortet Fragen aus der Wissensbasis rag_documents; Aufruf nur über /api/assistant."
 }

@@ -538,3 +538,10 @@ Nutzerentscheidungen 22.10.2026, ergänzen den Eintrag zu task-18-1:
 - Wiederherstellung und Update schließen sich gegenseitig aus (`request_restore`, `request_image_update`) und teilen die Sperre `maintenance.lock` für Wächter und tägliche Sicherung.
 - Dependabot-PR #3 (PostgREST v14 → v16) geprüft: keine der Änderungen betrifft RheinWerk (`jwt-role-claim-key` nicht gesetzt, `db-schemas` ohne `pg_catalog`, kein `Prefer: timezone`).
 
+## 2026-10-22: Website-Assistent in RheinWerk (task-18-10)
+
+- Die Website fragt den Assistenten nur noch über die eigene Route `/api/assistant`; n8n bleibt hinter Cloudflare Access, der Service-Token liegt nur auf dem Server. Prüfung der Frage (1–500 Zeichen) und 20 Fragen je Besucher in 10 Minuten (Speicher einer Server-Instanz; genügt für das Demoprojekt, sonst Upstash/Edge Config).
+- Wissensbasis als Tabelle `rag_documents` in der RheinWerk-Datenbank, nur für `service_role`; die Embeddings werden in RheinWerk neu erzeugt statt kopiert, damit die Quelldatei in `metadata.file` steht. Dokumente und Systemprompt liegen im Repository (fiktive Daten).
+- Gesprächsverlauf je Browser-Tab (`session_id`, UUID) statt eines festen Schlüssels für alle Besucher wie auf Oracle.
+- Sprachmodell wie auf Oracle (`gpt-5.6-luna`), damit die Antworten gleich bleiben; OpenAI-Credential von RheinWerk.
+
