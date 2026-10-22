@@ -4230,20 +4230,27 @@
           "description": "Karte Termin bestätigen entfällt; Zur Einsatzplanung öffnet die Plantafel mit der Vormerkung oder dem Wunschtag als Auswahl; Planung schließt die offene Vormerkung ohne Absage an den Kunden.",
           "order": 2,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Auswahl auf der Vormerkung",
             "Vormerkung nach Planung geschlossen",
             "test:db, lint, typecheck, build"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T18:53:59Z",
+          "completedAt": "2026-10-22T19:05:08Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T19:05:08Z",
+            "commands": [
+              "supabase test db (54 Dateien, 1210 Tests)",
+              "APP_URL=http://localhost:3100 npm run test:ui (unter next dev)",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "Browser: Anfrage mit Vormerkung aus dem Formular, Plantafel, Einsatz planen"
+            ],
+            "summary": "Migration 20261022235000_plan_takes_hold.sql (lokal per psql): schedule_visit schließt die offene Vormerkung der Anfrage als confirmed mit dem Einsatz (auch bei anderer Zeit), ohne E-Mail; confirm_visit_hold ohne doppeltes Ereignis. Anfrage: Karte Termin bestätigen entfällt; Einsatz planen zeigt die Vormerkung mit Wunsch des Kunden, Zur Einsatzplanung, Terminwunsch ablehnen; bei offener Erstbearbeitung eigene Karte ohne Bestätigen. Plantafel: ohne Woche/Auswahl Start in der Woche der Vormerkung (sonst am Wunschtag), Vormerkung als Auswahl mit ihrer Dauer, Hinweis in der Leiste. Geprüft: RIS-2026-02896 → Plantafel ab 02.11. mit Auswahl Anna 07:00–09:00, Einsatz planen → Vormerkung confirmed, Terminbestätigung. test:ui: Vormerkungsfälle bestanden (neu geschrieben); 2 Fehler im Abschnitt hängender E-Mail-Versand wegen lokal liegender Test-E-Mails (lokales n8n aus), unabhängig von dieser Änderung."
           }
         },
         {

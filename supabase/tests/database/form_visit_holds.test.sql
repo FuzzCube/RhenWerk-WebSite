@@ -1,7 +1,7 @@
 -- task-19-3: the website form holds the wished window (least booked technician of the month), otherwise the next free
 -- one; manual planning queues the same Terminbestätigung. Run with: supabase test db
 begin;
-select plan(14);
+select plan(17);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'd1@x.test'),
@@ -91,6 +91,19 @@ select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-
 select throws_ok($$select public.queue_visit_confirmation((select id from public.visits where request_id = 'ddbb0000-0000-4000-8000-000000000001'))$$, '42501', null, 'technician cannot');
 select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-0000000000d1', 'role', 'authenticated')::text, true);
 select throws_ok($$select public.queue_visit_confirmation(gen_random_uuid())$$, '42501', null, 'unknown visit');
+
+-- task-20-2: planning a held request elsewhere on the board closes the hold, without a rejection e-mail
+reset role;
+update public.requests set intake_status = 'processed', intake_completed_at = now(), intake_mode = 'manual', manual_minutes_baseline = 15, priority = 'normal'
+where id = 'ddbb0000-0000-4000-8000-000000000004';
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-0000000000d1', 'role', 'authenticated')::text, true);
+select lives_ok($$select public.schedule_visit('ddbb0000-0000-4000-8000-000000000004', (select version from public.requests where id = 'ddbb0000-0000-4000-8000-000000000004'),
+  '00000000-0000-0000-0000-0000000000b1', pg_temp.at('14:00', 1), pg_temp.at('16:00', 1))$$, 'held request planned in another window');
+reset role;
+select ok((select h.status = 'confirmed' and h.visit_id is not null and h.decided_by = '00000000-0000-0000-0000-0000000000d1'
+  from public.visit_holds h where h.request_id = 'ddbb0000-0000-4000-8000-000000000004'), 'hold closed with the planned visit');
+select is((select count(*)::int from public.messages where request_id = 'ddbb0000-0000-4000-8000-000000000004' and kind = 'other'), 0, 'no e-mail about the hold');
 
 select * from finish();
 rollback;

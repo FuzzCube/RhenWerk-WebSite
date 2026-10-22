@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { confirmHold, createCustomerFromRequest, linkCustomer, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
+import { createCustomerFromRequest, linkCustomer, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
 import { availableActions, DraftActions, RequestActions } from "@/components/dashboard/request-actions";
 import { CheckboxField, HiddenField, SaveForm, SelectField, SuggestField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
@@ -21,7 +21,7 @@ import { describeEvent } from "@/lib/events";
 import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange } from "@/lib/format";
 import { nextReminderText, stageLabel } from "@/lib/reminders";
 import { contractHint } from "@/lib/service-contract";
-import { label, STATUS, statusInfo } from "@/lib/status";
+import { label, statusInfo } from "@/lib/status";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -180,7 +180,7 @@ export default async function RequestPage({ params }: Props) {
         </div>
 
         <aside className="request-layout__side">
-          {!technician && openHold && <HoldCard hold={openHold} request={request} person={person} />}
+          {!technician && openHold && !canPlan && <HoldCard hold={openHold} request={request} person={person} />}
           {!hasActions && closedFor && (
             // Technician: nothing left to do, so the slot says how the request ended
             <section id="aktionen" className={`rw-card ${closedFor === "completed" ? "rw-card--success" : "rw-card--neutral"} request-next`} aria-labelledby="aktionen-title">
@@ -218,8 +218,11 @@ export default async function RequestPage({ params }: Props) {
               {canPlan && (
                 <div className="request-next__plan">
                   <p className="request-next__title">Einsatz planen</p>
-                  <p className="rw-card__note">Erstbearbeitung abgeschlossen. Techniker und Termin in der Einsatzplanung wählen.</p>
+                  {openHold
+                    ? <HoldNote hold={openHold} request={request} person={person} />
+                    : <p className="rw-card__note">Erstbearbeitung abgeschlossen. Techniker und Termin in der Einsatzplanung wählen.</p>}
                   <Link className="button button--primary" href={`/dashboard/planung?anfrage=${request.id}`}>Zur Einsatzplanung</Link>
+                  {openHold && <HoldReject hold={openHold} />}
                 </div>
               )}
               <RequestActions detail={detail} employee={employee} />
@@ -470,45 +473,50 @@ function CustomerSuggestions({ request, suggestions }: { request: RequestDetail[
 }
 
 const WISHED_TIME: Record<string, string> = { any: "Uhrzeit beliebig", morning: "vormittags", afternoon: "nachmittags" };
-const priorityOptions = Object.entries(STATUS.request_priority).map(([value, info]) => ({ value, label: info.label }));
 
-// Window held by the phone assistant (task-13-3) or from the wish in the website form (task-19-3): the dispatcher
-// confirms with one click (open intake completed with the chosen priority, visit planned, customer e-mail) or rejects
-function HoldCard({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
-  const intakeOpen = request.intake_status !== "processed";
-  const form = hold.origin === "form";
+// Held window of the phone assistant (task-13-3) or the website form (task-19-3). Since task-20-2 it is planned on the
+// planning board, where it is the preselected slot; planning there closes it (also at another time).
+function HoldNote({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
   const payload = request.raw_payload as { request?: { preferred_time?: string } } | null;
   const time = payload?.request?.preferred_time ?? "any";
   const wish = `${request.requested_visit_date ? formatCalendarDate(request.requested_visit_date) : "–"}, ${WISHED_TIME[time] ?? `ab ${time} Uhr`}`;
   return (
-    <section id="terminwunsch" className="rw-card rw-card--action request-hold" aria-labelledby="terminwunsch-title">
-      <p className="request-next__eyebrow">{form ? "Terminwunsch (Formular)" : "Terminwunsch (Telefon)"}</p>
-      <h2 id="terminwunsch-title" className="request-next__title request-hold__when">{formatTimeRange(hold.starts_at, hold.ends_at)}</h2>
-      <p className="rw-card__note">
-        {form ? <>Automatisch für {person(hold.technician_id)} vorgemerkt (am wenigsten ausgelastet im Monat)</> : <>Vom Telefonassistenten für {person(hold.technician_id)} vorgemerkt</>}, gilt bis <span className="mono">{formatDateTime(hold.expires_at)}</span>. Bestätigen plant den Einsatz und schickt dem Kunden eine Terminbestätigung.
+    <>
+      <p className="rw-card__note request-hold__line">
+        <strong>Terminwunsch vorgemerkt{hold.origin === "form" ? " (Formular)" : " (Telefon)"}:</strong> <span className="mono">{formatTimeRange(hold.starts_at, hold.ends_at)}</span>, {person(hold.technician_id)}, gilt bis <span className="mono">{formatDateTime(hold.expires_at)}</span>.
       </p>
-      {form && (
+      {hold.origin === "form" && (
         <p className={`rw-card__note${hold.wish_met === false ? " request-hold__hint" : ""}`}>
           Wunsch des Kunden: {wish}.{hold.wish_met === false && " Zu dieser Zeit war niemand frei – vorgemerkt ist der nächste freie Termin."}
         </p>
       )}
-      <SaveForm action={confirmHold} submitLabel="Termin bestätigen">
-        <HiddenField name="request_id" value={request.id} />
-        <HiddenField name="version" value={request.version} />
+      <p className="rw-card__note">In der Einsatzplanung ist er als Auswahl gesetzt; „Einsatz planen“ übernimmt ihn oder eine andere Zeit und schickt die Terminbestätigung.</p>
+    </>
+  );
+}
+
+function HoldReject({ hold }: { hold: RequestDetail["holds"][number] }) {
+  return (
+    <details className="action request-hold__reject">
+      <summary>Terminwunsch ablehnen</summary>
+      <SaveForm action={rejectHold} submitLabel="Vormerkung ablehnen" submitVariant="danger">
         <HiddenField name="hold_id" value={hold.id} />
-        {intakeOpen && (
-          <SelectField name="priority" label="Priorität" required defaultValue={request.priority ?? "normal"} options={priorityOptions}
-            hint="Die Erstbearbeitung ist noch offen: Angaben oben kurz prüfen, dann schließt der Knopf sie mit dieser Priorität ab." />
-        )}
+        <TextField name="reason" label="Grund für den Kunden" required />
+        <TextAreaField name="alternative" label="Gegenvorschlag" rows={2} hint="Zum Beispiel „Donnerstag ab 10 Uhr“. Steht in der E-Mail an den Kunden." />
       </SaveForm>
-      <details className="action">
-        <summary>Ablehnen</summary>
-        <SaveForm action={rejectHold} submitLabel="Vormerkung ablehnen" submitVariant="danger">
-          <HiddenField name="hold_id" value={hold.id} />
-          <TextField name="reason" label="Grund für den Kunden" required />
-          <TextAreaField name="alternative" label="Gegenvorschlag" rows={2} hint="Zum Beispiel „Donnerstag ab 10 Uhr“. Steht in der E-Mail an den Kunden." />
-        </SaveForm>
-      </details>
+    </details>
+  );
+}
+
+// Intake still open: the hold is shown with the option to reject it; planning follows after the intake
+function HoldCard({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
+  return (
+    <section id="terminwunsch" className="rw-card rw-card--action request-hold" aria-labelledby="terminwunsch-title">
+      <p className="request-next__eyebrow">{hold.origin === "form" ? "Terminwunsch (Formular)" : "Terminwunsch (Telefon)"}</p>
+      <h2 id="terminwunsch-title" className="request-next__title request-hold__when">{formatTimeRange(hold.starts_at, hold.ends_at)}</h2>
+      <HoldNote hold={hold} request={request} person={person} />
+      <p className="rw-card__note request-hold__hint">Erst die Erstbearbeitung abschließen, dann in der Einsatzplanung planen.</p>
+      <HoldReject hold={hold} />
     </section>
   );
 }

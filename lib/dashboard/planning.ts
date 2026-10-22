@@ -194,3 +194,18 @@ export async function loadMonthLoads(day: string, technicians: Technician[], wor
   const loads = Object.fromEntries(technicians.map((tech) => [tech.id, monthLoad({ technicianId: tech.id, day, workingHours, visits: visitList, absences })]));
   return { month: days[0], loads, error: Boolean(visits.error || busy.error) };
 }
+
+// Where the planning board opens for a request (task-20-2): its open hold (technician, window) or the wished day
+export type PlanningTarget = { hold: { technicianId: string; start: string; end: string } | null; wishedDay: string | null };
+
+export async function loadPlanningTarget(requestId: string): Promise<PlanningTarget> {
+  const supabase = await createClient();
+  const [hold, request] = await Promise.all([
+    supabase.from("visit_holds").select("technician_id, starts_at, ends_at").eq("request_id", requestId).eq("status", "open").maybeSingle(),
+    supabase.from("requests").select("requested_visit_date").eq("id", requestId).maybeSingle(),
+  ]);
+  return {
+    hold: hold.data ? { technicianId: hold.data.technician_id, start: hold.data.starts_at, end: hold.data.ends_at } : null,
+    wishedDay: request.data?.requested_visit_date ?? null,
+  };
+}

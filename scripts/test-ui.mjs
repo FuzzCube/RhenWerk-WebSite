@@ -1056,19 +1056,23 @@ try {
       await page.open(`${BASE}/dashboard/planung?woche=${dayKey}`);
       check("  Plantafel zeigt die Vormerkung (schraffiert, nicht blockierend)", await page.eval(`[...document.querySelectorAll(".plan3__blk--hold")].some((e) => (e.getAttribute("title") ?? "").includes(${JSON.stringify(confirmCase.req.request_number)}))`));
       await page.open(`${BASE}/dashboard/anfragen/${confirmCase.req.id}`);
-      const card = await page.eval(`(() => { const c = document.getElementById("terminwunsch"); return c ? { title: c.querySelector("h2")?.textContent ?? "", text: c.textContent } : null; })()`);
-      check("  Anfrage: Block „Terminwunsch (Telefon)“ mit Zeitfenster", !!card && /\d{2}:\d{2}/.test(card.title) && card.text.includes("Termin bestätigen"), JSON.stringify(card));
-      await page.eval(`document.querySelector("#terminwunsch form.save-form").requestSubmit()`);
+      // task-20-2: the hold is shown in "Einsatz planen" and planned on the planning board, where it is preselected
+      const note = await page.eval(`document.querySelector("#aktionen .request-hold__line")?.textContent ?? ""`);
+      check("  Anfrage: „Terminwunsch vorgemerkt“ in „Einsatz planen“ mit Zeitfenster", /13:00/.test(note) && await page.eval(`!!document.querySelector('#aktionen a[href*="/dashboard/planung?anfrage="]')`), note);
+      await page.open(`${BASE}/dashboard/planung?anfrage=${confirmCase.req.id}`);
+      const preset = await page.eval(`document.querySelector(".plan3__blk--pick")?.getAttribute("aria-label") ?? ""`);
+      check("  Plantafel: Vormerkung als Auswahl gesetzt", preset.includes("13:00–15:00"), preset);
+      await page.eval(`document.querySelector(".plan3__form").requestSubmit()`);
       const confirmed = await waitFor(async () => (await admin.from("visit_holds").select("status").eq("id", confirmCase.hold.id).single()).data?.status === "confirmed");
       const { data: planned } = await admin.from("visits").select("scheduled_start, technician_id, status").eq("request_id", confirmCase.req.id);
       const { data: mails } = await admin.from("messages").select("subject, status, approved_by, to_address").eq("request_id", confirmCase.req.id).eq("kind", "other");
-      check("  Bestätigen: Einsatz im Fenster geplant, Bestätigung an den Kunden in der Warteschlange",
+      check("  Planen: Einsatz im Fenster, Vormerkung geschlossen, Terminbestätigung in der Warteschlange",
         confirmed && planned?.length === 1 && Date.parse(planned[0].scheduled_start) === Date.parse(at("13:00")) && mails?.length === 1 && mails[0].approved_by === dispoId && mails[0].subject.startsWith("Terminbestätigung"),
         JSON.stringify({ planned, mails }));
       await page.open(`${BASE}/dashboard/anfragen/${confirmCase.req.id}`);
-      check("  danach kein offener Terminwunsch mehr", await page.eval(`!document.getElementById("terminwunsch")`));
+      check("  danach kein offener Terminwunsch mehr", await page.eval(`!document.querySelector(".request-hold__line")`));
       await page.open(`${BASE}/dashboard/anfragen/${rejectCase.req.id}`);
-      await fillIn(`document.querySelector("#terminwunsch details.action")`, { reason: "Techniker auf Schulung", alternative: "Donnerstag ab 10 Uhr" });
+      await fillIn(`document.querySelector("#aktionen details.request-hold__reject")`, { reason: "Techniker auf Schulung", alternative: "Donnerstag ab 10 Uhr" });
       const rejected = await waitFor(async () => (await admin.from("visit_holds").select("status").eq("id", rejectCase.hold.id).single()).data?.status === "rejected");
       const { data: rejectMail } = await admin.from("messages").select("body_text").eq("request_id", rejectCase.req.id).eq("kind", "other").maybeSingle();
       check("  Ablehnen mit Grund und Gegenvorschlag, E-Mail an den Kunden", rejected && !!rejectMail?.body_text.includes("Techniker auf Schulung") && rejectMail.body_text.includes("Donnerstag ab 10 Uhr"), JSON.stringify(rejectMail));

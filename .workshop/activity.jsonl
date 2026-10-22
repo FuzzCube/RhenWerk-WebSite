@@ -484,3 +484,5 @@
 {"timestamp":"2026-10-22T18:50:02Z","type":"roadmap_updated","taskId":null,"summary":"Roadmap v25: Phase 20 Rückmeldungen nach dem Rundgang mit drei Tasks."}
 {"timestamp":"2026-10-22T18:50:02Z","type":"task_started","taskId":"task-20-1","summary":"Formular: Auswahllisten, Uhrzeit, Dateien ziehen begonnen."}
 {"timestamp":"2026-10-22T18:52:59Z","type":"task_completed","taskId":"task-20-1","summary":"Formular: Pfeile der Auswahllisten mit Abstand, Uhrzeit im 30-Minuten-Raster bis 14 Uhr mit Hinweis, Dateien per Drag and Drop; lint, typecheck, build bestanden."}
+{"timestamp":"2026-10-22T18:53:59Z","type":"task_started","taskId":"task-20-2","summary":"Anfrage führt in die Einsatzplanung mit Vormerkung begonnen."}
+{"timestamp":"2026-10-22T19:05:08Z","type":"task_completed","taskId":"task-20-2","summary":"Anfrage führt in die Einsatzplanung mit der Vormerkung als Auswahl; Planung schließt die Vormerkung; test:db, lint, typecheck, build bestanden, test:ui bis auf 2 umgebungsbedingte Fehler."}

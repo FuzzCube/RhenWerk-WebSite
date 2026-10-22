@@ -235,23 +235,6 @@ export async function resumePaymentReminders(_previous: FormState, formData: For
 
 // Window hold of the phone assistant (task-13-3): confirm plans the visit in the held window (schedule_visit with all
 // checks) and queues a confirmation e-mail; reject needs a reason and may offer an alternative to the customer
-export async function confirmHold(_previous: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(STAFF);
-  const ctx = context(formData);
-  if (!ctx || !UUID.test(ctx.values.hold_id ?? "")) return invalid(formValues(formData));
-  const supabase = await createClient();
-  // One click (task-19-3): with a priority the open intake is completed first, then the hold is confirmed
-  let version = ctx.version;
-  if (ctx.values.priority) {
-    if (!PRIORITIES.includes(ctx.values.priority)) return formError("Bitte die Priorität festlegen.", ctx.values, { priority: "Pflichtangabe für den Abschluss." });
-    const { data, error } = await supabase.rpc("complete_intake", { request_id: ctx.id, expected_version: version, priority: ctx.values.priority as Enums["request_priority"] });
-    if (error || !data) return formError(databaseErrorMessage(error ?? {}), ctx.values);
-    version = data.version;
-  }
-  return run(ctx.values, "Termin bestätigt. Der Einsatz ist eingeplant, die Bestätigung an den Kunden steht in der Warteschlange.", () =>
-    supabase.rpc("confirm_visit_hold", { hold_id: ctx.values.hold_id, expected_version: version }));
-}
-
 export async function rejectHold(_previous: FormState, formData: FormData): Promise<FormState> {
   await requireRole(STAFF);
   const values = formValues(formData);

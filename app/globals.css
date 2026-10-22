@@ -2005,3 +2005,5 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 }
 .system-image-update__list { list-style: none; padding-left: 0 !important; }
 .system-image-update__list li { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Hold of the selected request on the planning board (task-20-2) */
+.plan3__hold-note { margin-top: 4px; padding: 8px 10px; font-size: 13px; line-height: 1.45; background: color-mix(in srgb, var(--rw-color-lime-500) 14%, white); border-left: 3px solid var(--rw-color-lime-500); }

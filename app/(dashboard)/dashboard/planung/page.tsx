@@ -4,11 +4,11 @@ import { PlanBoard, type BoardPick } from "@/components/dashboard/plan-board";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { PriorityText, RequestStatusChip } from "@/components/dashboard/ui/status-chip";
 import { Icon } from "@/components/ui";
-import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime } from "@/lib/berlin-time";
+import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay } from "@/lib/berlin-time";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { getEmployeeNames } from "@/lib/dashboard/requests";
-import { loadAvailability, loadMonthLoads, loadPlanningDays, loadSelectedContext, type Availability, type WorkingHours } from "@/lib/dashboard/planning";
+import { loadAvailability, loadMonthLoads, loadPlanningDays, loadPlanningTarget, loadSelectedContext, type Availability, type WorkingHours } from "@/lib/dashboard/planning";
 import { formatCalendarDate, formatDate, formatDateTime, formatNumber, formatWeekdayDate } from "@/lib/format";
 import { hoursOn, nextWorkingDays, SLOT_DURATIONS } from "@/lib/slot-suggestions";
 import { label } from "@/lib/status";
@@ -32,12 +32,21 @@ export default async function PlanningPage({ searchParams }: Props) {
   const params = await searchParams;
   const today = dayKeyOf(new Date());
   const dayView = single(params.ansicht) === "tag";
-  const focusDay = workday(isDayKey(single(params.tag)) ? single(params.tag) : today);
-  const anchor = workday(isDayKey(single(params.woche)) ? single(params.woche) : today);
+  // Opened from a request (task-20-2): without a chosen week or slot the board starts at its hold or wished day, and
+  // the hold is the preselected slot
+  const requestParam = single(params.anfrage);
+  const target = /^[0-9a-f-]{36}$/i.test(requestParam) ? await loadPlanningTarget(requestParam) : null;
+  const fresh = !single(params.woche) && !single(params.tag) && !single(params.techniker);
+  const targetDay = target?.hold ? dayKeyOf(new Date(target.hold.start)) : target?.wishedDay ?? null;
+  const startDay = fresh && targetDay && targetDay > today ? targetDay : today;
+  const focusDay = workday(isDayKey(single(params.tag)) ? single(params.tag) : startDay);
+  const anchor = workday(isDayKey(single(params.woche)) ? single(params.woche) : startDay);
   const days = dayView ? [focusDay] : nextWorkingDays(anchor, 7);
   const data = await loadPlanningDays(employee, days, single(params.anfrage) || undefined);
   const durationParam = Number.parseInt(single(params.dauer), 10);
-  const duration = (SLOT_DURATIONS as readonly number[]).includes(durationParam) ? durationParam : 120;
+  const holdMinutes = target?.hold ? (Date.parse(target.hold.end) - Date.parse(target.hold.start)) / 60_000 : null;
+  const duration = (SLOT_DURATIONS as readonly number[]).includes(durationParam) ? durationParam
+    : holdMinutes && (SLOT_DURATIONS as readonly number[]).includes(holdMinutes) ? holdMinutes : 120;
   const selected = data.selected;
   const [availability, context, names, monthLoads] = await Promise.all([
     loadAvailability(selected?.id ?? null, data.technicians, data.workingHours, duration),
@@ -51,9 +60,12 @@ export default async function PlanningPage({ searchParams }: Props) {
   const pickTech = single(params.techniker);
   const pickDay = single(params.datum);
   const pickStart = single(params.beginn);
+  const hold = target?.hold ?? null;
   const pick: BoardPick | null = selected && data.technicians.some((tech) => tech.id === pickTech) && isDayKey(pickDay) && isTime(pickStart)
     ? { technicianId: pickTech, day: pickDay, start: pickStart, end: toTime(Math.min(toMinutes(pickStart) + duration, 23 * 60 + 30)) }
-    : null;
+    : selected && fresh && hold && data.technicians.some((tech) => tech.id === hold.technicianId)
+      ? { technicianId: hold.technicianId, day: dayKeyOf(new Date(hold.start)), start: toTime(minutesOfDay(new Date(hold.start))), end: toTime(minutesOfDay(new Date(hold.end))) }
+      : null;
 
   const link = (overrides: Record<string, string | null>) => {
     const query = new URLSearchParams();
@@ -74,6 +86,11 @@ export default async function PlanningPage({ searchParams }: Props) {
       </div>
       <strong className="plan3__req-name">{selected.company_name}</strong>
       <span className="plan3__muted">{selected.city} · {label("service_kind", selected.service_kind)} · <PriorityText priority={selected.priority} /></span>
+      {hold && (
+        <span className="plan3__hold-note">
+          Terminwunsch vorgemerkt: <span className="mono">{formatDateTime(hold.start)}–{toTime(minutesOfDay(new Date(hold.end)))}</span>, {techName(hold.technicianId)}. Als Auswahl gesetzt; „Einsatz planen“ übernimmt ihn, eine andere Zeit ersetzt ihn.
+        </span>
+      )}
       {selected.due_at && <span className="plan3__muted">Servicefrist <span className="mono">{formatDateTime(selected.due_at)}</span></span>}
       {context && context.visits.length > 0 && (
         <span className="plan3__muted">Folgeeinsatz · Ersteinsatz am <span className="mono">{formatDate(context.visits[0].start)}</span> durch {techName(context.visits[0].technicianId)}</span>
