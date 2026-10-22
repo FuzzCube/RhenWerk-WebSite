@@ -3781,7 +3781,7 @@
           "description": "Ersetzt task-17-13. Tägliche Sicherung auf dem VPS mit Wiederherstellungstest (14 Tage), dazu die tägliche Sicherung des Anbieters; keine Kopie außer Haus (Nutzerentscheidung 22.10.2026, Demoprojekt); jede Sicherung in der Datenbank (Zeitpunkt, Größe, Inhalt, Prüfung, Anlass). Bereich „System“: letzte geprüfte Sicherung, Liste, Inhalt; nur admin „Jetzt sichern“ als Anfrage an einen Dienst auf dem VPS. Warnung bei Sicherung älter als 26 Stunden oder Fehler.",
           "order": 6,
           "weight": 3,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-18-3"
           ],
@@ -3792,12 +3792,23 @@
             "test:db, test:api, test:ui, betrieb.md 4"
           ],
           "startedAt": "2026-10-22T12:36:46Z",
-          "completedAt": null,
+          "completedAt": "2026-10-22T13:15:04Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Tägliche Sicherung auf dem VPS (systemd rheinwerk-backup.timer 03:00 Europe/Berlin, scripts/ops/nightly.mjs): erste Sicherung 22.10.2026 12:59 UTC, 97 MB in 16 s, verschlüsselt mit n8n-Schlüssel, .env und ops.env, Probewiederherstellung bestanden (7 s); 14 Tage in /opt/rheinwerk/backups. Tabelle public.backups (Migration 20261022140000, über GitHub Actions mit Sicherung davor eingespielt). „Jetzt sichern“ gegen die Produktion: manager 42501, admin Anfrage, rheinwerk-systemcheck führt sie in ca. 30 s aus (Zeile manual, Clara Becker, geprüft), Anfrage geleert. Sicherungen vor Migrationen in der Liste; migrate.sh führt nach Aktualisierung die neue Fassung aus (auf dem Server geprüft). Wächter: backup:stale ok, backup:provider ok (OVHcloud automatedBackup enabled, täglich 09:42, 1 Sicherungspunkt; Recht auf restorePoints fehlt im Schlüssel, daher nur Zustand), keine offenen Warnungen. test:db 50 Dateien/1150 Tests, test:api, test:ui (Sicherungskarte und Liste, Manager ohne Knopf, Anfrage per Knopf), test:unit 136, lint, typecheck, build.",
+            "commands": [
+              "npm run test:db",
+              "npm run test:api",
+              "npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "sudo systemctl start rheinwerk-backup.service",
+              "rpc request_backup als manager und admin über api.rheinwerk-service.online",
+              "node scripts/ops/check.mjs --now (VPS)"
+            ],
+            "checkedAt": "2026-10-22T13:15:04Z"
           }
         },
         {
@@ -3806,7 +3817,7 @@
           "description": "Ersetzt task-17-14. Nur admin stellt die gesamte Datenbank samt Dateien aus einer geprüften Sicherung wieder her (Nutzerentscheidung 21.10.2026, keine einzelnen Datensätze); Rückfrage mit Eingabe eines Wortes, vorher automatische Sicherung des aktuellen Stands, n8n angehalten, danach Gesundheitsprüfung und Rückkehr bei Fehler, E-Mail an den Admin.",
           "order": 7,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-6"
           ],
@@ -3831,7 +3842,7 @@
           "description": "Ersetzt task-17-16. Neue Versionen kommen als Renovate-PR (Image-Version in docker-compose.yml); das Einspielen auf dem VPS: Systemsicherung, Update, nur lesender Selbsttest (Supabase: Datenbank, Anmeldung, Rollenrechte, Storage, Migrationen; n8n: healthz, aktive Workflows, Credentials, Workflow „Selbsttest“), bei Fehler automatischer Rückfall auf Version und Daten von vorher, E-Mail. Verlauf im Bereich „System“.",
           "order": 8,
           "weight": 3,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-5",
             "task-18-6"

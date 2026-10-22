@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v23, 19 Phasen, 113 Tasks, Fortschritt 95,19 % (Gewicht 257 von 270).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v23, 19 Phasen, 113 Tasks, Fortschritt 96,3 % (Gewicht 260 von 270).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -20,8 +20,8 @@ Roadmap v23 (22.10.2026): zusätzlich Umzug vom Oracle-Server (`ssh oracle-n8n`)
 
 ## Zuletzt abgeschlossen
 
+- `task-18-6` (22.10.2026): **Datensicherung auf dem VPS**: täglich 03:00 mit Probewiederherstellung (`rheinwerk-backup.timer`, `/opt/rheinwerk/backups`, 14 Tage), Tabelle `backups`, Bereich „System“ mit Liste und „Jetzt sichern“ (nur admin), Sicherungen vor Migrationen, Warnungen `backup:failed`/`backup:stale`/`backup:provider`, Sicherung von OVHcloud über die API geprüft (`docs/betrieb.md` 4).
 - `task-18-5` (22.10.2026): **Deployment nur über GitHub Actions**: Push auf `main` → Prüfungen → Sicherung und neue Migrationen auf dem VPS (`ops/vps/migrate.sh`, SSH-Schlüssel nur für dieses Skript) → `vercel deploy --prod`; Vercel baut Pushes nicht mehr selbst. Neue Migrationen nur hinzufügend (DROP bricht ab). Dependabot: offene Update-PRs #1–#10 (Images erst mit task-18-8; TypeScript 7 und eslint 10 rot). `docs/betrieb.md` 3.8.
-- `task-18-4` (22.10.2026): **Website live unter https://rheinwerk-service.online** (Vercel-Projekt `rheinwerk-industrieservice` jetzt aus diesem Repository, `cdg1`, Auto-Deploy bei Push auf `main`). Supabase-API `api.` und n8n-Webhooks nur mit Access-Service-Token; Passwort-Mails über Gmail mit deutschen Vorlagen (`SITE_URL`); Formular mit Upload geprüft; Wächter prüft die Website (`docs/setup.md` „Deployment auf Vercel“, `docs/betrieb.md` 3.7). Demo-Anruf von Mira auf der öffentlichen Website noch vom Nutzer zu bestätigen.
 - `task-18-2` (22.10.2026): VPS mit Docker Compose (`docs/betrieb.md` 3.5, `ops/vps/`): Server `ssh vps` (OVHcloud VPS-2, Ubuntu 26.04), Swap, Docker mit Ports nur auf 127.0.0.1, Node.js 24; Compose-Projekt `rheinwerk` (Supabase ohne Realtime, n8n 2.40.7, Tunnel `rheinwerk-vps`) mit festen Versionen und neuen Schlüsseln, 68 Migrationen eingespielt; Wächter und „System prüfen“ als systemd-Timer, ohne E-Mails bis task-18-3; Neustart geprüft. Weitere Projekte auf dem Server vorgesehen (Regeln in 3.5).
 
 ## Wo was dokumentiert ist (Telefonassistent)
@@ -52,4 +52,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 18 „Deployment“: startbar `task-18-6` (Sicherung auf dem VPS, bis dahin **keine eigene tägliche Sicherung**, nur die des Anbieters) und `task-18-10` (RAG-Assistent). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 18 „Deployment“: startbar `task-18-7` (Wiederherstellung aus einer Sicherung proben), `task-18-8` (Systemupdates mit Rückfall; offene Dependabot-PRs #1–#5 für Images) und `task-18-10` (RAG-Assistent). Vorher empfohlen: Speicherplatz schaffen und die Updates aus dem Bereich „System“ einspielen (`docs/HANDOFF.md`). Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
