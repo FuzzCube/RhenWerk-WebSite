@@ -9,6 +9,8 @@ import { readdirSync, readFileSync } from "node:fs";
 
 export const ERROR_WORKFLOW = "rwFehlerMeldung1";
 const MIRA_WORKFLOWS = ["rwAgentTools2026", "rwCallAnalysis26"];
+// Started by hand only (manual trigger, cannot be published): import of the assistant's knowledge base (task-18-10)
+const MANUAL_WORKFLOWS = ["rwRagImport2026"];
 // Scheduled workflows that save their executions, with the longest acceptable gap between two runs in minutes
 export const SCHEDULES = { IlH4b7AKuSXyMiOd: 10, wO3EgSMM8l1wRKsc: 10, rGQGvOLDJUuHt4bO: 30 };
 // A warning of the error workflow closes after this long without a new failed execution
@@ -32,7 +34,7 @@ export function expectedWorkflows(miraConfigured) {
   const dir = new URL("../../n8n/workflows/", import.meta.url);
   return readdirSync(dir).filter((file) => file.endsWith(".workflow.json"))
     .map((file) => JSON.parse(readFileSync(new URL(file, dir), "utf8")))
-    .filter((workflow) => miraConfigured || !MIRA_WORKFLOWS.includes(workflow.id))
+    .filter((workflow) => !MANUAL_WORKFLOWS.includes(workflow.id) && (miraConfigured || !MIRA_WORKFLOWS.includes(workflow.id)))
     .map((workflow) => ({ id: workflow.id, name: workflow.name }));
 }
 

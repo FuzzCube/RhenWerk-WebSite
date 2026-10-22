@@ -516,6 +516,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"rag_documents": {
+                  Row: {
+                    "content": string,"created_at": string,"embedding": string,"id": number,"metadata": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content": string,"created_at"?: string,"embedding": string,"id"?: number,"metadata"?: NonNullable<Json>
+                  }
+                  Update: {
+                    "content"?: string,"created_at"?: string,"embedding"?: string,"id"?: number,"metadata"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"request_customer_suggestions": {
                   Row: {
                     "created_at": string,"customer_id": string,"reason": string,"request_id": string
@@ -2899,6 +2913,11 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"match_rag_documents":
+{ Args: { "filter"?: Json,"match_count"?: number,"query_embedding": string }; Returns: {
+              "content": string,"id": number,"metadata": Json,"similarity": number
+            }[]
+                           },
 "monitor_call_analysis":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },

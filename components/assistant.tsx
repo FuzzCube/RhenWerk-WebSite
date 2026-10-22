@@ -3,8 +3,21 @@
 import { useState } from "react";
 import { Bot, LoaderCircle, Send, X } from "lucide-react";
 
-const WEBHOOK_URL =
-  "https://rheinwerk-rag.130-61-221-231.sslip.io/webhook/rheinwerk-assistant";
+// Asks through the own route /api/assistant (task-18-10; until then directly the n8n on the Oracle server). One
+// session per browser tab, so follow-up questions keep their context without mixing visitors.
+const API_URL = "/api/assistant";
+
+function sessionId() {
+  try {
+    const stored = sessionStorage.getItem("rheinwerk-assistant-session");
+    if (stored) return stored;
+    const created = crypto.randomUUID();
+    sessionStorage.setItem("rheinwerk-assistant-session", created);
+    return created;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 const suggestions = [
   "Was kostet eine Inspektion?",
@@ -29,21 +42,22 @@ export function Assistant() {
     setLoading(true);
 
     try {
-      const response = await fetch(WEBHOOK_URL, {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           question: trimmedQuestion,
+          session_id: sessionId(),
         }),
       });
 
+      const data: { answer?: string; message?: string } = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        setAnswer(data.message || "Der Assistent ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut.");
+        return;
       }
-
-      const data: { answer?: string } = await response.json();
 
       setAnswer(
         data.answer ||
@@ -151,6 +165,7 @@ export function Assistant() {
           onChange={(event) => setQuestion(event.target.value)}
           aria-label="Frage an den Assistenten"
           placeholder="Frage eingeben"
+          maxLength={500}
           disabled={loading}
         />
 

@@ -294,6 +294,33 @@ console.log("\nSystem: Updates und Warnungen");
   check("Admin fordert eine Sicherung an", !backupRequest.error && backupRequest.data?.backup_requested_by === systemAdmin.id, backupRequest.error?.message);
   check("  zweite Anforderung: RW422", (await systemAdmin.client.rpc("request_backup")).error?.code === "RW422");
   await admin.from("system_status").update({ backup_requested_at: null, backup_requested_by: null, backup_started_at: null }).eq("id", 1);
+
+  // task-18-10: the assistant's knowledge base only for service_role (n8n); the website asks through /api/assistant
+  const vector = `[${Array(3072).fill(0.1).join(",")}]`;
+  const anonClient = createClient(url, publishableKey, options);
+  check("Wissensbasis: anon liest nichts", denied(await anonClient.from("rag_documents").select("id").limit(1)));
+  check("Wissensbasis: Admin liest nichts", denied(await systemAdmin.client.from("rag_documents").select("id").limit(1)));
+  check("Wissensbasis: Suche nur für den Dienst", denied(await anonClient.rpc("match_rag_documents", { query_embedding: vector, match_count: 1 }))
+    && !(await admin.rpc("match_rag_documents", { query_embedding: vector, match_count: 1 })).error);
+}
+
+// task-18-10: /api/assistant checks the question before anything goes to n8n (needs the running app, APP_URL)
+console.log("\nWebsite-Assistent: /api/assistant");
+{
+  const app = process.env.APP_URL ?? "http://localhost:3000";
+  const ask = (body) => fetch(`${app}/api/assistant`, { method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body) });
+  let reachable = true;
+  try { await fetch(app, { signal: AbortSignal.timeout(5000) }); } catch { reachable = false; }
+  if (!reachable) {
+    console.log(`  übersprungen: App unter ${app} nicht erreichbar (npm run dev)`);
+  } else {
+    const session = crypto.randomUUID();
+    const empty = await ask({ question: "   ", session_id: session });
+    check("Leere Frage: 400 mit Hinweis", empty.status === 400 && (await empty.json()).message === "Bitte eine Frage eingeben.");
+    check("Zu lange Frage: 400", (await ask({ question: "x".repeat(501), session_id: session })).status === 400);
+    check("Feste Sitzung wie früher (rheinwerk-test): 400", (await ask({ question: "Hallo", session_id: "rheinwerk-test" })).status === 400);
+    check("Kein JSON: 400", (await ask("kein json")).status === 400);
+  }
 }
 
 await deactivateTestAccounts(admin, createdAccounts);
