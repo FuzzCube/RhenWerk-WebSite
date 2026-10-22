@@ -55,7 +55,7 @@ services:
   kong:
     <<: *restart
     container_name: supabase_kong_rheinwerk
-    image: envoyproxy/envoy:v1.39.1
+    image: envoyproxy/envoy:v1.40.0
     mem_limit: 256m
     networks:
       default:
