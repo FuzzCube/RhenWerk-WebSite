@@ -57,6 +57,8 @@ export type ServiceRequestPayload = {
     urgency: string;
     known_safety_hazard: string;
     preferred_service_date: string;
+    // task-19-3: any, morning, afternoon or HH:MM; unknown values count as any
+    preferred_time?: string;
     requires_human_review: boolean;
   };
   contract_and_attachments: {

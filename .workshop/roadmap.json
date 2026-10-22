@@ -4104,20 +4104,27 @@
           "description": "Wunschtermin aus Formular und Telefon: freies Fenster beim am wenigsten belegten Techniker vormerken, sonst nächstes freies Fenster; Dispatcher bestätigt mit einem Klick, Kunde erhält Terminbestätigung, auch bei manueller Planung.",
           "order": 3,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Vormerkung aus dem Formular",
             "Terminbestätigung bei Bestätigung und manueller Planung",
             "test:db, lint, typecheck, build"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T19:55:00Z",
+          "completedAt": "2026-10-22T20:30:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T20:30:00Z",
+            "commands": [
+              "supabase test db (54 Dateien, 1207 Tests, neu form_visit_holds.test.sql)",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "lokal: ingest_submission mit Wunsch 10:00, Klick auf Termin bestätigen im Browser, Planung auf der Plantafel mit Bestätigung"
+            ],
+            "summary": "Migration 20261022230000_form_visit_holds.sql (lokal per psql eingespielt): ingest_submission merkt den Wunschtermin aus dem Formular vor (genaue Uhrzeit, vormittags, nachmittags, beliebig), sonst den nächsten freien Termin (wish_met=false); Techniker nach Auslastung im Monat (gilt auch für Mira); Notfälle ohne Vormerkung; queue_visit_confirmation für die manuelle Planung. Formular: Feld Gewünschte Uhrzeit (preferred_time, n8n reicht es durch, keine Workflow-Änderung). Anfrage: Karte Terminwunsch (Formular) mit Wunsch des Kunden, Termin bestätigen schließt offene Erstbearbeitung mit gewählter Priorität ab und bestätigt. Plantafel: Haken Terminbestätigung an den Kunden senden (Standard an). Lokal geprüft: RIS-2026-02895 vorgemerkt 29.10. 10:00, ein Klick → processed, Einsatz, Terminbestätigung in der Warteschlange; Planung RIS-2026-02889 → Terminbestätigung, freigegeben von der planenden Person. Nicht ausgeführt: test:api, test:ui, Formularversand über n8n, Produktion (Migration kommt mit dem Push über GitHub Actions)."
           }
         },
         {

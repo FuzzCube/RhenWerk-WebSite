@@ -828,14 +828,14 @@ isOneToOne: false
                   ]
                 },"visit_holds": {
                   Row: {
-                    "alternative": string | null,"conversation_id": string | null,"created_at": string,"decided_at": string | null,"decided_by": string | null,"ends_at": string,"expires_at": string,"id": string,"reject_reason": string | null,"request_id": string,"starts_at": string,"status": string,"technician_id": string,"updated_at": string,"visit_id": string | null
+                    "alternative": string | null,"conversation_id": string | null,"created_at": string,"decided_at": string | null,"decided_by": string | null,"ends_at": string,"expires_at": string,"id": string,"origin": string,"reject_reason": string | null,"request_id": string,"starts_at": string,"status": string,"technician_id": string,"updated_at": string,"visit_id": string | null,"wish_met": boolean | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "alternative"?: string | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"ends_at": string,"expires_at": string,"id"?: string,"reject_reason"?: string | null,"request_id": string,"starts_at": string,"status"?: string,"technician_id": string,"updated_at"?: string,"visit_id"?: string | null
+                    "alternative"?: string | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"ends_at": string,"expires_at": string,"id"?: string,"origin"?: string,"reject_reason"?: string | null,"request_id": string,"starts_at": string,"status"?: string,"technician_id": string,"updated_at"?: string,"visit_id"?: string | null,"wish_met"?: boolean | null
                   }
                   Update: {
-                    "alternative"?: string | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"ends_at"?: string,"expires_at"?: string,"id"?: string,"reject_reason"?: string | null,"request_id"?: string,"starts_at"?: string,"status"?: string,"technician_id"?: string,"updated_at"?: string,"visit_id"?: string | null
+                    "alternative"?: string | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"ends_at"?: string,"expires_at"?: string,"id"?: string,"origin"?: string,"reject_reason"?: string | null,"request_id"?: string,"starts_at"?: string,"status"?: string,"technician_id"?: string,"updated_at"?: string,"visit_id"?: string | null,"wish_met"?: boolean | null
                   }
                   Relationships: [
                     {
@@ -3028,6 +3028,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"queue_visit_confirmation":
+{ Args: { "visit_id": string }; Returns: undefined
+                           },
 "raise_alert":
 { Args: { "alert_key": string,"detail"?: string,"severity": string,"source": string,"title": string }; Returns: Json
                            },
@@ -3177,13 +3180,15 @@ isOneToOne: false
 "ends_at": string,
 "expires_at": string,
 "id": string,
+"origin": string,
 "reject_reason": string | null,
 "request_id": string,
 "starts_at": string,
 "status": string,
 "technician_id": string,
 "updated_at": string,
-"visit_id": string | null
+"visit_id": string | null,
+"wish_met": boolean | null
             }
                           SetofOptions: {
         from: "*"

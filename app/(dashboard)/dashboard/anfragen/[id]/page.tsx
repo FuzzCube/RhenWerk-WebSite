@@ -21,7 +21,7 @@ import { describeEvent } from "@/lib/events";
 import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange } from "@/lib/format";
 import { nextReminderText, stageLabel } from "@/lib/reminders";
 import { contractHint } from "@/lib/service-contract";
-import { label, statusInfo } from "@/lib/status";
+import { label, STATUS, statusInfo } from "@/lib/status";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -469,21 +469,37 @@ function CustomerSuggestions({ request, suggestions }: { request: RequestDetail[
   );
 }
 
-// Window held by the phone assistant (task-13-3): the dispatcher confirms (visit planned, customer e-mail) or rejects
+const WISHED_TIME: Record<string, string> = { any: "Uhrzeit beliebig", morning: "vormittags", afternoon: "nachmittags" };
+const priorityOptions = Object.entries(STATUS.request_priority).map(([value, info]) => ({ value, label: info.label }));
+
+// Window held by the phone assistant (task-13-3) or from the wish in the website form (task-19-3): the dispatcher
+// confirms with one click (open intake completed with the chosen priority, visit planned, customer e-mail) or rejects
 function HoldCard({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
   const intakeOpen = request.intake_status !== "processed";
+  const form = hold.origin === "form";
+  const payload = request.raw_payload as { request?: { preferred_time?: string } } | null;
+  const time = payload?.request?.preferred_time ?? "any";
+  const wish = `${request.requested_visit_date ? formatCalendarDate(request.requested_visit_date) : "–"}, ${WISHED_TIME[time] ?? `ab ${time} Uhr`}`;
   return (
     <section id="terminwunsch" className="rw-card rw-card--action request-hold" aria-labelledby="terminwunsch-title">
-      <p className="request-next__eyebrow">Terminwunsch (Telefon)</p>
+      <p className="request-next__eyebrow">{form ? "Terminwunsch (Formular)" : "Terminwunsch (Telefon)"}</p>
       <h2 id="terminwunsch-title" className="request-next__title request-hold__when">{formatTimeRange(hold.starts_at, hold.ends_at)}</h2>
       <p className="rw-card__note">
-        Vom Telefonassistenten für {person(hold.technician_id)} vorgemerkt, gilt bis <span className="mono">{formatDateTime(hold.expires_at)}</span>. Bestätigen plant den Einsatz und schickt dem Kunden eine Bestätigung.
+        {form ? <>Automatisch für {person(hold.technician_id)} vorgemerkt (am wenigsten ausgelastet im Monat)</> : <>Vom Telefonassistenten für {person(hold.technician_id)} vorgemerkt</>}, gilt bis <span className="mono">{formatDateTime(hold.expires_at)}</span>. Bestätigen plant den Einsatz und schickt dem Kunden eine Terminbestätigung.
       </p>
-      {intakeOpen && <p className="rw-card__note request-hold__hint">Erst nach abgeschlossener Erstbearbeitung bestätigen.</p>}
+      {form && (
+        <p className={`rw-card__note${hold.wish_met === false ? " request-hold__hint" : ""}`}>
+          Wunsch des Kunden: {wish}.{hold.wish_met === false && " Zu dieser Zeit war niemand frei – vorgemerkt ist der nächste freie Termin."}
+        </p>
+      )}
       <SaveForm action={confirmHold} submitLabel="Termin bestätigen">
         <HiddenField name="request_id" value={request.id} />
         <HiddenField name="version" value={request.version} />
         <HiddenField name="hold_id" value={hold.id} />
+        {intakeOpen && (
+          <SelectField name="priority" label="Priorität" required defaultValue={request.priority ?? "normal"} options={priorityOptions}
+            hint="Die Erstbearbeitung ist noch offen: Angaben oben kurz prüfen, dann schließt der Knopf sie mit dieser Priorität ab." />
+        )}
       </SaveForm>
       <details className="action">
         <summary>Ablehnen</summary>

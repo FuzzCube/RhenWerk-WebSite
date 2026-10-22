@@ -1052,7 +1052,7 @@ try {
       await page.open(`${BASE}/dashboard/anfragen?suche=${encodeURIComponent(confirmCase.req.request_number)}`);
       check("Anfragenliste: Kennzeichen „Terminwunsch“", await page.eval(`[...document.querySelectorAll(".rw-flag--hold")].some((e) => e.textContent === "Terminwunsch")`));
       await page.open(`${BASE}/dashboard/erstbearbeitung?tab=planung`);
-      check("  Erstbearbeitung: Hinweis „Terminwunsch (Telefon)“", await page.eval(`[...document.querySelectorAll(".hint")].some((e) => e.textContent.startsWith("Terminwunsch (Telefon)"))`));
+      check("  Erstbearbeitung: Hinweis „Terminwunsch vorgemerkt“", await page.eval(`[...document.querySelectorAll(".hint")].some((e) => e.textContent.startsWith("Terminwunsch vorgemerkt"))`));
       await page.open(`${BASE}/dashboard/planung?woche=${dayKey}`);
       check("  Plantafel zeigt die Vormerkung (schraffiert, nicht blockierend)", await page.eval(`[...document.querySelectorAll(".plan3__blk--hold")].some((e) => (e.getAttribute("title") ?? "").includes(${JSON.stringify(confirmCase.req.request_number)}))`));
       await page.open(`${BASE}/dashboard/anfragen/${confirmCase.req.id}`);

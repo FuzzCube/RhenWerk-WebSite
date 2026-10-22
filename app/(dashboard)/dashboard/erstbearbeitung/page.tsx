@@ -161,7 +161,7 @@ function Hints({ row, holdAt, customerCheck }: { row: QueueRow; holdAt?: string;
   const hints: Array<{ text: string; tone: "info" | "warning" | "danger" }> = [];
   // Uncertain automatic customer match (task-14-2)
   if (customerCheck) hints.push({ text: "Kunde prüfen: möglicher Bestandskunde", tone: "warning" });
-  if (holdAt) hints.push({ text: `Terminwunsch (Telefon): ${formatDateTime(holdAt)}`, tone: "info" });
+  if (holdAt) hints.push({ text: `Terminwunsch vorgemerkt: ${formatDateTime(holdAt)}`, tone: "info" });
   if (row.safety_check_required) hints.push({ text: "Sicherheitsgefahr: vor Planung prüfen", tone: "danger" });
   else if (row.safety_risk && row.safety_risk !== "none_known") hints.push({ text: `Sicherheitsgefahr ${label("safety_risk", row.safety_risk).toLowerCase()}`, tone: "warning" });
   if (row.queue === "planning" && row.work_status === "waiting_parts") hints.push({ text: "Folgeeinsatz nach Teilelieferung", tone: "info" });

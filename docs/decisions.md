@@ -545,3 +545,13 @@ Nutzerentscheidungen 22.10.2026, ergänzen den Eintrag zu task-18-1:
 - Gesprächsverlauf je Browser-Tab (`session_id`, UUID) statt eines festen Schlüssels für alle Besucher wie auf Oracle.
 - Sprachmodell wie auf Oracle (`gpt-5.6-luna`), damit die Antworten gleich bleiben; OpenAI-Credential von RheinWerk.
 
+
+## Wunschtermin aus dem Formular automatisch vormerken (task-19-3, 22.10.2026)
+
+Nutzerentscheidung: Wie beim Telefonassistenten soll auch das Formular den Wunschtermin prüfen und vormerken, damit der Dispatcher nur noch prüft und mit einem Klick bestätigt.
+
+- Das Formular fragt zusätzlich die Uhrzeit (beliebig, vormittags, nachmittags oder volle Stunde 07–14 Uhr). Frei → Vormerkung beim im Monat am wenigsten belegten Techniker; belegt → nächster freier Termin ab dem Wunschtag, in der Anfrage als „Zu dieser Zeit war niemand frei“ gekennzeichnet. Die Datenbank rechnet den Kalender, kein Sprachmodell.
+- Notfälle bekommen keine Vormerkung (wie am Telefon); sie gehen sofort an Menschen.
+- „Termin bestätigen“ schließt eine offene Erstbearbeitung mit der gewählten Priorität ab und plant den Einsatz; die Terminbestätigung gilt als von dieser Person freigegeben (Regel „Ausgehende E-Mails brauchen Freigabe“ bleibt).
+- Auch die manuelle Planung auf der Plantafel schickt standardmäßig eine Terminbestätigung (abwählbar). Verschieben schickt keine neue Bestätigung.
+- Die Auslastung des Monats entscheidet zuerst über den Techniker, danach die des Tages; das gilt auch für Mira.

@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { rescheduleVisit, scheduleVisit } from "@/app/(dashboard)/dashboard/planung/actions";
-import { HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
+import { CheckboxField, HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
 import { Icon } from "@/components/ui";
 import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay, weekStart } from "@/lib/berlin-time";
 import type { BusyBlock, Technician, WorkingHours } from "@/lib/dashboard/planning";
@@ -577,7 +577,7 @@ export function PlanBoard(props: Props) {
           <li><i className="plan3__key plan3__key--own" />Eigene Einsätze</li>
           <li><i className="plan3__key plan3__key--busy" />Belegt</li>
           <li><i className="plan3__key plan3__key--absence" />Abwesend</li>
-          <li><i className="plan3__key plan3__key--hold" />Vorgemerkt (Telefon)</li>
+          <li><i className="plan3__key plan3__key--hold" />Vorgemerkt (Telefon, Formular)</li>
           {canPick && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
           {canPick && <li><i className="plan3__key plan3__key--pick" />Auswahl</li>}
           <li><i className="plan3__key plan3__key--past" />Vorbei</li>
@@ -703,6 +703,7 @@ export function PlanBoard(props: Props) {
                     <TextField name="end" label="Ende" type="time" required defaultValue={pick?.end ?? toTime(8 * 60 + duration)} />
                   </div>
                 </div>
+                <CheckboxField name="notify_customer" label="Terminbestätigung an den Kunden senden" defaultChecked />
                 <p className={`plan3__check plan3__check--${pickCheck ? (pickCheck.ok ? "ok" : "bad") : "none"}`} aria-live="polite">
                   <Icon name={pickCheck ? (pickCheck.ok ? "check-circle" : "alert") : "calendar"} size={18} />
                   <span>{pickCheck ? pickCheck.message : "Noch kein Termin gewählt: Vorschlag oder freie Fläche in der Plantafel anklicken."}</span>

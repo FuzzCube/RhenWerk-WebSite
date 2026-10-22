@@ -28,7 +28,7 @@ export async function scheduleVisit(_previous: FormState, formData: FormData): P
   const start = berlinToInstant(values.date, values.start);
   const end = berlinToInstant(values.date, values.end);
   const supabase = await createClient();
-  const { error } = await supabase.rpc("schedule_visit", {
+  const { data: visit, error } = await supabase.rpc("schedule_visit", {
     request_id: values.request_id,
     expected_version: version,
     technician_id: values.technician_id,
@@ -39,8 +39,14 @@ export async function scheduleVisit(_previous: FormState, formData: FormData): P
     const hint = error.code === "RW410" ? " Bitte im Kalender einen freien Zeitraum wählen." : "";
     return formError(`${databaseErrorMessage(error)}${hint}`, values, error.code === "RW410" ? { start: "Zeitraum belegt." } : {});
   }
+  // Terminbestätigung to the customer (task-19-3), approved by the planning person; the visit stays planned if it fails
+  let mail = "";
+  if (values.notify_customer === "on" && visit) {
+    const { error: mailError } = await supabase.rpc("queue_visit_confirmation", { visit_id: visit.id });
+    mail = mailError ? " Die Terminbestätigung konnte nicht erstellt werden." : " Die Terminbestätigung an den Kunden steht in der Warteschlange.";
+  }
   refresh();
-  return formSuccess(`Einsatz geplant: ${formatTimeRange(start, end)}.`, values);
+  return formSuccess(`Einsatz geplant: ${formatTimeRange(start, end)}.${mail}`, values);
 }
 
 // Same text the board prefills
