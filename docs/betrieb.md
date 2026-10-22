@@ -249,6 +249,17 @@ Ergebnis: Zeilenzahlen wie im Manifest (1 573 Anfragen, 87 Kunden, 3 197 Nachric
 
 Seit 22.10.2026 läuft die Website mit Dashboard auf Vercel (Einrichtung, Variablen, Rückweg und Tarifgrenzen in [setup.md](setup.md#deployment-auf-vercel)); `api.rheinwerk-service.online` im Tunnel `rheinwerk-vps` auf `kong:8000`, geschützt durch die Access-Anwendung „RheinWerk API“ (Service Auth, Token „ElevenLabs Mira“). Ohne Token antworten `api.` und die Webhooks von `n8n.` mit 403, der Browser erreicht beide nie direkt. Die Access-Anwendung für das Formular deckt `webhook/rheinwerk-service-request`, `webhook-test/…` und `healthz` ab (vorher Bypass, seit 22.10.2026 Service Auth). Health-Check `https://rheinwerk-service.online/api/health` (mit `HEALTH_TOKEN`: Commit, Datenbank und n8n mit Dauer, ca. 150–170 ms). Der Wächter auf dem VPS prüft sie alle 5 Minuten (`WEBSITE_URL=https://rheinwerk-service.online` in `/opt/rheinwerk/ops.env`).
 
+### 3.8 Prüfung und Deployment mit GitHub Actions (task-18-5)
+
+`.github/workflows/ci.yml`: Bei jedem Pull Request und Push laufen `lint`, `typecheck`, `test:unit` und `build`. Nur bei einem Push auf `main` und nur wenn alles grün ist, folgen:
+
+1. **Sicherung und Migrationen auf dem VPS**: GitHub meldet sich mit einem eigenen SSH-Schlüssel an, der in `~/.ssh/authorized_keys` nur `ops/vps/migrate.sh` ausführen darf (`command="…",restrict`: keine Shell, keine Weiterleitung); der Commit wird als Argument übergeben. Das Skript setzt `/opt/rheinwerk/app` auf den Commit (nur Commits aus `origin/main`), aktualisiert bei geändertem `package-lock.json` die Pakete der Dienste, sichert die Datenbank (`/opt/rheinwerk/state/pre-migration/`, die letzten 10) und spielt nur Migrationen ein, die noch nicht in `supabase_migrations.schema_migrations` stehen, jede in einer Transaktion; danach lädt PostgREST das Schema neu. Ohne neue Migration keine Sicherung. **Nur hinzufügende Migrationen:** `DROP TABLE/COLUMN/SCHEMA` bricht ab; solche Änderungen von Hand mit Sicherung einspielen (`sh ops/vps/migrate.sh` ist dafür nicht gedacht, sondern psql nach 4.5).
+2. **Deployment auf Vercel** mit `vercel deploy --prod` (Token `VERCEL_TOKEN`). Vercel baut Pushes nicht mehr selbst (`vercel.json` `git.deploymentEnabled: false`), damit ein roter Test oder eine gescheiterte Migration das Deployment verhindert.
+
+Geheimnisse im Repository (Settings → Secrets): `VPS_HOST`, `VPS_KNOWN_HOSTS`, `VPS_SSH_KEY` (nur in GitHub, keine Kopie auf dem Rechner), `VERCEL_TOKEN` (Vercel → Account → Tokens, „github-actions“), `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Schlüssel erneuern: neues Paar erzeugen, Zeile mit `github-actions-rheinwerk-deploy` in `authorized_keys` ersetzen, `gh secret set VPS_SSH_KEY < key`, lokale Kopie löschen.
+
+**Updates:** Dependabot (`.github/dependabot.yml`) öffnet montags gesammelte PRs für npm-Pakete und die Images in `ops/vps/docker-compose.yml`, monatlich für die Actions. Jeder PR durchläuft die Prüfungen; gemergt wird von Hand, Images nur mit Sicherung und Rückfall (task-18-8). Nach dem Merge eines Image-Updates zusätzlich auf dem VPS `ops/vps/compose.sh up -d` (das Deployment aktualisiert nur das Repository, nicht die Container).
+
 ## 4. Datensicherung
 
 ### 4.1 Was gesichert wird

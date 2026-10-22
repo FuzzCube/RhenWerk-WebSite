@@ -1,0 +1,69 @@
+# Prüfung und Deployment (task-18-5, docs/betrieb.md 3.8)
+#   Pull Request und Push: lint, typecheck, test:unit, build
+#   Push auf main, nur wenn alles grün ist: Sicherung und neue Migrationen auf dem VPS (ops/vps/migrate.sh über einen
+#   SSH-Schlüssel, der nur dieses Skript ausführen darf), danach Deployment auf Vercel. Vercel baut Pushes nicht mehr
+#   selbst (vercel.json git.deploymentEnabled).
+# Geheimnisse im Repository: VPS_HOST, VPS_KNOWN_HOSTS, VPS_SSH_KEY, VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Prüfungen
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Nur für den Build; zur Laufzeit gelten die Variablen in Vercel
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run build
+
+  deploy:
+    name: Migrationen und Deployment
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://rheinwerk-service.online
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - name: Sicherung und Migrationen auf dem VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          ssh -i ~/.ssh/deploy -o BatchMode=yes -o IdentitiesOnly=yes "ubuntu@$VPS_HOST" "$GITHUB_SHA"
+      - name: Deployment auf Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: npx --yes vercel@65.1.0 deploy --prod --yes --token "$VERCEL_TOKEN"

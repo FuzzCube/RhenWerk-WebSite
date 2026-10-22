@@ -1,0 +1,23 @@
+# Update-PRs (task-18-5): wöchentlich, gesammelt; jeder PR durchläuft die Prüfungen (ci.yml), gemergt wird von Hand.
+# Docker-Images in ops/vps/docker-compose.yml nur mit Sicherung und Rückfall einspielen (task-18-8).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: docker-compose
+    directory: /ops/vps
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

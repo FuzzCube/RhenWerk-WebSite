@@ -127,7 +127,7 @@ Das App-Passwort gehört nur in die Umgebung, nie ins Repository. Ohne eigenen S
 
 ## Deployment auf Vercel
 
-Projekt `rheinwerk-industrieservice` (Team `fuzz-cube`), verbunden mit `FuzzCube/RhenWerk-WebSite`, Branch `main`: jeder Push wird gebaut und veröffentlicht. Funktionen in `cdg1` (Paris, `vercel.json`). Domain `rheinwerk-service.online` (DNS in Cloudflare: `A @ 216.198.79.1`, `CNAME www` auf Vercel, beide „DNS only“), `www` leitet mit 308 auf die Domain um. Lokaler Ordner per `vercel link` verbunden (`.vercel/`, nicht im Repository).
+Projekt `rheinwerk-industrieservice` (Team `fuzz-cube`), verbunden mit `FuzzCube/RhenWerk-WebSite`, Branch `main`. Veröffentlicht wird seit task-18-5 nur über GitHub Actions nach grünen Prüfungen und Migrationen (betrieb.md 3.8), nicht mehr direkt bei jedem Push. Funktionen in `cdg1` (Paris, `vercel.json`). Domain `rheinwerk-service.online` (DNS in Cloudflare: `A @ 216.198.79.1`, `CNAME www` auf Vercel, beide „DNS only“), `www` leitet mit 308 auf die Domain um. Lokaler Ordner per `vercel link` verbunden (`.vercel/`, nicht im Repository).
 
 Umgebungsvariablen (nur Production, alle „sensitive“, Werte nie ins Repository):
 
