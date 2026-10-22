@@ -1241,7 +1241,8 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .plan3__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--rw-text-secondary); }
 .plan3__legend li { display: inline-flex; align-items: center; gap: 7px; }
 .plan3__key { width: 14px; height: 14px; border: 1px solid var(--rw-border-default); border-radius: 2px; }
-.plan3__key--own { background: var(--rw-color-navy-950); border-color: var(--rw-color-navy-950); }
+.plan3__key--own { background: var(--rw-color-blue-600); border-color: var(--rw-color-blue-600); }
+.plan3__key--own-past { background: var(--rw-color-blue-100); border-color: var(--rw-color-blue-500); }
 .plan3__key--busy { background: var(--rw-color-steel-300); }
 .plan3__key--absence, .plan3__blk--absence { background: repeating-linear-gradient(135deg, var(--rw-color-steel-300) 0 3px, var(--rw-color-steel-100) 3px 7px); }
 .plan3__key--sug { background: var(--rw-color-blue-050); border: 1.5px dashed var(--rw-color-blue-700); }
@@ -1280,7 +1281,8 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .plan3__blk--own, .plan3__blk--busy, .plan3__blk--absence, .plan3__blk--sug, .plan3__blk--pick { z-index: 2; }
 .plan3__blk { position: absolute; top: 6px; bottom: 6px; display: flex; align-items: center; overflow: hidden; padding: 0 6px; border-radius: 2px; font-family: var(--rw-font-mono); font-size: 11px; font-weight: 500; white-space: nowrap; pointer-events: none; }
 .plan3__blk-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.plan3__blk--own { background: var(--rw-color-navy-950); color: var(--rw-color-white); pointer-events: auto; }
+.plan3__blk--own { background: var(--rw-color-blue-600); color: var(--rw-color-white); pointer-events: auto; }
+.plan3__blk--own.is-past { background: var(--rw-color-blue-100); color: var(--rw-color-blue-800); box-shadow: inset 0 0 0 1px var(--rw-color-blue-500); }
 .plan3__blk--busy { background: var(--rw-color-steel-300); color: var(--rw-text-primary); pointer-events: auto; }
 .plan3__blk--absence { color: var(--rw-text-primary); pointer-events: auto; }
 .plan3__blk--outside { top: 0; bottom: 0; padding: 0; border-radius: 0; background: var(--rw-color-steel-100); }
@@ -2007,3 +2009,10 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .system-image-update__list li { display: flex; flex-wrap: wrap; gap: 8px; }
 /* Hold of the selected request on the planning board (task-20-2) */
 .plan3__hold-note { margin-top: 4px; padding: 8px 10px; font-size: 13px; line-height: 1.45; background: color-mix(in srgb, var(--rw-color-lime-500) 14%, white); border-left: 3px solid var(--rw-color-lime-500); }
+/* Chosen visit with handles to change its length (task-20-3) */
+.plan3__blk--own.is-chosen { overflow: visible; z-index: 4; box-shadow: 0 0 0 2px var(--rw-color-lime-500), 0 2px 8px rgba(11, 31, 51, 0.25); }
+.plan3__handle { position: absolute; top: -3px; bottom: -3px; width: 10px; display: block; cursor: ew-resize; touch-action: none; pointer-events: auto; background: var(--rw-color-lime-500); border: 1px solid var(--rw-color-navy-950); border-radius: 2px; }
+.plan3__handle--start { left: -5px; }
+.plan3__handle--end { right: -5px; }
+.plan3__handle::after { content: ""; position: absolute; inset: 30% 3px; border-left: 1px solid var(--rw-color-navy-950); border-right: 1px solid var(--rw-color-navy-950); }
+body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; user-select: none; }

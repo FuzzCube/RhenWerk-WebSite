@@ -73,6 +73,9 @@ type Ignore = { technicianId: string; start: number; end: number };
 type Move = { block: BusyBlock; visitId: string; version: number; from: BoardPick; to: BoardPick; error?: string };
 const DRAG_STEP = 15;
 const DEFAULT_REASON = "Verschoben auf der Plantafel";
+const RESIZE_REASON = "Dauer geändert auf der Plantafel";
+// Only the length changed (task-20-3): same technician, day and either start or end
+const onlyLength = (move: Move) => move.to.technicianId === move.from.technicianId && move.to.day === move.from.day && (move.to.start === move.from.start || move.to.end === move.from.end);
 const ignoreOf = (block: BusyBlock): Ignore => ({ technicianId: block.technicianId, start: Date.parse(block.start), end: Date.parse(block.end) });
 
 export function PlanBoard(props: Props) {
@@ -86,6 +89,8 @@ export function PlanBoard(props: Props) {
   const [notice, setNotice] = useState("");
   const [drag, setDrag] = useState<Drag | null>(null);
   const [move, setMove] = useState<Move | null>(null);
+  // Visit chosen with one click (task-20-3): shows handles to change its length; a double click opens the request
+  const [chosenVisit, setChosenVisit] = useState<string | null>(null);
   // Saving a move: on success the server refreshes the board data, the pending move is cleared here
   const [, moveAction, moving] = useActionState(async (previous: FormState, formData: FormData) => {
     const result = await rescheduleVisit(previous, formData);
@@ -331,6 +336,48 @@ export function PlanBoard(props: Props) {
     document.body.classList.add("is-plan-dragging");
   }
 
+  // Handle of a chosen visit (task-20-3): drags its start or end on the 15-minute grid, at least 30 minutes long; the
+  // result goes to the same confirmation as a move
+  function startResize(event: ReactPointerEvent<HTMLElement>, visit: BusyBlock, edge: "start" | "end") {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const laneElement = event.currentTarget.closest<HTMLElement>(".plan3__lane");
+    if (!laneElement || !visit.move) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const origin = move && move.visitId === visit.move.visitId ? move.to : pickOf(visit);
+    const ignore = ignoreOf(visit);
+    const startX = event.clientX;
+    let current: Drag | null = null;
+    const move_ = (moveEvent: PointerEvent) => {
+      if (!current && Math.abs(moveEvent.clientX - startX) < 3) return;
+      const rect = laneElement.getBoundingClientRect();
+      const minute = Math.round((bounds.from + ((moveEvent.clientX - rect.left) / rect.width) * (bounds.to - bounds.from)) / DRAG_STEP) * DRAG_STEP;
+      let start = toMinutes(origin.start);
+      let end = toMinutes(origin.end);
+      if (edge === "start") start = Math.min(Math.max(minute, bounds.from), end - 2 * DRAG_STEP);
+      else end = Math.max(Math.min(minute, bounds.to), start + 2 * DRAG_STEP);
+      current = { technicianId: origin.technicianId, day: origin.day, x: moveEvent.clientX, y: moveEvent.clientY, ignore, snapped: { ...origin, start: toTime(start), end: toTime(end) } };
+      setDrag(current);
+    };
+    const stop = (dropIt: boolean) => {
+      window.removeEventListener("pointermove", move_);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      document.body.classList.remove("is-plan-resizing");
+      setDrag(null);
+      if (!current) return;
+      suppressClick.current = true;
+      window.setTimeout(() => { suppressClick.current = false; }, 0);
+      if (dropIt) dropVisit(visit, current.snapped, true);
+    };
+    const onUp = () => stop(true);
+    const onCancel = () => stop(false);
+    window.addEventListener("pointermove", move_);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+    document.body.classList.add("is-plan-resizing");
+  }
+
   // Dropped on a free slot: take it; on a conflict: the next free window of that day, else keep the old selection
   function drop(candidate: BoardPick, origin: BoardPick) {
     const result = check(candidate);
@@ -341,17 +388,19 @@ export function PlanBoard(props: Props) {
   }
 
   // Planned visit dropped: free target → confirmation; conflict → next free window of the same length that day
-  function dropVisit(visit: BusyBlock, candidate: BoardPick) {
+  function dropVisit(visit: BusyBlock, candidate: BoardPick, resized = false) {
     if (!visit.move) return;
     const from = pickOf(visit);
     const ignore = ignoreOf(visit);
     const pending = (to: BoardPick, text = "") => {
       setNotice(text);
-      if (to.technicianId === from.technicianId && to.day === from.day && to.start === from.start) return setMove(null);
+      if (to.technicianId === from.technicianId && to.day === from.day && to.start === from.start && to.end === from.end) return setMove(null);
       setMove({ block: visit, visitId: visit.move!.visitId, version: visit.move!.version, from, to });
     };
     const result = check(candidate, ignore);
     if (result.ok) return pending(candidate);
+    // A changed length stays where it is: the next free window of another length would surprise
+    if (resized) return setNotice(`${result.message} Länge unverändert.`);
     const span = toMinutes(from.end) - toMinutes(from.start);
     const found = windowFrom(candidate.technicianId, candidate.day, toMinutes(candidate.start), span, ignore) ?? windowFrom(candidate.technicianId, candidate.day, 0, span, ignore);
     if (found) return pending(found, `${result.message} Nächstes freies Fenster vorgeschlagen: ${found.start}–${found.end}.`);
@@ -366,11 +415,15 @@ export function PlanBoard(props: Props) {
       if (visit.requestId) router.push(`/dashboard/anfragen/${visit.requestId}`);
       return;
     }
-    if (event.key === "Escape") { setMove(null); return; }
+    if (event.key === "Escape") { setMove(null); setChosenVisit(null); return; }
     const base = move && move.visitId === visit.move?.visitId ? move.to : pickOf(visit);
     const span = toMinutes(base.end) - toMinutes(base.start);
     let next: BoardPick | null = null;
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    if (event.shiftKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      // Shift + ←/→: length by 15 minutes (task-20-3), at least 30 minutes
+      const end = Math.min(Math.max(toMinutes(base.end) + (event.key === "ArrowLeft" ? -DRAG_STEP : DRAG_STEP), toMinutes(base.start) + 2 * DRAG_STEP), bounds.to);
+      next = { ...base, end: toTime(end) };
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       const start = Math.min(Math.max(toMinutes(base.start) + (event.key === "ArrowLeft" ? -DRAG_STEP : DRAG_STEP), bounds.from), bounds.to - span);
       next = { ...base, start: toTime(start), end: toTime(start + span) };
     } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -382,7 +435,7 @@ export function PlanBoard(props: Props) {
     event.stopPropagation();
     const from = pickOf(visit);
     setNotice("");
-    if (next.technicianId === from.technicianId && next.start === from.start) return setMove(null);
+    if (next.technicianId === from.technicianId && next.start === from.start && next.end === from.end) return setMove(null);
     setMove({ block: visit, visitId: visit.move.visitId, version: visit.move.version, from, to: next });
   }
 
@@ -457,7 +510,7 @@ export function PlanBoard(props: Props) {
         role={interactive ? "button" : "img"}
         tabIndex={interactive ? 0 : undefined}
         aria-label={interactive ? `${label}. Auswählen` : label}
-        onClick={interactive ? (event) => { if (!suppressClick.current) select(event.clientX, event.currentTarget); } : undefined}
+        onClick={(event) => { if (suppressClick.current) return; setChosenVisit(null); if (interactive) select(event.clientX, event.currentTarget); }}
         onKeyDown={interactive ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(null, event.currentTarget); } } : undefined}
       >
         {halfHourLines.map((minute) => <i key={minute} className="plan3__grid plan3__grid--half" style={{ left: `${pct(minute)}%` }} />)}
@@ -473,28 +526,40 @@ export function PlanBoard(props: Props) {
             const visit = segment.block;
             // Planned visits within one day may be dragged (task-10-8); the original stays faded while it is moved
             const movable = visit.move !== null && dayKeyOf(new Date(visit.start)) === day && dayKeyOf(new Date(Date.parse(visit.end) - 1)) === day;
+            // Colours by time (task-20-3): coming visits blue, past ones dark grey
+            const past = segment.kind === "own" && Date.parse(visit.end) <= now.getTime() ? " is-past" : "";
             if (!movable) {
-              return <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}`} style={place(segment.start, segment.end)} title={`${segment.label} · ${span}`}>{text}</span>;
+              return <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}${past}`} style={place(segment.start, segment.end)} title={`${segment.label} · ${span}`}>{text}</span>;
             }
             const isMoving = move?.visitId === visit.move?.visitId || (drag?.ignore?.start === Date.parse(visit.start) && drag.ignore.technicianId === visit.technicianId);
+            const chosen = chosenVisit === visit.move?.visitId && !isMoving;
             return (
               <span
                 key={`${segment.start}-${segment.end}`}
-                className={`plan3__blk plan3__blk--own is-movable${isMoving ? " is-moving" : ""}`}
+                className={`plan3__blk plan3__blk--own is-movable${past}${isMoving ? " is-moving" : ""}${chosen ? " is-chosen" : ""}`}
                 style={place(segment.start, segment.end)}
-                title={`${segment.label} · ${span} · ziehen zum Verschieben`}
+                title={`${segment.label} · ${span} · Klick: auswählen und Länge ändern, ziehen: verschieben, Doppelklick: Anfrage öffnen`}
                 role="button"
                 tabIndex={0}
                 data-visit={visit.move?.visitId}
-                aria-label={`Einsatz ${segment.label}, ${name}, ${shortDay(day)} ${span}. Ziehen oder mit Pfeiltasten verschieben, Enter öffnet die Anfrage.`}
+                aria-pressed={chosen}
+                aria-label={`Einsatz ${segment.label}, ${name}, ${shortDay(day)} ${span}. Ziehen oder mit Pfeiltasten verschieben, Umschalt und Pfeiltasten ändern die Länge, Enter öffnet die Anfrage.`}
                 onPointerDown={(event) => startDrag(event, pickOf(visit), visit)}
                 onClick={(event) => {
                   event.stopPropagation();
-                  if (!suppressClick.current && visit.requestId) router.push(`/dashboard/anfragen/${visit.requestId}`);
+                  if (!suppressClick.current) setChosenVisit(chosen ? null : visit.move?.visitId ?? null);
+                }}
+                onDoubleClick={(event) => {
+                  event.stopPropagation();
+                  if (visit.requestId) router.push(`/dashboard/anfragen/${visit.requestId}`);
                 }}
                 onKeyDown={(event) => visitKey(event, visit)}
               >
                 {text}
+                {chosen && <>
+                  <i className="plan3__handle plan3__handle--start" aria-hidden="true" onPointerDown={(event) => startResize(event, visit, "start")} />
+                  <i className="plan3__handle plan3__handle--end" aria-hidden="true" onPointerDown={(event) => startResize(event, visit, "end")} />
+                </>}
               </span>
             );
           })}
@@ -578,8 +643,9 @@ export function PlanBoard(props: Props) {
         )}
 
         <ul className="plan3__legend" aria-label="Legende">
-          <li><i className="plan3__key plan3__key--own" />Eigene Einsätze</li>
-          <li><i className="plan3__key plan3__key--busy" />Belegt</li>
+          <li><i className="plan3__key plan3__key--own" />Einsätze</li>
+          <li><i className="plan3__key plan3__key--own-past" />Einsätze, vorbei</li>
+          <li><i className="plan3__key plan3__key--busy" />Belegt (andere)</li>
           <li><i className="plan3__key plan3__key--absence" />Abwesend</li>
           <li><i className="plan3__key plan3__key--hold" />Vorgemerkt (Telefon, Formular)</li>
           {canPick && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
@@ -624,7 +690,7 @@ export function PlanBoard(props: Props) {
           {canPick
             ? <>Leere Fläche anklicken oder die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
             : "Links eine Anfrage wählen, dann lassen sich freie Flächen anklicken."}
-          {hasMovable && " Geplante Einsätze lassen sich zum Verschieben ziehen (Pfeiltasten auf dem Einsatz, Enter öffnet die Anfrage)."}
+          {hasMovable && " Geplante Einsätze: ziehen verschiebt; ein Klick wählt den Einsatz, dann ändern die Griffe an den Rändern die Länge (oder Umschalt + Pfeiltasten); Doppelklick oder Enter öffnet die Anfrage."}
         </p>
         {notice && <p className="plan3__notice" role="status">{notice}</p>}
         {move && (
@@ -635,7 +701,7 @@ export function PlanBoard(props: Props) {
             <input type="hidden" name="date" value={move.to.day} />
             <input type="hidden" name="start" value={move.to.start} />
             <input type="hidden" name="end" value={move.to.end} />
-            <h3 id="verschieben-title" className="plan3__eyebrow">Einsatz {move.block.requestNumber} verschieben</h3>
+            <h3 id="verschieben-title" className="plan3__eyebrow">Einsatz {move.block.requestNumber} {onlyLength(move) ? "Dauer ändern" : "verschieben"}</h3>
             <p className="plan3__move-change">
               <span><span className="plan3__muted">Bisher</span> {techName(move.from.technicianId)} · {shortDay(move.from.day)} <span className="mono">{move.from.start}–{move.from.end}</span></span>
               <Icon name="arrow-right" size={16} />
@@ -644,10 +710,10 @@ export function PlanBoard(props: Props) {
             {moveCheck && !moveCheck.ok && <p className="plan3__check plan3__check--bad"><Icon name="alert" size={18} /><span>{moveCheck.message}</span></p>}
             <label className="plan3__move-reason">
               <span>Grund</span>
-              <input name="reason" type="text" maxLength={500} defaultValue={DEFAULT_REASON} key={move.visitId} />
+              <input name="reason" type="text" maxLength={500} defaultValue={onlyLength(move) ? RESIZE_REASON : DEFAULT_REASON} key={`${move.visitId}-${onlyLength(move)}`} />
             </label>
             <div className="plan3__move-actions">
-              <button type="submit" className="button button--primary" disabled={moving || !moveCheck?.ok}>{moving ? "Wird verschoben …" : "Verschieben"}</button>
+              <button type="submit" className="button button--primary" disabled={moving || !moveCheck?.ok}>{moving ? "Wird gespeichert …" : onlyLength(move) ? "Dauer speichern" : "Verschieben"}</button>
               <button type="button" className="button button--secondary" disabled={moving} onClick={() => { setMove(null); setNotice(""); }}>Abbrechen</button>
               {move.error && <p className="save-status save-status--error" role="alert">{move.error}</p>}
             </div>

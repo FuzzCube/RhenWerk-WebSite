@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v25, 21 Phasen, 121 Tasks, Fortschritt 99,3 % (Gewicht 284 von 286).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v25, 21 Phasen, 121 Tasks, Fortschritt 100 % (Gewicht 286 von 286).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -22,15 +22,15 @@ Roadmap v23 (22.10.2026): zusätzlich Umzug vom Oracle-Server (`ssh oracle-n8n`)
 
 Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (erledigt), `task-19-2` Einsatzplanung für Admin und Knopf aus der Anfrage (erledigt), `task-19-3` Wunschtermin aus dem Formular vormerken und Terminbestätigung (erledigt), `task-19-4` Plantafel rastet animiert auf Viertelstunden ein (erledigt), `task-19-5` Kosten von OpenAI im Bereich System (erledigt; Costs-API mit Admin-Key; Restguthaben nur aus eingetragenem Guthaben, OpenAI hat keine Guthaben-API).
 
-## Phase 20 „Rückmeldungen nach dem Rundgang“ (Roadmap v25, 22.10.2026)
+## Phase 20 „Rückmeldungen nach dem Rundgang“ (Roadmap v25, 22.10.2026, abgeschlossen)
 
-`task-20-1` Formular (erledigt), `task-20-2` Anfrage → Einsatzplanung mit Vormerkung als Auswahl (erledigt), `task-20-3` Plantafel: Farben nach Zeit, Länge per Griffen ändern, Doppelklick öffnet die Anfrage.
+`task-20-1` Formular (erledigt), `task-20-2` Anfrage → Einsatzplanung mit Vormerkung als Auswahl (erledigt), `task-20-3` Plantafel (erledigt). Uhrzeit im Formular seit Nutzerwunsch bis 16:00.
 
 ## Zuletzt abgeschlossen
 
+- `task-20-3` (22.10.2026): **Plantafel**: Einsätze künftig blau, vorbei hellblau, fremde grau; Klick wählt einen Einsatz, Griffe ändern die Länge, Doppelklick öffnet die Anfrage.
 - `task-20-2` (22.10.2026): **Vormerkung in der Einsatzplanung**: „Zur Einsatzplanung“ öffnet die Plantafel mit der Vormerkung als Auswahl, Planung schließt sie (Migration `20261022235000_plan_takes_hold.sql`), Anfrage ohne „Termin bestätigen“, „Terminwunsch ablehnen“ bleibt.
 - `task-20-1` (22.10.2026): **Formular**: Pfeile der Auswahllisten mit Abstand, Uhrzeit 07:00–14:00 im 30-Minuten-Raster mit Hinweis, Dateien per Drag and Drop.
-- `task-18-13` (22.10.2026): **Oracle-Server still**: letzte Sicherung verschlüsselt auf dem VPS (`/opt/rheinwerk/backups/oracle-final/`), alle Container gestoppt ohne Neustart, altes Repository archiviert; alte Vercel-Adresse zeigt die neue Website (`docs/betrieb.md` 3.9).
 
 ## Wo was dokumentiert ist (Telefonassistent)
 
@@ -60,4 +60,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 20: `task-20-3`. Phasen 18 und 19 abgeschlossen und deployt; OpenAI-Admin-Key auf dem VPS eintragen; Oracle-Instanz in der Oracle Cloud löschen, wenn nichts mehr gebraucht wird. Alle Tasks der Roadmap v24 erledigt. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 20 abgeschlossen (Push ausstehend). Phasen 18 und 19 abgeschlossen und deployt; OpenAI-Admin-Key auf dem VPS eintragen; Oracle-Instanz in der Oracle Cloud löschen, wenn nichts mehr gebraucht wird. Alle Tasks der Roadmap v24 erledigt. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
