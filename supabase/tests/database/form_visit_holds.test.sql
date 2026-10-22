@@ -1,7 +1,7 @@
 -- task-19-3: the website form holds the wished window (least booked technician of the month), otherwise the next free
 -- one; manual planning queues the same Terminbestätigung. Run with: supabase test db
 begin;
-select plan(17);
+select plan(21);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'd1@x.test'),
@@ -68,6 +68,12 @@ select is((select count(*)::int from public.visit_holds where request_id = 'ddbb
 select ok((select h.id is not null and h.wish_met from pg_temp.hold(6) h), 'unknown time counts as any time');
 select is((select count(*)::int from public.messages where request_id = 'ddbb0000-0000-4000-8000-000000000001' and kind = 'receipt'), 1, 'receipt still queued');
 select is((select count(*)::int from public.request_events where request_id = 'ddbb0000-0000-4000-8000-000000000001' and event_type = 'visit_hold_created'), 1, 'hold logged');
+-- task-20-6: the receipt names the held window as not yet confirmed; without a hold the wished date and time
+select ok((select m.subject like 'Anfrage eingegangen RIS-%' and m.body_text like '%Wunschtermin: ' || to_char(pg_temp.day(), 'DD.MM.YYYY') || ', 10:00–12:00 Uhr (vorgemerkt, noch nicht bestätigt)%'
+  and m.body_text like '%noch kein%Termin zugesagt%' and m.body_html like '%10:00–12:00 Uhr (vorgemerkt, noch nicht bestätigt)%'
+  from public.messages m where m.request_id = 'ddbb0000-0000-4000-8000-000000000001' and m.kind = 'receipt'), 'receipt: held window, not yet confirmed');
+select ok((select m.body_text like '%Wunschtermin: ' || to_char(pg_temp.day(), 'DD.MM.YYYY') || ', vormittags%'
+  from public.messages m where m.request_id = 'ddbb0000-0000-4000-8000-000000000005' and m.kind = 'receipt'), 'receipt without hold: wished date and time');
 
 -- One click for the dispatcher: intake done, hold confirmed, customer gets the confirmation
 update public.requests set intake_status = 'processed', intake_completed_at = now(), intake_mode = 'manual', manual_minutes_baseline = 15, priority = 'normal'
@@ -83,9 +89,11 @@ set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-0000000000d1', 'role', 'authenticated')::text, true);
 select lives_ok($$select public.queue_visit_confirmation((select id from public.visits where request_id = 'ddbb0000-0000-4000-8000-000000000001'))$$, 'confirmation of a planned visit');
 reset role;
-select ok((select m.approved_by = '00000000-0000-0000-0000-0000000000d1' and m.to_address = 'wanda@wunsch.test' and m.body_text like '%Dauer etwa 2.0 Stunden%'
+select ok((select m.approved_by = '00000000-0000-0000-0000-0000000000d1' and m.to_address = 'wanda@wunsch.test' and m.body_text like '%Dauer etwa 2 Stunden,%'
   from public.messages m where m.request_id = 'ddbb0000-0000-4000-8000-000000000001' and m.subject like 'Terminbestätigung%' order by m.created_at desc limit 1),
   'approved by the planning person, sent to the customer');
+select is(private.duration_text(pg_temp.at('10:00'), pg_temp.at('11:30')), '1 Stunde und 30 Minuten', 'length in words');
+select is(private.duration_text(pg_temp.at('10:00'), pg_temp.at('10:45')), '45 Minuten', 'short length in words');
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-0000000000b1', 'role', 'authenticated')::text, true);
 select throws_ok($$select public.queue_visit_confirmation((select id from public.visits where request_id = 'ddbb0000-0000-4000-8000-000000000001'))$$, '42501', null, 'technician cannot');
