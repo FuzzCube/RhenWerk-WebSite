@@ -496,3 +496,7 @@
 {"timestamp": "2026-10-22T20:09:55Z", "type": "task_completed", "taskId": "task-20-5", "summary": "Griffe an Auswahl und geänderter Länge, Dauer-Knöpfe entfernt, Vorschlag per Klick genau übernommen; lint, typecheck, build, test:ui (bis auf 2 umgebungsbedingte Fehler)."}
 {"timestamp": "2026-10-22T20:29:17Z", "type": "roadmap_updated", "taskId": "task-20-6", "summary": "Nutzerwunsch nach Test: task-20-6 klare Eingangsbestätigung und Dauer in der Terminbestätigung ergänzt."}
 {"timestamp": "2026-10-22T20:29:17Z", "type": "task_completed", "taskId": "task-20-6", "summary": "Eingangsbestätigung nach der Vormerkung mit Hinweis, Dauer lesbar, Test-E-Mails auf der Produktion gelöscht; test:db, test:unit, test:api, lint, typecheck."}
+{"timestamp": "2026-10-22T20:54:31Z", "type": "roadmap_updated", "taskId": "task-20-7", "summary": "Nutzerwunsch nach Test: task-20-7 ergänzt."}
+{"timestamp": "2026-10-22T20:54:31Z", "type": "task_completed", "taskId": "task-20-7", "summary": "Terminänderung per E-Mail beim Verschieben; Prüfungen bestanden (test:ui bis auf 2 umgebungsbedingte Fehler)."}
+{"timestamp": "2026-10-22T20:54:31Z", "type": "roadmap_updated", "taskId": "task-20-8", "summary": "Nutzerwunsch nach Test: task-20-8 ergänzt."}
+{"timestamp": "2026-10-22T20:54:31Z", "type": "task_completed", "taskId": "task-20-8", "summary": "Entwurf sichtbar nach dem Speichern, Konflikt durch Versand behoben; Prüfungen bestanden (test:ui bis auf 2 umgebungsbedingte Fehler)."}

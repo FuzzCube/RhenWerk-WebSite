@@ -68,7 +68,7 @@ type Segment = { start: number; end: number; kind: "own" | "busy" | "absence" | 
 // the pointer. A moved visit is left out of the conflict check (ignore), it does not collide with itself.
 type Drag = { technicianId: string; day: string; snapped: BoardPick; x: number; y: number; ignore: Ignore | null };
 type Ignore = { technicianId: string; start: number; end: number };
-// Visit dropped somewhere else, waiting for confirmation (old → new, reason)
+// Visit dropped somewhere else, waiting for confirmation (old → new, reason, e-mail to the customer)
 // error: message of a failed save, belongs to this move only (a new drag starts without it)
 type Move = { block: BusyBlock; visitId: string; version: number; from: BoardPick; to: BoardPick; error?: string };
 const DRAG_STEP = 15;
@@ -738,6 +738,13 @@ export function PlanBoard(props: Props) {
               <span>Grund</span>
               <input name="reason" type="text" maxLength={500} defaultValue={onlyLength(move) ? RESIZE_REASON : DEFAULT_REASON} key={`${move.visitId}-${onlyLength(move)}`} />
             </label>
+            {/* task-20-7: a new time goes to the customer; another technician alone does not concern them */}
+            {(move.to.day !== move.from.day || move.to.start !== move.from.start || move.to.end !== move.from.end) && (
+              <label className="plan3__move-notify">
+                <input name="notify_customer" type="checkbox" defaultChecked />
+                <span>Kunden über die Terminänderung informieren</span>
+              </label>
+            )}
             <div className="plan3__move-actions">
               <button type="submit" className="button button--primary" disabled={moving || !moveCheck?.ok}>{moving ? "Wird gespeichert …" : onlyLength(move) ? "Dauer speichern" : "Verschieben"}</button>
               <button type="button" className="button button--secondary" disabled={moving} onClick={() => { setMove(null); setNotice(""); }}>Abbrechen</button>

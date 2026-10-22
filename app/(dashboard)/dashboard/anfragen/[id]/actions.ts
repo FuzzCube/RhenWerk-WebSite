@@ -29,11 +29,41 @@ function context(formData: FormData): Context | null {
   return { values, id: values.request_id, version };
 }
 
+type RpcResult<T = unknown> = { data: T | null; error: { code?: string; message?: string } | null };
+type Client = Awaited<ReturnType<typeof createClient>>;
+
 async function run(values: Record<string, string>, success: string, call: () => PromiseLike<{ error: { code?: string; message?: string } | null }>): Promise<FormState> {
   const { error } = await call();
   if (error) return formError(databaseErrorMessage(error), values);
   refresh();
   return formSuccess(success, values);
+}
+
+// task-20-4, for every action since task-20-8: sending an e-mail in the background (receipt, confirmation) changes the
+// request (version) a few seconds later. If only such e-mail events happened since the page was loaded (seen_at = its
+// updated_at), nothing the person decided on has changed: repeat with the current version instead of a conflict.
+const MAIL_EVENTS: readonly string[] = ["message_queued", "message_sent"];
+
+async function withCurrentVersion<T>(supabase: Client, input: Context, call: (version: number) => PromiseLike<RpcResult<T>>): Promise<RpcResult<T>> {
+  const result = await call(input.version);
+  if (result.error?.code !== "RW409" || !input.values.seen_at) return result;
+  const [{ data: current }, { data: events }] = await Promise.all([
+    supabase.from("requests").select("version").eq("id", input.id).single(),
+    supabase.from("request_events").select("actor_type, event_type").eq("request_id", input.id).gt("created_at", input.values.seen_at),
+  ]);
+  // At least one e-mail event, nothing else, and no more version steps than such events (a change without an event,
+  // e.g. edited data, still counts as a conflict)
+  const list = events ?? [];
+  const mailOnly = list.length > 0 && list.every((event) => event.actor_type === "automation" && MAIL_EVENTS.includes(event.event_type));
+  return current && mailOnly && current.version > input.version && current.version - input.version <= list.length ? call(current.version) : result;
+}
+
+// Action on the request with its version: repeated once when only e-mails were sent meanwhile
+async function runVersioned(supabase: Client, input: Context, success: string, call: (version: number) => PromiseLike<RpcResult>): Promise<FormState> {
+  const { error } = await withCurrentVersion(supabase, input, call);
+  if (error) return formError(databaseErrorMessage(error), input.values);
+  refresh();
+  return formSuccess(success, input.values);
 }
 
 const invalid = (values: Record<string, string>) => formError("Ungültige Anfrage. Bitte die Seite neu laden.", values);
@@ -47,24 +77,11 @@ export async function completeIntake(_previous: FormState, formData: FormData): 
   const supabase = await createClient();
   const complete = (version: number) =>
     supabase.rpc("complete_intake", { request_id: input.id, expected_version: version, priority: values.priority as Enums["request_priority"], note: values.note?.trim() || undefined });
-  let { error } = await complete(input.version);
-  // task-20-4: sending the receipt in the background changes the request (version) a few seconds after it arrives.
-  // If only such e-mail events happened since the page was loaded (seen_at = its updated_at), nothing the person
-  // decided on has changed: complete with the current version instead of reporting a conflict.
-  if (error?.code === "RW409" && values.seen_at) {
-    const [{ data: current }, { data: events }] = await Promise.all([
-      supabase.from("requests").select("version, intake_status").eq("id", input.id).single(),
-      supabase.from("request_events").select("actor_type, event_type").eq("request_id", input.id).gt("created_at", values.seen_at),
-    ]);
-    const mailOnly = (events ?? []).every((event) => event.actor_type === "automation" && MAIL_EVENTS.includes(event.event_type));
-    if (current && mailOnly && ["new", "analyzing", "needs_review"].includes(current.intake_status)) ({ error } = await complete(current.version));
-  }
+  const { error } = await withCurrentVersion(supabase, input, complete);
   if (error) return formError(databaseErrorMessage(error), values);
   // Next step is planning (user request 22.10.2026): straight to the board, where an open hold is the preselected slot
   redirect(`/dashboard/planung?anfrage=${input.id}`);
 }
-
-const MAIL_EVENTS: readonly string[] = ["message_queued", "message_sent"];
 
 export async function correctAnalysis(_previous: FormState, formData: FormData): Promise<FormState> {
   await requireRole(STAFF);
@@ -81,10 +98,10 @@ export async function correctAnalysis(_previous: FormState, formData: FormData):
   if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", values, fieldErrors);
   const runId = UUID.test(values.automation_run_id ?? "") ? values.automation_run_id : undefined;
   const supabase = await createClient();
-  return run(values, "Korrektur gespeichert.", () =>
+  return runVersioned(supabase, input, "Korrektur gespeichert.", (version) =>
     supabase.rpc("correct_analysis", {
       request_id: input.id,
-      expected_version: input.version,
+      expected_version: version,
       reason: values.reason.trim(),
       priority: (priority || undefined) as Enums["request_priority"] | undefined,
       service_kind: (serviceKind || undefined) as Enums["service_kind"] | undefined,
@@ -97,8 +114,8 @@ export async function markAwaitingCustomer(_previous: FormState, formData: FormD
   const input = context(formData);
   if (!input) return invalid(formValues(formData));
   const supabase = await createClient();
-  return run(input.values, "Status „Wartet auf Kunde“ gesetzt.", () =>
-    supabase.rpc("mark_awaiting_customer", { request_id: input.id, expected_version: input.version, note: input.values.note?.trim() || undefined }));
+  return runVersioned(supabase, input, "Status „Wartet auf Kunde“ gesetzt.", (version) =>
+    supabase.rpc("mark_awaiting_customer", { request_id: input.id, expected_version: version, note: input.values.note?.trim() || undefined }));
 }
 
 export async function rejectRequest(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -108,8 +125,8 @@ export async function rejectRequest(_previous: FormState, formData: FormData): P
   const { values } = input;
   if (!values.reason?.trim()) return formError("Bitte den Ablehnungsgrund angeben.", values, { reason: "Pflichtangabe." });
   const supabase = await createClient();
-  return run(values, "Anfrage abgelehnt.", () =>
-    supabase.rpc("reject_request", { request_id: input.id, expected_version: input.version, reason: values.reason.trim() }));
+  return runVersioned(supabase, input, "Anfrage abgelehnt.", (version) =>
+    supabase.rpc("reject_request", { request_id: input.id, expected_version: version, reason: values.reason.trim() }));
 }
 
 function emailErrors(values: Record<string, string>): Record<string, string> {
@@ -129,15 +146,18 @@ export async function createDraft(_previous: FormState, formData: FormData): Pro
   if (!MESSAGE_KINDS.includes(values.kind ?? "")) fieldErrors.kind = "Bitte die Art wählen.";
   if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", values, fieldErrors);
   const supabase = await createClient();
-  return run(values, "Entwurf gespeichert (nicht versendet).", () =>
+  const { data: draft, error } = await withCurrentVersion(supabase, input, (version) =>
     supabase.rpc("create_message_draft", {
       request_id: input.id,
-      expected_version: input.version,
+      expected_version: version,
       kind: values.kind as Enums["message_kind"],
       to_address: values.to_address.trim(),
       subject: values.subject.trim(),
       body_text: values.body_text,
     }));
+  if (error) return formError(databaseErrorMessage(error), values);
+  // task-20-8: the draft lives in the correspondence; open it there with the text, the form starts from the template
+  redirect(`/dashboard/anfragen/${input.id}?entwurf=${draft?.id ?? ""}#nachricht-${draft?.id ?? ""}`);
 }
 
 export async function updateDraft(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -148,10 +168,10 @@ export async function updateDraft(_previous: FormState, formData: FormData): Pro
   const fieldErrors = emailErrors(values);
   if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", values, fieldErrors);
   const supabase = await createClient();
-  return run(values, "Entwurf aktualisiert (nicht versendet).", () =>
+  return runVersioned(supabase, input, "Entwurf aktualisiert (nicht versendet).", (version) =>
     supabase.rpc("update_message_draft", {
       message_id: values.message_id,
-      expected_version: input.version,
+      expected_version: version,
       to_address: values.to_address.trim(),
       subject: values.subject.trim(),
       body_text: values.body_text,
@@ -163,8 +183,8 @@ export async function queueDraft(_previous: FormState, formData: FormData): Prom
   const input = context(formData);
   if (!input || !UUID.test(input.values.message_id ?? "")) return invalid(formValues(formData));
   const supabase = await createClient();
-  return run(input.values, "In die Warteschlange gestellt – noch nicht versendet.", () =>
-    supabase.rpc("queue_message", { message_id: input.values.message_id, expected_version: input.version }));
+  return runVersioned(supabase, input, "In die Warteschlange gestellt – noch nicht versendet.", (version) =>
+    supabase.rpc("queue_message", { message_id: input.values.message_id, expected_version: version }));
 }
 
 // Completion and invoicing (task-6-3): current technician, manager or admin, no manager approval.
@@ -178,8 +198,8 @@ export async function closeRequest(_previous: FormState, formData: FormData): Pr
   const { values } = input;
   if (!values.completion_summary?.trim()) return formError("Bitte den Abschlussbericht angeben.", values, { completion_summary: "Pflichtangabe für den Abschluss." });
   const supabase = await createClient();
-  return run(values, "Anfrage abgeschlossen. Die Rechnung kann jetzt erstellt werden.", () =>
-    supabase.rpc("close_request", { request_id: input.id, expected_version: input.version, completion_summary: values.completion_summary.trim() }));
+  return runVersioned(supabase, input, "Anfrage abgeschlossen. Die Rechnung kann jetzt erstellt werden.", (version) =>
+    supabase.rpc("close_request", { request_id: input.id, expected_version: version, completion_summary: values.completion_summary.trim() }));
 }
 
 export async function createInvoice(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -187,8 +207,8 @@ export async function createInvoice(_previous: FormState, formData: FormData): P
   const input = context(formData);
   if (!input) return invalid(formValues(formData));
   const supabase = await createClient();
-  return run(input.values, "Rechnungsentwurf erstellt. Bitte Positionen prüfen und ausstellen.", () =>
-    supabase.rpc("create_invoice", { request_id: input.id, expected_version: input.version }));
+  return runVersioned(supabase, input, "Rechnungsentwurf erstellt. Bitte Positionen prüfen und ausstellen.", (version) =>
+    supabase.rpc("create_invoice", { request_id: input.id, expected_version: version }));
 }
 
 export async function issueInvoice(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -196,8 +216,8 @@ export async function issueInvoice(_previous: FormState, formData: FormData): Pr
   const input = context(formData);
   if (!input || !UUID.test(input.values.invoice_id ?? "")) return invalid(formValues(formData));
   const supabase = await createClient();
-  return run(input.values, "Rechnung ausgestellt. Das PDF steht zum Download bereit.", () =>
-    supabase.rpc("issue_invoice", { invoice_id: input.values.invoice_id, expected_version: input.version }));
+  return runVersioned(supabase, input, "Rechnung ausgestellt. Das PDF steht zum Download bereit.", (version) =>
+    supabase.rpc("issue_invoice", { invoice_id: input.values.invoice_id, expected_version: version }));
 }
 
 // Payment of an issued invoice (task-10-3, user decision: on the request page and in the invoice list).
@@ -213,8 +233,8 @@ export async function recordPayment(_previous: FormState, formData: FormData): P
   if (day > today) return formError("Das Zahlungsdatum liegt in der Zukunft.", input.values, { paid_on: "Höchstens heute." });
   const paidAt = day === today ? undefined : berlinToInstant(day, "23:59").toISOString();
   const supabase = await createClient();
-  return run(input.values, "Zahlung erfasst.", () =>
-    supabase.rpc("record_payment", { invoice_id: input.values.invoice_id, expected_version: input.version, ...(paidAt ? { paid_at: paidAt } : {}) }));
+  return runVersioned(supabase, input, "Zahlung erfasst.", (version) =>
+    supabase.rpc("record_payment", { invoice_id: input.values.invoice_id, expected_version: version, ...(paidAt ? { paid_at: paidAt } : {}) }));
 }
 
 // Payment reminders (task-10-2): send the next stage now, pause or resume per invoice (manager, admin).
@@ -229,8 +249,8 @@ export async function sendPaymentReminder(_previous: FormState, formData: FormDa
   const input = await reminderInput(formData);
   if (!input) return invalid(formValues(formData));
   const supabase = await createClient();
-  return run(input.values, "Erinnerung erstellt. Sie wird mit dem nächsten Versandlauf verschickt.", () =>
-    supabase.rpc("send_payment_reminder", { invoice_id: input.values.invoice_id, expected_version: input.version }));
+  return runVersioned(supabase, input, "Erinnerung erstellt. Sie wird mit dem nächsten Versandlauf verschickt.", (version) =>
+    supabase.rpc("send_payment_reminder", { invoice_id: input.values.invoice_id, expected_version: version }));
 }
 
 export async function pausePaymentReminders(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -239,16 +259,16 @@ export async function pausePaymentReminders(_previous: FormState, formData: Form
   const reason = input.values.reason?.trim() ?? "";
   if (!reason) return formError("Bitte einen Grund angeben.", input.values, { reason: "Pflichtangabe, z. B. Ratenzahlung vereinbart." });
   const supabase = await createClient();
-  return run(input.values, "Erinnerungen ausgesetzt.", () =>
-    supabase.rpc("pause_payment_reminders", { invoice_id: input.values.invoice_id, expected_version: input.version, reason }));
+  return runVersioned(supabase, input, "Erinnerungen ausgesetzt.", (version) =>
+    supabase.rpc("pause_payment_reminders", { invoice_id: input.values.invoice_id, expected_version: version, reason }));
 }
 
 export async function resumePaymentReminders(_previous: FormState, formData: FormData): Promise<FormState> {
   const input = await reminderInput(formData);
   if (!input) return invalid(formValues(formData));
   const supabase = await createClient();
-  return run(input.values, "Erinnerungen fortgesetzt.", () =>
-    supabase.rpc("resume_payment_reminders", { invoice_id: input.values.invoice_id, expected_version: input.version }));
+  return runVersioned(supabase, input, "Erinnerungen fortgesetzt.", (version) =>
+    supabase.rpc("resume_payment_reminders", { invoice_id: input.values.invoice_id, expected_version: version }));
 }
 
 // Window hold of the phone assistant (task-13-3): confirm plans the visit in the held window (schedule_visit with all
@@ -270,8 +290,8 @@ export async function createCustomerFromRequest(_previous: FormState, formData: 
   const input = context(formData);
   if (!input) return invalid(formValues(formData));
   const supabase = await createClient();
-  return run(input.values, "Kunde angelegt und verknüpft.", () =>
-    supabase.rpc("create_customer_from_request", { request_id: input.id, expected_version: input.version }));
+  return runVersioned(supabase, input, "Kunde angelegt und verknüpft.", (version) =>
+    supabase.rpc("create_customer_from_request", { request_id: input.id, expected_version: version }));
 }
 
 // Link to the customer master data (task-13-10), e.g. to correct the phone assistant; empty number removes the link.
@@ -285,6 +305,6 @@ export async function linkCustomer(_previous: FormState, formData: FormData): Pr
   if (number && !/^K?[-\s]?\d{4,}$/i.test(number)) return formError("Bitte die markierten Felder prüfen.", values, { customer_number: "Format K-12345." });
   if (values.site_id && !UUID.test(values.site_id)) return invalid(values);
   const supabase = await createClient();
-  return run(values, number ? "Mit dem Kunden verknüpft." : "Verknüpfung entfernt.", () =>
-    supabase.rpc("link_request_customer", { request_id: input.id, expected_version: input.version, customer_number: number, site_id: values.site_id || undefined, copy_data: values.copy_data === "on" }));
+  return runVersioned(supabase, input, number ? "Mit dem Kunden verknüpft." : "Verknüpfung entfernt.", (version) =>
+    supabase.rpc("link_request_customer", { request_id: input.id, expected_version: version, customer_number: number, site_id: values.site_id || undefined, copy_data: values.copy_data === "on" }));
 }

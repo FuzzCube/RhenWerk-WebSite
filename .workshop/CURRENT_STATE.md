@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v25, 21 Phasen, 124 Tasks, Fortschritt 100 % (Gewicht 289 von 289).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v25, 21 Phasen, 126 Tasks, Fortschritt 100 % (Gewicht 291 von 291).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -24,10 +24,12 @@ Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (er
 
 ## Phase 20 „Rückmeldungen nach dem Rundgang“ (Roadmap v25, 22.10.2026, abgeschlossen)
 
-`task-20-1` Formular (erledigt), `task-20-2` Anfrage → Einsatzplanung mit Vormerkung als Auswahl (erledigt), `task-20-3` Plantafel (erledigt), `task-20-4` Erstbearbeitung → Einsatzplanung (erledigt), `task-20-5` Länge per Griffen (erledigt), `task-20-6` Eingangs- und Terminbestätigung (erledigt). Uhrzeit im Formular seit Nutzerwunsch bis 16:00.
+`task-20-1` Formular (erledigt), `task-20-2` Anfrage → Einsatzplanung mit Vormerkung als Auswahl (erledigt), `task-20-3` Plantafel (erledigt), `task-20-4` Erstbearbeitung → Einsatzplanung (erledigt), `task-20-5` Länge per Griffen (erledigt), `task-20-6` Eingangs- und Terminbestätigung, `task-20-7` Terminänderung per E-Mail, `task-20-8` Entwurf und Konflikte (erledigt). Uhrzeit im Formular seit Nutzerwunsch bis 16:00.
 
 ## Zuletzt abgeschlossen
 
+- `task-20-8` (22.10.2026): **Entwurf**: nach dem Speichern Sprung zum Entwurf; kein Versionskonflikt durch Versand im Hintergrund bei allen Aktionen der Anfrage.
+- `task-20-7` (22.10.2026): **Terminänderung**: Verschieben auf der Plantafel schickt dem Kunden neuen und bisherigen Termin (Häkchen, voreingestellt).
 - `task-20-6` (22.10.2026): **E-Mails**: Eingangsbestätigung „Anfrage eingegangen“ mit „vorgemerkt, noch nicht bestätigt“; Terminbestätigung mit lesbarer Dauer; 177 Test-E-Mails an example.com auf der Produktion gelöscht.
 - `task-20-5` (22.10.2026): **Länge per Griffen**: Auswahl ohne Dauer-Knöpfe, blaue Griffe an den Rändern; Griffe bleiben an einer geänderten Länge; Klick auf einen Vorschlag übernimmt ihn genau.
 - `task-20-4` (22.10.2026): **Erstbearbeitung → Einsatzplanung**: keine Vormerkungskarte bei offener Erstbearbeitung, „Erstbearbeitung abschließen“ öffnet die Plantafel mit der Vormerkung; Versionskonflikt durch den Versand der Eingangsbestätigung wird nicht mehr gemeldet.

@@ -555,3 +555,7 @@ Nutzerentscheidung: Wie beim Telefonassistenten soll auch das Formular den Wunsc
 - „Termin bestätigen“ schließt eine offene Erstbearbeitung mit der gewählten Priorität ab und plant den Einsatz; die Terminbestätigung gilt als von dieser Person freigegeben (Regel „Ausgehende E-Mails brauchen Freigabe“ bleibt).
 - Auch die manuelle Planung auf der Plantafel schickt standardmäßig eine Terminbestätigung (abwählbar). Verschieben schickt keine neue Bestätigung.
 - Die Auslastung des Monats entscheidet zuerst über den Techniker, danach die des Tages; das gilt auch für Mira.
+
+## 22.10.2026 · Versionskonflikt nur bei echten Änderungen (task-20-8)
+
+Der Versand einer E-Mail im Hintergrund (Eingangsbestätigung, Terminbestätigung) erhöht die Version der Anfrage einige Sekunden später. Alle Aktionen der Anfrageseite senden deshalb `seen_at` (updated_at der geladenen Seite) mit. Bei RW409 wird einmal mit der aktuellen Version wiederholt, wenn seitdem mindestens ein und ausschließlich Mail-Ereignisse der Automatisierung (`message_queued`, `message_sent`) geschahen und die Version höchstens um deren Anzahl stieg. Jede andere Änderung, auch ohne Ereignis, bleibt ein Konflikt.

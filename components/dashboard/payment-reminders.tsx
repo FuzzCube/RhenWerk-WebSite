@@ -16,6 +16,7 @@ export function PaymentReminders({ detail, canManage, today }: { detail: Request
     <>
       <HiddenField name="request_id" value={detail.request.id} />
       <HiddenField name="version" value={detail.request.version} />
+      <HiddenField name="seen_at" value={detail.request.updated_at} />
       <HiddenField name="invoice_id" value={invoice.id} />
     </>
   );

@@ -1853,6 +1853,8 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .plan3__move-change { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 0; font-size: 14px; line-height: 1.43; }
 .plan3__move-reason { display: grid; gap: 4px; max-width: 32rem; font-size: 13px; font-weight: 600; color: var(--rw-text-secondary); }
 .plan3__move-reason input { min-height: 40px; padding: 8px 10px; font: inherit; font-size: 15px; font-weight: 400; color: var(--rw-text-primary); background: var(--rw-color-white); border: 1px solid var(--rw-border-default, var(--rw-color-steel-300)); border-radius: var(--rw-radius-sm); }
+.plan3__move-notify { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--rw-text-primary); cursor: pointer; }
+.plan3__move-notify input { width: 18px; height: 18px; margin: 0; accent-color: var(--rw-color-blue-700); }
 .plan3__move-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
 .plan3__move-actions .save-status { margin: 0; }
 
@@ -2027,3 +2029,7 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .plan3__handle--pick.plan3__handle--end { right: -9px; }
 .plan3__handle--pick::after { inset: 30% 2px; }
 .plan3__handle--pick::after { border-color: var(--rw-color-white); }
+
+/* task-20-8: a saved draft is marked where the page jumps to it */
+.message:target { scroll-margin-top: 96px; outline: 2px solid var(--rw-color-lime-500); outline-offset: 2px; border-radius: var(--rw-radius-sm); }
+.message__draft-note { margin: 12px 0 0; font-size: 14px; font-weight: 600; color: var(--rw-text-primary); }

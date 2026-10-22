@@ -407,6 +407,7 @@ function CustomerLink({ detail }: { detail: RequestDetail }) {
         <SaveForm action={createCustomerFromRequest} submitLabel="Neuen Kunden aus der Anfrage anlegen" submitVariant="secondary" className="request-customer__create">
           <HiddenField name="request_id" value={r.id} />
           <HiddenField name="version" value={r.version} />
+          <HiddenField name="seen_at" value={r.updated_at} />
         </SaveForm>
       )}
       <details className="action">
@@ -414,6 +415,7 @@ function CustomerLink({ detail }: { detail: RequestDetail }) {
         <SaveForm action={linkCustomer} submitLabel={customer ? "Speichern" : "Verknüpfen"}>
           <HiddenField name="request_id" value={r.id} />
           <HiddenField name="version" value={r.version} />
+          <HiddenField name="seen_at" value={r.updated_at} />
           <div className="form-grid">
             <SuggestField area="kundennummer" name="customer_number" label="Kundennummer" defaultValue={customer?.customer_number ?? r.stated_customer_number ?? ""} hint="Firma, Nummer oder Ort tippen und Vorschlag wählen. Leer lassen, um die Verknüpfung zu entfernen." />
             {customer && customer.sites.length > 1 && (
@@ -457,6 +459,7 @@ function CustomerSuggestions({ request, suggestions }: { request: RequestDetail[
               <SaveForm action={linkCustomer} submitLabel="Zuordnen" submitVariant="secondary" className="customer-suggest__action">
                 <HiddenField name="request_id" value={request.id} />
                 <HiddenField name="version" value={request.version} />
+                <HiddenField name="seen_at" value={request.updated_at} />
                 <HiddenField name="customer_number" value={customer.customer_number} />
               </SaveForm>
             </li>
@@ -466,6 +469,7 @@ function CustomerSuggestions({ request, suggestions }: { request: RequestDetail[
       <SaveForm action={createCustomerFromRequest} submitLabel="Neuen Kunden anlegen" submitVariant="secondary" className="customer-suggest__create">
         <HiddenField name="request_id" value={request.id} />
         <HiddenField name="version" value={request.version} />
+        <HiddenField name="seen_at" value={request.updated_at} />
       </SaveForm>
     </section>
   );
@@ -571,7 +575,8 @@ function Correspondence({ detail, person, editable }: { detail: RequestDetail; p
           const incoming = message.direction === "incoming";
           const when = message.received_at ?? message.sent_at ?? message.created_at;
           return (
-            <li key={message.id} className={`message message--${message.direction}`}>
+            // Anchor for "Als Entwurf speichern" (task-20-8): the page opens at the new draft, :target marks it
+            <li key={message.id} id={`nachricht-${message.id}`} className={`message message--${message.direction}`}>
               <details open={message.status === "draft" && editable}>
                 <summary>
                   <span className="message__head">
@@ -585,7 +590,10 @@ function Correspondence({ detail, person, editable }: { detail: RequestDetail; p
                   <p>{message.body_text}</p>
                   {message.author_id && <p className="message__meta">Verfasst von {person(message.author_id, "Unbekannt")}</p>}
                   {message.error_text && <p className="message__error">Fehler: {message.error_text}</p>}
-                  {message.status === "draft" && editable && <DraftActions detail={detail} message={message} />}
+                  {message.status === "draft" && editable && <>
+                    <p className="message__draft-note">Entwurf gespeichert, noch nicht versendet. Hier weiter bearbeiten oder in die Warteschlange stellen.</p>
+                    <DraftActions detail={detail} message={message} />
+                  </>}
                 </div>
               </details>
             </li>

@@ -4374,6 +4374,67 @@
             ],
             "summary": "Ursache der Rückmeldung: die Terminbestätigung RIS-2026-02765 entstand beim Planen mit vorausgewählter Benachrichtigung (bleibt laut Nutzer so). Migrationen 20261022235500_receipt_wish_hold (aus emails/build_receipt_migration.py: private.receipt_wish, neuer Betreff, Texte) und 20261022235600_confirmation_duration (private.duration_text, ingest_submission legt die Eingangsbestätigung nach der Vormerkung an, confirm_visit_hold und queue_visit_confirmation mit lesbarer Dauer). pgTAP form_visit_holds 21 Tests. Produktion: 177 Test-E-Mails an example.com (queued/draft/failed) gelöscht, Sicherung ~/n8n-backup/test-messages-2026-10-22.csv auf dem VPS."
           }
+        },
+        {
+          "id": "task-20-7",
+          "title": "E-Mail an den Kunden bei Terminänderung",
+          "description": "Nutzerwunsch: wird ein geplanter Einsatz verschoben oder seine Länge geändert, erhält der Kunde automatisch eine Terminänderung mit neuem und bisherigem Termin.",
+          "order": 7,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-6"
+          ],
+          "definitionOfDone": [
+            "Häkchen im Verschieben-Dialog, voreingestellt",
+            "E-Mail nur bei geänderter Zeit",
+            "pgTAP und Browserprüfung"
+          ],
+          "startedAt": "2026-10-22T20:40:00Z",
+          "completedAt": "2026-10-22T20:54:31Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-22T20:54:31Z",
+            "commands": [
+              "npx supabase test db (1218 Tests)",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "Browser: Einsatz per Pfeiltaste verschoben, Häkchen gesetzt, gespeichert"
+            ],
+            "summary": "Migration 20261022235700_visit_change_mail: public.queue_visit_change(visit_id, previous_start, previous_end) schreibt „Terminänderung RIS-…“ mit neuem Termin, Dauer und bisherigem Termin; nichts bei gleicher Zeit (nur anderer Techniker). rescheduleVisit liest die Zeit vor dem Verschieben und ruft die Funktion, wenn notify_customer gesetzt ist. Plantafel: Häkchen „Kunden über die Terminänderung informieren“ (voreingestellt), nur sichtbar bei geänderter Zeit. Geprüft: RIS-2026-01751 07:00→07:15, Meldung „Terminänderung … in der Warteschlange“, E-Mail mit „Neuer Termin … 7:15 Uhr“ und „Bisher … 7 Uhr“. pgTAP form_visit_holds 25 Tests."
+          }
+        },
+        {
+          "id": "task-20-8",
+          "title": "Entwurf einer E-Mail bleibt sichtbar, kein Konflikt durch Versand",
+          "description": "Nutzerrückmeldung: nach „Als Entwurf speichern“ schien der Text verloren (Formular zeigt wieder die Vorlage, der Entwurf steht unter Korrespondenz); zuvor Versionskonflikt beim Speichern durch den Versand im Hintergrund.",
+          "order": 8,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-4"
+          ],
+          "definitionOfDone": [
+            "Nach dem Speichern springt die Seite zum Entwurf mit dem Text",
+            "Hinweis auf vorhandene Entwürfe im Formular",
+            "Kein Konflikt durch Versand im Hintergrund bei allen Aktionen der Anfrage",
+            "Echte Konflikte bleiben"
+          ],
+          "startedAt": "2026-10-22T20:40:00Z",
+          "completedAt": "2026-10-22T20:54:31Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-22T20:54:31Z",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3100 npm run test:ui (unter next dev)",
+              "Browser: Entwurf gespeichert während Versand simuliert (Version +1)"
+            ],
+            "summary": "Produktion RIS-2026-02767: beide Entwürfe enthielten den Text; das Formular startete danach wieder mit der Vorlage. createDraft leitet jetzt auf #nachricht-<id> um (Entwurf offen, markiert, Hinweis „noch nicht versendet“); das Formular verweist auf vorhandene Entwürfe. withCurrentVersion/runVersioned für alle 14 Aktionen mit Version (seen_at in allen Formularen der Anfrage): Wiederholung nur bei ≥1 und ausschließlich Mail-Ereignissen der Automatisierung und höchstens so vielen Versionsschritten (test:ui fand, dass eine Änderung ohne Ereignis sonst übergangen würde). test:ui: Konfliktprüfungen bestehen, nur die 2 bekannten Fehler wegen lokal liegender Test-E-Mails."
+          }
         }
       ]
     }

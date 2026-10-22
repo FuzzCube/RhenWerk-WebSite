@@ -3028,6 +3028,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"queue_visit_change":
+{ Args: { "previous_end": string,"previous_start": string,"visit_id": string }; Returns: undefined
+                           },
 "queue_visit_confirmation":
 { Args: { "visit_id": string }; Returns: undefined
                            },

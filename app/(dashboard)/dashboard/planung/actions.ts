@@ -69,6 +69,8 @@ export async function rescheduleVisit(_previous: FormState, formData: FormData):
   const start = berlinToInstant(values.date, values.start);
   const end = berlinToInstant(values.date, values.end);
   const supabase = await createClient();
+  // Time before the move, for the e-mail to the customer (task-20-7)
+  const { data: before } = await supabase.from("visits").select("scheduled_start, scheduled_end").eq("id", values.visit_id).single();
   const { error } = await supabase.rpc("reschedule_visit", {
     visit_id: values.visit_id,
     expected_version: version,
@@ -85,6 +87,13 @@ export async function rescheduleVisit(_previous: FormState, formData: FormData):
     }
     return formError(`${databaseErrorMessage(error)}${error.code === "RW410" ? " Bitte einen freien Zeitraum wählen." : ""}`, values);
   }
+  // Terminänderung to the customer (task-20-7), approved by the planning person; only when the time changed
+  let mail = "";
+  const timeChanged = before && (Date.parse(before.scheduled_start) !== start.getTime() || Date.parse(before.scheduled_end) !== end.getTime());
+  if (values.notify_customer === "on" && before && timeChanged) {
+    const { error: mailError } = await supabase.rpc("queue_visit_change", { visit_id: values.visit_id, previous_start: before.scheduled_start, previous_end: before.scheduled_end });
+    mail = mailError ? " Die Nachricht über die Terminänderung konnte nicht erstellt werden." : " Die Terminänderung an den Kunden steht in der Warteschlange.";
+  }
   refresh();
-  return formSuccess(`Einsatz verschoben: ${formatTimeRange(start, end)}.`, values);
+  return formSuccess(`Einsatz verschoben: ${formatTimeRange(start, end)}.${mail}`, values);
 }

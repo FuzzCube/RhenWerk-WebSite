@@ -1,7 +1,7 @@
 -- task-19-3: the website form holds the wished window (least booked technician of the month), otherwise the next free
 -- one; manual planning queues the same Terminbestätigung. Run with: supabase test db
 begin;
-select plan(21);
+select plan(25);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'd1@x.test'),
@@ -112,6 +112,22 @@ reset role;
 select ok((select h.status = 'confirmed' and h.visit_id is not null and h.decided_by = '00000000-0000-0000-0000-0000000000d1'
   from public.visit_holds h where h.request_id = 'ddbb0000-0000-4000-8000-000000000004'), 'hold closed with the planned visit');
 select is((select count(*)::int from public.messages where request_id = 'ddbb0000-0000-4000-8000-000000000004' and kind = 'other'), 0, 'no e-mail about the hold');
+
+-- task-20-7: a moved visit tells the customer the new time (old time named), nothing when the time stayed
+update public.visits set scheduled_start = pg_temp.at('08:00', 1), scheduled_end = pg_temp.at('09:30', 1)
+where request_id = 'ddbb0000-0000-4000-8000-000000000004';
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-0000000000d1', 'role', 'authenticated')::text, true);
+select lives_ok($$select public.queue_visit_change((select id from public.visits where request_id = 'ddbb0000-0000-4000-8000-000000000004'), pg_temp.at('14:00', 1), pg_temp.at('16:00', 1))$$, 'change of a moved visit');
+select lives_ok($$select public.queue_visit_change((select id from public.visits where request_id = 'ddbb0000-0000-4000-8000-000000000004'), pg_temp.at('08:00', 1), pg_temp.at('09:30', 1))$$, 'same time: nothing to tell');
+reset role;
+select ok((select count(*) = 1 and bool_and(m.subject like 'Terminänderung RIS-%' and m.status = 'queued' and m.to_address = 'wanda@wunsch.test'
+    and m.body_text like '%Neuer Termin: %um 8 Uhr, Dauer etwa 1 Stunde und 30 Minuten,%' and m.body_text like '%Bisher: %um 14 Uhr, Dauer etwa 2 Stunden.%')
+  from public.messages m where m.request_id = 'ddbb0000-0000-4000-8000-000000000004' and m.subject like 'Terminänderung%'), 'one e-mail with new and old time');
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-0000-0000-0000000000b1', 'role', 'authenticated')::text, true);
+select throws_ok($$select public.queue_visit_change((select id from public.visits where request_id = 'ddbb0000-0000-4000-8000-000000000004'), now(), now())$$, '42501', null, 'technician cannot');
+reset role;
 
 select * from finish();
 rollback;

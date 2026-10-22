@@ -37,6 +37,7 @@ function Context({ detail }: { detail: RequestDetail }) {
     <>
       <HiddenField name="request_id" value={detail.request.id} />
       <HiddenField name="version" value={detail.request.version} />
+      <HiddenField name="seen_at" value={detail.request.updated_at} />
     </>
   );
 }
@@ -62,6 +63,8 @@ export function RequestActions({ detail, employee }: { detail: RequestDetail; em
   // Customer number only for linked requests (task-15-3); requests.customer_number is set only then
   const customerNote = r.customer_number ? `Ihre Kundennummer: ${r.customer_number} – bitte bei Rückfragen und Anrufen angeben.\n\n` : "";
   const body = `Guten Tag ${r.contact_name},\n\nvielen Dank für Ihre Anfrage ${r.request_number}. Für die Planung des Einsatzes benötigen wir noch folgende Angaben:\n\n- \n\n${customerNote}Mit freundlichen Grüßen\n${employee.displayName}\nRheinWerk Industrieservice`;
+  // Open drafts (task-20-8): the form points there instead of starting a second one unnoticed
+  const drafts = (detail.messages ?? []).filter((message) => message.status === "draft");
   // Only the next step has the primary (lime) button
   const variant = (key: ActionKey) => (key === primary ? "primary" : "secondary");
   const className = (key: ActionKey) => `action${key === primary ? " action--primary" : ""}${key === "reject" ? " action--danger" : ""}`;
@@ -73,7 +76,6 @@ export function RequestActions({ detail, employee }: { detail: RequestDetail; em
         <p className="section-note">Schließt die Erstbearbeitung ab und öffnet die Einsatzplanung mit dieser Anfrage.</p>
         <SaveForm action={completeIntake} submitLabel="Erstbearbeitung abschließen" submitVariant={variant("complete")}>
           <Context detail={detail} />
-          <HiddenField name="seen_at" value={r.updated_at} />
           <div className="form-grid">
             <SelectField name="priority" label="Priorität" required defaultValue={r.priority ?? ""} options={priorityOptions} />
           </div>
@@ -104,7 +106,12 @@ export function RequestActions({ detail, employee }: { detail: RequestDetail; em
     email: () => (
       <details key="email" className={className("email")}>
         <summary>E-Mail an Kunden vorbereiten</summary>
-        <p className="section-note">Erstellt einen Entwurf. Versendet wird nichts: Erst nach „In Warteschlange stellen“ unter Korrespondenz übernimmt die spätere Integration den Versand.</p>
+        <p className="section-note">Erstellt einen Entwurf unter Korrespondenz; die Seite springt danach dorthin. Versendet wird erst nach „In Warteschlange stellen“.</p>
+        {drafts.length > 0 && (
+          <p className="rw-blocked">
+            {drafts.length === 1 ? "Es gibt schon einen Entwurf" : `Es gibt schon ${drafts.length} Entwürfe`}: <a href={`#nachricht-${drafts[0].id}`}>unter Korrespondenz weiter bearbeiten</a>.
+          </p>
+        )}
         <SaveForm action={createDraft} submitLabel="Als Entwurf speichern" submitVariant="secondary">
           <Context detail={detail} />
           <div className="form-grid">
