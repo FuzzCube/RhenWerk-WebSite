@@ -501,8 +501,17 @@ Die Gesamtprobe zeigte, dass n8n nach einem Start `/healthz` beantwortet, bevor 
 
 Nutzerentscheidung 21.10.2026, ausgearbeitet mit Preisen vom 21.10.2026 (Einzelheiten `docs/betrieb.md` 3):
 
-- Website und Dashboard auf **Vercel Hobby** in Region `fra1`; Supabase (self-hosted) und n8n per **Docker Compose auf einem VPS** in Deutschland: Hetzner CX33 (8,99 €/Monat), solange Hetzner keine geteilten Server liefert netcup VPS 1000 G12.5 (14,50 €/Monat, 12 Monate). Kopie der Sicherungen auf eine Hetzner Storage Box BX11 (3,20 €). Infrastruktur zusammen ca. 12–18 € im Monat.
+- Website und Dashboard auf **Vercel Hobby** in Region `fra1`; Supabase (self-hosted) und n8n per **Docker Compose auf einem VPS** in Deutschland (am 22.10.2026 festgelegt: OVHcloud VPS-2, siehe unten; zuerst geprüft: Hetzner CX33 8,99 € nicht lieferbar, netcup VPS 1000 14,50 €).
 - Die Supabase-API wird **nicht öffentlich**: Sie liegt unter `api.rheinwerk-service.online` hinter Cloudflare Access, nur die Website auf Vercel kommt mit einem Service-Token durch. Das geht, weil der Browser die API nie direkt aufruft (alle Zugriffe auf dem Server, Passwort-Link über `/auth/bestaetigen`). Am Server ist außer SSH kein Port offen; alles läuft über den Cloudflare-Tunnel. Verworfen: Kong direkt öffentlich mit Reverse Proxy und Rate-Limits (größere Angriffsfläche, die Rate-Limit-Regeln im kostenlosen Cloudflare-Tarif sind sehr begrenzt).
 - n8n bleibt hinter Cloudflare Access; neben ElevenLabs sendet auch die Website ihre Webhook-Aufrufe mit Service-Token.
 - Der Hobby-Tarif erlaubt nur nicht-kommerzielle Nutzung. Für das Portfolio-Projekt reicht er, wenn die Website deutlich als Demo gekennzeichnet ist; vor echter Nutzung mit Kunden Wechsel auf Vercel Pro (20 $/Monat).
 - Verworfen: Supabase Cloud und n8n Cloud (zweite Datenhaltung, Sicherungen erst im bezahlten Tarif, Umzug der Workflows); Oracle „Always Free“ (Ampere-Instanzen selten verfügbar).
+
+## 2026-10-22: OVHcloud VPS-2 ohne Speicher außer Haus, Sicherung auf dem Rechner um 09:00
+
+Nutzerentscheidungen 22.10.2026, ergänzen den Eintrag zu task-18-1:
+
+- Server für Phase 18: **OVHcloud VPS-2** (4 vCore, 8 GB RAM, 75 GB NVMe, tägliche Sicherung des Anbieters inklusive, 8,58 € inkl. MwSt. im Monat bei 12 Monaten Vorauszahlung, Standort Deutschland). Günstiger als Hetzner CX33 (derzeit nicht lieferbar) und netcup; VPS-1 mit 4 GB wäre das Minimum.
+- **Keine Kopie der Sicherungen außer Haus** für das Demoprojekt: die tägliche Sicherung des Anbieters und die eigenen geprüften Sicherungen auf dem Server (14 Tage) reichen. Vor echter Nutzung nachrüsten (`docs/betrieb.md` 3.4).
+- Die Website wird sichtbar als Portfolio-Projekt gekennzeichnet (task-18-4).
+- Auf dem eigenen Rechner läuft die Sicherung `online.rheinwerk.backup` ab sofort um **09:00** statt 02:00, weil der Rechner nachts schläft.

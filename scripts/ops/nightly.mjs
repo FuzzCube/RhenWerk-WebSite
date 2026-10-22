@@ -1,4 +1,5 @@
-// Nightly run (task-17-17): launchd online.rheinwerk.backup at 02:00 from the development folder (missed runs are
+// Daily run (task-17-17): launchd online.rheinwerk.backup at 09:00 from the development folder (user decision
+// 22.10.2026, the computer sleeps at night) (missed runs are
 // made up by macOS after waking), by hand: npm run nightly
 //   1. backup with restore check (scripts/backup.mjs, scripts/backup-check.mjs; keeps BACKUP_KEEP_DAYS days); a failure
 //      is the warning backup:failed with e-mail, the next good run closes it

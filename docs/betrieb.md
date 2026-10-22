@@ -31,7 +31,7 @@ flowchart LR
     App["Next.js<br/>aus dem Entwicklungsordner"]
     N8N["n8n :5678"]
     SB[("Supabase<br/>:54321, nicht öffentlich")]
-    Backup["Sicherung täglich 02:00<br/>online.rheinwerk.backup"]
+    Backup["Sicherung täglich 09:00<br/>online.rheinwerk.backup"]
     Tunnel -->|"rheinwerk-service.online"| App
     Tunnel -->|"n8n.rheinwerk-service.online<br/>(nur mit Access)"| N8N
     App --> SB
@@ -70,7 +70,7 @@ Nutzerentscheidung 21.10.2026 (task-17-17): Bis zum Abschluss des Projekts läuf
 
 | Dienst | Wann | Skript | Von Hand |
 | --- | --- | --- | --- |
-| `online.rheinwerk.backup` | täglich 02:00 (verpasste Läufe holt macOS nach dem Aufwachen nach) | `scripts/ops/nightly.mjs`: Sicherung mit Wiederherstellungstest (4.2, 4.3), bei Fehler Warnung `backup:failed` und E-Mail; danach installierte und verfügbare Versionen für den Bereich „System“ (`scripts/ops/versions.mjs`, nur Anzeige, task-17-15) | `npm run nightly` |
+| `online.rheinwerk.backup` | täglich 09:00 (Nutzerentscheidung 22.10.2026, der Rechner schläft nachts; verpasste Läufe holt macOS nach dem Aufwachen nach) | `scripts/ops/nightly.mjs`: Sicherung mit Wiederherstellungstest (4.2, 4.3), bei Fehler Warnung `backup:failed` und E-Mail; danach installierte und verfügbare Versionen für den Bereich „System“ (`scripts/ops/versions.mjs`, nur Anzeige, task-17-15) | `npm run nightly` |
 | `online.rheinwerk.watchdog` | alle 5 Minuten | `scripts/ops/watchdog.mjs` (Abschnitt 5) | `npm run watchdog` |
 | `online.rheinwerk.systemcheck` | alle 20 Sekunden, arbeitet nur bei einer Anfrage | `scripts/ops/check.mjs`: „System prüfen“ aus dem Dashboard (alle Prüfungen einschließlich SMTP und Versionen, task-17-15), Protokoll `systemcheck.log` | `npm run system:check` |
 
@@ -111,7 +111,7 @@ flowchart LR
     N8N -->|Docker-Netz| Kong
     Ops["Wächter, Sicherung<br/>(systemd-Timer)"] --> PG
   end
-  Ops -->|"verschlüsselt, täglich"| Box["Storage Box<br/>(außer Haus)"]
+  Snap["Tägliche Sicherung des Anbieters<br/>(ganzer Server, letzte 24 h)"] -.- VPS
   GitHub["GitHub (Code, Actions, Renovate)"] -->|Deploy| Vercel
 ```
 
@@ -120,32 +120,32 @@ flowchart LR
 - **Supabase und n8n** per Docker Compose auf einem VPS. Kein offener Port außer SSH mit Schlüssel; die Dienste sind nur über den Cloudflare-Tunnel erreichbar (ausgehende Verbindung wie heute). Postgres, Studio und die Docker-Ports sind nie öffentlich; Studio bei Bedarf über `ssh -L`.
 - **Supabase-API** unter `api.rheinwerk-service.online` hinter Cloudflare Access: nur Anfragen mit Service-Token kommen durch. Das reicht, weil der Browser die API **nie** direkt aufruft (Prüfung task-18-1): alle Zugriffe laufen auf dem Server (Server-Komponenten, Server-Actions, Routen), Dateien über eigene Routen, und der Link zum Zurücksetzen des Passworts führt auf die Website (`/auth/bestaetigen` mit `token_hash`, `verifyOtp` auf dem Server). Realtime wird nicht genutzt.
 - **n8n** unter `n8n.rheinwerk-service.online` hinter Cloudflare Access: Oberfläche mit E-Mail-Login des Betreibers, Webhooks nur mit Service-Token (ElevenLabs wie heute, neu auch Vercel für das Anfrageformular und `/api/health`). n8n spricht Supabase im Docker-Netz direkt an, nicht über den Tunnel.
-- **Betrieb** auf dem VPS: Wächter, Sicherung und „System prüfen“ als systemd-Timer statt launchd; Sicherung täglich verschlüsselt auf eine Storage Box außer Haus (task-18-6). Warn-E-Mails wie bisher über Gmail SMTP.
+- **Betrieb** auf dem VPS: Wächter, Sicherung und „System prüfen“ als systemd-Timer statt launchd; eigene Sicherung täglich verschlüsselt mit Wiederherstellungstest auf dem VPS (14 Tage), dazu die tägliche Sicherung des ganzen Servers durch den Anbieter (task-18-6). Kein zusätzlicher Speicher außer Haus (Nutzerentscheidung 22.10.2026, Demoprojekt). Warn-E-Mails wie bisher über Gmail SMTP.
 - **Bleibt bei externen Diensten:** OpenAI (n8n), ElevenLabs (Mira), Gmail (Versand und Eingang über n8n), Vercel Blob (Uploads des Formulars), Cloudflare Turnstile.
 
 ### 3.2 Bedarf und Wahl des Servers
 
-Gemessen am 21.10.2026 auf dem Rechner: alle Container zusammen ca. 3,5 GB RAM, davon für den Betrieb nötig ca. 1,8 GB (Postgres 0,45, n8n 0,5, Kong, PostgREST, Auth, Storage, cloudflared; Studio, Analytics/Logflare, Vector, Inbucket und pg-meta entfallen auf dem Server). Daten: Postgres 68 MB, Dateien 44 MB, n8n 0,8 GB; Docker-Images ca. 15 GB, eine Sicherung ca. 100 MB. Ziel: 4 vCPU, 8 GB RAM (Platz für Sicherung mit Probewiederherstellung und Updates mit Rückfall, task-18-8), ab 80 GB SSD, Rechenzentrum in Deutschland (DSGVO).
+Gemessen am 21.10.2026 auf dem Rechner: alle Container zusammen ca. 3,5 GB RAM, davon für den Betrieb nötig ca. 1,8 GB (Postgres 0,45, n8n 0,5, Kong, PostgREST, Auth, Storage, cloudflared; Studio, Analytics/Logflare, Vector, Inbucket und pg-meta entfallen auf dem Server). Daten: Postgres 68 MB, Dateien 44 MB, n8n 0,8 GB; Docker-Images ca. 15 GB, eine Sicherung ca. 100 MB. Plattenbedarf auf dem Server ca. 15 GB: Images ca. 5,3 GB (Postgres 1,75, Storage 1,4, n8n 1,7, übrige 0,5), vorherige Versionen für den Rückfall ca. 3,5 GB, System ca. 4 GB, Daten 1 GB, eigene Sicherungen 14 × 0,1 GB. Ziel: 4 vCPU, 8 GB RAM (Platz für Sicherung mit Probewiederherstellung und Updates mit Rückfall, task-18-8), ab 40 GB SSD, Rechenzentrum in Deutschland (DSGVO). Auf jedem Server: 2 GB Swap, `shared_buffers` von Postgres begrenzen, Schwellen des Wächters `DISK_WARN_GB=8`, `DISK_CRITICAL_GB=3`.
 
 | Server | Leistung | Preis/Monat | Stand 21.10.2026 |
 | --- | --- | --- | --- |
-| **Hetzner Cloud CX33** (Nürnberg/Falkenstein) | 4 vCPU geteilt, 8 GB, 80 GB NVMe, 20 TB | 8,99 €, stündlich abgerechnet, monatlich kündbar | **empfohlen**, aber derzeit „nicht verfügbar“ (alle geteilten Hetzner-Tarife; Preise seit April 2026 deutlich gestiegen) |
-| netcup VPS 1000 G12.5 (Nürnberg) | 4 vCore, 8 GB, 128 GB | 14,50 € bei 12 Monaten Laufzeit | **Ausweichlösung**, bestellbar |
-| Hetzner CX23 | 2 vCPU, 4 GB, 40 GB | 5,99 € | zu knapp für Probewiederherstellung und Rückfall |
+| **OVHcloud VPS-2** (Standort Deutschland beim Bestellen wählen) | 4 vCore, 8 GB, 75 GB NVMe, 1 Gbit/s, Traffic unbegrenzt, **tägliche Sicherung inklusive** | 8,58 € inkl. MwSt. (ca. 7,21 € netto) bei 12 Monaten Vorauszahlung | **gewählt** (Nutzer, 22.10.2026): günstigster Server mit 8 GB, Sicherung des Anbieters ersetzt den Speicher außer Haus |
+| OVHcloud VPS-1 | 2 vCore, 4 GB, 40 GB, 500 Mbit/s, tägliche Sicherung | 4,53 € inkl. MwSt. | reicht als Minimum (Betrieb ca. 2,1 GB RAM, Rückfall-Updates knapp); nur mit Swap |
+| Hetzner Cloud CX33 | 4 vCPU geteilt, 8 GB, 80 GB NVMe | 8,99 € netto | derzeit „nicht verfügbar“ (alle geteilten Hetzner-Tarife) |
+| netcup VPS 1000 G12.5 (Nürnberg) | 4 vCore, 8 GB, 128 GB | 14,50 € netto bei 12 Monaten | Ausweichlösung, bestellbar |
 | Supabase Cloud + n8n Cloud | verwaltet | ab ca. 25 € plus n8n Cloud | verworfen: zweite Datenhaltung, Sicherungen erst im bezahlten Tarif, n8n-Workflows müssten umziehen |
 
-Entscheidung beim Bestellen (task-18-2): CX33, wenn verfügbar; sonst netcup VPS 1000. Beide sind x86, die heutigen Images laufen unverändert.
+Bestellung in task-18-2: OVHcloud VPS-2 mit Standort Deutschland; alle genannten Server sind x86, die heutigen Images laufen unverändert.
 
 ### 3.3 Kosten je Monat
 
 | Posten | Betrag | Bemerkung |
 | --- | --- | --- |
-| VPS | 8,99 € (Hetzner CX33) oder 14,50 € (netcup) | |
-| Storage Box BX11 (1 TB, Hetzner) | 3,20 € | Kopie der Sicherungen außer Haus |
+| VPS OVHcloud VPS-2 | ca. 7,21 € netto (8,58 € inkl. MwSt.) | 12 Monate im Voraus, tägliche Sicherung des Anbieters inklusive |
 | Vercel Hobby | 0 € | 100 GB Datenübertragung, 1 Mio. Funktionsaufrufe, 4 h aktive CPU, Laufzeit bis 300 s je Aufruf; bei Überschreitung pausiert das Projekt bis 30 Tage |
 | Cloudflare (DNS, Tunnel, Access bis 50 Nutzer) | 0 € | Service-Tokens laufen schon heute im kostenlosen Tarif (Mira) |
 | GitHub (öffentliches Repository, Actions, Renovate) | 0 € | |
-| **Summe Infrastruktur** | **ca. 12,20 €** (mit netcup ca. 17,70 €) | |
+| **Summe Infrastruktur** | **ca. 7,21 € netto** (8,58 € inkl. MwSt.) | |
 | Domain `rheinwerk-service.online` | laut Rechnung des Registrars | jährlich (Abschnitt 6) |
 | OpenAI, ElevenLabs | nach Verbrauch und Tarif | unverändert gegenüber heute |
 | Bei kommerzieller Nutzung: Vercel Pro | 20 $ je Entwickler-Platz | enthält 20 $ Nutzungsguthaben |
@@ -158,7 +158,9 @@ Entscheidung beim Bestellen (task-18-2): CX33, wenn verfügbar; sonst netcup VPS
 | **Hobby-Grenzen:** bei Überschreitung pausiert das Projekt bis zu 30 Tage; nur 1 Stunde Laufzeitprotokolle. | Erwartete Last liegt weit darunter (Demo, wenige Aufrufe am Tag; Rechnungs-PDF und Server-Actions brauchen Sekunden, nicht Minuten). Nutzung im Vercel-Dashboard monatlich prüfen (Wartungsplan 6), Bilder statisch. |
 | **Öffentliche Supabase-API.** Kong wäre mit dem öffentlichen Schlüssel für jeden erreichbar. | Die API wird nicht öffentlich: Cloudflare Access lässt nur Anfragen mit Service-Token durch (Kopfzeilen im Supabase-Client der Website, task-18-4). Dahinter bleiben RLS, Schreiben nur über RPCs und die Rate-Limits von Auth. Der geheime Schlüssel steht nur als verschlüsselte Umgebungsvariable in Vercel und in `.env` auf dem Server. Neue JWT-Schlüssel statt der Demo-Schlüssel des lokalen Stacks. Service-Token jährlich und bei Verdacht erneuern (Abschnitt 6 und 7). |
 | **n8n-Webhooks von Vercel** brauchen nach dem Umzug ebenfalls den Service-Token. | `/api/service-request` und `/api/health` senden die Access-Kopfzeilen mit (task-18-4); die Formular-Probe gehört zur Gesamtprobe (task-18-9). |
-| **Ein einzelner Server** ohne Ausfallreserve; Hetzner derzeit ohne freie geteilte Server. | Tägliche verschlüsselte Sicherung außer Haus, geprüfte Wiederherstellung (task-18-6, 18-7); netcup als zweiter Anbieter mit denselben Images; der Wächter meldet Ausfälle wie heute. |
+| **Ein einzelner Server** ohne Ausfallreserve. | Tägliche Sicherung des ganzen Servers durch den Anbieter (eine Rückkehrmöglichkeit, letzte 24 Stunden) und eigene verschlüsselte Sicherungen mit Wiederherstellungstest auf dem Server (14 Tage, für Datenfehler, die erst später auffallen; task-18-6, 18-7); der Wächter meldet Ausfälle wie heute. |
+| **Keine Kopie außer Haus** (Nutzerentscheidung 22.10.2026, Demoprojekt): fällt der Anbieter samt seiner Sicherung aus, sind die Daten weg. | Für Demodaten hingenommen; bei Bedarf eine Sicherung von Hand auf den eigenen Rechner kopieren (`scp`). Vor echter Nutzung einen Speicher außer Haus ergänzen (z. B. Hetzner Storage Box, 3,20 €). |
+| **4 GB RAM bei VPS-1** wären knapp. | VPS-2 mit 8 GB gewählt; auf jedem Server 2 GB Swap und begrenzte Postgres-Puffer. |
 | **Selbst betriebenes Supabase** unterscheidet sich vom lokalen CLI-Stack (Compose-Datei, Schlüssel, SMTP für Auth-E-Mails, Versionen). | Eigene Compose-Datei im Repository mit festen Image-Versionen wie heute (`supabase services`), SMTP für echte Passwort-Mails (task-18-2); Updates nur mit Sicherung und Rückfall (task-18-8). |
 | **Latenz** Vercel ↔ Server über den Tunnel. | Region `fra1` und Server in Deutschland; nach dem Umzug im Dashboard messen (Gesamtprobe task-18-9). |
 
@@ -212,7 +214,7 @@ Ergebnis vom 20.10.2026: alle Prüfungen bestanden (829 Anfragen, 113 Konten, 2 
 
 | Was | Wann | Wo |
 | --- | --- | --- |
-| Sicherung + Prüfung | täglich 02:00 (`launchd` `online.rheinwerk.backup`, Abschnitt 2.3; verpasste Läufe holt macOS nach dem Aufwachen nach) | `~/RheinWerk-Backups`, ältere als 14 Tage löscht jeder Lauf |
+| Sicherung + Prüfung | täglich 09:00 (`launchd` `online.rheinwerk.backup`, Abschnitt 2.3; verpasste Läufe holt macOS nach dem Aufwachen nach) | `~/RheinWerk-Backups`, ältere als 14 Tage löscht jeder Lauf |
 | Kopie außer Haus | täglich mit (Ordner in iCloud Drive/Google Drive) oder wöchentlich manuell | Cloud-Ordner, verschlüsselt |
 | Monatssicherung | am 1. jedes Monats | externe SSD, 12 Monate aufbewahren |
 
@@ -274,7 +276,7 @@ Danach: Anmeldung im Dashboard, n8n → Executions (Zeitpläne laufen grün), ei
 
 | Rhythmus | Aufgabe | Befehl / Ort |
 | --- | --- | --- |
-| täglich 02:00 (automatisch) | Sicherung + Wiederherstellungstest, Versionen für den Bereich „System“ | `launchd` `online.rheinwerk.backup` |
+| täglich 09:00 (automatisch) | Sicherung + Wiederherstellungstest, Versionen für den Bereich „System“ | `launchd` `online.rheinwerk.backup` |
 | alle 5 Minuten (automatisch) | Zustand aller Systeme mit Warnung und E-Mail (SMTP stündlich) | `launchd` `online.rheinwerk.watchdog` |
 | nach jedem manuellen Update | „System prüfen“ im Bereich „System“ (Admin) oder `npm run system:check`; Zustand und Versionen müssen danach stimmen | Dashboard |
 | täglich (automatisch, Datenbank) | Transkripte > 30 Tage, Widget-Sitzungen > 90 Tage löschen; Zahlungserinnerungen; Eskalationen | pg_cron, [supabase-lokal.md](supabase-lokal.md#6-werkzeuge-im-alltag) |

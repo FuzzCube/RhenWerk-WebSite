@@ -1,5 +1,5 @@
 // Services on the host (task-17-17), safe to run again: npm run ops:install
-//   online.rheinwerk.backup    02:00, backup with restore check and versions (scripts/ops/nightly.mjs)
+//   online.rheinwerk.backup    09:00, backup with restore check and versions (scripts/ops/nightly.mjs)
 //   online.rheinwerk.watchdog  every 5 minutes, checks of Mira, n8n and the systems (scripts/ops/watchdog.mjs)
 //   online.rheinwerk.systemcheck  every 20 seconds, "System prüfen" from the dashboard (scripts/ops/check.mjs, task-17-15)
 // All run from this development folder with its .env.local; logs in ~/Library/Logs/RheinWerk. Agents of the former
@@ -48,6 +48,6 @@ for (const label of AGENTS) {
   }
   if (!loaded(label)) execFileSync("launchctl", ["bootstrap", domain, file]);
 }
-console.log(`Sicherung online.rheinwerk.backup täglich 02:00 (Protokoll ${path.join(LOG_DIR, "backup.log")})`);
+console.log(`Sicherung online.rheinwerk.backup täglich 09:00 (Protokoll ${path.join(LOG_DIR, "backup.log")})`);
 console.log(`Wächter online.rheinwerk.watchdog alle 5 Minuten (Protokoll ${path.join(LOG_DIR, "watchdog.log")})`);
 console.log(`„System prüfen“ online.rheinwerk.systemcheck alle 20 Sekunden (Protokoll ${path.join(LOG_DIR, "systemcheck.log")})`);

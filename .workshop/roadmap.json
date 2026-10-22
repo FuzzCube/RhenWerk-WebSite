@@ -3648,7 +3648,7 @@
         {
           "id": "task-18-2",
           "title": "VPS mit Docker Compose",
-          "description": "VPS einrichten: SSH nur mit Schlüssel, Firewall, unattended-upgrades; docker-compose.yml im Repository mit fest gepinnten Versionen für Supabase (self-hosted), n8n und Reverse Proxy (TLS) bzw. cloudflared; Wächter und Dienste als systemd-Timer statt launchd (scripts/ops bleibt). Nach task-18-1: Hetzner CX33, sonst netcup VPS 1000; nur SSH offen, Supabase-API und n8n ausschließlich über den Cloudflare-Tunnel (api. und n8n. hinter Access), Studio nur per SSH-Tunnel; neue JWT-Schlüssel statt der Demo-Schlüssel (betrieb.md 3).",
+          "description": "VPS einrichten: SSH nur mit Schlüssel, Firewall, unattended-upgrades; docker-compose.yml im Repository mit fest gepinnten Versionen für Supabase (self-hosted), n8n und Reverse Proxy (TLS) bzw. cloudflared; Wächter und Dienste als systemd-Timer statt launchd (scripts/ops bleibt). Nach task-18-1: OVHcloud VPS-2 (Nutzerentscheidung 22.10.2026) mit Standort Deutschland, 2 GB Swap, DISK_WARN_GB=8; nur SSH offen, Supabase-API und n8n ausschließlich über den Cloudflare-Tunnel (api. und n8n. hinter Access), Studio nur per SSH-Tunnel; neue JWT-Schlüssel statt der Demo-Schlüssel (betrieb.md 3).",
           "order": 2,
           "weight": 3,
           "status": "ready",
@@ -3744,7 +3744,7 @@
         {
           "id": "task-18-6",
           "title": "Datensicherung auf dem VPS und im Dashboard",
-          "description": "Ersetzt task-17-13. Nächtliche Sicherung auf dem VPS mit Wiederherstellungstest und Kopie außer Haus (z. B. Storage Box); jede Sicherung in der Datenbank (Zeitpunkt, Größe, Inhalt, Prüfung, Anlass). Bereich „System“: letzte geprüfte Sicherung, Liste, Inhalt; nur admin „Jetzt sichern“ als Anfrage an einen Dienst auf dem VPS. Warnung bei Sicherung älter als 26 Stunden oder Fehler.",
+          "description": "Ersetzt task-17-13. Tägliche Sicherung auf dem VPS mit Wiederherstellungstest (14 Tage), dazu die tägliche Sicherung des Anbieters; keine Kopie außer Haus (Nutzerentscheidung 22.10.2026, Demoprojekt); jede Sicherung in der Datenbank (Zeitpunkt, Größe, Inhalt, Prüfung, Anlass). Bereich „System“: letzte geprüfte Sicherung, Liste, Inhalt; nur admin „Jetzt sichern“ als Anfrage an einen Dienst auf dem VPS. Warnung bei Sicherung älter als 26 Stunden oder Fehler.",
           "order": 6,
           "weight": 3,
           "status": "planned",
@@ -3752,7 +3752,7 @@
             "task-18-3"
           ],
           "definitionOfDone": [
-            "Sicherung täglich, Kopie außer Haus, Prüfung",
+            "Sicherung täglich mit Prüfung, Sicherung des Anbieters eingeschaltet",
             "Liste im Dashboard, „Jetzt sichern“ nur admin (manager 42501)",
             "Warnung bei veralteter oder fehlgeschlagener Sicherung",
             "test:db, test:api, test:ui, betrieb.md 4"

@@ -100,7 +100,7 @@ export default async function SystemPage() {
 
           <div className="system-grid">
             <Card stripe="neutral" title="Datensicherung" id="system-sicherung" headingLevel={2}
-              description="Jede Nacht um 02:00 werden Anfragen, Kunden, Rechnungen, Dateien und die Automatisierung gesichert und mit einer Probewiederherstellung geprüft.">
+              description="Jeden Tag um 09:00 werden Anfragen, Kunden, Rechnungen, Dateien und die Automatisierung gesichert und mit einer Probewiederherstellung geprüft.">
               <EmptyState title="Die Liste der Sicherungen erscheint hier in Kürze." />
             </Card>
 
@@ -128,7 +128,7 @@ export default async function SystemPage() {
             description={`Neue Versionen werden angezeigt, aber nicht installiert. Updates führt der Betreiber nach den Release Notes und mit Sicherung durch.${system.dependencies.checked_at ? ` Geprüft ${formatDateTime(system.dependencies.checked_at)}.` : ""}`}>
             <div className="system-versions">
               <DataTable caption="Systemversionen" columns={versionColumns} rows={versions} rowKey={(row) => row.key}
-                empty={<EmptyState title="Noch nicht geprüft. Die Versionen werden jede Nacht um 02:00 ermittelt." />} />
+                empty={<EmptyState title="Noch nicht geprüft. Die Versionen werden jeden Tag um 09:00 ermittelt." />} />
             </div>
           </Card>
 

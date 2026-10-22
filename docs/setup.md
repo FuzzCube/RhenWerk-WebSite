@@ -143,7 +143,7 @@ Warnungen aus Updates und Überwachung (Phase 17) gehen direkt per Gmail SMTP an
 
 ## Sicherung
 
-`npm run backup` sichert Datenbank, Dateien und n8n in ein Archiv und löscht Sicherungen, die älter als 14 Tage sind (die neueste bleibt immer), `npm run backup:check` prüft die Wiederherstellung in einer getrennten Datenbank. Vor `supabase db reset` und vor Updates ausführen; jede Nacht um 02:00 automatisch über `online.rheinwerk.backup` (`npm run nightly` von Hand). Einstellungen, Zeitplan und Wiederherstellung: [betrieb.md](betrieb.md#4-datensicherung).
+`npm run backup` sichert Datenbank, Dateien und n8n in ein Archiv und löscht Sicherungen, die älter als 14 Tage sind (die neueste bleibt immer), `npm run backup:check` prüft die Wiederherstellung in einer getrennten Datenbank. Vor `supabase db reset` und vor Updates ausführen; jeden Tag um 09:00 automatisch über `online.rheinwerk.backup` (`npm run nightly` von Hand). Einstellungen, Zeitplan und Wiederherstellung: [betrieb.md](betrieb.md#4-datensicherung).
 
 ## Ports des lokalen Stacks
 
