@@ -3887,7 +3887,7 @@
           "description": "Ende-zu-Ende: Push mit Migration bis Vercel, Rollback über Vercel, Systemupdate mit Rückfall, Wiederherstellung aus Sicherung, Ausfall von n8n auf dem VPS mit Warnung. Übergabe (HANDOFF.md) aktualisiert.",
           "order": 9,
           "weight": 1,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-7",
             "task-18-8"
