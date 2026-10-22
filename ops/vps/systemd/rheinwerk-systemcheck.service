@@ -1,0 +1,15 @@
+# „System prüfen“ (task-17-15) auf dem VPS, Ersatz für launchd online.rheinwerk.systemcheck (task-18-2): holt eine
+# Anfrage des Dashboards ab, ohne Anfrage endet er nach einer kleinen Abfrage.
+# Vorlage: ops/vps/install-services.sh setzt __USER__ ein.
+[Unit]
+Description=RheinWerk System prüfen
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=/opt/rheinwerk/app
+ExecStart=/usr/bin/node --env-file=/opt/rheinwerk/ops.env scripts/ops/check.mjs
+TimeoutStartSec=240
+Nice=5

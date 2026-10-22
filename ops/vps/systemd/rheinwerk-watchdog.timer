@@ -1,0 +1,10 @@
+[Unit]
+Description=RheinWerk Wächter alle 5 Minuten
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target

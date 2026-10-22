@@ -70,6 +70,20 @@ test("Container: Pflicht-Container gestoppt oder fehlend, laufende unhealthy; op
   assert.doesNotMatch(c.detail, /edge_runtime|n8n-old/);
 });
 
+test("VPS (task-18-2): Website abgeschaltet, Supabase ohne Realtime, n8n unter eigenem Namen", () => {
+  const raw = healthy();
+  raw.website = { off: true };
+  raw.n8nContainer = "rheinwerk-n8n";
+  raw.docker.containers = [...["db", "kong", "auth", "rest", "storage"].map((s) => container(`supabase_${s}_rheinwerk`)), container("rheinwerk-n8n")];
+  const env = { SUPABASE_REQUIRED_SERVICES: "db,kong,auth,rest,storage" };
+  const systems = evaluateSystems(raw, env);
+  assert.deepEqual(failed(systems), []);
+  assert.equal(systems.website.state, "off");
+  assert.equal(systems.docker.state, "ok");
+  assert.deepEqual(failed(evaluateSystems(raw)), ["system:container"]);
+  assert.match(evaluateSystems(raw).docker.checks[1].detail, /supabase_realtime: fehlt/);
+});
+
 test("Speicherplatz: Warnung unter 20 GB, kritisch unter 5 GB, Schwellen aus der Umgebung", () => {
   const raw = healthy();
   raw.disk = { free: 12 * GB, total: 926 * GB };

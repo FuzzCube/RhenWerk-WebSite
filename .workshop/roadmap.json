@@ -3651,7 +3651,7 @@
           "description": "VPS einrichten: SSH nur mit Schlüssel, Firewall, unattended-upgrades; docker-compose.yml im Repository mit fest gepinnten Versionen für Supabase (self-hosted), n8n und Reverse Proxy (TLS) bzw. cloudflared; Wächter und Dienste als systemd-Timer statt launchd (scripts/ops bleibt). Nach task-18-1: OVHcloud VPS-2 in Roubaix (Nutzerentscheidung 22.10.2026), Auftragsverarbeitungsvertrag annehmen, 2 GB Swap, DISK_WARN_GB=8; nur SSH offen, Supabase-API und n8n ausschließlich über den Cloudflare-Tunnel (api. und n8n. hinter Access), Studio nur per SSH-Tunnel; neue JWT-Schlüssel statt der Demo-Schlüssel (betrieb.md 3).",
           "order": 2,
           "weight": 3,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-18-1"
           ],
@@ -3661,13 +3661,22 @@
             "Wächter läuft als systemd-Timer",
             "betrieb.md 3"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T08:32:22Z",
+          "completedAt": "2026-10-22T08:59:25Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "VPS (OVHcloud VPS-2, Ubuntu 26.04) per ops/vps/setup.sh eingerichtet: SSH nur Schlüssel, ufw nur 22, unattended-upgrades, 2 GB Swap, Docker 29.9 mit Ports nur auf 127.0.0.1 (daemon.json), Node.js 24. Compose-Projekt rheinwerk (Postgres, Envoy, Auth, PostgREST, Storage, n8n 2.40.7, cloudflared) mit festen Versionen, restart unless-stopped und mem_limit; neue JWT- und sb_-Schlüssel auf dem Server erzeugt, ohne Schlüssel HTTP 401. Alle 68 Migrationen eingespielt. Tunnel rheinwerk-vps mit 4 Verbindungen. Wächter und System prüfen als systemd-Timer, nur Container des Projekts, alle Prüfungen ok (Website, Mira, SMTP bis task-18-3/18-4 aus). Neustart des Servers: alles von selbst wieder da. Lokal lint, typecheck, test:unit 128/128 grün. Weitere Projekte vorgesehen (betrieb.md 3.5).",
+            "commands": [
+              "ssh vps sh /opt/rheinwerk/app/ops/vps/setup.sh",
+              "ops/vps/compose.sh up -d",
+              "psql: 68 Migrationen",
+              "systemctl start rheinwerk-watchdog.service",
+              "sudo systemctl reboot",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run test:unit"
+            ],
+            "checkedAt": "2026-10-22T08:59:25Z"
           }
         },
         {
@@ -3676,7 +3685,7 @@
           "description": "Letzte Sicherung vom Rechner auf dem VPS wiederherstellen (Postgres, Storage, n8n mit Schlüssel, betrieb.md 4.5), Credentials in n8n prüfen, Webhook-URLs (Mira, Formular) umstellen, Probe aller Abläufe.",
           "order": 3,
           "weight": 2,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-2"
           ],

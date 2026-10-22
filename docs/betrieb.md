@@ -167,6 +167,60 @@ Bestellung in task-18-2: OVHcloud VPS-2 in Roubaix (Nutzerentscheidung 22.10.202
 
 **Umzug** (Einzelschritte in task-18-2 bis 18-4): Server mit Docker, Firewall (nur SSH mit Schlüssel) und `unattended-upgrades`; Compose-Stack mit Supabase, n8n und cloudflared; letzte Sicherung vom Rechner nach Abschnitt 4.5 wiederherstellen (Postgres, Storage, n8n-Datenbank **mit Schlüssel**); im Cloudflare-Tunnel die Ziele auf den Server umstellen; Website auf Vercel mit den Umgebungsvariablen; DNS der Domain auf Vercel. Danach Sicherung und Wächter auf dem Server (task-18-6).
 
+### 3.5 Server einrichten (task-18-2)
+
+Eingerichtet am 22.10.2026: OVHcloud VPS-2 `vps-0fcb2edf.vps.ovh.net` (Roubaix), Ubuntu 26.04, 4 vCore, 8 GB RAM, 72 GB. Auf dem Rechner per `ssh vps` erreichbar (Eintrag in `~/.ssh/config`). Auf dem Server können **weitere Projekte** laufen; die Regeln dafür stehen am Ende des Abschnitts.
+
+**Aufbau**
+
+| Was | Wo |
+| --- | --- |
+| Repository (öffentlich, nur lesend; `git pull`) | `/opt/rheinwerk/app` |
+| Geheimnisse für Docker Compose (nur auf dem Server, `chmod 600`) | `/opt/rheinwerk/.env` |
+| Umgebung für Wächter und „System prüfen“ | `/opt/rheinwerk/ops.env` |
+| Zustand der Dienste (Datei für Datenbank-Ausfall) | `/opt/rheinwerk/state` |
+| Compose-Datei, Werkzeuge | `ops/vps/` im Repository |
+| Daten | Docker-Volumes `rheinwerk_db-data`, `rheinwerk_db-config`, `rheinwerk_storage-data`, `rheinwerk_n8n-data` |
+
+Compose-Projekt `rheinwerk` (`ops/vps/docker-compose.yml`, Aufruf immer über `ops/vps/compose.sh`): Postgres, API-Gateway (Envoy), Auth, PostgREST, Storage, n8n und cloudflared, alle mit fester Image-Version, `restart: unless-stopped` und Speichergrenze (zusammen höchstens ca. 4,3 GB, im Betrieb ca. 1,2 GB). Abgeleitet aus der offiziellen Compose-Datei von Supabase (Commit `a2ee9a9`, SQL-Dateien und Envoy-Konfiguration unverändert unter `ops/vps/supabase/`); ohne Realtime, Edge Functions, Analytics, Pooler und imgproxy, die RheinWerk nicht nutzt. Die Containernamen beginnen mit `supabase_<dienst>_rheinwerk`, damit Wächter und Sicherung sie wie auf dem Rechner erkennen. Postgres-Puffer begrenzt (`shared_buffers=256MB`).
+
+**Neu aufsetzen** (Voraussetzung: SSH nur mit Schlüssel, `ufw` mit nur `22/tcp`, `unattended-upgrades`; Benutzer mit `sudo`):
+
+```bash
+git clone https://github.com/FuzzCube/RhenWerk-WebSite.git /tmp/rw && sh /tmp/rw/ops/vps/setup.sh
+# setup.sh (wiederholbar): 2 GB Swap; Docker und Node.js 24 aus den offiziellen Paketquellen; /etc/docker/daemon.json;
+# /opt/rheinwerk mit Repository und npm ci; ops/vps/generate-env.sh; systemd-Timer (ops/vps/install-services.sh)
+nano /opt/rheinwerk/.env                     # CLOUDFLARE_TUNNEL_TOKEN eintragen (unten)
+cd /opt/rheinwerk/app && ops/vps/compose.sh up -d && ops/vps/compose.sh ps
+# Schema: Migrationen per psql in Reihenfolge (task-18-2) oder Wiederherstellung einer Sicherung (4.5, task-18-3)
+```
+
+`generate-env.sh` erzeugt die Geheimnisse auf dem Server, ohne sie auszugeben, und überschreibt nie eine vorhandene Datei: Postgres-Passwort, neues JWT-Geheimnis mit eigenem Schlüsselpaar (ES256) und neue API-Schlüssel `sb_publishable_…`/`sb_secret_…` statt der Demo-Schlüssel des lokalen Stacks. Für die Website auf Vercel (task-18-4) und n8n gelten diese neuen Schlüssel. Die Werte stehen nur in `/opt/rheinwerk/.env`; anzeigen bei Bedarf mit `grep SUPABASE_ /opt/rheinwerk/.env` auf dem Server.
+
+**Cloudflare-Tunnel des Servers:** Zero Trust → Networks → Tunnels → „Create a tunnel“ (cloudflared), Name `rheinwerk-vps`, den Token aus dem angezeigten Befehl (Teil nach `--token`) in `/opt/rheinwerk/.env` als `CLOUDFLARE_TUNNEL_TOKEN` eintragen, dann `ops/vps/compose.sh up -d cloudflared`. Die öffentlichen Hostnamen bleiben bis zum Umzug (task-18-3) beim Tunnel des Rechners; dann im Tunnel `rheinwerk-vps` eintragen: `api.rheinwerk-service.online` → `http://kong:8000`, `n8n.rheinwerk-service.online` → `http://n8n:5678` (Access-Anwendungen bleiben unverändert).
+
+**Zugang ohne öffentliche Ports:** Postgres `ssh -L 54322:127.0.0.1:54322 vps`, API `ssh -L 54321:127.0.0.1:54321 vps`, n8n `ssh -L 5678:127.0.0.1:5678 vps`. Studio nur bei Bedarf: `ops/vps/compose.sh --profile studio up -d studio`, `ssh -L 54323:127.0.0.1:54323 vps`, http://localhost:54323, danach `ops/vps/compose.sh --profile studio stop studio meta`.
+
+**Wächter und „System prüfen“** laufen als systemd-Timer statt launchd: `rheinwerk-watchdog.timer` (alle 5 Minuten) und `rheinwerk-systemcheck.timer` (alle 20 Sekunden), Units unter `ops/vps/systemd/`, Protokoll `journalctl -u rheinwerk-watchdog`. Umgebung `/opt/rheinwerk/ops.env`: nur Container des Compose-Projekts `rheinwerk` (`DOCKER_COMPOSE_PROJECT`), Supabase-Dienste ohne Realtime (`SUPABASE_REQUIRED_SERVICES`), `DISK_WARN_GB=8`, `DISK_CRITICAL_GB=3`, Website bis task-18-4 nicht geprüft (`WEBSITE_URL=off`). **Bis zum Umzug (task-18-3) ist `ALERT_EMAILS` leer**, damit Rechner und Server nicht doppelt melden; danach `ALERT_EMAILS`, SMTP-Zugang, `N8N_API_KEY`, ElevenLabs und Access-Token aus `.env.local` ergänzen. Die tägliche Sicherung folgt in task-18-6; die Sicherung des Anbieters lässt sich über die OVHcloud-API abfragen (`GET /1.0/vps/vps-0fcb2edf.vps.ovh.net/automatedBackup` und `…/automatedBackup/restorePoints`, Wiederherstellung `POST …/automatedBackup/restore`, Basis `https://eu.api.ovh.com`; braucht einen API-Schlüssel des OVH-Kontos).
+
+**Updates:** `unattended-upgrades` spielt nur Sicherheitsupdates von Ubuntu ein; Docker, Node.js und die Images werden nicht automatisch aktualisiert (task-18-8). Repository aktualisieren: `git -C /opt/rheinwerk/app pull --ff-only && (cd /opt/rheinwerk/app && npm ci --omit=dev --ignore-scripts)`.
+
+**Weitere Projekte auf dem Server**
+
+- Eigener Ordner `/opt/<projekt>`, eigenes Compose-Projekt (`name:`) und damit eigenes Docker-Netz; keine gemeinsamen Volumes oder Container.
+- Keine öffentlichen Ports: `/etc/docker/daemon.json` bindet veröffentlichte Ports standardmäßig an `127.0.0.1` (Docker umgeht `ufw`). Öffentlich nur über einen eigenen Cloudflare-Tunnel je Projekt oder einen gemeinsamen Reverse Proxy; `ufw` bleibt bei `22/tcp`.
+- Speichergrenze (`mem_limit`) für jeden Dienst; RheinWerk belegt höchstens ca. 4,3 GB von 8 GB.
+- Belegte Ports auf `127.0.0.1` (neue Projekte wählen andere):
+
+| Port | Projekt | Dienst |
+| --- | --- | --- |
+| 54321 | rheinwerk | Supabase-API (Envoy) |
+| 54322 | rheinwerk | Postgres |
+| 54323 | rheinwerk | Studio (nur Profil `studio`) |
+| 5678 | rheinwerk | n8n |
+
+- Eigene systemd-Units mit Präfix `<projekt>-`.
+
 ## 4. Datensicherung
 
 ### 4.1 Was gesichert wird

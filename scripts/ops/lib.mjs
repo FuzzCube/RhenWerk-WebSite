@@ -7,7 +7,8 @@ import { createClient } from "@supabase/supabase-js";
 import { sendAlert } from "../lib/notify.mjs";
 
 export const DASHBOARD = "https://rheinwerk-service.online/dashboard/system";
-export const LOG_DIR = path.join(homedir(), "Library", "Logs", "RheinWerk");
+// OPS_LOG_DIR on the VPS (task-18-2: /opt/rheinwerk/state, logs in the journal of systemd)
+export const LOG_DIR = process.env.OPS_LOG_DIR ?? path.join(homedir(), "Library", "Logs", "RheinWerk");
 
 // Calls never throw: without the database the service goes on and only the record in the dashboard is missing
 let client = null;

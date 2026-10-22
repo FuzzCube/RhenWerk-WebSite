@@ -1,0 +1,10 @@
+[Unit]
+Description=RheinWerk System prüfen alle 20 Sekunden
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=20s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

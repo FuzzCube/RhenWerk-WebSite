@@ -1,0 +1,14 @@
+# Wächter (task-17-9, 17-8, 17-15) auf dem VPS, Ersatz für launchd online.rheinwerk.watchdog (task-18-2).
+# Vorlage: ops/vps/install-services.sh setzt __USER__ ein.
+[Unit]
+Description=RheinWerk Wächter
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=/opt/rheinwerk/app
+ExecStart=/usr/bin/node --env-file=/opt/rheinwerk/ops.env scripts/ops/watchdog.mjs
+TimeoutStartSec=240
+Nice=5

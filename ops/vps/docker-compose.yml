@@ -1,0 +1,284 @@
+# RheinWerk auf dem VPS (task-18-2, docs/betrieb.md 3.5): Supabase (self-hosted), n8n und Cloudflare-Tunnel.
+# Aufruf nur über ops/vps/compose.sh (Projektname rheinwerk, Geheimnisse in /opt/rheinwerk/.env).
+#
+# Abgeleitet aus supabase/supabase docker/docker-compose.yml (Commit a2ee9a9 vom 22.10.2026, Dateien unter
+# ops/vps/supabase/), reduziert auf das, was RheinWerk nutzt: ohne Realtime, Edge Functions, Analytics, Pooler und
+# imgproxy. Studio und pg-meta nur im Profil "studio" (bei Bedarf starten, Zugriff per ssh -L).
+#
+# Weitere Projekte auf demselben Server: eigenes Compose-Projekt und Netz, Ports nur auf 127.0.0.1 (zusätzlich setzt
+# /etc/docker/daemon.json "ip": "127.0.0.1"), Speichergrenzen je Dienst. Belegte Ports: docs/betrieb.md 3.5.
+# Alle Images mit fester Version; Updates nur mit Sicherung und Rückfall (task-18-8).
+
+name: rheinwerk
+
+x-restart: &restart
+  restart: unless-stopped
+
+services:
+  db:
+    <<: *restart
+    container_name: supabase_db_rheinwerk
+    image: supabase/postgres:17.6.1.136
+    mem_limit: 1g
+    volumes:
+      - ./supabase/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:ro
+      - ./supabase/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:ro
+      - ./supabase/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
+      - ./supabase/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:ro
+      - ./supabase/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:ro
+      - ./supabase/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:ro
+      - ./supabase/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:ro
+      - db-data:/var/lib/postgresql/data
+      - db-config:/etc/postgresql-custom
+    ports:
+      - 127.0.0.1:54322:5432
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: 5432
+      POSTGRES_PORT: 5432
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: postgres
+      POSTGRES_DB: postgres
+      JWT_EXP: ${JWT_EXPIRY}
+    # Puffer begrenzt, damit neben Sicherung mit Probewiederherstellung und weiteren Projekten Platz bleibt
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_min_messages=fatal",
+      "-c", "shared_buffers=256MB", "-c", "effective_cache_size=1GB", "-c", "maintenance_work_mem=128MB"]
+
+  # API-Gateway (Envoy, Standard der offiziellen Compose-Datei). Der Containername beginnt mit supabase_kong_, weil der
+  # Wächter die Supabase-Dienste am Namen erkennt (scripts/ops/systems.mjs); im Netz heißt er kong und envoy.
+  kong:
+    <<: *restart
+    container_name: supabase_kong_rheinwerk
+    image: envoyproxy/envoy:v1.39.1
+    mem_limit: 256m
+    networks:
+      default:
+        aliases: [envoy, api-gw]
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/127.0.0.1/8000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - 127.0.0.1:54321:8000
+    volumes:
+      - ./supabase/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./supabase/envoy/cds.yaml:/etc/envoy/cds.yaml:ro
+      - ./supabase/envoy/lds.template.yaml:/etc/envoy/lds.template.yaml:ro
+      - ./supabase/envoy/docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY}
+      ANON_KEY_ASYMMETRIC: ${ANON_KEY_ASYMMETRIC}
+      SERVICE_ROLE_KEY_ASYMMETRIC: ${SERVICE_ROLE_KEY_ASYMMETRIC}
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
+
+  auth:
+    <<: *restart
+    container_name: supabase_auth_rheinwerk
+    image: supabase/gotrue:v2.197.0
+    mem_limit: 256m
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    # Entspricht supabase/config.toml [auth]; SMTP und E-Mail-Vorlagen für echte Passwort-Mails folgen in task-18-4
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: ${SITE_URL}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
+      GOTRUE_DISABLE_SIGNUP: "true"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_KEYS: ${JWT_KEYS}
+      GOTRUE_JWT_ISSUER: ${API_EXTERNAL_URL}
+      GOTRUE_SECURITY_REFRESH_TOKEN_ROTATION_ENABLED: "true"
+      GOTRUE_SECURITY_REFRESH_TOKEN_REUSE_INTERVAL: 10
+      GOTRUE_PASSWORD_MIN_LENGTH: 6
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: "true"
+      GOTRUE_RATE_LIMIT_EMAIL_SENT: 2
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
+      GOTRUE_MAILER_URLPATHS_INVITE: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
+
+  rest:
+    <<: *restart
+    container_name: supabase_rest_rheinwerk
+    image: postgrest/postgrest:v14.18
+    mem_limit: 256m
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "postgrest", "--ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,graphql_public
+      PGRST_DB_MAX_ROWS: 1000
+      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_ADMIN_SERVER_PORT: 3001
+      PGRST_ADMIN_SERVER_HOST: localhost
+      PGRST_JWT_SECRET: ${JWT_JWKS}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
+    command: ["postgrest"]
+
+  storage:
+    <<: *restart
+    container_name: supabase_storage_rheinwerk
+    image: supabase/storage-api:v1.81.0
+    mem_limit: 384m
+    depends_on:
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://storage:5000/status"]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+      start_period: 10s
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://rest:3000
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+      JWT_JWKS: ${JWT_JWKS}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      STORAGE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      REQUEST_ALLOW_X_FORWARDED_PATH: "true"
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      GLOBAL_S3_BUCKET: stub
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - storage-data:/var/lib/storage
+
+  # Nur bei Bedarf: ops/vps/compose.sh --profile studio up -d studio, dann vom Rechner
+  # ssh -L 54323:127.0.0.1:54323 vps und http://localhost:54323 öffnen; danach wieder stoppen.
+  studio:
+    <<: *restart
+    profiles: [studio]
+    container_name: supabase_studio_rheinwerk
+    image: supabase/studio:2026.10.12-sha-3699278
+    mem_limit: 512m
+    depends_on: [meta]
+    ports:
+      - 127.0.0.1:54323:3000
+    environment:
+      HOSTNAME: "0.0.0.0"
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: db
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER_READ_WRITE: postgres
+      PG_META_CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
+      PGRST_DB_SCHEMAS: public,graphql_public
+      DEFAULT_ORGANIZATION_NAME: RheinWerk
+      DEFAULT_PROJECT_NAME: RheinWerk
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+      SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY}
+      ENABLED_FEATURES_LOGS_ALL: "false"
+
+  meta:
+    <<: *restart
+    profiles: [studio]
+    container_name: supabase_meta_rheinwerk
+    image: supabase/postgres-meta:v0.100.0
+    mem_limit: 256m
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      CRYPTO_KEY: ${PG_META_CRYPTO_KEY}
+
+  # Gleiche Version wie auf dem Rechner (2.40.7); Daten und Schlüsseldatei (config) im Volume n8n-data, nach dem
+  # Umzug aus der Sicherung (task-18-3). Supabase im Docker-Netz unter http://kong:8000.
+  n8n:
+    <<: *restart
+    container_name: rheinwerk-n8n
+    image: n8nio/n8n:2.40.7
+    mem_limit: 1g
+    ports:
+      - 127.0.0.1:5678:5678
+    environment:
+      N8N_PROXY_HOPS: 1
+      N8N_EDITOR_BASE_URL: https://${N8N_HOST}
+      WEBHOOK_URL: https://${N8N_HOST}/
+      N8N_WEBHOOK_URL: https://${N8N_HOST}/
+      GENERIC_TIMEZONE: Europe/Berlin
+      TZ: Europe/Berlin
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+    volumes:
+      - n8n-data:/home/node/.n8n
+
+  # Eigener Tunnel des Servers (von Cloudflare verwaltet, Ziele im Zero-Trust-Dashboard: api. → http://kong:8000,
+  # n8n. → http://n8n:5678). Ohne CLOUDFLARE_TUNNEL_TOKEN bricht der Container ab.
+  cloudflared:
+    <<: *restart
+    container_name: rheinwerk-cloudflared
+    image: cloudflare/cloudflared:2026.10.3
+    mem_limit: 128m
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+
+volumes:
+  db-data:
+  db-config:
+  storage-data:
+  n8n-data:

@@ -2,8 +2,10 @@
 // dispatch (SMTP), Docker and free disk space; n8n and the phone assistant have their own modules (n8n.mjs, mira.mjs).
 // collectSystems gathers the raw answers, evaluateSystems turns them into one entry per system with its checks (pure,
 // unit tests in tests/unit/systems-monitor.test.mjs).
-//   WEBSITE_URL (default http://127.0.0.1:3000), HEALTH_TOKEN, N8N_CONTAINER (default n8n),
+//   WEBSITE_URL (default http://127.0.0.1:3000, "off" skips the check), HEALTH_TOKEN, N8N_CONTAINER (default n8n),
 //   DISK_WARN_GB (default 20), DISK_CRITICAL_GB (default 5)
+// On the VPS (task-18-2) other projects run next to RheinWerk: DOCKER_COMPOSE_PROJECT limits the containers to this
+// compose project, SUPABASE_REQUIRED_SERVICES lists the Supabase services it runs (no realtime there).
 // SMTP logs in at Gmail without sending, only once an hour (SMTP_CHECK_MINUTES) or on "System prüfen", so that Google
 // does not see a login every 5 minutes; in between the previous result stays.
 import { execFile } from "node:child_process";
@@ -15,6 +17,7 @@ import { verifySmtp } from "../lib/notify.mjs";
 const exec = promisify(execFile);
 export const SMTP_CHECK_MINUTES = 60;
 const REQUIRED_SUPABASE = ["db", "kong", "auth", "rest", "storage", "realtime"];
+const requiredSupabase = (env) => env.SUPABASE_REQUIRED_SERVICES?.split(",").map((s) => s.trim()).filter(Boolean) ?? REQUIRED_SUPABASE;
 export const SYSTEMS = { website: "Website und Dashboard", database: "Datenbank (Supabase)", tunnel: "Cloudflare-Tunnel", smtp: "E-Mail-Versand (SMTP)", docker: "Docker", disk: "Speicherplatz" };
 
 async function run(command, args) {
@@ -54,11 +57,12 @@ export async function collectSystems(env, { pingDatabase, previous = {}, force =
   const base = env.WEBSITE_URL ?? "http://127.0.0.1:3000";
   const n8nContainer = env.N8N_CONTAINER ?? "n8n";
   const smtpDue = force || !previous.smtp?.checked_at || now.getTime() - Date.parse(previous.smtp.checked_at) > (SMTP_CHECK_MINUTES - 3) * 60_000;
+  const project = env.DOCKER_COMPOSE_PROJECT ? ["--filter", `label=com.docker.compose.project=${env.DOCKER_COMPOSE_PROJECT}`] : [];
   const [website, database, docker, containers, smtp] = await Promise.all([
-    timed(`${base}/api/health`, env.HEALTH_TOKEN ? { Authorization: `Bearer ${env.HEALTH_TOKEN}` } : {}),
+    base === "off" ? { off: true } : timed(`${base}/api/health`, env.HEALTH_TOKEN ? { Authorization: `Bearer ${env.HEALTH_TOKEN}` } : {}),
     pingDatabase(),
     run("docker", ["version", "--format", "{{.Server.Version}}"]),
-    run("docker", ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.State}}\t{{.Status}}"]),
+    run("docker", ["ps", "-a", ...project, "--format", "{{.Names}}\t{{.Image}}\t{{.State}}\t{{.Status}}"]),
     smtpDue ? verifySmtp() : null,
   ]);
   const list = containers.ok ? containers.out.trim().split("\n").filter(Boolean).map((line) => {
@@ -105,7 +109,7 @@ export function evaluateSystems(raw, env = {}) {
 
   const site = raw.website;
   const siteUp = site.status === 200 || site.status === 503;
-  systems.website = entry([siteUp
+  systems.website = site.off ? entry([check("system:website", SYSTEMS.website, null, "warning", "", "Website wird hier nicht geprüft (WEBSITE_URL=off)")], null) : entry([siteUp
     ? check("system:website", SYSTEMS.website, true)
     : check("system:website", SYSTEMS.website, false, "critical", "Website und Dashboard nicht erreichbar",
       `Die Website antwortet nicht (${site.status ? `HTTP ${site.status}` : site.error}). Mitarbeiter können das Dashboard nicht öffnen. Läuft Next.js im Entwicklungsordner (npm run dev oder npm run start)? Protokoll im Terminal prüfen.`)],
@@ -156,9 +160,10 @@ export function evaluateSystems(raw, env = {}) {
     dockerChecks.push(check("system:docker", SYSTEMS.docker, true));
     // Required containers must run; every running one must not be unhealthy (edge runtime, studio and the like are
     // optional: the project has no edge functions)
-    const required = (c) => c.name === raw.n8nContainer || REQUIRED_SUPABASE.some((service) => c.name.startsWith(`supabase_${service}_`));
+    const services = requiredSupabase(env);
+    const required = (c) => c.name === raw.n8nContainer || services.some((service) => c.name.startsWith(`supabase_${service}_`));
     const bad = docker.containers.filter((c) => (required(c) && c.state !== "running") || (c.state === "running" && c.status.includes("(unhealthy)")));
-    const missing = REQUIRED_SUPABASE.filter((service) => !docker.containers.some((c) => c.name.startsWith(`supabase_${service}_`))).map((service) => `supabase_${service}`);
+    const missing = services.filter((service) => !docker.containers.some((c) => c.name.startsWith(`supabase_${service}_`))).map((service) => `supabase_${service}`);
     if (!docker.containers.some((c) => c.name === raw.n8nContainer)) missing.push(raw.n8nContainer);
     const problems = [...bad.map((c) => `${c.name}: ${c.status}`), ...missing.map((name) => `${name}: fehlt`)];
     const names = [...bad.map((c) => c.name), ...missing];
