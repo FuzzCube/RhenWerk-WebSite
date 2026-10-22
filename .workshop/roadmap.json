@@ -3911,7 +3911,7 @@
           "description": "Vom Oracle-Server (ssh oracle-n8n, Supabase-Stack supabase, n8n 2.37.10): Tabelle rheinwerk (36 Abschnitte, pgvector, OpenAI-Embeddings) als Migration in die RheinWerk-Datenbank, Workflows „RheinWerk Local Assistant“ und „RheinWerk Documents Import“ samt Dokumenten (~/n8n/documents) in das n8n von RheinWerk. Website ruft den Assistenten über eine eigene Route /api/assistant auf (Access-Service-Token auf dem Server, kein CORS); bisher direkt https://rheinwerk-rag.130-61-221-231.sslip.io mit CORS nur für rheinwerk-industrieservice.vercel.app.",
           "order": 10,
           "weight": 2,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-18-3"
           ],
@@ -3920,13 +3920,23 @@
             "/api/assistant mit Begrenzung und Prüfung",
             "test:unit, test:api, betrieb.md, n8n-workflows.md"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T16:05:00Z",
+          "completedAt": "2026-10-22T16:45:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T16:45:00Z",
+            "commands": [
+              "npm run test:db",
+              "npm run test:api",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "sh ops/vps/rag-import.sh (VPS)",
+              "Vergleich Oracle/RheinWerk mit 6 Fragen",
+              "POST https://rheinwerk-service.online/api/assistant"
+            ],
+            "summary": "Website-Assistent vom Oracle-Server in RheinWerk: Tabelle rag_documents (pgvector 3072, nur service_role, Migration 20261022200000) mit match_rag_documents, 7 Dokumente in n8n/rag-documents, Workflows „RheinWerk · Assistent“ (Systemprompt unverändert, gpt-5.6-luna, Gesprächsverlauf je Besucher statt festem Schlüssel für alle) und „RheinWerk · Dokumente importieren“ (ops/vps/rag-import.sh, 29 Abschnitte mit metadata.file), Error-Workflow zugewiesen. Website ruft /api/assistant (Frage 1–500 Zeichen, session_id UUID, 20 Fragen je Besucher in 10 Minuten, Access-Service-Token; Pfad in Cloudflare Access „RheinWerk Webhook“ ergänzt: mit Token 200, ohne 403). Vergleich mit Oracle bei 6 Fragen inhaltlich gleich; live auf rheinwerk-service.online mit Folgefrage im Kontext. test:db 53 Dateien/1193 Tests, test:api, test:unit 146, lint, typecheck, build; Wächter ohne Warnung. Oracle läuft bis task-18-13 weiter."
           }
         },
         {
