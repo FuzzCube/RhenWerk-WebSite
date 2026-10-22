@@ -419,6 +419,8 @@ Danach: Anmeldung im Dashboard, n8n → Executions (Zeitpläne laufen grün), ei
 
 Dauer: einige Minuten, Website und n8n sind dabei kurz nicht erreichbar. Während des Updates prüft der Wächter nicht und die tägliche Sicherung entfällt (Sperre `maintenance.lock`, wie bei der Wiederherstellung). Ein gepinnter Dienst zeigt weiter „Update bereit“: Ursache beheben und erneut einspielen, oder den PR zurücknehmen (`git revert`), danach Pin-Datei löschen. Probe des Rückfalls: `touch /opt/rheinwerk/state/update-fail-selftest` lässt den ersten Selbsttest scheitern (danach Datei löschen). Rückfall von Hand: `ops/vps/compose.sh stop`, je Volume `docker run --rm -v rheinwerk_<volume>:/v -v <schnappschuss>:/s:ro --entrypoint sh <db-image> -c 'find /v -mindepth 1 -delete && tar --numeric-owner -xpf /s/rheinwerk_<volume>.tar -C /v'`, alte Images in `images.override.yml`, `ops/vps/compose.sh up -d`.
 
+Probe am 22.10.2026 auf dem VPS: envoy v1.39.1 → v1.40.0 mit `update-fail-selftest` → Rückfall in 90 Sekunden (Volumes aus dem Schnappschuss, envoy gepinnt, Selbsttest danach bestanden, Warnung `update:failed`); danach dasselbe Update ohne Probe eingespielt (Pin entfernt, Warnung geschlossen). Anschließend Dependabot-PRs #2–#5 in einem Lauf: Postgres 17.6.1.136 → 17.11.0.005, n8n 2.40.7 → 2.44.4, PostgREST v14.18 → v16.4, Storage v1.81.0 → v1.84.1, gut 2 Minuten (davon 1 Minute Images laden), Selbsttest bestanden, alle Systeme in Ordnung.
+
 Der Workflow „RheinWerk · Selbsttest“ (`n8n/generate_selftest_workflow.py`) muss in n8n importiert und aktiv sein, sonst scheitert jedes Update am Selbsttest; der Wächter meldet ihn wie alle Workflows des Repositorys, wenn er fehlt oder inaktiv ist.
 
 | Rhythmus | Aufgabe | Befehl / Ort |
