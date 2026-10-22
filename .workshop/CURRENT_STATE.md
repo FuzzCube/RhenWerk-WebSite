@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v25, 21 Phasen, 121 Tasks, Fortschritt 100 % (Gewicht 286 von 286).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v25, 21 Phasen, 122 Tasks, Fortschritt 100 % (Gewicht 287 von 287).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -28,9 +28,9 @@ Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (er
 
 ## Zuletzt abgeschlossen
 
+- `task-20-4` (22.10.2026): **Erstbearbeitung → Einsatzplanung**: keine Vormerkungskarte bei offener Erstbearbeitung, „Erstbearbeitung abschließen“ öffnet die Plantafel mit der Vormerkung; Versionskonflikt durch den Versand der Eingangsbestätigung wird nicht mehr gemeldet.
 - `task-20-3` (22.10.2026): **Plantafel**: Einsätze künftig blau, vorbei hellblau, fremde grau; Klick wählt einen Einsatz, Griffe ändern die Länge, Doppelklick öffnet die Anfrage.
 - `task-20-2` (22.10.2026): **Vormerkung in der Einsatzplanung**: „Zur Einsatzplanung“ öffnet die Plantafel mit der Vormerkung als Auswahl, Planung schließt sie (Migration `20261022235000_plan_takes_hold.sql`), Anfrage ohne „Termin bestätigen“, „Terminwunsch ablehnen“ bleibt.
-- `task-20-1` (22.10.2026): **Formular**: Pfeile der Auswahllisten mit Abstand, Uhrzeit 07:00–14:00 im 30-Minuten-Raster mit Hinweis, Dateien per Drag and Drop.
 
 ## Wo was dokumentiert ist (Telefonassistent)
 

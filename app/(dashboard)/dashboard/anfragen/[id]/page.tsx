@@ -180,7 +180,6 @@ export default async function RequestPage({ params }: Props) {
         </div>
 
         <aside className="request-layout__side">
-          {!technician && openHold && !canPlan && <HoldCard hold={openHold} request={request} person={person} />}
           {!hasActions && closedFor && (
             // Technician: nothing left to do, so the slot says how the request ended
             <section id="aktionen" className={`rw-card ${closedFor === "completed" ? "rw-card--success" : "rw-card--neutral"} request-next`} aria-labelledby="aktionen-title">
@@ -481,17 +480,10 @@ function HoldNote({ hold, request, person }: { hold: RequestDetail["holds"][numb
   const time = payload?.request?.preferred_time ?? "any";
   const wish = `${request.requested_visit_date ? formatCalendarDate(request.requested_visit_date) : "–"}, ${WISHED_TIME[time] ?? `ab ${time} Uhr`}`;
   return (
-    <>
-      <p className="rw-card__note request-hold__line">
-        <strong>Terminwunsch vorgemerkt{hold.origin === "form" ? " (Formular)" : " (Telefon)"}:</strong> <span className="mono">{formatTimeRange(hold.starts_at, hold.ends_at)}</span>, {person(hold.technician_id)}, gilt bis <span className="mono">{formatDateTime(hold.expires_at)}</span>.
-      </p>
-      {hold.origin === "form" && (
-        <p className={`rw-card__note${hold.wish_met === false ? " request-hold__hint" : ""}`}>
-          Wunsch des Kunden: {wish}.{hold.wish_met === false && " Zu dieser Zeit war niemand frei – vorgemerkt ist der nächste freie Termin."}
-        </p>
-      )}
-      <p className="rw-card__note">In der Einsatzplanung ist er als Auswahl gesetzt; „Einsatz planen“ übernimmt ihn oder eine andere Zeit und schickt die Terminbestätigung.</p>
-    </>
+    <p className="rw-card__note request-hold__line">
+      Terminwunsch vorgemerkt: <span className="mono">{formatTimeRange(hold.starts_at, hold.ends_at)}</span>, {person(hold.technician_id)}.
+      {hold.wish_met === false && <span className="request-hold__hint"> Gewünscht war {wish}; zu dieser Zeit war niemand frei.</span>}
+    </p>
   );
 }
 
@@ -505,19 +497,6 @@ function HoldReject({ hold }: { hold: RequestDetail["holds"][number] }) {
         <TextAreaField name="alternative" label="Gegenvorschlag" rows={2} hint="Zum Beispiel „Donnerstag ab 10 Uhr“. Steht in der E-Mail an den Kunden." />
       </SaveForm>
     </details>
-  );
-}
-
-// Intake still open: the hold is shown with the option to reject it; planning follows after the intake
-function HoldCard({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
-  return (
-    <section id="terminwunsch" className="rw-card rw-card--action request-hold" aria-labelledby="terminwunsch-title">
-      <p className="request-next__eyebrow">{hold.origin === "form" ? "Terminwunsch (Formular)" : "Terminwunsch (Telefon)"}</p>
-      <h2 id="terminwunsch-title" className="request-next__title request-hold__when">{formatTimeRange(hold.starts_at, hold.ends_at)}</h2>
-      <HoldNote hold={hold} request={request} person={person} />
-      <p className="rw-card__note request-hold__hint">Erst die Erstbearbeitung abschließen, dann in der Einsatzplanung planen.</p>
-      <HoldReject hold={hold} />
-    </section>
   );
 }
 

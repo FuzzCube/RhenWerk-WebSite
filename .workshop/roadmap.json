@@ -4281,6 +4281,37 @@
             ],
             "summary": "Plantafel: Einsätze künftig blue-600, vorbei blue-100 (is-past), fremde grau; Legende Einsätze / Einsätze, vorbei / Belegt (andere). Klick wählt einen Einsatz mit Griffen an Anfang und Ende, Ziehen ändert die Länge im 15-Minuten-Raster (mindestens 30 Minuten), Umschalt+Pfeiltasten per Tastatur; Bestätigung als Dauer ändern mit eigenem Grund, gespeichert über reschedule_visit (geprüft: RIS-2026-02896 07:00–09:00 → 07:00–09:30 in der Datenbank). Doppelklick öffnet die Anfrage (geprüft), Klick auf freie Fläche oder Esc hebt die Auswahl auf. Behoben: eine reine Längenänderung galt als unverändert (Vergleich nur des Beginns). test:ui: Verschieben, Tastatur und Versionskonflikt bestanden; 2 Fehler im Abschnitt hängender E-Mail-Versand wegen lokal liegender Test-E-Mails (lokales n8n aus). Mit diesem Commit außerdem: Uhrzeit im Formular bis 16:00 (Nutzerwunsch)."
           }
+        },
+        {
+          "id": "task-20-4",
+          "title": "Erstbearbeitung führt direkt in die Einsatzplanung",
+          "description": "Nutzerwunsch nach Test: bei offener Erstbearbeitung keine Karte zur Vormerkung, nur Prüfen und freigeben; Erstbearbeitung abschließen öffnet die Plantafel mit der Vormerkung als Auswahl; Versionskonflikt durch den Versand der Eingangsbestätigung im Hintergrund wird nicht gemeldet.",
+          "order": 4,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-2"
+          ],
+          "definitionOfDone": [
+            "Keine Karte bei offener Erstbearbeitung",
+            "Weiterleitung in die Einsatzplanung",
+            "Kein Konflikt durch Versand im Hintergrund",
+            "lint, typecheck, build, test:ui"
+          ],
+          "startedAt": "2026-10-22T19:18:03Z",
+          "completedAt": "2026-10-22T19:43:03Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-22T19:43:03Z",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3100 npm run test:ui (unter next dev)",
+              "Browser: Seite geladen, Versand simuliert (message_sent, Version 2→3), Erstbearbeitung abschließen"
+            ],
+            "summary": "Ursache des Fehlers auf der Produktion (RIS-2026-02765): confirm_message_sent setzt updated_at der Anfrage und erhöht damit die Version 20 Sekunden nach Eingang; die offene Seite hatte die alte Version. completeIntake wiederholt bei RW409 mit der aktuellen Version, wenn seit dem updated_at der Seite nur message_queued/message_sent der Automatisierung geschahen und die Erstbearbeitung noch offen ist; sonst bleibt die Konfliktmeldung. Danach Weiterleitung nach /dashboard/planung?anfrage=… (Vormerkung als Auswahl). Karte Terminwunsch bei offener Erstbearbeitung entfernt, Zeile in Einsatz planen gekürzt. Geprüft: Versand während offener Seite → abgeschlossen (Version 4), Plantafel mit Auswahl Anna 28.10. 10:00–12:00. test:ui: neue Prüfung bestanden; 2 bekannte Fehler wegen lokal liegender Test-E-Mails."
+          }
         }
       ]
     }

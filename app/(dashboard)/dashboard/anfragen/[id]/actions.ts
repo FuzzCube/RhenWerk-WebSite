@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/session";
 import { berlinToInstant, dayKeyOf, isDayKey } from "@/lib/berlin-time";
 import { databaseErrorMessage, formError, formSuccess, formValues, type FormState } from "@/lib/forms";
@@ -44,9 +45,26 @@ export async function completeIntake(_previous: FormState, formData: FormData): 
   const { values } = input;
   if (!PRIORITIES.includes(values.priority ?? "")) return formError("Bitte die Priorität festlegen.", values, { priority: "Pflichtangabe für den Abschluss." });
   const supabase = await createClient();
-  return run(values, "Erstbearbeitung abgeschlossen. Die Anfrage steht jetzt zur Einsatzplanung bereit.", () =>
-    supabase.rpc("complete_intake", { request_id: input.id, expected_version: input.version, priority: values.priority as Enums["request_priority"], note: values.note?.trim() || undefined }));
+  const complete = (version: number) =>
+    supabase.rpc("complete_intake", { request_id: input.id, expected_version: version, priority: values.priority as Enums["request_priority"], note: values.note?.trim() || undefined });
+  let { error } = await complete(input.version);
+  // task-20-4: sending the receipt in the background changes the request (version) a few seconds after it arrives.
+  // If only such e-mail events happened since the page was loaded (seen_at = its updated_at), nothing the person
+  // decided on has changed: complete with the current version instead of reporting a conflict.
+  if (error?.code === "RW409" && values.seen_at) {
+    const [{ data: current }, { data: events }] = await Promise.all([
+      supabase.from("requests").select("version, intake_status").eq("id", input.id).single(),
+      supabase.from("request_events").select("actor_type, event_type").eq("request_id", input.id).gt("created_at", values.seen_at),
+    ]);
+    const mailOnly = (events ?? []).every((event) => event.actor_type === "automation" && MAIL_EVENTS.includes(event.event_type));
+    if (current && mailOnly && ["new", "analyzing", "needs_review"].includes(current.intake_status)) ({ error } = await complete(current.version));
+  }
+  if (error) return formError(databaseErrorMessage(error), values);
+  // Next step is planning (user request 22.10.2026): straight to the board, where an open hold is the preselected slot
+  redirect(`/dashboard/planung?anfrage=${input.id}`);
 }
+
+const MAIL_EVENTS: readonly string[] = ["message_queued", "message_sent"];
 
 export async function correctAnalysis(_previous: FormState, formData: FormData): Promise<FormState> {
   await requireRole(STAFF);

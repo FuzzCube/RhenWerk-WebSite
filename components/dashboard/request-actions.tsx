@@ -70,9 +70,10 @@ export function RequestActions({ detail, employee }: { detail: RequestDetail; em
     complete: () => (
       <details key="complete" className={className("complete")} open={primary === "complete" || undefined}>
         <summary>Prüfen und freigeben</summary>
-        <p className="section-note">Schließt die Erstbearbeitung ab. Die Anfrage geht danach in die Einsatzplanung.</p>
+        <p className="section-note">Schließt die Erstbearbeitung ab und öffnet die Einsatzplanung mit dieser Anfrage.</p>
         <SaveForm action={completeIntake} submitLabel="Erstbearbeitung abschließen" submitVariant={variant("complete")}>
           <Context detail={detail} />
+          <HiddenField name="seen_at" value={r.updated_at} />
           <div className="form-grid">
             <SelectField name="priority" label="Priorität" required defaultValue={r.priority ?? ""} options={priorityOptions} />
           </div>

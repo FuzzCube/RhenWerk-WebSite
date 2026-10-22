@@ -490,3 +490,5 @@
 {"timestamp":"2026-10-22T19:17:11Z","type":"decision_recorded","taskId":"task-20-1","summary":"Nutzerwunsch: Uhrzeit im Formular bis 16:00 statt 14:00; späte Wünsche, die nicht mehr in den Arbeitstag passen, merkt die Datenbank als nächsten freien Termin vor."}
 {"timestamp":"2026-10-22T19:17:11Z","type":"task_completed","taskId":"task-20-3","summary":"Plantafel: Farben nach Zeit, Länge per Griffen oder Umschalt+Pfeiltasten, Doppelklick öffnet die Anfrage; lint, typecheck, build bestanden, test:ui bis auf 2 umgebungsbedingte Fehler."}
 {"timestamp":"2026-10-22T19:17:11Z","type":"phase_completed","taskId":null,"summary":"Phase 20 Rückmeldungen nach dem Rundgang abgeschlossen."}
+{"timestamp":"2026-10-22T19:43:03Z","type":"roadmap_updated","taskId":"task-20-4","summary":"Nutzerwunsch nach Test: task-20-4 Erstbearbeitung führt direkt in die Einsatzplanung ergänzt."}
+{"timestamp":"2026-10-22T19:43:03Z","type":"task_completed","taskId":"task-20-4","summary":"Keine Vormerkungskarte bei offener Erstbearbeitung, Abschluss öffnet die Plantafel, Konflikt durch Versand im Hintergrund behoben; lint, typecheck, build, test:ui (bis auf 2 umgebungsbedingte Fehler)."}

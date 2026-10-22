@@ -1016,6 +1016,8 @@ try {
   const after = await dbRequest();
   const queueRow = (await admin.from("dispatcher_queue").select("queue").eq("id", request.id).single()).data;
   check("Freigabe: processed, Modus human_review, Warteschlange Planung", released && after.intake_mode === "human_review" && queueRow.queue === "planning", `${after.intake_status} ${after.intake_mode} ${queueRow.queue}`);
+  // task-20-4: the next step opens at once – the planning board with this request
+  check("  danach direkt in der Einsatzplanung mit der Anfrage", await waitFor(() => page.eval(`location.pathname === "/dashboard/planung" && new URLSearchParams(location.search).get("anfrage") === ${JSON.stringify(request.id)}`)));
 
   // Version conflict on reject keeps the reason; after reload the rejection succeeds
   await page.open(requestUrl);
