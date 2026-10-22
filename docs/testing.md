@@ -155,6 +155,22 @@ Mit `UI_SCREENSHOTS=<Ordner>` wird je Seite und Breite ein Screenshot gespeicher
 | 7 Historie aus Ereignissen, Fristen, Wiedereröffnung, Stornierung | `intake_operations.test.sql`, `scenarios.test.sql` |
 | 8 Responsive-Prüfung | `test:ui` (alle Bereiche je Rolle bei 390/768/1440 px), Sichtprüfung je Rolle in der Gesamtprüfung (unten) |
 
+## Gesamtprobe des Deployments 22.10.2026 (task-18-9)
+
+Gegen die Produktion: VPS (`ssh vps`, Supabase, n8n, Tunnel, systemd-Dienste), Vercel (`rheinwerk-service.online`), GitHub Actions. Anforderungen aus dem Dashboard („Jetzt sichern“, „Update einspielen“, „Wiederherstellen“) mit denselben Datenbankfunktionen als Admin Clara Becker gestellt; ausgeführt hat sie der Dienst `rheinwerk-systemcheck`.
+
+| Probe | Ablauf | Ergebnis |
+| --- | --- | --- |
+| 1 Push mit Migration bis Vercel | Migration `20261022210000_backups_comment` (Kommentar der Tabelle `backups`) gepusht | 16:48:43 Push → 16:50:28 Prüfungen grün → Sicherung vor der Migration (Zeile „Vor Migration“, `…-d72cbb6.dump`), Migration eingespielt → 16:53:18 Vercel „Ready“, Website 200; gesamt 4,5 Minuten |
+| 2 Rückfall über Vercel | `vercel rollback` auf das vorige Production-Deployment, danach `vercel promote` des aktuellen | je 3 Sekunden, Domain zeigt auf das gewählte Deployment, Website und `/api/assistant` antworten; `promote` schaltet die automatische Zuweisung der Domain für die nächsten Deployments wieder ein |
+| 3 Systemupdate mit Rückfall | n8n 2.44.4 → 2.44.6 in `docker-compose.yml` gepusht („Update bereit: 1“); erst mit `update-fail-selftest`, dann ohne | Probe: Rückfall in 140 s, n8n wieder 2.44.4 und gepinnt, `update:failed`; Update: 70 s, n8n 2.44.6, Pin entfernt, Warnung automatisch geschlossen |
+| 4 Wiederherstellung | „Jetzt sichern“ (geprüft, 88 Kunden) → Testkunde `K-99189` (89) → „Wiederherstellen“ dieser Sicherung | 58 s, 88 Kunden, Testkunde weg, Sicherung „Vor Wiederherstellung“ in der Liste, Rollenrechte unverändert (`authenticated` ändert keine Profile, `anon` liest keine Anfragen), Liste der Wiederherstellungen erhalten |
+| 5 Ausfall von n8n | `docker stop rheinwerk-n8n` 17:09:38; `docker start` 17:13:49 | 17:13:33 `n8n:down`, `mira:webhook`, `system:container` kritisch, E-Mail 17:13:34; nach dem Start alle drei um 17:18:34 automatisch behoben (3 Minuten Anlaufzeit plus Takt des Wächters) |
+
+Dabei gefunden: Die erste Wiederherstellung lief mit einem Testkunden ohne gültige Kundennummer (Format `K-` und Ziffern), der Testkunde wurde nicht angelegt und die Probe zeigte nichts; mit `K-99189` wiederholt. Die Warnung `n8n:fehler:rwCallAnalysis26` (16:46, „The connection was aborted“ beim Abruf der Gespräche aus ElevenLabs) entstand vor den Proben und gehört nicht dazu; sie schließt sich nach einer Stunde ohne Fehler.
+
+Am selben Tag in task-18-6 bis 18-10 außerdem: Wiederherstellung und Rückkehr auf einer Kopie (`docs/betrieb.md` 4.5), Systemupdates von envoy, Postgres, n8n, PostgREST und Storage (`docs/betrieb.md` 6), Website-Assistent mit Vergleich zu Oracle (`docs/n8n-workflows.md` 9). Lokal: `test:db` 1193 Tests in 53 Dateien, `test:api`, `test:unit` 146, `test:ui`, `lint`, `typecheck`, `build` bestanden.
+
 ## Gesamtprobe der Überwachung 21.10.2026 (task-17-11)
 
 Auf dem Rechner gegen die laufenden Dienste (Supabase, n8n, Cloudflare-Tunnel, `next dev`, Wächter und Prüfdienst aus `npm run ops:install`). Jede Probe: Störung herbeiführen, Wächter oder „System prüfen“, Warnung, E-Mail und Bereich „System“ (1440 und 390 px) prüfen, Störung beheben, automatische Behebung prüfen. E-Mails an `ALERT_EMAILS`: in der Datenbank als versendet markiert (`notified_at`), keine Zeile „Warn-E-Mail nicht gesendet“ in den Protokollen; den Eingang bestätigt der Empfänger.

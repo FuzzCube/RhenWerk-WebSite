@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v23, 19 Phasen, 113 Tasks, Fortschritt 99,26 % (Gewicht 268 von 270).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v23, 19 Phasen, 113 Tasks, Fortschritt 99,63 % (Gewicht 269 von 270).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -20,6 +20,7 @@ Roadmap v23 (22.10.2026): zusätzlich Umzug vom Oracle-Server (`ssh oracle-n8n`)
 
 ## Zuletzt abgeschlossen
 
+- `task-18-9` (22.10.2026): **Gesamtprobe des Deployments** gegen die Produktion bestanden: Push mit Migration bis Vercel (4,5 Minuten), Rückfall über Vercel, Systemupdate mit Rückfall (n8n 2.44.6), Wiederherstellung, Ausfall von n8n mit Warnung und E-Mail (`docs/testing.md`). Übergabe neu in `docs/HANDOFF.md`.
 - `task-18-10` (22.10.2026): **Website-Assistent in RheinWerk**: Wissensbasis `rag_documents` (nur service_role), Dokumente in `n8n/rag-documents`, Workflows „RheinWerk · Assistent“ und „Dokumente importieren“ (`ops/vps/rag-import.sh`), Website fragt über `/api/assistant` (Prüfung, Begrenzung, Access-Token; Pfad in Cloudflare Access „RheinWerk Webhook“). Oracle läuft bis task-18-13 weiter (`docs/n8n-workflows.md` 9).
 - `task-18-8` (22.10.2026): **Systemupdates auf dem VPS**: Dependabot-PR mergen → im Bereich „System“ „Images (Server): Update bereit“ → **Update einspielen** (nur admin): Sicherung, Schnappschuss der Volumes, neue Images, nur lesender Selbsttest (inkl. Workflow „RheinWerk · Selbsttest“), bei Fehler Rückfall mit Pin in `images.override.yml` (`docs/betrieb.md` 6). Eingespielt: envoy 1.40, Postgres 17.11.0.005, n8n 2.44.4, PostgREST v16.4, Storage v1.84.1. Offene Dependabot-PRs nur noch npm/Actions (#6–#10).
 - `task-18-7` (22.10.2026): **Wiederherstellen aus einer Sicherung** im Bereich „System“ (nur admin, Wort `WIEDERHERSTELLEN`, nur geprüfte vollständige Sicherung mit gleichem Migrationsstand): Sicherung davor, n8n angehalten, Gesundheitsprüfung, Rückkehr bei Fehler, E-Mail, Warnung `restore:failed` (`scripts/ops/restore-run.mjs`, `scripts/restore.mjs`, `docs/betrieb.md` 4.5). Gefunden und behoben: `pg_restore` verlor die `revoke`-Anweisungen der Migrationen (VPS seit task-18-3, am 22.10.2026 repariert). Echte Wiederherstellung auf dem VPS noch nicht ausgeführt (Nutzerwunsch).

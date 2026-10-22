@@ -3887,7 +3887,7 @@
           "description": "Ende-zu-Ende: Push mit Migration bis Vercel, Rollback über Vercel, Systemupdate mit Rückfall, Wiederherstellung aus Sicherung, Ausfall von n8n auf dem VPS mit Warnung. Übergabe (HANDOFF.md) aktualisiert.",
           "order": 9,
           "weight": 1,
-          "status": "ready",
+          "status": "completed",
           "dependsOn": [
             "task-18-7",
             "task-18-8"
@@ -3896,13 +3896,19 @@
             "Alle Proben im verification-Objekt beschrieben",
             "HANDOFF.md, betrieb.md, testing.md aktuell"
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-22T16:47:00Z",
+          "completedAt": "2026-10-22T17:30:00Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-10-22T17:30:00Z",
+            "commands": [
+              "git push (Migration 20261022210000)",
+              "vercel rollback / vercel promote",
+              "request_image_update mit und ohne update-fail-selftest (n8n 2.44.6)",
+              "request_backup, request_restore mit Testkunde K-99189",
+              "docker stop/start rheinwerk-n8n mit Wächter"
+            ],
+            "summary": "Gesamtprobe gegen die Produktion (Ergebnis docs/testing.md): Push mit Migration bis Vercel in 4,5 Minuten (Sicherung vor Migration, Migration, Ready); Rückfall über Vercel per rollback und promote je 3 s; Systemupdate n8n 2.44.4 → 2.44.6 mit absichtlich scheiterndem Selbsttest (Rückfall in 140 s, gepinnt, update:failed) und danach eingespielt (70 s, Warnung geschlossen); Wiederherstellung einer Sicherung in 58 s (Testkunde weg, Sicherung davor vorhanden, Rollenrechte unverändert); Ausfall von n8n: n8n:down, mira:webhook, system:container nach 4 Minuten mit E-Mail, nach dem Start automatisch behoben. docs/HANDOFF.md neu (Betrieb, Alltag, Zugänge, nächste Schritte). Gefunden: erste Wiederherstellungsprobe mit ungültiger Kundennummer ohne Marker, wiederholt."
           }
         },
         {
@@ -4005,7 +4011,7 @@
           "description": "Nach erfolgreichem Umzug von RAG, House Items Bot und Personal Copilot: letzte Sicherung der Oracle-Daten auf den VPS kopieren, Container auf Oracle stoppen, alte Vercel-Website rheinwerk-industrieservice abschalten oder auf die neue Domain umleiten, Repository archivieren.",
           "order": 13,
           "weight": 1,
-          "status": "planned",
+          "status": "ready",
           "dependsOn": [
             "task-18-9",
             "task-18-10",

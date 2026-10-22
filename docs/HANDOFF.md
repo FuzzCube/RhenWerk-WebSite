@@ -1,24 +1,47 @@
-# Übergabe: nächste Schritte (Stand 21.10.2026, Roadmap v22)
+# Übergabe (Stand 22.10.2026, Roadmap v23)
 
-Roadmap v22: Phasen 0–17 abgeschlossen (zuletzt Phase 17 „Updates und Überwachung“ mit der Gesamtprobe `task-17-11` am 21.10.2026, Ergebnis in `docs/testing.md`), Phase 18 „Deployment“ geplant. Stand und bekannte Probleme in `.workshop/CURRENT_STATE.md`, Übersicht mit `npm run workshop:status`.
+Phase 18 „Deployment“ ist bis auf `task-18-13` (Oracle-Server und alte Website abschalten) abgeschlossen; die Gesamtprobe des Deployments (`task-18-9`) steht in `docs/testing.md`. Stand und Übersicht: `.workshop/CURRENT_STATE.md`, `npm run workshop:status`.
 
-Was Phase 17 gebracht hat (Entscheidungen in `docs/decisions.md`):
+## So läuft es
 
-- Bis Projektende läuft alles aus dem Entwicklungsordner (`task-17-17`); die frühere Produktionskopie `~/RheinWerk-Prod` mit nächtlichem Code-Update ist entfernt, ihr Code steht in der Git-Historie bis `284294f`.
-- Dienste auf dem Rechner (`npm run ops:install`, Protokolle `~/Library/Logs/RheinWerk/`): tägliche Sicherung mit Wiederherstellungstest und Versionen um 09:00 (`online.rheinwerk.backup`, der Rechner schläft nachts), Wächter alle 5 Minuten (`online.rheinwerk.watchdog`) für n8n, Mira, Website, Datenbank, Tunnel, Docker, Speicherplatz und stündlich SMTP, „System prüfen“ aus dem Dashboard (`online.rheinwerk.systemcheck`, alle 20 Sekunden). node und zsh brauchen dafür Festplattenvollzugriff (nach `brew upgrade node` erneuern).
-- Der Bereich „System“ zeigt alle acht Systeme mit Zustand und Prüfzeit und die Versionen von Docker Desktop, Supabase CLI und Images, n8n, Node.js und npm-Paketen mit Empfehlung und Release Notes (nur Anzeige, `task-17-15`).
-- Warnungen gehen per Gmail SMTP an `ALERT_EMAILS` und erscheinen für Manager und Admin oben auf jeder Dashboard-Seite und im Bereich „System“ (`/dashboard/system`); der n8n-Error-Workflow „RheinWerk · Fehlermeldung“ meldet fehlgeschlagene Läufe.
+| Teil | Wo | Dokumentation |
+| --- | --- | --- |
+| Website und Dashboard | Vercel Hobby, Region `cdg1`, `rheinwerk-service.online` (`www` leitet weiter) | `docs/betrieb.md` 3.7 |
+| Supabase (Datenbank, Auth, REST, Storage) und n8n | OVHcloud VPS-2 Roubaix (`ssh vps`), Docker Compose `/opt/rheinwerk` (`ops/vps/compose.sh`) | `docs/betrieb.md` 3.5 |
+| Zugang von außen | nur Cloudflare-Tunnel (`api.` → Supabase, `n8n.` → n8n) hinter Cloudflare Access; offen ist nur Port 22 | `docs/betrieb.md` 3.5, 3.6 |
+| Deployment | Push auf `main` → GitHub Actions: Prüfungen → Sicherung und neue Migrationen auf dem VPS (`ops/vps/migrate.sh`) → `vercel deploy --prod`; Vercel baut nicht selbst | `docs/betrieb.md` 3.8 |
+| Dienste auf dem VPS (systemd) | `rheinwerk-watchdog` (alle 5 Minuten), `rheinwerk-systemcheck` (alle 20 Sekunden: „System prüfen“, „Jetzt sichern“, „Wiederherstellen“, „Update einspielen“), `rheinwerk-backup` (03:00) | `docs/betrieb.md` 4–6 |
+| Website-Assistent | `/api/assistant` → n8n „RheinWerk · Assistent“ → Wissensbasis `rag_documents` | `docs/n8n-workflows.md` 9 |
+| Entwicklung | Mac mit lokalem Supabase (`supabase start`) und `next dev`; das lokale n8n bleibt gestoppt (sonst liest Gmail doppelt) | `docs/setup.md` |
 
-Nächste Schritte (die mit Task-ID stehen in der Roadmap, die übrigen werden erst nach Rücksprache ein Task):
+Weitere Projekte auf demselben VPS (eigene Compose-Projekte, nicht Teil dieses Repositorys): `/opt/houseitems` (House Items Bot), `/opt/personal-copilot`.
 
-1. Speicherplatz schaffen: auf dem Rechner sind nur etwa 12 GB frei, die Warnung „Wenig Speicherplatz“ ist offen (Schwelle 20 GB, `docker system df`, alte Container wie `n8n-old` entfernen).
-2. Updates nach den Empfehlungen im Bereich „System“ (Stand 21.10.2026: Docker Desktop, Supabase CLI, n8n, Node.js, 14 npm-Pakete), jeweils mit Sicherung vorher und „System prüfen“ danach.
-3. Server bestellen (Nutzer): OVHcloud VPS-2 in Roubaix, danach `task-18-2` (Zielbild, Kosten und Risiken in `docs/betrieb.md` 3, Entscheidungen 21./22.10.2026 in `docs/decisions.md`).
-4. Phase 18 „Deployment“ zum Projektende: Website auf Vercel (`cdg1`), Supabase und n8n per Docker Compose auf dem VPS, GitHub Actions und Renovate; Sicherung im Dashboard, Datenwiederherstellung und Systemupdates mit Rückfall dort (`task-18-1` bis `task-18-9`).
-5. Sprachtests mit Stimme, die noch fehlen (`docs/telefonassistent/testprotokoll.md`, Abschnitt „Offen“): Notfall eines Bestandskunden (task-16-2), Anruf mit Demo-Weiterleitung, Unterbrechen und Stille, ein Gespräch über das Widget.
-6. SLA-Verträge im Dashboard pflegen (anlegen, verlängern, beenden); bisher nur Migration und Demo-Seed.
-7. Eigene Rechnungsanschrift je Kunde (Rechnungen nehmen bisher die Anschrift der Anfrage).
-8. SMTP für echte Passwort-Mails (`docs/setup.md`), bei Phase 18 ohnehin nötig.
-9. Ideen: KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+## Alltag des Betreibers
 
-Vor dem Start: Docker und `supabase start`, `next dev` läuft im Terminal des Nutzers; nie `supabase db reset` (neue Migrationen mit `supabase migration up`); Prüfungen gegen `next start` (z. B. `npx next start -p 3202` und `APP_URL=http://localhost:3202`, nicht `127.0.0.1`); `test:ui` und `test:api` hinterlassen Testdaten, `npm run demo:seed` räumt sie ab; Push nur auf Wunsch.
+- Bereich „System“ (`/dashboard/system`, Admin): Zustand aller Systeme, Datensicherung (täglich 03:00, geprüft, 14 Tage), Warnungen; Warnungen kommen zusätzlich per E-Mail an `ALERT_EMAILS`.
+- Updates: montags Dependabot-PRs. Images (`ops/vps/docker-compose.yml`): Release Notes lesen, mergen, nach dem Deployment „Update einspielen“ (Sicherung, Schnappschuss, Selbsttest, Rückfall). npm und GitHub Actions: mergen, wenn die Prüfungen grün sind; Hauptversionen einzeln.
+- Daten zurückholen: „Wiederherstellen“ an einer Sicherung (nur Admin, Wort `WIEDERHERSTELLEN`), vorher wird automatisch gesichert.
+- Wissensbasis des Assistenten ändern: Datei in `n8n/rag-documents/`, pushen, auf dem VPS `sh /opt/rheinwerk/app/ops/vps/rag-import.sh`.
+- Notfälle: `docs/betrieb.md` 7.
+
+## Zugänge (Geheimnisse nie im Repository)
+
+| Wo | Was |
+| --- | --- |
+| VPS `/opt/rheinwerk/.env` | Schlüssel von Supabase, Postgres-Passwort, Tunnel-Token |
+| VPS `/opt/rheinwerk/ops.env` | Dienste: Supabase-Schlüssel, SMTP, `ALERT_EMAILS`, `BACKUP_PASSPHRASE`, `N8N_API_KEY`, OVHcloud-API (nur lesend) |
+| Vercel (Environment Variables) | Supabase-URL und Schlüssel, Cloudflare-Access-Service-Token, `N8N_WEBHOOK_URL`, Turnstile, Blob, `SITE_URL` |
+| GitHub Secrets | `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VPS_HOST`, `VPS_SSH_KEY` (darf nur `migrate.sh` ausführen), `VPS_KNOWN_HOSTS` |
+| Cloudflare Zero Trust | Tunnel `rheinwerk-vps`, Access-Anwendungen „api“, „RheinWerk Webhook“ (Formular, Anhänge, Assistent), „n8n“ (Mira), „n8n Editor“, „n8n OAuth callback“ |
+| Passwort-Manager | `BACKUP_PASSPHRASE` (ohne sie ist keine Sicherung lesbar), n8n-Besitzerkonto, Demo-Passwort, OVHcloud-Konto |
+
+Konten: GitHub, Cloudflare, Vercel, OVHcloud, Google Cloud/Gmail, OpenAI, ElevenLabs (`docs/betrieb.md` 8).
+
+## Nächste Schritte
+
+1. `task-18-13`: Oracle-Server (`ssh oracle-n8n`) abschalten, wenn House Items Bot und Personal Copilot auf dem VPS bestätigt sind; alte Website auf Vercel und das alte Repository archivieren.
+2. Dependabot-PRs #6–#10: #6–#8 (Actions, npm-Minor) grün; #9 TypeScript 7 und #10 eslint 10 scheitern an den Prüfungen und brauchen Anpassungen.
+3. Vor echter Nutzung mit Kunden: Vercel Pro (Hobby nur nicht-kommerziell), Kopie der Sicherungen außer Haus (`docs/betrieb.md` 3.4), Begrenzung von `/api/assistant` über die Server-Instanz hinaus.
+4. Offen aus früheren Phasen: Sprachtests mit Stimme (`docs/telefonassistent/testprotokoll.md`, „Offen“), SLA-Verträge im Dashboard pflegen, eigene Rechnungsanschrift je Kunde, Ideen: KI-Vorbelegung im Posteingang, optionale E-Mail-Adresse bei telefonischen Anfragen.
+
+Arbeitsregeln: nie `supabase db reset`; neue Migrationen nur hinzufügend (DROP bricht das Deployment ab); jeder Push auf `main` geht in die Produktion; nie mit Werkzeugen des Rechners auf eine laufende n8n-Datenbank zugreifen.
