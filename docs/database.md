@@ -765,3 +765,24 @@ Migration `20261021150000_system_updates.sql` (Phase 17, Entscheidungen in [deci
 **Abgebrochene Läufe** (task-17-6, Migration `20261021160000_abandon_stale_runs.sql`): `abandon_stale_runs()` (nur `service_role`) schließt Läufe und Anfragen in `running` als `failed` ab; die Skripte rufen sie nur mit gehaltener Sperre auf dem Rechner auf, wenn kein anderer Lauf aktiv sein kann.
 
 **Aufräumen:** `purge_system_history()`, pg_cron `system-history-cleanup` täglich 02:50: Läufe `no_change` nach 30 Tagen, behobene Warnungen nach 90 Tagen, übrige beendete Läufe und Anfragen nach 12 Monaten. Tests: `system_updates.test.sql`.
+
+## Datensicherung, Wiederherstellung, Systemupdates und Wissensbasis (Phase 18)
+
+Betrieb in [betrieb.md](betrieb.md) 4–6, Entscheidungen in [decisions.md](decisions.md). Lesen dürfen `admin` und `manager` (`private.can_read_system()`, wie `system_alerts`), Anfragen stellt nur `admin` (`manager` → `42501`), alles Übrige nur `service_role` (Dienst `rheinwerk-systemcheck`, `scripts/ops/`). Client-Rollen haben auf diese Tabellen nur `select`.
+
+| Tabelle | Inhalt |
+| --- | --- |
+| `backups` (task-18-6, `20261022140000`) | jede Sicherung: `started_at`, `finished_at`, `reason` (`daily`, `manual`, `migration` = nur Postgres vor einem Deployment, `pre_restore`, `pre_update`), `status` `ok`/`failed` (dann `error`), `file_name`, `size_bytes`, `contents` (Zeilenzahlen, `storage_files`, `n8n_workflows`, `secrets`, seit task-18-7 `migration` = neueste Migration), `verified` (Probewiederherstellung bestanden; `null` = nicht geprüft), `requested_by`; Zeilen 90 Tage |
+| `restores` (task-18-7, `20261022160000`) | Wiederherstellungen: `backup_id`, `file_name`, `backup_finished_at`, `requested_by`, `status` `requested` → `running` → `ok`/`failed`/`rolled_back` (Fehler, Stand davor zurück; dann `error`), `pre_backup_file`; höchstens eine angefordert oder laufend (`restores_one_active`); Zeilen 90 Tage |
+| `image_updates` (task-18-8, `20261022180000`) | Systemupdates der Images auf dem VPS: `requested_by`, `status` `requested` → `running` → `ok`/`no_change`/`failed`/`rolled_back`, `changes` (`[{service, from, to}]`), `pre_backup_file`, `error`; höchstens eins aktiv; Zeilen 1 Jahr. `system_updates` (task-17-2) bleibt für die alten Code-Updates ungenutzt |
+| `rag_documents` (task-18-10, `20261022200000`) | Wissensbasis des Website-Assistenten: `content`, `metadata` (`file` = Quelldatei in `n8n/rag-documents`), `embedding` `extensions.vector(3072)` (`text-embedding-3-large`, ohne Index); RLS ohne Policy, nur `service_role` |
+
+**Funktionen:**
+
+- `request_backup()` „Jetzt sichern“: höchstens eine Anfrage (`RW422`), nach 30 Minuten ohne Abschluss neu möglich; Spalten `backup_requested_at`, `backup_requested_by`, `backup_started_at` in `system_status`. Dienst: `claim_backup_request()` (Anfragender oder `null`), `finish_backup_request()`, `record_backup(reason, status, started_at, file_name, size_bytes, contents, verified, error, requested_by)`.
+- `request_restore(backup_id, confirmation)`: `confirmation` muss `WIEDERHERSTELLEN` sein (Groß-/Kleinschreibung und Ränder egal, sonst `RW422`); nur eine geprüfte vollständige Sicherung (`daily`, `manual`, `pre_restore`, `pre_update`) der letzten 14 Tage mit `contents.migration` = aktueller Stand (`RW422`, unbekannt `RW404`); keine zweite Wiederherstellung und kein laufendes Update (`RW422`); eine Anfrage ohne Abschluss nach einer Stunde wird als `failed` aufgegeben. Dienst: `claim_restore_request()`, `finish_restore_request(restore_id, status, pre_backup_file, error)`.
+- `current_migration()`: neueste Migration, für `admin`/`manager` und `service_role` (das Dashboard zeigt „Wiederherstellen“ nur bei passender Sicherung).
+- `request_image_update()`: keine zweite Anfrage und keine laufende Wiederherstellung (`RW422`), Aufgabe nach einer Stunde wie oben. Dienst: `claim_image_update()`, `finish_image_update(update_id, status, changes, pre_backup_file, error)`.
+- `match_rag_documents(query_embedding, match_count, filter)`: Abschnitte nach Kosinus-Ähnlichkeit, `filter` über `metadata @>`; nur `service_role` (Supabase Vector Store von n8n).
+
+Beim Wiederherstellen bleiben `backups`, `restores`, `image_updates`, `system_alerts` und `system_status` auf dem aktuellen Stand (`KEEP_TABLES` in `scripts/restore.mjs`), und die Rechte (GRANT/REVOKE) werden aus dem Dump gesetzt, weil `pg_restore` sonst die `revoke`-Anweisungen der Migrationen verliert. Tests: `backups.test.sql`, `restores.test.sql`, `image_updates.test.sql`, `rag_documents.test.sql`.

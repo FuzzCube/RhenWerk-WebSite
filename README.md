@@ -8,7 +8,7 @@ Für den Einstieg genügen `.workshop/CURRENT_STATE.md` und `npm run workshop:st
 
 | Datei | Inhalt | Lesen, wenn … |
 | --- | --- | --- |
-| [docs/HANDOFF.md](docs/HANDOFF.md) | Nächste Schritte nach Roadmap v22 | eine neue Arbeit auswählen |
+| [docs/HANDOFF.md](docs/HANDOFF.md) | Übergabe: wie der Betrieb läuft (Vercel, VPS), Alltag, Zugänge, nächste Schritte | einsteigen oder eine neue Arbeit auswählen |
 | [docs/setup.md](docs/setup.md) | Lokale Einrichtung, Umgebungsvariablen, Start, SMTP, Sicherheitsupdates | Umgebung einrichten oder starten |
 | [docs/supabase-lokal.md](docs/supabase-lokal.md) | Lokales Supabase Schritt für Schritt: Dienste und Ports, Schlüssel, Migrationen, Demodaten, pg_cron, Verbindung zu n8n, Fehlerbehebung | Datenbank einrichten oder Störung suchen |
 | [docs/architecture.md](docs/architecture.md) | Aufbau der App: Routen, Rollen, Bereiche, UI-Bausteine, Diagramme, Posteingang, Einsatzplanung, Anrufe, Bereich „System“ | Dashboard-Code ändern |
@@ -17,8 +17,8 @@ Für den Einstieg genügen `.workshop/CURRENT_STATE.md` und `npm run workshop:st
 | [docs/testing.md](docs/testing.md) | Testsuiten, was sie prüfen, Gesamtprüfung | Tests schreiben oder ausführen |
 | [docs/kpi-dictionary.md](docs/kpi-dictionary.md) | Kennzahlen, Formeln, Richtungen | Auswertung oder Übersicht ändern |
 | [docs/demo-data.md](docs/demo-data.md) | Demo-Nutzer, Demo-Seed, Prüfung `demo:verify` | Demodaten ändern |
-| [docs/betrieb.md](docs/betrieb.md) | Betriebskonzept: Stufe 1 (eigener Rechner, Cloudflare Tunnel, Domain, Dienste `npm run ops:install` für nächtliche Sicherung und Wächter), Stufe 2 (Zielarchitektur Vercel und VPS mit Kosten und Risiken), Datensicherung mit `npm run backup`/`backup:check`, Wiederherstellung, Überwachung, Wartungsplan, Notfälle | Betrieb, Sicherung, Wartung oder Umzug |
-| [docs/n8n-workflows.md](docs/n8n-workflows.md) | Die neun n8n-Workflows (mit Error-Workflow): Gesamtbild, Steckbrief je Workflow, Verbindungen (Credentials, RPCs, Netzwerk), Abläufe als Sequenzdiagramme, Einrichtung von Grund auf, Störungen | n8n verstehen, einrichten oder Störung suchen |
+| [docs/betrieb.md](docs/betrieb.md) | Betriebskonzept: Stufe 1 (eigener Rechner, historisch), Stufe 2 (seit 22.10.2026: Vercel und VPS, Einrichtung `ops/vps/`, Deployment über GitHub Actions), Datensicherung und Wiederherstellung im Dashboard, Überwachung, Systemupdates mit Rückfall, Wartungsplan, Notfälle | Betrieb, Sicherung, Wartung oder Störung |
+| [docs/n8n-workflows.md](docs/n8n-workflows.md) | Die zwölf n8n-Workflows (mit Error-Workflow, Selbsttest und Website-Assistent): Gesamtbild, Steckbrief je Workflow, Verbindungen (Credentials, RPCs, Netzwerk), Abläufe als Sequenzdiagramme, Einrichtung von Grund auf, Störungen | n8n verstehen, einrichten oder Störung suchen |
 | [docs/n8n-contract.md](docs/n8n-contract.md) | n8n-Workflows, Formularpfad, Gmail, OpenAI, Integrations-RPCs | n8n oder E-Mail-Verarbeitung ändern |
 | [docs/website.md](docs/website.md) | Öffentliche Website, Formular, Demo-Anruf | Website ändern |
 | [docs/telefonassistent/setup.md](docs/telefonassistent/setup.md) | Einrichtung des Agenten, Werkzeuge, Tunnel, Demo-Anruf, Skripte | Telefonassistent einrichten oder ändern |

@@ -137,6 +137,7 @@ Umgebungsvariablen (nur Production, alle „sensitive“, Werte nie ins Reposito
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | neue Schlüssel aus `/opt/rheinwerk/.env` |
 | `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | Service Token „ElevenLabs Mira“ (Supabase-API und n8n) |
 | `N8N_WEBHOOK_URL` | `https://n8n.rheinwerk-service.online/webhook/rheinwerk-service-request` |
+| `N8N_ASSISTANT_URL` | optional; ohne sie fragt `/api/assistant` `/webhook/rheinwerk-assistant` auf dem Host von `N8N_WEBHOOK_URL` (task-18-10) |
 | `SITE_URL` | `https://rheinwerk-service.online` |
 | `ELEVENLABS_API_KEY`, `HEALTH_TOKEN` | wie `.env.local` |
 | `BLOB_READ_WRITE_TOKEN`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Blob-Speicher und Produktionsschlüssel von Turnstile |

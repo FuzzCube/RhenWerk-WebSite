@@ -7,7 +7,7 @@ Vollständige Version der ursprünglichen Website auf Basis von Next.js 16, App 
 
 ## Implementiert
 
-- Sämtliche Seiten, die Navigation, das mobile Menü, responsive Zustände und der Informationsassistent.
+- Sämtliche Seiten, die Navigation, das mobile Menü, responsive Zustände und der Informationsassistent (seit task-18-10 über die eigene Route `/api/assistant` statt direkt beim n8n des Oracle-Servers; Wissensbasis und Workflows in [n8n-workflows.md](n8n-workflows.md#9-website-assistent-task-18-10)).
 - Ein fünfstufiges deutsches Formular mit Speicherung des Entwurfs in `sessionStorage`.
 - Prüfung der Pflichtfelder auf Client- und Serverseite mit einer Liste der zu korrigierenden Felder.
 - Deterministisches `human_review: true` bei Produktionsstillstand sowie bei Sicherheitsgefahr `Ja` oder `Unklar`.
