@@ -3781,7 +3781,7 @@
           "description": "Ersetzt task-17-13. Tägliche Sicherung auf dem VPS mit Wiederherstellungstest (14 Tage), dazu die tägliche Sicherung des Anbieters; keine Kopie außer Haus (Nutzerentscheidung 22.10.2026, Demoprojekt); jede Sicherung in der Datenbank (Zeitpunkt, Größe, Inhalt, Prüfung, Anlass). Bereich „System“: letzte geprüfte Sicherung, Liste, Inhalt; nur admin „Jetzt sichern“ als Anfrage an einen Dienst auf dem VPS. Warnung bei Sicherung älter als 26 Stunden oder Fehler.",
           "order": 6,
           "weight": 3,
-          "status": "ready",
+          "status": "in_progress",
           "dependsOn": [
             "task-18-3"
           ],
@@ -3791,7 +3791,7 @@
             "Warnung bei veralteter oder fehlgeschlagener Sicherung",
             "test:db, test:api, test:ui, betrieb.md 4"
           ],
-          "startedAt": null,
+          "startedAt": "2026-10-22T12:36:46Z",
           "completedAt": null,
           "verification": {
             "status": "not_run",

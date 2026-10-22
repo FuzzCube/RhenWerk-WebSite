@@ -29,7 +29,7 @@ printf 'Types: deb\nURIs: https://download.docker.com/linux/ubuntu\nSuites: %s\n
 printf 'Types: deb\nURIs: https://deb.nodesource.com/node_24.x\nSuites: nodistro\nComponents: main\nSigned-By: /etc/apt/keyrings/nodesource.asc\n' \
   | sudo tee /etc/apt/sources.list.d/nodesource.sources >/dev/null
 sudo apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin nodejs git >/dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin nodejs git sqlite3 >/dev/null
 sudo usermod -aG docker "$USER_NAME"
 
 # 3. Docker für mehrere Projekte: veröffentlichte Ports standardmäßig nur auf 127.0.0.1 (Docker umgeht ufw),
@@ -46,7 +46,7 @@ sudo systemctl enable --now docker >/dev/null 2>&1
 sudo systemctl restart docker
 
 # 4. Projektordner: Repository (öffentlich, nur lesend), Geheimnisse, Zustand der Dienste
-sudo install -d -o "$USER_NAME" -g "$USER_NAME" -m 0750 "$BASE" "$BASE/state"
+sudo install -d -o "$USER_NAME" -g "$USER_NAME" -m 0750 "$BASE" "$BASE/state" "$BASE/backups"
 if [ -d "$BASE/app/.git" ]; then git -C "$BASE/app" pull --ff-only -q; else git clone -q "$REPO" "$BASE/app"; fi
 (cd "$BASE/app" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund --loglevel=error)
 sh "$BASE/app/ops/vps/generate-env.sh"

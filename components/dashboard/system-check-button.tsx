@@ -27,7 +27,7 @@ export function SystemCheckButton({ state }: { state: "idle" | "waiting" | "runn
     <div className="system-check">
       <button type="button" className="button button--secondary" onClick={run} disabled={pending || open} aria-busy={open || pending}>{label}</button>
       <p className="save-status" role="status">
-        {state === "stuck" ? "Der Prüfdienst auf dem Rechner meldet sich nicht (online.rheinwerk.systemcheck, npm run ops:install)." : open ? "Ergebnisse erscheinen in etwa einer Minute." : ""}
+        {state === "stuck" ? "Der Prüfdienst auf dem Server meldet sich nicht (rheinwerk-systemcheck, docs/betrieb.md 3.5)." : open ? "Ergebnisse erscheinen in etwa einer Minute." : ""}
       </p>
       {error && <p className="save-status save-status--error" role="alert">{error}</p>}
     </div>

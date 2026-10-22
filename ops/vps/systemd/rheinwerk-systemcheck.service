@@ -11,5 +11,5 @@ Type=oneshot
 User=__USER__
 WorkingDirectory=/opt/rheinwerk/app
 ExecStart=/usr/bin/node --env-file=/opt/rheinwerk/ops.env scripts/ops/check.mjs
-TimeoutStartSec=240
+TimeoutStartSec=900
 Nice=5

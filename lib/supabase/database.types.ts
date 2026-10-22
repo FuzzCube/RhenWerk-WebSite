@@ -112,6 +112,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"backups": {
+                  Row: {
+                    "contents": NonNullable<Json>,"error": string | null,"file_name": string | null,"finished_at": string,"id": string,"reason": string,"requested_by": string | null,"size_bytes": number | null,"started_at": string,"status": string,"verified": boolean | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "contents"?: NonNullable<Json>,"error"?: string | null,"file_name"?: string | null,"finished_at"?: string,"id"?: string,"reason": string,"requested_by"?: string | null,"size_bytes"?: number | null,"started_at": string,"status": string,"verified"?: boolean | null
+                  }
+                  Update: {
+                    "contents"?: NonNullable<Json>,"error"?: string | null,"file_name"?: string | null,"finished_at"?: string,"id"?: string,"reason"?: string,"requested_by"?: string | null,"size_bytes"?: number | null,"started_at"?: string,"status"?: string,"verified"?: boolean | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "backups_requested_by_fkey"
+      columns: ["requested_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"callback_requests": {
                   Row: {
                     "callback_number": string,"closed_at": string | null,"closed_by": string | null,"closed_reason": string | null,"company_name": string,"conversation_id": string,"created_at": string,"escalated_at": string | null,"escalated_to": string | null,"id": string,"request_id": string,"scheduled_start": string,"site": string,"status": string,"technician_id": string,"updated_at": string,"visit_id": string
@@ -682,17 +702,23 @@ isOneToOne: false
                   ]
                 },"system_status": {
                   Row: {
-                    "available_commit": string | null,"check_requested_at": string | null,"check_requested_by": string | null,"check_started_at": string | null,"checked_at": string | null,"current_commit": string | null,"dependency_updates": NonNullable<Json>,"id": number,"monitoring": NonNullable<Json>,"pending_commits": NonNullable<Json>,"updated_at": string
+                    "available_commit": string | null,"backup_requested_at": string | null,"backup_requested_by": string | null,"backup_started_at": string | null,"check_requested_at": string | null,"check_requested_by": string | null,"check_started_at": string | null,"checked_at": string | null,"current_commit": string | null,"dependency_updates": NonNullable<Json>,"id": number,"monitoring": NonNullable<Json>,"pending_commits": NonNullable<Json>,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "available_commit"?: string | null,"check_requested_at"?: string | null,"check_requested_by"?: string | null,"check_started_at"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
+                    "available_commit"?: string | null,"backup_requested_at"?: string | null,"backup_requested_by"?: string | null,"backup_started_at"?: string | null,"check_requested_at"?: string | null,"check_requested_by"?: string | null,"check_started_at"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
                   }
                   Update: {
-                    "available_commit"?: string | null,"check_requested_at"?: string | null,"check_requested_by"?: string | null,"check_started_at"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
+                    "available_commit"?: string | null,"backup_requested_at"?: string | null,"backup_requested_by"?: string | null,"backup_started_at"?: string | null,"check_requested_at"?: string | null,"check_requested_by"?: string | null,"check_started_at"?: string | null,"checked_at"?: string | null,"current_commit"?: string | null,"dependency_updates"?: NonNullable<Json>,"id"?: number,"monitoring"?: NonNullable<Json>,"pending_commits"?: NonNullable<Json>,"updated_at"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "system_status_backup_requested_by_fkey"
+      columns: ["backup_requested_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "system_status_check_requested_by_fkey"
       columns: ["check_requested_by"]
 isOneToOne: false
@@ -1616,6 +1642,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"claim_backup_request":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "claim_queued_messages":
 { Args: { "batch_limit"?: number,"lease_seconds"?: number }; Returns: Json[]
                            },
@@ -2273,9 +2302,35 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"finish_backup_request":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "available_commit": string | null,
+"backup_requested_at": string | null,
+"backup_requested_by": string | null,
+"backup_started_at": string | null,
+"check_requested_at": string | null,
+"check_requested_by": string | null,
+"check_started_at": string | null,
+"checked_at": string | null,
+"current_commit": string | null,
+"dependency_updates": NonNullable<Json>,
+"id": number,
+"monitoring": NonNullable<Json>,
+"pending_commits": NonNullable<Json>,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "finish_system_check":
 { Args: Record<PropertyKey, never>; Returns: {
               "available_commit": string | null,
+"backup_requested_at": string | null,
+"backup_requested_by": string | null,
+"backup_started_at": string | null,
 "check_requested_at": string | null,
 "check_requested_by": string | null,
 "check_started_at": string | null,
@@ -2838,6 +2893,26 @@ isOneToOne: false
 "raise_alert":
 { Args: { "alert_key": string,"detail"?: string,"severity": string,"source": string,"title": string }; Returns: Json
                            },
+"record_backup":
+{ Args: { "contents": Json,"error": string,"file_name": string,"reason": string,"requested_by"?: string,"size_bytes": number,"started_at": string,"status": string,"verified": boolean }; Returns: {
+              "contents": NonNullable<Json>,
+"error": string | null,
+"file_name": string | null,
+"finished_at": string,
+"id": string,
+"reason": string,
+"requested_by": string | null,
+"size_bytes": number | null,
+"started_at": string,
+"status": string,
+"verified": boolean | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "backups"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "record_incoming_message":
 { Args: { "payload": Json }; Returns: Json
                            },
@@ -3077,6 +3152,29 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"request_backup":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "available_commit": string | null,
+"backup_requested_at": string | null,
+"backup_requested_by": string | null,
+"backup_started_at": string | null,
+"check_requested_at": string | null,
+"check_requested_by": string | null,
+"check_started_at": string | null,
+"checked_at": string | null,
+"current_commit": string | null,
+"dependency_updates": NonNullable<Json>,
+"id": number,
+"monitoring": NonNullable<Json>,
+"pending_commits": NonNullable<Json>,
+"updated_at": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "system_status"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "request_rollback":
 { Args: { "target_commit": string }; Returns: {
               "action": string,
@@ -3097,6 +3195,9 @@ isOneToOne: false
 "request_system_check":
 { Args: Record<PropertyKey, never>; Returns: {
               "available_commit": string | null,
+"backup_requested_at": string | null,
+"backup_requested_by": string | null,
+"backup_started_at": string | null,
 "check_requested_at": string | null,
 "check_requested_by": string | null,
 "check_started_at": string | null,
@@ -3384,6 +3485,9 @@ isOneToOne: false
 "set_monitoring":
 { Args: { "payload": Json,"system_key": string }; Returns: {
               "available_commit": string | null,
+"backup_requested_at": string | null,
+"backup_requested_by": string | null,
+"backup_started_at": string | null,
 "check_requested_at": string | null,
 "check_requested_by": string | null,
 "check_started_at": string | null,
@@ -3404,6 +3508,9 @@ isOneToOne: false
 "set_system_status":
 { Args: { "payload": Json }; Returns: {
               "available_commit": string | null,
+"backup_requested_at": string | null,
+"backup_requested_by": string | null,
+"backup_started_at": string | null,
 "check_requested_at": string | null,
 "check_requested_by": string | null,
 "check_started_at": string | null,

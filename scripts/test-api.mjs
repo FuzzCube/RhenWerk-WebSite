@@ -281,6 +281,19 @@ console.log("\nSystem: Updates und Warnungen");
   check("Admin erledigt die Warnung (manual, mit Person)", !resolved.error && resolved.data?.resolved_reason === "manual" && resolved.data?.resolved_by === systemAdmin.id, resolved.error?.message);
   check("  zweites Erledigen: RW422", (await systemAdmin.client.rpc("resolve_alert", { alert_id: raised.data.alert_id })).error?.code === "RW422");
   await admin.from("system_alerts").delete().eq("alert_key", key);
+
+  // task-18-6: backups. Manager reads the list but cannot start one (42501); admin files "Jetzt sichern" once (RW422
+  // for a second request); only the service records backups. The request is cleared at the end so that the service
+  // on the VPS never sees it (the test runs against the local stack).
+  check("Manager liest die Sicherungen", !(await manager.client.from("backups").select("id").limit(1)).error);
+  check("Dispatcher sieht keine Sicherungen", ((await dispatcherA.client.from("backups").select("id")).data ?? []).length === 0);
+  check("Manager: Jetzt sichern abgewiesen (42501)", (await manager.client.rpc("request_backup")).error?.code === "42501");
+  check("Manager: record_backup abgewiesen", denied(await manager.client.rpc("record_backup", { reason: "manual", status: "ok", started_at: new Date().toISOString(), file_name: "x", size_bytes: 1, contents: {}, verified: true, error: null })));
+  await admin.from("system_status").update({ backup_requested_at: null, backup_requested_by: null, backup_started_at: null }).eq("id", 1);
+  const backupRequest = await systemAdmin.client.rpc("request_backup");
+  check("Admin fordert eine Sicherung an", !backupRequest.error && backupRequest.data?.backup_requested_by === systemAdmin.id, backupRequest.error?.message);
+  check("  zweite Anforderung: RW422", (await systemAdmin.client.rpc("request_backup")).error?.code === "RW422");
+  await admin.from("system_status").update({ backup_requested_at: null, backup_requested_by: null, backup_started_at: null }).eq("id", 1);
 }
 
 await deactivateTestAccounts(admin, createdAccounts);

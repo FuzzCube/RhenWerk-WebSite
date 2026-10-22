@@ -20,6 +20,17 @@ export async function resolveAlert(alertId: string): Promise<Result> {
   return { ok: true };
 }
 
+// "Jetzt sichern" (task-18-6): only admin files a request (request_backup checks it again, manager 42501); the
+// service rheinwerk-systemcheck on the VPS runs the backup with restore check
+export async function requestBackup(): Promise<Result> {
+  await requireRole(["admin"]);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_backup");
+  if (error) return { ok: false, message: databaseErrorMessage(error) };
+  refresh();
+  return { ok: true };
+}
+
 // "System prüfen" (task-17-15): only admin files a request (request_system_check checks it again); the service
 // online.rheinwerk.systemcheck on the host runs the checks
 export async function requestSystemCheck(): Promise<Result> {

@@ -94,6 +94,13 @@ SUPABASE_DB_CONTAINER=supabase_db_rheinwerk
 SUPABASE_STORAGE_CONTAINER=supabase_storage_rheinwerk
 N8N_CONTAINER=rheinwerk-n8n
 N8N_API_URL=http://127.0.0.1:5678
+# Tägliche Sicherung (task-18-6, docs/betrieb.md 4): 14 Tage, verschlüsselt mit BACKUP_PASSPHRASE (unten ergänzen)
+BACKUP_DIR=$BASE/backups
+BACKUP_KEEP_DAYS=14
+SUPABASE_STORAGE_PATH=/var/lib/storage
+BACKUP_SECRET_FILES=$BASE/.env,$BASE/ops.env
+# Zustand der Sicherung von OVHcloud (nur lesend, eu.api.ovh.com/createToken): OVH_APPLICATION_KEY,
+# OVH_APPLICATION_SECRET, OVH_CONSUMER_KEY
 OPS_LOG_DIR=$BASE/state
 DISK_WARN_GB=8
 DISK_CRITICAL_GB=3

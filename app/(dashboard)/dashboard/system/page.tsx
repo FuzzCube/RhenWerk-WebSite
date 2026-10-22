@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BackupButton } from "@/components/dashboard/backup-button";
 import { ResolveAlertButton } from "@/components/dashboard/resolve-alert-button";
 import { SystemCheckButton } from "@/components/dashboard/system-check-button";
 import { Card } from "@/components/dashboard/ui/card";
@@ -8,6 +9,7 @@ import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
+import { backupContents, backupReasonLabel, backupStatus, formatBytes, latestVerified, providerView, type BackupRow } from "@/lib/backups";
 import { loadSystemOverview } from "@/lib/dashboard/system";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/format";
 import {
@@ -21,8 +23,9 @@ export const metadata: Metadata = { title: "System" };
 // Admin and manager read the same content. Code updates are not part of the dashboard (task-17-12;
 // since task-17-17 the code runs only from the development folder). The watchdog fills the state of every system
 // (n8n task-17-8, phone assistant and credit task-17-9, the others task-17-15), the nightly run the versions (only
-// shown, never installed); only admin starts a check at once ("System prüfen"). Backups (task-18-6) still show an
-// empty state. Open and resolved warnings are listed at the end; only admin closes one (task-17-10).
+// shown, never installed); only admin starts a check at once ("System prüfen"). Backups (task-18-6): the newest checked
+// one, the backup of the provider and the list of 14 days; only admin starts one at once ("Jetzt sichern"). Open and
+// resolved warnings are listed at the end; only admin closes one (task-17-10).
 export default async function SystemPage() {
   const employee = await requireRole(rolesFor("/dashboard/system"));
   const isAdmin = employee.role === "admin";
@@ -33,6 +36,9 @@ export default async function SystemPage() {
   const mira = system.monitoring.mira;
   const now = new Date();
   const checkState = checkRequestState(system.checkRequest, now);
+  const backupState = checkRequestState(system.backupRequest, now, 30);
+  const latest = latestVerified(system.backups);
+  const provider = providerView(system.provider);
   const openAlerts = summary.alerts as SystemAlertRow[];
 
   const alertColumn: Column<SystemAlertRow> = {
@@ -100,8 +106,21 @@ export default async function SystemPage() {
 
           <div className="system-grid">
             <Card stripe="neutral" title="Datensicherung" id="system-sicherung" headingLevel={2}
-              description="Jeden Tag um 09:00 werden Anfragen, Kunden, Rechnungen, Dateien und die Automatisierung gesichert und mit einer Probewiederherstellung geprüft.">
-              <EmptyState title="Die Liste der Sicherungen erscheint hier in Kürze." />
+              description="Jeden Tag um 03:00 werden Anfragen, Kunden, Rechnungen, Dateien und die Automatisierung verschlüsselt gesichert und mit einer Probewiederherstellung geprüft; aufbewahrt 14 Tage auf dem Server.">
+              <div className="system-backup">
+                {latest ? (
+                  <div className="system-backup__latest">
+                    <p><StatusChip status={backupStatus(latest)} /> Letzte geprüfte Sicherung <strong className="mono">{formatDateTime(latest.finished_at)}</strong> · {formatBytes(latest.size_bytes)}</p>
+                    <ul className="system-backup__contents">
+                      {backupContents(latest.contents).filter((item) => item.label !== "Commit").map((item) => <li key={item.label}><span>{item.label}</span><span className="mono">{item.value}</span></li>)}
+                    </ul>
+                  </div>
+                ) : (
+                  <EmptyState title="Noch keine geprüfte Sicherung." />
+                )}
+                <p className="system-backup__provider"><StatusChip status={provider.status} /> Sicherung des Anbieters: {provider.text}</p>
+                {isAdmin && <BackupButton state={backupState} />}
+              </div>
             </Card>
 
             <Card stripe="neutral" title="Zustand der Systeme" id="system-zustand" headingLevel={2}
@@ -123,6 +142,14 @@ export default async function SystemPage() {
             </Card>
 
           </div>
+
+          <Card stripe="neutral" title="Sicherungen der letzten 14 Tage" count={system.backups.length} id="system-sicherungen" headingLevel={2} flush
+            description="Täglich, von Hand und vor jeder Datenbankänderung des Deployments. Wiederherstellung nach docs/betrieb.md 4.5.">
+            <div className="system-backups">
+              <DataTable caption="Sicherungen" columns={backupColumns} rows={system.backups} rowKey={(row) => row.id}
+                empty={<EmptyState title="Noch keine Sicherung in den letzten 14 Tagen." />} />
+            </div>
+          </Card>
 
           <Card stripe="meta" title="Systemversionen" id="system-versionen" headingLevel={2} flush
             description={`Neue Versionen werden angezeigt, aber nicht installiert. Updates führt der Betreiber nach den Release Notes und mit Sicherung durch.${system.dependencies.checked_at ? ` Geprüft ${formatDateTime(system.dependencies.checked_at)}.` : ""}`}>
@@ -151,6 +178,39 @@ export default async function SystemPage() {
     </div>
   );
 }
+
+const backupColumns: Column<BackupRow>[] = [
+  { key: "time", header: "Zeitpunkt", mobile: "title", cell: (row) => <span className="mono">{formatDateTime(row.finished_at)}</span> },
+  { key: "reason", header: "Anlass", cell: (row) => <>{backupReasonLabel(row.reason)}{row.requester && <span className="cell-sub">{row.requester}</span>}</> },
+  { key: "size", header: "Größe", cell: (row) => <span className="mono">{formatBytes(row.size_bytes)}</span> },
+  {
+    key: "check", header: "Prüfung",
+    cell: (row) => (
+      <>
+        <StatusChip status={backupStatus(row)} />
+        {row.error && (
+          <details className="system-details system-details--inline">
+            <summary>Fehler</summary>
+            <p className="system-alert-detail">{row.error}</p>
+          </details>
+        )}
+      </>
+    ),
+  },
+  {
+    key: "contents", header: "Inhalt", mobile: "hide",
+    cell: (row) => {
+      const items = backupContents(row.contents);
+      if (!items.length) return "–";
+      return (
+        <details className="system-details system-details--inline">
+          <summary>{row.file_name ?? "Anzeigen"}</summary>
+          <ul className="system-backup__contents">{items.map((item) => <li key={item.label}><span>{item.label}</span><span className="mono">{item.value}</span></li>)}</ul>
+        </details>
+      );
+    },
+  },
+];
 
 const versionColumns: Column<VersionRow>[] = [
   { key: "system", header: "System", mobile: "title", cell: (row) => <strong>{row.label}</strong> },

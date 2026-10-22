@@ -1,0 +1,14 @@
+# Tägliche Sicherung mit Probewiederherstellung und Versionen (task-18-6), Ersatz für launchd online.rheinwerk.backup.
+# Vorlage: ops/vps/install-services.sh setzt __USER__ ein. Von Hand: sudo systemctl start rheinwerk-backup.service
+[Unit]
+Description=RheinWerk Sicherung
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=__USER__
+WorkingDirectory=/opt/rheinwerk/app
+ExecStart=/usr/bin/node --env-file=/opt/rheinwerk/ops.env scripts/ops/nightly.mjs
+TimeoutStartSec=1800
+Nice=10

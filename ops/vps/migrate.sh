@@ -51,6 +51,7 @@ done
 
 echo "2. Sicherung vor der Migration"
 mkdir -p "$BACKUPS"
+STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 TARGET="$BACKUPS/$(date -u +%Y%m%dT%H%M%SZ)-$(echo "$SHA" | cut -c1-7).dump"
 docker exec "$DB" pg_dump -U supabase_admin -d postgres -Fc > "$TARGET"
 echo "   $TARGET ($(du -h "$TARGET" | cut -f1))"
@@ -64,4 +65,9 @@ for file in $PENDING; do
   echo "   $name"
 done
 psql -c "notify pgrst, 'reload schema'"
+# In der Liste der Sicherungen im Bereich „System“ (task-18-6; Tabelle besteht ab dieser Migration)
+psql -c "insert into public.backups (started_at, reason, status, file_name, size_bytes, contents)
+  select '$STARTED', 'migration', 'ok', '$(basename "$TARGET")', $(stat -c %s "$TARGET"),
+    jsonb_build_object('commit', '$(echo "$SHA" | cut -c1-7)', 'migrations', $(echo "$PENDING" | wc -w))
+  where to_regclass('public.backups') is not null"
 echo "Fertig: $(echo "$PENDING" | wc -w) Migration(en)"

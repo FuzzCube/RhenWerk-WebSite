@@ -1,0 +1,10 @@
+[Unit]
+Description=RheinWerk Sicherung täglich um 03:00
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 Europe/Berlin
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

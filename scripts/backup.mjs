@@ -4,7 +4,10 @@
 // Secrets (n8n key, .env.local) only go into encrypted archives. Restore check: npm run backup:check.
 // Usage: npm run backup
 //   BACKUP_DIR (default ~/RheinWerk-Backups), BACKUP_KEEP_DAYS (default 14: older archives are deleted, the newest always stays), BACKUP_PASSPHRASE,
-//   N8N_CONTAINER (default n8n), SUPABASE_DB_CONTAINER, SUPABASE_STORAGE_CONTAINER
+//   N8N_CONTAINER (default n8n), SUPABASE_DB_CONTAINER, SUPABASE_STORAGE_CONTAINER, SUPABASE_STORAGE_PATH (default /mnt
+//   of the local stack, /var/lib/storage on the VPS), BACKUP_SECRET_FILES (default .env.local; on the VPS
+//   /opt/rheinwerk/.env,/opt/rheinwerk/ops.env, only in encrypted archives), BACKUP_SUMMARY_FILE (task-18-6: file,
+//   size and contents as JSON for the record in the dashboard)
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -15,6 +18,8 @@ const DB = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_A.Sadkovojs_Project
 const STORAGE = process.env.SUPABASE_STORAGE_CONTAINER ?? "supabase_storage_A.Sadkovojs_Project";
 const N8N = process.env.N8N_CONTAINER ?? "n8n";
 const N8N_HOME = "/home/node/.n8n";
+const STORAGE_PATH = process.env.SUPABASE_STORAGE_PATH ?? "/mnt";
+const SECRET_FILES = (process.env.BACKUP_SECRET_FILES ?? ".env.local").split(",").map((file) => file.trim()).filter(Boolean);
 const OUT = process.env.BACKUP_DIR ?? path.join(homedir(), "RheinWerk-Backups");
 const KEEP_DAYS = Number(process.env.BACKUP_KEEP_DAYS ?? 14);
 const PASSPHRASE = process.env.BACKUP_PASSPHRASE ?? "";
@@ -44,8 +49,8 @@ try {
   const postgresVersion = psql("show server_version");
 
   // 2. Storage files (bucket contents live in the volume of the storage container, metadata in Postgres)
-  const storageFiles = Number(run("docker", ["exec", STORAGE, "sh", "-c", "find /mnt -type f | wc -l"]).toString().trim());
-  writeFileSync(path.join(dir, "storage.tar.gz"), run("docker", ["exec", STORAGE, "tar", "-czf", "-", "-C", "/mnt", "."]));
+  const storageFiles = Number(run("docker", ["exec", STORAGE, "sh", "-c", `find ${STORAGE_PATH} -type f | wc -l`]).toString().trim());
+  writeFileSync(path.join(dir, "storage.tar.gz"), run("docker", ["exec", STORAGE, "tar", "-czf", "-", "-C", STORAGE_PATH, "."]));
 
   // 3. n8n: the live SQLite database is never opened from the host. In WAL mode a second process outside the Docker VM
   // cannot share the lock and index file reliably; on 20.10.2026 this left n8n stuck on its write lock for two hours.
@@ -64,7 +69,12 @@ try {
   const secrets = [];
   if (PASSPHRASE) {
     secrets.push("n8n-config");
-    if (existsSync(".env.local")) { copyFileSync(".env.local", path.join(dir, "env.local")); secrets.push("env.local"); }
+    // In the archive without the leading dot: .env.local → env.local, /opt/rheinwerk/.env → env, ops.env → ops.env
+    for (const file of SECRET_FILES.filter((file) => existsSync(file))) {
+      const target = path.basename(file).replace(/^\./, "");
+      copyFileSync(file, path.join(dir, target));
+      secrets.push(target);
+    }
   }
 
   const files = Object.fromEntries(readdirSync(dir).map((file) => [file, { bytes: statSync(path.join(dir, file)).size, sha256: sha256(path.join(dir, file)) }]));
@@ -97,6 +107,12 @@ try {
   if (PASSPHRASE) console.log(`  verschlüsselt (AES-256), enthält zusätzlich: ${secrets.join(", ")}`);
   else console.log("  WARNUNG: unverschlüsselt und ohne n8n-Schlüssel und .env.local. BACKUP_PASSPHRASE setzen, damit die Sicherung vollständig ist.");
   if (removed.length) console.log(`  ${removed.length} Sicherung(en) älter als ${KEEP_DAYS} Tage entfernt`);
+  if (process.env.BACKUP_SUMMARY_FILE) {
+    writeFileSync(process.env.BACKUP_SUMMARY_FILE, JSON.stringify({
+      file: target, file_name: path.basename(target), size_bytes: statSync(target).size, encrypted: Boolean(PASSPHRASE),
+      contents: { ...counts, storage_files: storageFiles, n8n_workflows: n8nWorkflows, secrets },
+    }));
+  }
 } finally {
   rmSync(work, { recursive: true, force: true });
 }

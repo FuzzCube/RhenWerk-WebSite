@@ -98,9 +98,10 @@ export const versionStatus = (level: VersionLevel): DisplayStatus => LEVEL[level
 // "System prüfen" (task-17-15): the service online.rheinwerk.systemcheck picks a request up within 20 seconds; after
 // 2 minutes without start it probably does not run
 export type CheckRequest = { requested_at: string | null; started_at: string | null };
-export function checkRequestState(request: CheckRequest, now: Date): "idle" | "waiting" | "running" | "stuck" {
+// A request is dropped after 10 minutes ("System prüfen") or 30 minutes ("Jetzt sichern", task-18-6)
+export function checkRequestState(request: CheckRequest, now: Date, expireMinutes = 10): "idle" | "waiting" | "running" | "stuck" {
   if (!request.requested_at) return "idle";
-  if (now.getTime() - Date.parse(request.requested_at) > 10 * 60_000) return "idle";
+  if (now.getTime() - Date.parse(request.requested_at) > expireMinutes * 60_000) return "idle";
   if (request.started_at) return "running";
   return now.getTime() - Date.parse(request.requested_at) > 2 * 60_000 ? "stuck" : "waiting";
 }

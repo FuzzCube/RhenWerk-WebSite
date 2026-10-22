@@ -1,12 +1,26 @@
-// "System prüfen" (task-17-15): launchd online.rheinwerk.systemcheck every 20 seconds from the development folder. Picks
-// up a request of the dashboard (claim_system_check) and runs all checks (scripts/ops/checks.mjs, SMTP included) and
-// the versions (scripts/ops/versions.mjs). Without a request it ends after one small query. By hand without request:
+// Requests of the dashboard (task-17-15, task-18-6): systemd timer rheinwerk-systemcheck every 20 seconds on the VPS.
+// "Jetzt sichern" (claim_backup_request) runs a backup with restore check (scripts/ops/backup-run.mjs), "System prüfen"
+// (claim_system_check) all checks (scripts/ops/checks.mjs, SMTP and provider backup included) and the versions
+// (scripts/ops/versions.mjs). Without a request it ends after two small queries. By hand without request:
 // npm run system:check
+import { runBackup } from "./backup-run.mjs";
 import { rpc } from "./lib.mjs";
 import { runChecks } from "./checks.mjs";
 import { refreshVersions } from "./versions-report.mjs";
 
 const now = process.argv.includes("--now");
+if (!now) {
+  const requester = await rpc("claim_backup_request");
+  if (requester) {
+    try {
+      await runBackup({ reason: "manual", requestedBy: requester });
+    } finally {
+      await rpc("finish_backup_request");
+    }
+    // Afterwards the area "System" shows the new backup without warning backup:stale
+    await runChecks();
+  }
+}
 if (!now && !(await rpc("claim_system_check"))) process.exit(0);
 const started = Date.now();
 try {

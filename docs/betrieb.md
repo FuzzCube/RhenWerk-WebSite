@@ -262,6 +262,21 @@ Geheimnisse im Repository (Settings → Secrets): `VPS_HOST`, `VPS_KNOWN_HOSTS`,
 
 ## 4. Datensicherung
 
+**Seit 22.10.2026 auf dem VPS (task-18-6).** Die Abschnitte 4.1 bis 4.3 gelten unverändert (dieselben Skripte); Unterschiede auf dem Server:
+
+| Was | Auf dem VPS |
+| --- | --- |
+| Zeitplan | täglich 03:00 (Europe/Berlin), systemd `rheinwerk-backup.timer` → `scripts/ops/nightly.mjs` (Sicherung, Probewiederherstellung, Versionen); Protokoll `journalctl -u rheinwerk-backup` |
+| Von Hand | im Dashboard „System“ → **Jetzt sichern** (nur admin; Manager 42501), ausgeführt von `rheinwerk-systemcheck` innerhalb von 20 Sekunden; oder `sudo systemctl start rheinwerk-backup.service` |
+| Ablage | `/opt/rheinwerk/backups/rheinwerk-<zeit>.tar.gz.enc`, 14 Tage (`BACKUP_KEEP_DAYS`), verschlüsselt mit `BACKUP_PASSPHRASE` aus `/opt/rheinwerk/ops.env` |
+| Inhalt | wie 4.1, statt `.env.local` die Dateien `/opt/rheinwerk/.env` (im Archiv `env`) und `/opt/rheinwerk/ops.env` (`BACKUP_SECRET_FILES`); Storage aus `/var/lib/storage` (`SUPABASE_STORAGE_PATH`); `sqlite3` auf dem Server installiert |
+| Vor Migrationen | `ops/vps/migrate.sh` (Deployment, 3.8) sichert nur Postgres nach `/opt/rheinwerk/state/pre-migration/` (die letzten 10), in der Liste als „Vor Migration“ ohne Probewiederherstellung |
+| Liste | Tabelle `public.backups` (Zeitpunkt, Anlass, Größe, Inhalt, Prüfung, Fehler; 90 Tage), im Bereich „System“ die letzten 14 Tage; lesen nur admin und manager |
+| Warnungen | `backup:failed` (Sicherung oder Prüfung gescheitert, kritisch, E-Mail), `backup:stale` (letzte geprüfte Sicherung älter als 26 Stunden oder keine; Wächter alle 5 Minuten), `backup:provider` (Sicherung des Anbieters aus, kein Sicherungspunkt der letzten 48 Stunden oder API nicht abrufbar) |
+| Sicherung des Anbieters | OVHcloud sichert täglich den ganzen Server (im Tarif). Der Wächter fragt stündlich `GET /vps/vps-0fcb2edf.vps.ovh.net/automatedBackup` und `…/restorePoints` mit einem nur lesenden Schlüssel (`OVH_APPLICATION_KEY`, `OVH_APPLICATION_SECRET`, `OVH_CONSUMER_KEY` in `ops.env`, angelegt über `eu.api.ovh.com/createToken` mit `GET` auf diese Pfade). Wiederherstellen des ganzen Servers nur im OVHcloud-Kundencenter (`POST …/automatedBackup/restore`, setzt den Server auf den Stand des Sicherungspunkts zurück) |
+
+Kopie außer Haus (4.4) entfällt nach Nutzerentscheidung 22.10.2026 (Demoprojekt); bei Bedarf ein Archiv per `scp vps:/opt/rheinwerk/backups/<datei> .` auf den Rechner holen. Wiederherstellung auf dem VPS: `ops/vps/import-backup.sh` (3.6), Probe in task-18-7.
+
 ### 4.1 Was gesichert wird
 
 | Bestandteil | Inhalt | Wie | Ohne Sicherung verloren? |
@@ -308,7 +323,7 @@ Ergebnis vom 20.10.2026: alle Prüfungen bestanden (829 Anfragen, 113 Konten, 2 
 
 | Was | Wann | Wo |
 | --- | --- | --- |
-| Sicherung + Prüfung | täglich 09:00 (`launchd` `online.rheinwerk.backup`, Abschnitt 2.3; verpasste Läufe holt macOS nach dem Aufwachen nach) | `~/RheinWerk-Backups`, ältere als 14 Tage löscht jeder Lauf |
+| Sicherung + Prüfung | bis 22.10.2026 täglich 09:00 auf dem Rechner (`launchd` `online.rheinwerk.backup`), seitdem auf dem VPS (oben) | `~/RheinWerk-Backups`, ältere als 14 Tage löscht jeder Lauf |
 | Kopie außer Haus | täglich mit (Ordner in iCloud Drive/Google Drive) oder wöchentlich manuell | Cloud-Ordner, verschlüsselt |
 | Monatssicherung | am 1. jedes Monats | externe SSD, 12 Monate aufbewahren |
 

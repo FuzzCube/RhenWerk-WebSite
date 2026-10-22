@@ -193,6 +193,9 @@ try {
       cards: [...document.querySelectorAll(".rw-card__title")].map((t) => t.textContent.replace(/\\s*\\d+$/, "")),
       buttons: [...document.querySelectorAll(".system-page button")].map((b) => b.textContent),
       check: document.querySelector(".system-check button")?.textContent ?? null,
+      backup: document.querySelector(".system-backup-action button")?.textContent ?? null,
+      backupCard: document.querySelector("#system-sicherung")?.closest(".rw-card")?.textContent ?? "",
+      backupRows: document.querySelectorAll(".system-backups tbody tr").length,
       versions: [...document.querySelectorAll(".system-versions tbody tr")].map((tr) => ({ text: tr.textContent, link: tr.querySelector('a[href^="https://"]')?.getAttribute("href") ?? "" })),
       openRows: [...document.querySelectorAll(".system-alerts-open tbody tr")].map((tr) => tr.textContent),
       resolvedRows: [...document.querySelectorAll(".system-alerts-resolved tbody tr")].map((tr) => tr.textContent),
@@ -208,7 +211,7 @@ try {
     await admin.rpc("mark_alert_notified", { alert_id: raised.data.alert_id });
     const { count: openAlerts } = await admin.from("system_alerts").select("id", { count: "exact", head: true }).is("resolved_at", null);
     const expected = openAlerts === 0 ? "Alles in Ordnung" : openAlerts === 1 ? "1 Punkt braucht Aufmerksamkeit" : `${openAlerts} Punkte brauchen Aufmerksamkeit`;
-    const sections = ["Datensicherung", "Zustand der Systeme", "Guthaben externer Dienste", "Systemversionen", "Warnungen"];
+    const sections = ["Datensicherung", "Sicherungen der letzten 14 Tage", "Zustand der Systeme", "Guthaben externer Dienste", "Systemversionen", "Warnungen"];
     // Watchdog result (task-17-9): row of the phone assistant and its credit as stored in system_status.monitoring
     const { data: status } = await admin.from("system_status").select("monitoring").single();
     const mira = status.monitoring?.mira;
@@ -230,7 +233,7 @@ try {
     await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
     await page.open(`${BASE}/dashboard/system`);
     const adminView = await view();
-    check(`Admin: „System“ in der Navigation, Zusammenfassung „${expected}“ mit ${openAlerts} Warnung(en), fünf Abschnitte`,
+    check(`Admin: „System“ in der Navigation, Zusammenfassung „${expected}“ mit ${openAlerts} Warnung(en), sechs Abschnitte`,
       adminView.nav && adminView.summary === expected && adminView.alerts === openAlerts && sections.every((t) => adminView.cards.includes(t)), JSON.stringify(adminView));
     check(`  Automatisierung (n8n): ${n8nLabel ?? "noch keine Prüfung"}; Telefonassistent: ${miraLabel ?? "noch keine Prüfung"}${creditText ? `, ${creditText}` : ""}`,
       (n8nLabel ? row(adminView, "Automatisierung (n8n)").includes(n8nLabel) : !row(adminView, "Automatisierung (n8n)"))
@@ -243,9 +246,13 @@ try {
     check(`  Versionen: ${versionLabels.length} Zeilen mit Empfehlung und Link zu den Release Notes, ohne Installieren`,
       adminView.versions.length === versionLabels.length && versionLabels.every((label, i) => adminView.versions[i].text.startsWith(label) && adminView.versions[i].link.startsWith("https://"))
         && !adminView.versions.some((v) => /installieren/i.test(v.text)), JSON.stringify(adminView.versions.map((v) => v.text.slice(0, 80))));
-    check("  „System prüfen“ und „Erledigt“ je offener Warnung, keine Code-Updates, Breite wie die übrigen Bereiche (1680 px), Hinweis oben ausgeblendet",
-      adminView.check !== null && adminView.buttons.length === openAlerts + 1 && adminView.buttons.filter((b) => b !== adminView.check).every((b) => b === "Erledigt") && !adminView.cards.some((t) => ["Versionen", "Verlauf", "Aktuelle Version"].includes(t))
+    check("  „System prüfen“, „Jetzt sichern“ und „Erledigt“ je offener Warnung, keine Code-Updates, Breite wie die übrigen Bereiche (1680 px), Hinweis oben ausgeblendet",
+      adminView.check !== null && adminView.backup === "Jetzt sichern" && adminView.buttons.length === openAlerts + 2 && adminView.buttons.filter((b) => b !== adminView.check && b !== adminView.backup).every((b) => b === "Erledigt") && !adminView.cards.some((t) => ["Versionen", "Verlauf", "Aktuelle Version"].includes(t))
         && adminView.mainWidth === "1680px" && !adminView.banner, JSON.stringify(adminView));
+    // task-18-6: card with the newest checked backup and the provider's backup, list of the last 14 days as stored
+    const { count: backupCount } = await admin.from("backups").select("id", { count: "exact", head: true }).gte("finished_at", new Date(Date.now() - 14 * 86400_000).toISOString());
+    check(`  Datensicherung: Sicherung des Anbieters genannt, ${backupCount} Sicherung(en) der letzten 14 Tage in der Liste`,
+      adminView.backupCard.includes("Sicherung des Anbieters") && adminView.backupRows === Math.min(backupCount, 60), JSON.stringify({ card: adminView.backupCard.slice(0, 300), rows: adminView.backupRows }));
     check("  Testwarnung in „Offene Warnungen“ mit Quelle", adminView.openRows.some((text) => text.includes(testTitle) && text.includes("Website und Dashboard")), JSON.stringify(adminView.openRows));
     await page.send("Network.clearBrowserCookies");
     await page.send("Network.setCookies", { cookies: await loginCookies("manager.demo@example.com") });
@@ -253,8 +260,9 @@ try {
       await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
       await page.open(`${BASE}/dashboard/system`);
       const managerView = await view();
-      check(`  Manager @${width}: gleiche Inhalte (acht Systeme, Versionen), ohne „Erledigt“ und „System prüfen“, kein Querscrollen`,
-        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons.length === 0 && managerView.check === null
+      check(`  Manager @${width}: gleiche Inhalte (acht Systeme, Versionen, Sicherungen), ohne „Erledigt“, „System prüfen“ und „Jetzt sichern“, kein Querscrollen`,
+        managerView.summary === expected && sections.every((t) => managerView.cards.includes(t)) && managerView.buttons.length === 0 && managerView.check === null && managerView.backup === null
+          && managerView.backupRows === adminView.backupRows
           && managerView.monitors.length === 8 && managerView.versions.length === versionLabels.length
           && managerView.openRows.some((text) => text.includes(testTitle)) && managerView.scroll <= managerView.width, JSON.stringify(managerView));
     }
@@ -283,8 +291,8 @@ try {
     const { data: stored } = await admin.from("system_alerts").select("resolved_reason, resolved_by").eq("alert_key", testKey).single();
     check("  Admin: „Erledigt“ verschiebt die Warnung nach „Behoben“ (von Hand, mit Person)", moved && stored?.resolved_reason === "manual" && Boolean(stored?.resolved_by), JSON.stringify(stored));
     await admin.from("system_alerts").delete().eq("alert_key", testKey);
-    // task-17-15: admin starts the check at 390, 768 and 1440 px; the service online.rheinwerk.systemcheck picks it up
-    // within 20 seconds (without the service the request stays and the page says so after 2 minutes)
+    // task-17-15: admin starts the check at 390, 768 and 1440 px. The service runs on the VPS since task-18-3; here the
+    // test runs it once itself against the local stack (scripts/ops/check.mjs, without warning e-mails)
     for (const width of [390, 768, 1440]) {
       await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 1000 });
       await page.open(`${BASE}/dashboard/system`);
@@ -297,10 +305,20 @@ try {
     const { data: pendingCheck } = await admin.from("system_status").select("check_requested_at, check_requested_by").single();
     check("  Admin: „System prüfen“ legt eine Anfrage an, Knopf bis zum Ende gesperrt", requested && Boolean(pendingCheck.check_requested_at && pendingCheck.check_requested_by), JSON.stringify(pendingCheck));
     const before = status.monitoring?.disk?.checked_at ?? "";
+    execFileSync(process.execPath, ["--env-file=.env.local", "scripts/ops/check.mjs"], { env: { ...process.env, ALERT_EMAILS: "" }, stdio: "ignore", timeout: 180_000 });
     const done = await page.until(`document.querySelector(".system-check button")?.textContent === "System prüfen"`, 90000);
     const { data: after } = await admin.from("system_status").select("check_requested_at, monitoring").single();
     check("  Prüfdienst übernimmt die Anfrage, neue Ergebnisse erscheinen ohne Neuladen", done && after.check_requested_at === null && (after.monitoring?.disk?.checked_at ?? "") > before,
       JSON.stringify({ done, requested: after.check_requested_at, disk: after.monitoring?.disk?.checked_at, before }));
+    // task-18-6: "Jetzt sichern" files a request and locks the button; the backup itself is checked on the VPS (here n8n
+    // is stopped since task-18-3), so the request is withdrawn again
+    await admin.from("system_status").update({ backup_requested_at: null, backup_requested_by: null, backup_started_at: null }).eq("id", 1);
+    await page.open(`${BASE}/dashboard/system`);
+    await page.eval(`document.querySelector(".system-backup-action button").click()`);
+    const backupRequested = await page.until(`/Sicherung (angefordert|läuft)/.test(document.querySelector(".system-backup-action button")?.textContent ?? "") && document.querySelector(".system-backup-action button").disabled`, 10000);
+    const { data: pendingBackup } = await admin.from("system_status").select("backup_requested_at, backup_requested_by").single();
+    check("  Admin: „Jetzt sichern“ legt eine Anfrage an, Knopf gesperrt", backupRequested && Boolean(pendingBackup.backup_requested_at && pendingBackup.backup_requested_by), JSON.stringify(pendingBackup));
+    await admin.from("system_status").update({ backup_requested_at: null, backup_requested_by: null, backup_started_at: null }).eq("id", 1);
   }
 
   console.log("\nÜbersicht (Admin): Kennzahlen führen zu passenden Listen");

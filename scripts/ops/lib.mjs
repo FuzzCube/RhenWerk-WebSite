@@ -89,6 +89,20 @@ export async function reportWithoutDatabase(check) {
   writeFileSync(OUTAGE_FILE, JSON.stringify({ notified_at: new Date().toISOString() }));
 }
 
+// Newest own backup with passed restore check (task-18-6); null if there is none, undefined without database
+export async function latestBackup() {
+  try {
+    const { data, error } = await db().from("backups").select("finished_at, reason, file_name, size_bytes")
+      .eq("status", "ok").eq("verified", true).in("reason", ["daily", "manual"])
+      .order("finished_at", { ascending: false }).limit(1).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
+  } catch (error) {
+    console.error(`Datenbank (backups): ${error.message}`);
+    return undefined;
+  }
+}
+
 // System check "Datenbank" (task-17-15): one small read with its duration
 export async function pingDatabase() {
   const started = performance.now();
