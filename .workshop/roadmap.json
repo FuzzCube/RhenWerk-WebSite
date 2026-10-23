@@ -4650,6 +4650,40 @@
             ],
             "summary": "Migration 20261023000500: private.week_order_count (Einsätze mit Beginn in der Woche plus offene Vormerkungen); technician_for_window nimmt unter den freien Technikern die mit dem Minimum der Wochenaufträge, bei mehreren Gleichauf nach Monatsanteil, Tagesminuten, id. pgTAP: Techniker mit vollerem Monat, aber weniger Aufträgen in der Woche gewinnt; bei Gleichstand der Wochenaufträge gewinnt der mit der geringeren Monatsauslastung; der alte Abwesenheitstest (Minutenanteil der Woche) entfiel. Nur SQL geändert, daher kein lint/typecheck/build/test:ui. Wird beim Push von der CI auf dem VPS eingespielt."
           }
+        },
+        {
+          "id": "task-20-16",
+          "title": "Verschiebewünsche der Kunden per E-Mail",
+          "description": "Nutzerwunsch 23.10.2026: Bittet ein Kunde per E-Mail, einen geplanten Termin zu verschieben, soll der Workflow das erkennen und eine Eingangsbestätigung schicken. Der Dispatcher sieht den Wunsch auf der Plantafel und bestätigt den Wunschtermin (Kunde bekommt die Bestätigung) oder bietet einen Alternativtermin an. Ein „Ja“ des Kunden verschiebt den Termin automatisch, ein „Nein“ lässt ihn bestehen; ohne Antwort gibt es eine Erinnerung.",
+          "order": 16,
+          "weight": 3,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-15"
+          ],
+          "definitionOfDone": [
+            "Tabelle für Änderungswünsche, Wunschtag und -zeit aus der E-Mail, Eingangsbestätigung",
+            "Plantafel: Kennzeichen am Einsatz, Liste der Wünsche, Wunsch und Alternativen, Bestätigen, Vorschlag senden, erledigen",
+            "Antwort des Kunden auf den Vorschlag (Ja verschiebt automatisch, Nein lässt bestehen)",
+            "Erinnerung bei ausbleibender Antwort (zwei Tage oder ein Tag vor dem Termin)",
+            "Anfragenliste und Anfrageseite zeigen den Wunsch",
+            "pgTAP, Workflow-Export, Dokumentation"
+          ],
+          "startedAt": "2026-10-23T10:50:00Z",
+          "completedAt": "2026-10-23T09:01:29Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-23T09:01:29Z",
+            "commands": [
+              "npx supabase test db (1288 Tests)",
+              "npm run typecheck",
+              "npm run lint",
+              "npm run test:unit (155)",
+              "APP_URL=http://localhost:3100 npm run test:ui",
+              "Plantafel im Browser: Vorschlag senden und Verschieben und bestätigen geprüft, Screenshots 390/1440 (Testdaten danach entfernt)"
+            ],
+            "summary": "Migration 20261023000600: visit_change_requests (RLS, Trigger schließt bei Verschiebung), apply_visit_reply erweitert (Verschiebewunsch mit Eingangsbestätigung, Ja/Nein zu einem Vorschlag, Wunschtag und -zeit), visit_replies_pending mit Datum und Angebot, visit_change_options, confirm_visit_change, offer_visit_change, close_visit_change, run_visit_change_reminders (pg_cron stündlich). Workflow 13 neu erzeugt (Schema mit decline, wished_day, wished_time; Prompt mit heute und Wochentag). Plantafel: Zeichen am Einsatz, Liste Änderungswünsche, Panel mit Wunsch, Optionen, Auswahl und drei Aktionen; Anfragenliste mit Marke, Anfrageseite mit Hinweis. Der Workflow im laufenden n8n auf dem VPS muss neu importiert werden (nicht automatisch); bis dahin arbeitet der alte Workflow mit den neuen Datenbankfunktionen weiter (neue Parameter optional)."
+          }
         }
       ]
     }

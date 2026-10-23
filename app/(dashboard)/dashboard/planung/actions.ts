@@ -97,3 +97,67 @@ export async function rescheduleVisit(_previous: FormState, formData: FormData):
   refresh();
   return formSuccess(`Einsatz verschoben: ${formatTimeRange(start, end)}.${mail}`, values);
 }
+
+// Customer wish to move a visit (task-20-16): the planning person confirms a time (visit moved, confirmation to the
+// customer) or offers another one (visit stays, offer to the customer); the database checks role, access, state,
+// the request version and that the window is free (RW410).
+function changeInput(values: Record<string, string>): { error: string | null; start: Date; end: Date; version: number } {
+  const version = Number.parseInt(values.version ?? "", 10);
+  const bad = !UUID.test(values.change_id ?? "") || !Number.isInteger(version) || !UUID.test(values.technician_id ?? "") || !isDayKey(values.date) || !isTime(values.start) || !isTime(values.end) || values.end <= values.start;
+  return { error: bad ? "Ungültige Auswahl. Bitte einen Zeitraum in der Plantafel wählen." : null, start: bad ? new Date(0) : berlinToInstant(values.date, values.start), end: bad ? new Date(0) : berlinToInstant(values.date, values.end), version };
+}
+
+function changeError(code: string | undefined, message: string | undefined, values: Record<string, string>): FormState {
+  if (code === "RW409") {
+    refresh();
+    return formError("Die Anfrage wurde inzwischen geändert. Die Plantafel ist neu geladen – bitte prüfen und erneut versuchen.", values);
+  }
+  return formError(`${databaseErrorMessage({ code, message })}${code === "RW410" ? " Bitte einen freien Zeitraum wählen." : ""}`, values);
+}
+
+export async function confirmVisitChange(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(["dispatcher", "manager", "admin"]);
+  const values = formValues(formData);
+  const input = changeInput(values);
+  if (input.error) return formError(input.error, values);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("confirm_visit_change", {
+    change_id: values.change_id,
+    expected_version: input.version,
+    technician_id: values.technician_id,
+    scheduled_start: input.start.toISOString(),
+    scheduled_end: input.end.toISOString(),
+  });
+  if (error) return changeError(error.code, error.message, values);
+  refresh();
+  return formSuccess(`Termin verschoben: ${formatTimeRange(input.start, input.end)}. Die Bestätigung an den Kunden steht in der Warteschlange.`, values);
+}
+
+export async function offerVisitChange(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(["dispatcher", "manager", "admin"]);
+  const values = formValues(formData);
+  const input = changeInput(values);
+  if (input.error) return formError(input.error, values);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("offer_visit_change", {
+    change_id: values.change_id,
+    expected_version: input.version,
+    technician_id: values.technician_id,
+    scheduled_start: input.start.toISOString(),
+    scheduled_end: input.end.toISOString(),
+  });
+  if (error) return changeError(error.code, error.message, values);
+  refresh();
+  return formSuccess(`Vorschlag gesendet: ${formatTimeRange(input.start, input.end)}. Der Termin bleibt, bis der Kunde zusagt.`, values);
+}
+
+export async function closeVisitChange(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(["dispatcher", "manager", "admin"]);
+  const values = formValues(formData);
+  if (!UUID.test(values.change_id ?? "")) return formError("Ungültiger Änderungswunsch. Bitte die Seite neu laden.", values);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("close_visit_change", { change_id: values.change_id });
+  if (error) return formError(databaseErrorMessage(error), values);
+  refresh();
+  return formSuccess("Änderungswunsch als erledigt markiert. Es wurde keine E-Mail gesendet.", values);
+}

@@ -832,6 +832,62 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"visit_change_requests": {
+                  Row: {
+                    "created_at": string,"decided_at": string | null,"decided_by": string | null,"id": string,"message_id": string | null,"offered_at": string | null,"offered_by": string | null,"offered_end": string | null,"offered_start": string | null,"offered_technician_id": string | null,"reminder_sent_at": string | null,"request_id": string,"status": string,"updated_at": string,"visit_id": string,"wish_summary": string | null,"wished_day": string | null,"wished_time": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"id"?: string,"message_id"?: string | null,"offered_at"?: string | null,"offered_by"?: string | null,"offered_end"?: string | null,"offered_start"?: string | null,"offered_technician_id"?: string | null,"reminder_sent_at"?: string | null,"request_id": string,"status"?: string,"updated_at"?: string,"visit_id": string,"wish_summary"?: string | null,"wished_day"?: string | null,"wished_time"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"id"?: string,"message_id"?: string | null,"offered_at"?: string | null,"offered_by"?: string | null,"offered_end"?: string | null,"offered_start"?: string | null,"offered_technician_id"?: string | null,"reminder_sent_at"?: string | null,"request_id"?: string,"status"?: string,"updated_at"?: string,"visit_id"?: string,"wish_summary"?: string | null,"wished_day"?: string | null,"wished_time"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "visit_change_requests_decided_by_fkey"
+      columns: ["decided_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_change_requests_message_id_fkey"
+      columns: ["message_id"]
+isOneToOne: false
+      referencedRelation: "messages"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_change_requests_offered_by_fkey"
+      columns: ["offered_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_change_requests_offered_technician_id_fkey"
+      columns: ["offered_technician_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_change_requests_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "dispatcher_queue"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_change_requests_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "requests"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "visit_change_requests_visit_id_fkey"
+      columns: ["visit_id"]
+isOneToOne: false
+      referencedRelation: "visits"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"visit_holds": {
                   Row: {
                     "alternative": string | null,"conversation_id": string | null,"created_at": string,"decided_at": string | null,"decided_by": string | null,"ends_at": string,"expires_at": string,"id": string,"origin": string,"reject_reason": string | null,"request_id": string,"starts_at": string,"status": string,"technician_id": string,"updated_at": string,"visit_id": string | null,"wish_met": boolean | null
@@ -1482,7 +1538,7 @@ isOneToOne: false
         isSetofReturn: false
       } },
 "apply_visit_reply":
-{ Args: { "confidence": number,"intent": string,"message_id": string,"summary": string,"workflow_execution_id"?: string }; Returns: Json
+{ Args: { "confidence": number,"intent": string,"message_id": string,"summary": string,"wished_day"?: string,"wished_time"?: string,"workflow_execution_id"?: string }; Returns: Json
                            },
 "archive_message":
 { Args: { "message_id": string,"reason": string }; Returns: {
@@ -1854,6 +1910,33 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"close_visit_change":
+{ Args: { "change_id": string }; Returns: {
+              "created_at": string,
+"decided_at": string | null,
+"decided_by": string | null,
+"id": string,
+"message_id": string | null,
+"offered_at": string | null,
+"offered_by": string | null,
+"offered_end": string | null,
+"offered_start": string | null,
+"offered_technician_id": string | null,
+"reminder_sent_at": string | null,
+"request_id": string,
+"status": string,
+"updated_at": string,
+"visit_id": string,
+"wish_summary": string | null,
+"wished_day": string | null,
+"wished_time": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "visit_change_requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "complete_incoming_message":
 { Args: { "message_id": string,"warnings"?: Json }; Returns: Json
                            },
@@ -2023,6 +2106,30 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "messages"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"confirm_visit_change":
+{ Args: { "change_id": string,"expected_version": number,"scheduled_end": string,"scheduled_start": string,"technician_id": string }; Returns: {
+              "actual_end": string | null,
+"actual_start": string | null,
+"actual_work_minutes": number | null,
+"cancellation_reason": string | null,
+"created_at": string,
+"created_by": string,
+"id": string,
+"request_id": string,
+"scheduled_end": string,
+"scheduled_start": string,
+"status": Database["public"]['Enums']["visit_status"],
+"summary": string | null,
+"technician_id": string,
+"updated_at": string,
+"waiting_reason": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "visits"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -2974,6 +3081,33 @@ isOneToOne: false
 "monitor_n8n_queues":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"offer_visit_change":
+{ Args: { "change_id": string,"expected_version": number,"scheduled_end": string,"scheduled_start": string,"technician_id": string }; Returns: {
+              "created_at": string,
+"decided_at": string | null,
+"decided_by": string | null,
+"id": string,
+"message_id": string | null,
+"offered_at": string | null,
+"offered_by": string | null,
+"offered_end": string | null,
+"offered_start": string | null,
+"offered_technician_id": string | null,
+"reminder_sent_at": string | null,
+"request_id": string,
+"status": string,
+"updated_at": string,
+"visit_id": string,
+"wish_summary": string | null,
+"wished_day": string | null,
+"wished_time": string | null
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "visit_change_requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "open_alerts":
 { Args: { "key_prefix": string }; Returns: {
               "alert_key": string,
@@ -3680,6 +3814,9 @@ isOneToOne: false
 "run_payment_reminders":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"run_visit_change_reminders":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "schedule_visit":
 { Args: { "expected_version": number,"request_id": string,"scheduled_end": string,"scheduled_start": string,"technician_id": string }; Returns: {
               "actual_end": string | null,
@@ -3976,6 +4113,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"visit_change_options":
+{ Args: { "change_id": string }; Returns: Json
+                           },
 "visit_replies_pending":
 { Args: { "batch_limit"?: number }; Returns: Json
                            },

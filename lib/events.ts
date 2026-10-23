@@ -34,6 +34,11 @@ export const EVENT_LABELS: Record<string, string> = {
   visit_hold_created: "Termin vom Telefonassistenten vorgemerkt",
   // Customer reply about a planned visit (task-20-10); the value is what the system did
   visit_reply_analyzed: "Kundenantwort zum Termin ausgewertet",
+  // Customer wish to move a planned visit (task-20-16)
+  visit_change_confirmed: "Terminwunsch des Kunden bestätigt, Termin verschoben",
+  visit_change_offered: "Alternativtermin dem Kunden angeboten",
+  visit_change_closed: "Terminwunsch des Kunden erledigt",
+  visit_change_reminded: "Erinnerung zum Terminvorschlag gesendet",
   visit_hold_confirmed: "Vorgemerkter Termin bestätigt",
   visit_hold_rejected: "Vorgemerkten Termin abgelehnt",
   visit_hold_expired: "Terminvormerkung abgelaufen",
@@ -75,7 +80,11 @@ const STATUS_OF_EVENT: Record<string, StatusKind> = {
 
 const FIELD_LABELS: Record<string, string> = { priority: "Priorität", intake_status: "Erstbearbeitung", service_kind: "Leistungsart", equipment_kind: "Anlage" };
 
-const VISIT_REPLY_ACTIONS: Record<string, string> = { cancelled: "Termin storniert", flagged: "Zur Prüfung markiert", none: "Keine Änderung" };
+const VISIT_REPLY_ACTIONS: Record<string, string> = {
+  cancelled: "Termin storniert", flagged: "Zur Prüfung markiert", none: "Keine Änderung",
+  change_requested: "Verschiebewunsch angelegt, Eingang bestätigt", change_updated: "Verschiebewunsch ergänzt",
+  moved: "Termin laut Vorschlag verschoben", declined: "Vorschlag abgelehnt, Termin bleibt",
+};
 
 type EventLike = { event_type: string; from_value: string | null; to_value: string | null };
 
@@ -114,6 +123,7 @@ function formatValue(event: EventLike, value: string | null, names: Map<string, 
   if (event.event_type === "dispatcher_assigned" || event.event_type === "technician_assigned" || event.event_type === "visit_reassigned") return names.get(value) ?? "Unbekannte Person";
   if (event.event_type === "intake_completed") return label("intake_mode", value);
   if (event.event_type === "visit_reply_analyzed") return VISIT_REPLY_ACTIONS[value] ?? value;
+  if (event.event_type === "visit_change_confirmed" || event.event_type === "visit_change_offered") return formatDateTime(value);
   if (event.event_type.startsWith("visit_")) return formatRange(value) ?? value;
   if (event.event_type === "deadline_changed") return formatDateTime(value);
   if (event.event_type === "payment_reminder_queued") return REMINDER_STAGES[Number(value)] ?? value;

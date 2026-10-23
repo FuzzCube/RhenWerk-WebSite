@@ -23,6 +23,7 @@ export function SaveForm({
   submitVariant = "primary",
   resetOnSuccess = false,
   closeOnSuccess = false,
+  submitDisabled = false,
   className,
 }: {
   action: SaveAction;
@@ -32,6 +33,8 @@ export function SaveForm({
   resetOnSuccess?: boolean;
   // Closes the surrounding <details> after a successful save (edit form behind a read-only view)
   closeOnSuccess?: boolean;
+  // Submit button off until the form is complete (e.g. a slot chosen on the planning board)
+  submitDisabled?: boolean;
   className?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initialFormState);
@@ -68,7 +71,7 @@ export function SaveForm({
       >
         {children}
         <div className="save-form__footer">
-          <button className={`button button--${submitVariant}`} type="submit" disabled={pending} aria-busy={pending}>{pending ? "Wird gespeichert …" : submitLabel}</button>
+          <button className={`button button--${submitVariant}`} type="submit" disabled={pending || submitDisabled} aria-busy={pending}>{pending ? "Wird gespeichert …" : submitLabel}</button>
           <SaveStatus state={state} pending={pending} dirty={dirty} />
         </div>
       </form>

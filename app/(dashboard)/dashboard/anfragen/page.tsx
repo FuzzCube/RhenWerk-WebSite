@@ -8,7 +8,7 @@ import { HazardFlag, PriorityText, RequestStatusChip } from "@/components/dashbo
 import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
-import { DATE_FIELDS, countViews, customerCheckIds, filterQuery, getEmployeeNames, listRequests, openHoldStarts, PAGE_SIZE, parseRequestFilters, unreadMessages, viewsFor, type RequestFilters, type RequestListItem, type RequestView } from "@/lib/dashboard/requests";
+import { DATE_FIELDS, countViews, customerCheckIds, filterQuery, getEmployeeNames, listRequests, activeChanges, openHoldStarts, PAGE_SIZE, parseRequestFilters, unreadMessages, viewsFor, type RequestFilters, type RequestListItem, type RequestView } from "@/lib/dashboard/requests";
 import { unreadText, type UnreadInfo } from "@/lib/dashboard/unread";
 import { REQUEST_DISPLAY_STATUSES } from "@/lib/display-status";
 import { DEFAULT_SORT, nextSort, REQUEST_SORTS, sortLabel, sortParam, type SortKey } from "@/lib/request-sort";
@@ -54,9 +54,9 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const showsDispatcher = employee.role === "manager" || employee.role === "admin";
   if (filters.sort.key === "dispatcher" && !showsDispatcher) filters.sort = DEFAULT_SORT;
   const [{ rows, total, error }, names, counts] = await Promise.all([listRequests(filters, employee.id), getEmployeeNames(), countViews(employee.role, employee.id)]);
-  const [holds, customerChecks, unread] = employee.role === "technician"
-    ? [new Map<string, string>(), new Set<string>(), new Map<string, UnreadInfo>()]
-    : await Promise.all([openHoldStarts(rows.map((row) => row.id)), customerCheckIds(rows.map((row) => row.id)), unreadMessages(rows.map((row) => row.id))]);
+  const [holds, customerChecks, unread, changes] = employee.role === "technician"
+    ? [new Map<string, string>(), new Set<string>(), new Map<string, UnreadInfo>(), new Map<string, "open" | "offered">()]
+    : await Promise.all([openHoldStarts(rows.map((row) => row.id)), customerCheckIds(rows.map((row) => row.id)), unreadMessages(rows.map((row) => row.id)), activeChanges(rows.map((row) => row.id))]);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const views = viewsFor(employee.role);
   const current = views.find((view) => view.key === filters.view) ?? views[0];
@@ -78,7 +78,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const sortOptions = (Object.keys(REQUEST_SORTS) as SortKey[]).filter((key) => key !== "dispatcher" || showsDispatcher)
     .flatMap((key) => [REQUEST_SORTS[key].first, REQUEST_SORTS[key].first === "ab" ? "auf" : "ab"].map((dir) => ({ key, dir: dir as "auf" | "ab" })));
   const columns: Column<RequestListItem>[] = [
-    { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} />{unread.has(row.id) && <span className="rw-flag rw-flag--unread" title={`${unreadText(unread.get(row.id)!.count)}, zuletzt ${formatDateTime(unread.get(row.id)!.latestAt)}`}><Icon name="mail" size={12} />{unread.get(row.id)!.count} neu</span>}{holds.has(row.id) && <span className="rw-flag rw-flag--hold" title={`Vorgemerkt: ${formatDateTime(holds.get(row.id)!)}`}>Terminwunsch</span>}{customerChecks.has(row.id) && <span className="rw-flag rw-flag--customer" title="Möglicher Bestandskunde: Zuordnung auf der Anfrageseite prüfen">Kunde prüfen</span>}</>, mobile: "title", sort: sortable("anfrage") },
+    { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} />{changes.has(row.id) && <span className={`rw-flag plan3__change-flag plan3__change-flag--${changes.get(row.id)}`} title={changes.get(row.id) === "offered" ? "Alternativtermin angeboten, der Kunde antwortet noch" : "Der Kunde möchte den Termin verschieben"}>{changes.get(row.id) === "offered" ? "Vorschlag gesendet" : "Verschiebewunsch"}</span>}{unread.has(row.id) && <span className="rw-flag rw-flag--unread" title={`${unreadText(unread.get(row.id)!.count)}, zuletzt ${formatDateTime(unread.get(row.id)!.latestAt)}`}><Icon name="mail" size={12} />{unread.get(row.id)!.count} neu</span>}{holds.has(row.id) && <span className="rw-flag rw-flag--hold" title={`Vorgemerkt: ${formatDateTime(holds.get(row.id)!)}`}>Terminwunsch</span>}{customerChecks.has(row.id) && <span className="rw-flag rw-flag--customer" title="Möglicher Bestandskunde: Zuordnung auf der Anfrageseite prüfen">Kunde prüfen</span>}</>, mobile: "title", sort: sortable("anfrage") },
     { key: "company", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub">{row.customer_number && <><span className="mono">{row.customer_number}</span> · </>}{row.city}</span></>, sort: sortable("kunde") },
     { key: "service", header: "Leistung", cell: (row) => <>{label("service_kind", row.service_kind)}<span className="cell-sub">{label("equipment_kind", row.equipment_kind)}</span></>, mobile: "hide", tablet: "hide", sort: sortable("leistung") },
     { key: "status", header: "Status", cell: (row) => <RequestStatusChip intakeStatus={row.intake_status} workStatus={row.work_status} /> },

@@ -18,6 +18,8 @@ export type WorkingHours = { technicianId: string; weekday: number; start: strin
 // to be agreed with the customer) or agreed with the customer on the phone by Mira. wish: the customer's wish (form)
 export type HoldState = "wish" | "deviates" | "mira";
 export type HoldInfo = { state: HoldState; wish: string | null };
+// Customer wish to move a planned visit (task-20-16): open = to be decided, offered = alternative offered, customer to answer
+export type ChangeState = "open" | "offered";
 export type BusyBlock = {
   technicianId: string;
   start: string;
@@ -34,7 +36,10 @@ export type BusyBlock = {
   hold?: HoldInfo;
   // Unread customer messages of the request (task-20-14), only where the request is readable
   unread?: number;
+  // Active wish of the customer to move this visit (task-20-16)
+  change?: { id: string; state: ChangeState };
 };
+export type PlanningChangeRow = { id: string; requestId: string; requestNumber: string | null; company: string | null; state: ChangeState; wish: string; offeredAt: string | null };
 export type PlanningRequest = Pick<QueueRow, "id" | "request_number" | "company_name" | "city" | "service_kind" | "priority" | "customer_urgency" | "safety_check_required" | "work_status" | "due_at" | "waiting_since" | "version">;
 
 export type PlanningData = {
@@ -46,10 +51,14 @@ export type PlanningData = {
   queue: PlanningRequest[];
   // Unread customer messages by request id: visits, holds and the queue (task-20-14)
   unread: Record<string, UnreadInfo>;
+  // Active wishes of customers to move a visit (task-20-16), oldest first
+  changes: PlanningChangeRow[];
   selected: PlanningRequest | null;
   selectedPlanned: { id: string; request_number: string } | null;
   error: boolean;
 };
+
+const CHANGE_SELECT = "id, request_id, visit_id, status, wished_day, wished_time, offered_at, requests!inner(request_number, company_name)";
 
 // Hold with what the customer wished (website form: day and preferred_time from the submission)
 const HOLD_SELECT = "request_id, technician_id, starts_at, ends_at, origin, wish_met, requests!inner(request_number, requested_visit_date, preferred_time:raw_payload->request->>preferred_time)";
@@ -81,14 +90,16 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
     .order("priority_rank").order("due_at", { ascending: true, nullsFirst: false }).order("waiting_since").order("id");
   if (employee.role === "dispatcher") queueQuery = queueQuery.eq("dispatcher_id", employee.id);
 
-  const [technicians, hours, busy, visits, queue, holds] = await Promise.all([
+  const [technicians, hours, busy, visits, queue, holds, changeRows] = await Promise.all([
     supabase.from("profiles").select("id, display_name").eq("role", "technician").eq("is_active", true).order("display_name"),
     supabase.from("employee_availability").select("employee_id, weekday, local_start, local_end, valid_from, valid_to").eq("kind", "working_hours"),
     supabase.rpc("technician_busy_intervals", { range_start: rangeStart, range_end: rangeEnd }),
     supabase.from("visits").select("id, request_id, technician_id, scheduled_start, scheduled_end, status").in("status", ["scheduled", "in_progress"]).lt("scheduled_start", rangeEnd).gt("scheduled_end", rangeStart),
     queueQuery,
     employee.role === "technician" ? null : supabase.from("visit_holds").select(HOLD_SELECT).eq("status", "open").lt("starts_at", rangeEnd).gt("ends_at", rangeStart),
+    employee.role === "technician" ? null : supabase.from("visit_change_requests").select(CHANGE_SELECT).in("status", ["open", "offered"]).order("created_at"),
   ]);
+  const changeByVisit = new Map((changeRows?.data ?? []).map((row) => [row.visit_id, { id: row.id, state: row.status as ChangeState }]));
 
   // Request numbers of readable visits (RLS)
   const readable = visits.data ?? [];
@@ -134,6 +145,7 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
         requestId: visit?.request_id ?? null,
         requestNumber: visit ? numberOf.get(visit.request_id) ?? null : null,
         unread: visit ? unread.get(visit.request_id)?.count ?? 0 : 0,
+        change: visit ? changeByVisit.get(visit.id) : undefined,
         move: visit && visit.status === "scheduled" && Date.parse(visit.scheduled_start) > loadedAt && versionOf.has(visit.request_id)
           ? { visitId: visit.id, version: versionOf.get(visit.request_id) as number }
           : null,
@@ -151,6 +163,11 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
     }))),
     queue: queueRows,
     unread: Object.fromEntries(unread),
+    changes: (changeRows?.data ?? []).map((row): PlanningChangeRow => {
+      const request = row.requests as unknown as { request_number: string | null; company_name: string | null };
+      return { id: row.id, requestId: row.request_id, requestNumber: request.request_number, company: request.company_name, state: row.status as ChangeState,
+        wish: formatWish(row.wished_day, row.wished_time), offeredAt: row.offered_at };
+    }),
     selected,
     selectedPlanned,
     error: Boolean(technicians.error || hours.error || busy.error || queue.error),
@@ -235,5 +252,50 @@ export async function loadPlanningTarget(requestId: string): Promise<PlanningTar
   return {
     hold: hold.data ? { technicianId: hold.data.technician_id, start: hold.data.starts_at, end: hold.data.ends_at, info: holdInfo(hold.data) } : null,
     wishedDay: request.data?.requested_visit_date ?? null,
+  };
+}
+
+// The wish of a customer to move a visit, for the planning board (task-20-16): the wish, the visit, what the dispatcher can do
+export type PlanningChange = {
+  id: string;
+  state: ChangeState;
+  wish: string;
+  wishedDay: string | null;
+  summary: string | null;
+  visit: { id: string; technicianId: string; start: string; end: string };
+  request: { id: string; number: string; company: string; city: string; serviceKind: string; priority: string | null; version: number };
+  offered: { technicianId: string; start: string; end: string; at: string | null } | null;
+  wished: { free: boolean; start: string | null; end: string | null; technicianId: string };
+  alternatives: Array<{ technicianId: string; start: string; end: string }>;
+  minutes: number;
+};
+
+export async function loadPlanningChange(requestId: string): Promise<PlanningChange | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("visit_change_requests")
+    .select("id, status, wished_day, wished_time, wish_summary, offered_technician_id, offered_start, offered_end, offered_at, visit_id, visits!inner(technician_id, scheduled_start, scheduled_end), requests!inner(id, request_number, company_name, city, service_kind, priority, version)")
+    .eq("request_id", requestId).in("status", ["open", "offered"]).maybeSingle();
+  if (!data) return null;
+  const options = await supabase.rpc("visit_change_options", { change_id: data.id });
+  const parsed = (options.data ?? {}) as {
+    wished?: { free?: boolean; start?: string | null; end?: string | null; technician_id?: string };
+    alternatives?: Array<{ technician_id: string; start: string; end: string }>;
+    minutes?: number;
+  };
+  const visit = data.visits as unknown as { technician_id: string; scheduled_start: string; scheduled_end: string };
+  const request = data.requests as unknown as { id: string; request_number: string; company_name: string; city: string; service_kind: string; priority: string | null; version: number };
+  return {
+    id: data.id,
+    state: data.status as ChangeState,
+    wish: formatWish(data.wished_day, data.wished_time),
+    wishedDay: data.wished_day,
+    summary: data.wish_summary,
+    visit: { id: data.visit_id, technicianId: visit.technician_id, start: visit.scheduled_start, end: visit.scheduled_end },
+    request: { id: request.id, number: request.request_number, company: request.company_name, city: request.city, serviceKind: request.service_kind, priority: request.priority, version: request.version },
+    offered: data.offered_start && data.offered_end && data.offered_technician_id
+      ? { technicianId: data.offered_technician_id, start: data.offered_start, end: data.offered_end, at: data.offered_at } : null,
+    wished: { free: Boolean(parsed.wished?.free), start: parsed.wished?.start ?? null, end: parsed.wished?.end ?? null, technicianId: parsed.wished?.technician_id ?? visit.technician_id },
+    alternatives: (parsed.alternatives ?? []).map((alt) => ({ technicianId: alt.technician_id, start: alt.start, end: alt.end })),
+    minutes: parsed.minutes ?? Math.round((Date.parse(visit.scheduled_end) - Date.parse(visit.scheduled_start)) / 60000),
   };
 }

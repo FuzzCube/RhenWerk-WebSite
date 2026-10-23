@@ -2073,3 +2073,18 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .message--unread { border-left: 5px solid var(--rw-color-danger-700); background: var(--rw-color-warning-surface); }
 .message__new { margin-left: 8px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--rw-color-white); background: var(--rw-color-danger-700); }
 .request-card__unread { font-weight: 700; color: var(--rw-color-danger-700); }
+
+/* task-20-16: customer wish to move a visit */
+.plan3__blk.has-change { box-shadow: inset 0 0 0 2px var(--rw-color-warning-800); }
+.plan3__change { position: absolute; top: 1px; z-index: 3; display: grid; place-items: center; width: 17px; height: 17px; margin-left: 2px; padding: 0; border: 1.5px solid var(--rw-color-warning-800); border-radius: 4px; background: var(--rw-color-warning-surface); color: var(--rw-color-warning-900); cursor: pointer; }
+.plan3__change--offered { border-color: var(--rw-color-info-800); background: var(--rw-color-info-surface); color: var(--rw-color-info-800); }
+.plan3__change:hover { filter: brightness(.95); }
+.plan3__change:focus-visible { outline: 3px solid var(--rw-color-blue-700); outline-offset: 1px; }
+.plan3__key--change { width: 15px; height: 15px; border: 2px solid var(--rw-color-warning-800); border-radius: 4px; background: var(--rw-color-warning-surface); }
+.plan3__change-flag { margin: 0 0 0 auto; }
+.plan3__change-flag--open { color: var(--rw-color-warning-900); background: var(--rw-color-warning-surface); border-color: var(--rw-color-warning-border); }
+.plan3__change-flag--offered { color: var(--rw-color-info-800); background: var(--rw-color-info-surface); border-color: var(--rw-color-info-border); }
+.plan3__changes { margin-bottom: var(--rw-space-16); padding-bottom: var(--rw-space-12); border-bottom: 1px solid var(--rw-border-subtle); }
+.rw-banner--change { align-items: flex-start; background: var(--rw-color-warning-surface); border-color: var(--rw-color-warning-border); border-top-color: var(--rw-color-warning-800); color: var(--rw-color-warning-900); }
+.rw-banner--change > svg { flex: none; margin-top: 2px; color: var(--rw-color-warning-800); }
+.rw-banner--change .unread-banner__title { color: var(--rw-color-warning-900); }

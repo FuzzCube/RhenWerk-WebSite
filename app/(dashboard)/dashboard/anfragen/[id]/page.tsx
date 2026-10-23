@@ -145,6 +145,23 @@ export default async function RequestPage({ params }: Props) {
         </div>
       </header>
 
+      {detail.change && !technician && (
+        // task-20-16: the customer wants to move the planned visit; decided on the planning board
+        <section id="verschiebewunsch" className="rw-banner rw-banner--change" aria-labelledby="verschiebewunsch-title">
+          <Icon name="calendar" size={22} />
+          <div className="unread-banner__text">
+            <h2 id="verschiebewunsch-title" className="unread-banner__title">{detail.change.status === "offered" ? "Vorschlag gesendet – der Kunde antwortet noch" : "Der Kunde möchte den Termin verschieben"}</h2>
+            <p className="unread-banner__more">Wunsch: <strong>{formatWish(detail.change.wished_day, detail.change.wished_time)}</strong>{detail.change.wish_summary ? <> · „{detail.change.wish_summary}“</> : null}</p>
+            {detail.change.status === "offered" && detail.change.offered_start && detail.change.offered_end && (
+              <p className="unread-banner__more">Angebot: <span className="mono">{formatTimeRange(detail.change.offered_start, detail.change.offered_end)}</span>. Sagt der Kunde zu, wird der Termin automatisch verschoben.</p>
+            )}
+          </div>
+          <div className="unread-banner__actions">
+            <Link className="rw-button-secondary" href={`/dashboard/planung?anfrage=${request.id}`}>Auf der Plantafel bearbeiten</Link>
+          </div>
+        </section>
+      )}
+
       {unread.length > 0 && (
         // task-20-14: the customer wrote (cancel, move, a question) and nobody has marked it as read yet
         <section id="neue-nachrichten" className="rw-banner rw-banner--unread" aria-labelledby="neue-nachrichten-title">

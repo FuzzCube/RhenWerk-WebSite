@@ -1,6 +1,6 @@
-# Übergabe (Stand 22.10.2026, Roadmap v25)
+# Übergabe (Stand 23.10.2026, Roadmap v25)
 
-Phase 18 „Deployment“, Phase 19 „Feinschliff vor der Präsentation“ und Phase 20 „Rückmeldungen nach dem Rundgang“ (Plantafel, E-Mails an Kunden, Storno per E-Mail-Antwort über den Workflow „RheinWerk · Kundenantwort zum Termin“) sind abgeschlossen; der Oracle-Server ist seit 22.10.2026 still (`task-18-13`, `docs/betrieb.md` 3.9). Die Gesamtprobe des Deployments (`task-18-9`) steht in `docs/testing.md`. Stand und Übersicht: `.workshop/CURRENT_STATE.md`, `npm run workshop:status`.
+Phase 18 „Deployment“, Phase 19 „Feinschliff vor der Präsentation“ und Phase 20 „Rückmeldungen nach dem Rundgang“ (Plantafel mit Arbeitswoche, Kundenwunsch und Vormerkungen, E-Mails an Kunden, Verteilung der Anfragen an Dispatcher nach dem Monat und der Vormerkungen an Techniker nach den Aufträgen der Woche, ungelesene Kundennachrichten, Storno und Verschiebewunsch per E-Mail-Antwort über den Workflow „RheinWerk · Kundenantwort zum Termin“) sind abgeschlossen; der Oracle-Server ist seit 22.10.2026 still (`task-18-13`, `docs/betrieb.md` 3.9). Die Gesamtprobe des Deployments (`task-18-9`) steht in `docs/testing.md`. Stand und Übersicht: `.workshop/CURRENT_STATE.md`, `npm run workshop:status`.
 
 ## So läuft es
 

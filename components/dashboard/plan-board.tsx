@@ -2,13 +2,14 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { rescheduleVisit, scheduleVisit } from "@/app/(dashboard)/dashboard/planung/actions";
+import { closeVisitChange, confirmVisitChange, offerVisitChange, rescheduleVisit, scheduleVisit } from "@/app/(dashboard)/dashboard/planung/actions";
 import { CheckboxField, HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
 import { Icon } from "@/components/ui";
 import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay, weekStart } from "@/lib/berlin-time";
 import type { BusyBlock, Technician, WorkingHours } from "@/lib/dashboard/planning";
 import { initialFormState, type FormState } from "@/lib/forms";
 import { formatWeekdayDate, TIME_ZONE } from "@/lib/format";
+import type { PlanningChange } from "@/lib/dashboard/planning";
 import { unreadText } from "@/lib/dashboard/unread";
 import { hoursOn, nextWorkingDays, slotReasonText, suggestSlots, type SlotBusy, type SlotExperience } from "@/lib/slot-suggestions";
 import type { MonthLoad } from "@/lib/technician-load";
@@ -43,6 +44,8 @@ type Props = {
   initialPick: BoardPick | null;
   // false when the request has an open hold (task-20-13): the customer's wish decides, no suggestions
   suggest: boolean;
+  // The customer wants to move a planned visit (task-20-16): wish, options and the answers of the dispatcher
+  change: PlanningChange | null;
   // Load per technician in the calendar month of the shown day (task-12-1); month as its first day
   monthLoads: { month: string; loads: Record<string, MonthLoad> };
 };
@@ -141,12 +144,14 @@ export function PlanBoard(props: Props) {
       // Holds of the phone assistant are shown, but do not block manual planning
       if (block.kind === "hold") continue;
       const key = `${block.technicianId}|${Date.parse(block.start)}|${Date.parse(block.end)}`;
+      // The visit the customer wants to move does not block its own new time (task-20-16)
+      if (props.change && key === `${props.change.visit.technicianId}|${Date.parse(props.change.visit.start)}|${Date.parse(props.change.visit.end)}`) continue;
       if (seen.has(key)) continue;
       seen.add(key);
       blocks.push({ technicianId: block.technicianId, start: block.start, end: block.end, kind: block.kind });
     }
     return blocks;
-  }, [busy, availability.busy]);
+  }, [busy, availability.busy, props.change]);
 
   const suggestions = useMemo(() => request && props.suggest
     ? suggestSlots({ technicians, workingHours, busy: availability.busy, days: availability.days, now, durationMinutes: duration, experience: availability.experience })
@@ -275,7 +280,7 @@ export function PlanBoard(props: Props) {
         const end = dayKeyOf(new Date(block.end)) > day ? 24 * 60 : minutesOfDay(new Date(block.end));
         const kind = block.kind === "absence" ? "absence" : block.kind === "hold" ? "hold" : block.requestNumber ? "own" : "busy";
         const label = kind === "absence" ? "Abwesend" : kind === "hold" ? holdLabel(block) : block.requestNumber ?? "Belegt";
-        const unreadSuffix = block.unread ? ` · ${unreadText(block.unread)}` : "";
+        const unreadSuffix = (block.unread ? ` · ${unreadText(block.unread)}` : "") + (block.change ? (block.change.state === "offered" ? " · Vorschlag gesendet, Kunde antwortet noch" : " · Kunde möchte verschieben") : "");
         return { start, end, kind, label: label + unreadSuffix, block };
       });
   }
@@ -496,6 +501,79 @@ export function PlanBoard(props: Props) {
   const hasMovable = busy.some((block) => block.move !== null);
   const rangeLabel = view === "tag" ? longDay(focusDay) : `KW ${isoWeek(days[0])}${isoWeek(days[days.length - 1]) !== isoWeek(days[0]) ? `/${isoWeek(days[days.length - 1])}` : ""}`;
   const rangeDates = view === "tag" ? `KW ${isoWeek(focusDay)}` : `${shortDay(days[0])} – ${shortDay(days[days.length - 1])}`;
+  // Panel for a customer's wish to move a visit (task-20-16): options on the board, then confirm, offer or close
+  function renderChangePanel() {
+    const change = props.change!;
+    const options = [
+      ...(change.wished.free && change.wished.start && change.wished.end ? [{ label: "Wunschtermin", technicianId: change.wished.technicianId, start: change.wished.start, end: change.wished.end }] : []),
+      ...change.alternatives.map((alt, index) => ({ label: `Alternative ${index + 1}`, technicianId: alt.technicianId, start: alt.start, end: alt.end })),
+    ].map((option) => ({ ...option, day: dayKeyOf(new Date(option.start)), from: toTime(minutesOfDay(new Date(option.start))), to: toTime(minutesOfDay(new Date(option.end))) }));
+    const ready = Boolean(pick && pickCheck?.ok);
+    const hidden = (name: string, value: string | number) => <HiddenField name={name} value={value} />;
+    const fields = (
+      <>
+        {hidden("change_id", change.id)}
+        {hidden("version", request?.version ?? 0)}
+        {hidden("technician_id", pick?.technicianId ?? "")}
+        {hidden("date", pick?.day ?? "")}
+        {hidden("start", pick?.start ?? "")}
+        {hidden("end", pick?.end ?? "")}
+      </>
+    );
+    return (
+      <>
+        <div className="plan3__panel-sec">
+          <h3 className="plan3__eyebrow">{change.wished.free ? "Wunschtermin und Alternativen" : "Alternativen zum Wunschtermin"}</h3>
+          {options.length === 0 ? (
+            <p className="plan3__muted">Keine freie Zeit in den nächsten zwei Wochen. Eine freie Fläche in der Plantafel anklicken und den Zeitraum ziehen.</p>
+          ) : (
+            <ul className="plan3__sugs">
+              {options.map((option, index) => {
+                const active = pick?.technicianId === option.technicianId && pick.day === option.day && pick.start === option.from && pick.end === option.to;
+                return (
+                  <li key={`${option.start}-${option.technicianId}`}>
+                    <button type="button" className="plan3__sug" aria-pressed={active}
+                      onClick={() => {
+                        const next = { technicianId: option.technicianId, day: option.day, start: option.from, end: option.to };
+                        if (view === "woche" && !days.includes(next.day)) { setPick(next); setFormKey((key) => key + 1); navigate({ anchor: next.day, pick: next }); }
+                        else if (view === "tag" && next.day !== focusDay) { setPick(next); setFormKey((key) => key + 1); navigate({ day: next.day, pick: next }); }
+                        else choose(next);
+                      }}>
+                      <span className="plan3__rank" aria-hidden="true">{index + 1}</span>
+                      <strong>{techName(option.technicianId)}</strong>
+                      <span className="mono">{shortDay(option.day)} · {option.from}–{option.to}</span>
+                      <span className="plan3__why">{option.label}{option.technicianId !== change.visit.technicianId ? " · anderer Techniker" : ""}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {!change.wished.free && <p className="plan3__muted">Zum Wunschtermin ist {techName(change.visit.technicianId)} nicht frei.</p>}
+        </div>
+        <div className="plan3__panel-sec">
+          <h3 className="plan3__eyebrow">Auswahl</h3>
+          <p className={`plan3__check plan3__check--${pickCheck ? (pickCheck.ok ? "ok" : "bad") : "none"}`} aria-live="polite">
+            <Icon name={pickCheck ? (pickCheck.ok ? "check-circle" : "alert") : "calendar"} size={18} />
+            <span>{pickCheck ? pickCheck.message : "Noch nichts gewählt: eine Option oder eine freie Fläche in der Plantafel anklicken, die Auswahl lässt sich ziehen."}</span>
+          </p>
+          <SaveForm key={`confirm-${formKey}`} action={confirmVisitChange} submitLabel="Verschieben und bestätigen" submitDisabled={!ready} className="plan3__form">
+            {fields}
+            <p className="plan3__muted">Der Termin wird verschoben, der Kunde erhält die Bestätigung mit dem neuen Termin.</p>
+          </SaveForm>
+          <SaveForm key={`offer-${formKey}`} action={offerVisitChange} submitLabel={change.state === "offered" ? "Neuen Vorschlag senden" : "Als Vorschlag senden"} submitVariant="secondary" submitDisabled={!ready} className="plan3__form">
+            {fields}
+            <p className="plan3__muted">Der Termin bleibt. Der Kunde bekommt den Vorschlag per E-Mail und antwortet mit Ja oder Nein; bei Ja wird der Termin automatisch verschoben.</p>
+          </SaveForm>
+          <SaveForm key={`close-${formKey}`} action={closeVisitChange} submitLabel="Wunsch ohne E-Mail erledigen" submitVariant="secondary" className="plan3__form">
+            {hidden("change_id", change.id)}
+            <p className="plan3__muted">Wenn der Wunsch anders geklärt wurde (z. B. am Telefon).</p>
+          </SaveForm>
+        </div>
+      </>
+    );
+  }
+
   const unit = view === "tag" ? { prev: "Vorheriger Tag", next: "Nächster Tag" } : { prev: "Vorherige Woche", next: "Nächste Woche" };
   const todayWorkday = isoWeekday(today) > 5 ? nextWorkday(today, 1) : today;
 
@@ -569,7 +647,7 @@ export function PlanBoard(props: Props) {
             if (!movable) {
               const holdState = segment.kind === "hold" ? visit.hold?.state : undefined;
               return (
-                <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}${past}${holdState ? ` is-${holdState}` : ""}`}
+                <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}${past}${holdState ? ` is-${holdState}` : ""}${visit.change ? " has-change" : ""}`}
                   style={place(segment.start, segment.end)} title={`${segment.label} · ${span}`} data-hold-state={holdState}>
                   {text || (holdState && HOLD_MARK[holdState] && <span className="plan3__blk-mark" aria-hidden="true">{HOLD_MARK[holdState]}</span>)}
                 </span>
@@ -580,7 +658,7 @@ export function PlanBoard(props: Props) {
             return (
               <span
                 key={`${segment.start}-${segment.end}`}
-                className={`plan3__blk plan3__blk--own is-movable${past}${isMoving ? " is-moving" : ""}${chosen ? " is-chosen" : ""}`}
+                className={`plan3__blk plan3__blk--own is-movable${past}${isMoving ? " is-moving" : ""}${chosen ? " is-chosen" : ""}${visit.change ? " has-change" : ""}`}
                 style={place(segment.start, segment.end)}
                 title={`${segment.label} · ${span} · Klick: auswählen und Länge ändern, ziehen: verschieben, Doppelklick: Anfrage öffnen`}
                 role="button"
@@ -610,6 +688,16 @@ export function PlanBoard(props: Props) {
         {/* Unread customer messages (task-20-14): red circle with the count at the top right of the block */}
         {!absentAllDay && segments.filter((segment) => (segment.block.unread ?? 0) > 0).map((segment) => (
           <span key={`unread-${segment.start}-${segment.end}`} className="plan3__badge" style={{ left: `${pct(Math.min(segment.end, bounds.to))}%` }} aria-hidden="true">{segment.block.unread}</span>
+        ))}
+        {/* Wish of the customer to move the visit (task-20-16): a marker that opens the wish in the panel */}
+        {!absentAllDay && segments.filter((segment) => segment.block.change && segment.block.requestId).map((segment) => (
+          <button key={`change-${segment.start}-${segment.end}`} type="button" className={`plan3__change plan3__change--${segment.block.change!.state}`}
+            style={{ left: `${pct(segment.start)}%` }} title={segment.block.change!.state === "offered" ? "Vorschlag gesendet, der Kunde antwortet noch – Wunsch öffnen" : "Der Kunde möchte den Termin verschieben – Wunsch öffnen"}
+            aria-label={`Verschiebewunsch ${segment.block.requestNumber ?? ""} öffnen`}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => { event.stopPropagation(); router.push(`/dashboard/planung?anfrage=${segment.block.requestId}`, { scroll: false }); }}>
+            <Icon name="calendar" size={11} />
+          </button>
         ))}
         {moveHere && (
           <span
@@ -709,6 +797,7 @@ export function PlanBoard(props: Props) {
           {canPick && props.suggest && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
           {canPick && <li><i className="plan3__key plan3__key--pick" />Auswahl</li>}
           <li><i className="plan3__key plan3__key--badge" />Ungelesene Nachricht vom Kunden</li>
+          <li><i className="plan3__key plan3__key--change" />Kunde möchte den Termin verschieben</li>
           <li><i className="plan3__key plan3__key--past" />Vorbei</li>
           <li><i className="plan3__key plan3__key--outside" />Außerhalb der Arbeitszeit</li>
         </ul>
@@ -794,58 +883,62 @@ export function PlanBoard(props: Props) {
       </section>
 
       <aside id="auswahl" className="rw-card rw-card--action plan3__panel" aria-labelledby="auswahl-title">
-        <h2 id="auswahl-title" className="plan3__eyebrow">Einsatz planen</h2>
+        <h2 id="auswahl-title" className="plan3__eyebrow">{props.change ? "Verschiebewunsch" : "Einsatz planen"}</h2>
         {request ? (
           <>
             <div className="plan3__panel-sec plan3__panel-sec--head">{props.requestSummary}</div>
-            {props.suggest && <div className="plan3__panel-sec">
-              <h3 className="plan3__eyebrow">Vorschläge</h3>
-              {suggestions.length === 0 ? (
-                <p className="plan3__muted">Kein freies Fenster für {durationText(duration)} in den nächsten 7 Arbeitstagen. Im Termin unten ein früheres Ende eintragen oder eine spätere Woche öffnen.</p>
-              ) : (
-                <ul className="plan3__sugs">
-                  {suggestions.map((suggestion, index) => {
-                    const active = pick?.technicianId === suggestion.technicianId && pick.day === suggestion.day && pick.start === suggestion.startTime && pick.end === suggestion.endTime;
-                    return (
-                      <li key={suggestion.technicianId}>
-                        <button type="button" className="plan3__sug" aria-pressed={active}
-                          onClick={() => {
-                            const next = { technicianId: suggestion.technicianId, day: suggestion.day, start: suggestion.startTime, end: suggestion.endTime };
-                            if (view === "woche" && !days.includes(next.day)) { setPick(next); setFormKey((key) => key + 1); navigate({ anchor: next.day, pick: next }); }
-                            else if (view === "tag" && next.day !== focusDay) { setPick(next); setFormKey((key) => key + 1); navigate({ day: next.day, pick: next }); }
-                            else choose(next);
-                          }}>
-                          <span className="plan3__rank" aria-hidden="true">{index + 1}</span>
-                          <strong>{suggestion.name}</strong>
-                          <span className="mono">{shortDay(suggestion.day)} · {suggestion.startTime}–{suggestion.endTime}</span>
-                          <span className="plan3__why">{suggestion.reasons.map((reason) => slotReasonText(reason, suggestion)).join(" · ")}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>}
-            <div className="plan3__panel-sec">
-              <h3 className="plan3__eyebrow">Termin</h3>
-              <SaveForm key={formKey} action={scheduleVisit} submitLabel="Einsatz planen" className="plan3__form">
-                <HiddenField name="request_id" value={request.id} />
-                <HiddenField name="version" value={request.version} />
-                <div className="plan3__fields" onChange={onFormChange}>
-                  <SelectField name="technician_id" label="Techniker" required defaultValue={pick?.technicianId ?? ""} options={technicians.map((tech) => ({ value: tech.id, label: tech.name }))} />
-                  <TextField name="date" label="Datum" type="date" required defaultValue={pick?.day ?? (isoWeekday(addDays(today, 1)) > 5 ? nextWorkday(today, 1) : addDays(today, 1))} />
-                  <div className="plan3__times">
-                    <TextField name="start" label="Beginn" type="time" required defaultValue={pick?.start ?? "08:00"} />
-                    <TextField name="end" label="Ende" type="time" required defaultValue={pick?.end ?? toTime(8 * 60 + duration)} />
+            {props.change ? renderChangePanel() : (
+              <>
+              {props.suggest && <div className="plan3__panel-sec">
+                <h3 className="plan3__eyebrow">Vorschläge</h3>
+                {suggestions.length === 0 ? (
+                  <p className="plan3__muted">Kein freies Fenster für {durationText(duration)} in den nächsten 7 Arbeitstagen. Im Termin unten ein früheres Ende eintragen oder eine spätere Woche öffnen.</p>
+                ) : (
+                  <ul className="plan3__sugs">
+                    {suggestions.map((suggestion, index) => {
+                      const active = pick?.technicianId === suggestion.technicianId && pick.day === suggestion.day && pick.start === suggestion.startTime && pick.end === suggestion.endTime;
+                      return (
+                        <li key={suggestion.technicianId}>
+                          <button type="button" className="plan3__sug" aria-pressed={active}
+                            onClick={() => {
+                              const next = { technicianId: suggestion.technicianId, day: suggestion.day, start: suggestion.startTime, end: suggestion.endTime };
+                              if (view === "woche" && !days.includes(next.day)) { setPick(next); setFormKey((key) => key + 1); navigate({ anchor: next.day, pick: next }); }
+                              else if (view === "tag" && next.day !== focusDay) { setPick(next); setFormKey((key) => key + 1); navigate({ day: next.day, pick: next }); }
+                              else choose(next);
+                            }}>
+                            <span className="plan3__rank" aria-hidden="true">{index + 1}</span>
+                            <strong>{suggestion.name}</strong>
+                            <span className="mono">{shortDay(suggestion.day)} · {suggestion.startTime}–{suggestion.endTime}</span>
+                            <span className="plan3__why">{suggestion.reasons.map((reason) => slotReasonText(reason, suggestion)).join(" · ")}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>}
+              <div className="plan3__panel-sec">
+                <h3 className="plan3__eyebrow">Termin</h3>
+                <SaveForm key={formKey} action={scheduleVisit} submitLabel="Einsatz planen" className="plan3__form">
+                  <HiddenField name="request_id" value={request.id} />
+                  <HiddenField name="version" value={request.version} />
+                  <div className="plan3__fields" onChange={onFormChange}>
+                    <SelectField name="technician_id" label="Techniker" required defaultValue={pick?.technicianId ?? ""} options={technicians.map((tech) => ({ value: tech.id, label: tech.name }))} />
+                    <TextField name="date" label="Datum" type="date" required defaultValue={pick?.day ?? (isoWeekday(addDays(today, 1)) > 5 ? nextWorkday(today, 1) : addDays(today, 1))} />
+                    <div className="plan3__times">
+                      <TextField name="start" label="Beginn" type="time" required defaultValue={pick?.start ?? "08:00"} />
+                      <TextField name="end" label="Ende" type="time" required defaultValue={pick?.end ?? toTime(8 * 60 + duration)} />
+                    </div>
                   </div>
-                </div>
-                <CheckboxField name="notify_customer" label="Terminbestätigung an den Kunden senden" defaultChecked />
-                <p className={`plan3__check plan3__check--${pickCheck ? (pickCheck.ok ? "ok" : "bad") : "none"}`} aria-live="polite">
-                  <Icon name={pickCheck ? (pickCheck.ok ? "check-circle" : "alert") : "calendar"} size={18} />
-                  <span>{pickCheck ? pickCheck.message : `Noch kein Termin gewählt: ${props.suggest ? "Vorschlag oder freie Fläche" : "Vormerkung oder freie Fläche"} in der Plantafel anklicken.`}</span>
-                </p>
-              </SaveForm>
-            </div>
+                  <CheckboxField name="notify_customer" label="Terminbestätigung an den Kunden senden" defaultChecked />
+                  <p className={`plan3__check plan3__check--${pickCheck ? (pickCheck.ok ? "ok" : "bad") : "none"}`} aria-live="polite">
+                    <Icon name={pickCheck ? (pickCheck.ok ? "check-circle" : "alert") : "calendar"} size={18} />
+                    <span>{pickCheck ? pickCheck.message : `Noch kein Termin gewählt: ${props.suggest ? "Vorschlag oder freie Fläche" : "Vormerkung oder freie Fläche"} in der Plantafel anklicken.`}</span>
+                  </p>
+                </SaveForm>
+              </div>
+              </>
+            )}
           </>
         ) : (
           <div className="plan3__panel-sec">{props.emptyPanel}</div>

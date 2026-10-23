@@ -579,3 +579,7 @@ Nutzerentscheidung: Die Plantafel zeigt die Arbeitswoche Montag bis Freitag stat
 ## 23.10.2026 · Techniker in zwei Stufen: Aufträge der Woche, dann Auslastung des Monats (task-20-15)
 
 Nutzerentscheidung: Die automatische Vormerkung wählt zuerst nach der Zahl der Aufträge (Einsätze und offene Vormerkungen) in der Kalenderwoche des Fensters; der Techniker mit den wenigsten gewinnt, wenn er allein auf dem Minimum liegt. Nur bei Gleichstand entscheidet die Auslastung des Monats (wie auf der Plantafel). Ersetzt den Minutenanteil der Woche aus task-20-11, der lange Aufträge stärker gewichtete als die Zahl der Aufträge.
+
+## 23.10.2026 · Verschiebewünsche der Kunden per E-Mail (task-20-16)
+
+Nutzerentscheidung: Ein Kunde, der per E-Mail einen geplanten Termin verschieben will, bekommt sofort eine automatische Eingangsbestätigung; die Entscheidung trifft der Dispatcher auf der Plantafel (Wunschtermin frei: ein Klick, der Kunde bekommt die Bestätigung; sonst ein Alternativvorschlag per E-Mail, der Termin bleibt). Sagt der Kunde auf den Vorschlag „Ja“, verschiebt die Datenbank den Termin selbst, wenn das Fenster noch frei ist; „Nein“ lässt den Termin bestehen. Antwortet der Kunde nicht, erinnert ihn das System einmal, zwei Tage nach dem Vorschlag oder einen Tag vor dem Termin. Alle E-Mails sind feste Vorlagen, kein vom Sprachmodell geschriebener Text; das Sprachmodell erkennt nur Absicht, Wunschtag und Uhrzeit. Eine Stornierung bleibt automatisch.

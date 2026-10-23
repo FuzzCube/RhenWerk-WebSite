@@ -117,6 +117,7 @@ Geplante Aufträge in der Datenbank (pg_cron, Zeiten in UTC):
 | --- | --- | --- |
 | `callback-escalation` | jede Minute | unbestätigte Rückrufbitten nach 15 Minuten an den Dispatcher eskalieren |
 | `visit-holds-expire` | stündlich :05 | Terminvormerkungen des Telefonassistenten nach zwei Werktagen freigeben |
+| `visit-change-reminders` | stündlich :15 | eine Erinnerung an unbeantwortete Terminvorschläge (zwei Tage nach dem Angebot oder einen Tag vor dem Termin), abgelaufene Angebote schließen (task-20-16) |
 | `payment-reminders` | täglich 06:00 | Zahlungserinnerungen für überfällige Rechnungen in die Versand-Warteschlange |
 | `call-transcripts-30-days` | täglich 02:30 | Gesprächstranskripte nach 30 Tagen löschen (Datenschutz) |
 | `calls-without-request-12-months` | täglich 02:40 | Anrufe ohne Anfrage 12 Monate nach Gesprächsende löschen (Datenschutz, task-16-1) |

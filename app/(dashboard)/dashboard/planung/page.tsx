@@ -8,7 +8,7 @@ import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTi
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { getEmployeeNames } from "@/lib/dashboard/requests";
-import { loadAvailability, loadMonthLoads, loadPlanningDays, loadPlanningTarget, loadSelectedContext, type Availability, type WorkingHours } from "@/lib/dashboard/planning";
+import { loadAvailability, loadMonthLoads, loadPlanningChange, loadPlanningDays, loadPlanningTarget, loadSelectedContext, type Availability, type WorkingHours } from "@/lib/dashboard/planning";
 import { formatCalendarDate, formatDate, formatDateTime, formatNumber, formatWeekdayDate } from "@/lib/format";
 import { hoursOn, nextWorkingDays } from "@/lib/slot-suggestions";
 import { unreadText } from "@/lib/dashboard/unread";
@@ -36,9 +36,14 @@ export default async function PlanningPage({ searchParams }: Props) {
   // Opened from a request (task-20-2): without a chosen week or slot the board starts at its hold or wished day, and
   // the hold is the preselected slot
   const requestParam = single(params.anfrage);
-  const target = /^[0-9a-f-]{36}$/i.test(requestParam) ? await loadPlanningTarget(requestParam) : null;
+  const validRequest = /^[0-9a-f-]{36}$/i.test(requestParam);
+  const target = validRequest ? await loadPlanningTarget(requestParam) : null;
+  // The customer wants to move a planned visit (task-20-16): the board shows the wish and what can be done about it
+  const change = validRequest ? await loadPlanningChange(requestParam) : null;
   const fresh = !single(params.woche) && !single(params.tag) && !single(params.techniker);
-  const targetDay = target?.hold ? dayKeyOf(new Date(target.hold.start)) : target?.wishedDay ?? null;
+  const targetDay = change
+    ? (change.wished.start ? dayKeyOf(new Date(change.wished.start)) : change.wishedDay ?? dayKeyOf(new Date(change.visit.start)))
+    : target?.hold ? dayKeyOf(new Date(target.hold.start)) : target?.wishedDay ?? null;
   const startDay = fresh && targetDay && targetDay > today ? targetDay : today;
   const focusDay = workday(isDayKey(single(params.tag)) ? single(params.tag) : startDay);
   const anchor = workday(isDayKey(single(params.woche)) ? single(params.woche) : startDay);
@@ -48,7 +53,7 @@ export default async function PlanningPage({ searchParams }: Props) {
   const holdMinutes = target?.hold ? (Date.parse(target.hold.end) - Date.parse(target.hold.start)) / 60_000 : null;
   // Any length on the 15-minute grid from 30 minutes to 10 hours (task-20-5: set with the handles of the selection)
   const validDuration = (minutes: number | null) => minutes !== null && Number.isInteger(minutes) && minutes % 15 === 0 && minutes >= 30 && minutes <= 600;
-  const duration = validDuration(durationParam) ? durationParam : validDuration(holdMinutes) ? holdMinutes! : 120;
+  const duration = validDuration(durationParam) ? durationParam : change && validDuration(change.minutes) ? change.minutes : validDuration(holdMinutes) ? holdMinutes! : 120;
   const selected = data.selected;
   const [availability, context, names, monthLoads] = await Promise.all([
     loadAvailability(selected?.id ?? null, data.technicians, data.workingHours, duration),
@@ -63,8 +68,10 @@ export default async function PlanningPage({ searchParams }: Props) {
   const pickDay = single(params.datum);
   const pickStart = single(params.beginn);
   const hold = target?.hold ?? null;
-  const pick: BoardPick | null = selected && data.technicians.some((tech) => tech.id === pickTech) && isDayKey(pickDay) && isTime(pickStart)
+  const pick: BoardPick | null = (selected || change) && data.technicians.some((tech) => tech.id === pickTech) && isDayKey(pickDay) && isTime(pickStart)
     ? { technicianId: pickTech, day: pickDay, start: pickStart, end: toTime(Math.min(toMinutes(pickStart) + duration, 23 * 60 + 30)) }
+    : change && fresh && change.wished.free && change.wished.start && change.wished.end && data.technicians.some((tech) => tech.id === change.wished.technicianId)
+      ? { technicianId: change.wished.technicianId, day: dayKeyOf(new Date(change.wished.start)), start: toTime(minutesOfDay(new Date(change.wished.start))), end: toTime(minutesOfDay(new Date(change.wished.end))) }
     : selected && fresh && hold && data.technicians.some((tech) => tech.id === hold.technicianId)
       ? { technicianId: hold.technicianId, day: dayKeyOf(new Date(hold.start)), start: toTime(minutesOfDay(new Date(hold.start))), end: toTime(minutesOfDay(new Date(hold.end))) }
       : null;
@@ -81,7 +88,33 @@ export default async function PlanningPage({ searchParams }: Props) {
   const waiting = data.queue.length;
   const unreadOf = (id: string | null) => (id ? data.unread[id] : undefined);
 
-  const requestSummary = selected && (
+  const changeSummary = change && (
+    <div className="plan3__req">
+      <div className="plan3__req-top">
+        <Link className="mono" href={`/dashboard/anfragen/${change.request.id}#korrespondenz`}>{change.request.number}</Link>
+        <span className={`rw-flag plan3__change-flag plan3__change-flag--${change.state}`}>{change.state === "offered" ? "Vorschlag gesendet" : "Verschiebewunsch"}</span>
+      </div>
+      <strong className="plan3__req-name">{change.request.company}</strong>
+      <span className="plan3__muted">{change.request.city} · {label("service_kind", change.request.serviceKind)}</span>
+      <span className="plan3__muted">Bisheriger Termin: <span className="mono">{formatDateTime(change.visit.start)}–{toTime(minutesOfDay(new Date(change.visit.end)))}</span>, {techName(change.visit.technicianId)}</span>
+      <span className="plan3__wish">Kundenwunsch: <strong className="mono">{change.wish}</strong></span>
+      {change.summary && <span className="plan3__muted">„{change.summary}“</span>}
+      {change.state === "offered" && change.offered && (
+        <span className="plan3__hold-note plan3__hold-note--deviates" data-change-state="offered">
+          Vorschlag an den Kunden: <span className="mono">{formatDateTime(change.offered.start)}–{toTime(minutesOfDay(new Date(change.offered.end)))}</span>, {techName(change.offered.technicianId)}
+          {change.offered.at ? <> (gesendet <span className="mono">{formatDateTime(change.offered.at)}</span>)</> : null}. Der Kunde hat noch nicht geantwortet; sagt er zu, wird der Termin automatisch verschoben. Eine Erinnerung geht nach zwei Tagen oder einen Tag vor dem Termin raus.
+        </span>
+      )}
+      {change.state === "open" && !change.wished.free && (
+        <span className="plan3__hold-note plan3__hold-note--deviates" data-change-state="open">Der Wunschtermin ist nicht frei. Einen Vorschlag wählen und dem Kunden anbieten.</span>
+      )}
+      {change.state === "open" && change.wished.free && (
+        <span className="plan3__hold-note plan3__hold-note--wish" data-change-state="open">Der Wunschtermin ist frei und als Auswahl gesetzt. „Verschieben und bestätigen“ ändert den Termin und schickt dem Kunden die Bestätigung.</span>
+      )}
+    </div>
+  );
+
+  const selectedSummary = selected && (
     <div className="plan3__req">
       <div className="plan3__req-top">
         <Link className="mono" href={`/dashboard/anfragen/${selected.id}`}>{selected.request_number}</Link>
@@ -116,6 +149,8 @@ export default async function PlanningPage({ searchParams }: Props) {
       )}
     </div>
   );
+
+  const requestSummary = changeSummary ?? selectedSummary;
 
   const emptyPanel = data.selectedPlanned ? (
     <EmptyState title={`${data.selectedPlanned.request_number} braucht keine Planung mehr.`} action={<Link className="rw-button-secondary" href={`/dashboard/anfragen/${data.selectedPlanned.id}`}>Zur Anfrage</Link>}>
@@ -155,6 +190,25 @@ export default async function PlanningPage({ searchParams }: Props) {
 
       <div className="plan3">
         <aside className="rw-card rw-card--meta plan3__queue" aria-labelledby="queue-title">
+          {data.changes.length > 0 && (
+            <section className="plan3__changes" aria-labelledby="changes-title">
+              <header className="plan3__queue-head">
+                <h2 id="changes-title" className="rw-card__title">Änderungswünsche <span className="rw-card__count mono">{data.changes.length}</span></h2>
+                <span className="plan3__eyebrow">Kunde möchte verschieben</span>
+              </header>
+              <ul className="plan3__list">
+                {data.changes.map((row) => (
+                  <li key={row.id}>
+                    <Link href={`/dashboard/planung?anfrage=${row.requestId}`} className="plan3__item" aria-current={row.requestId === change?.request.id ? "true" : undefined} scroll={false}>
+                      <span className="plan3__item-head"><span className="mono">{row.requestNumber}</span>{unreadOf(row.requestId) && <span className="plan3__badge plan3__badge--inline" title={unreadText(unreadOf(row.requestId)!.count)}>{unreadOf(row.requestId)!.count}</span>}<span className={`rw-flag plan3__change-flag plan3__change-flag--${row.state}`}>{row.state === "offered" ? "Wartet auf Antwort" : "Neu"}</span></span>
+                      <strong>{row.company}</strong>
+                      <span className="plan3__muted">Wunsch: {row.wish}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <header className="plan3__queue-head">
             <h2 id="queue-title" className="rw-card__title">Zu planen <span className="rw-card__count mono">{waiting}</span></h2>
             <span className="plan3__eyebrow">Priorität · Frist</span>
@@ -179,7 +233,7 @@ export default async function PlanningPage({ searchParams }: Props) {
         </aside>
 
         <PlanBoard
-          key={selected?.id ?? "none"}
+          key={change?.request.id ?? selected?.id ?? "none"}
           technicians={data.technicians}
           workingHours={data.workingHours}
           busy={data.busy}
@@ -188,12 +242,13 @@ export default async function PlanningPage({ searchParams }: Props) {
           days={days}
           anchor={anchor}
           focusDay={focusDay}
-          request={selected?.id ? { id: selected.id, version: selected.version ?? 0, number: selected.request_number ?? "" } : null}
+          request={change ? { id: change.request.id, version: change.request.version, number: change.request.number } : selected?.id ? { id: selected.id, version: selected.version ?? 0, number: selected.request_number ?? "" } : null}
+          change={change}
           requestSummary={requestSummary}
           emptyPanel={emptyPanel}
           initialDuration={duration}
           initialPick={pick}
-          suggest={!hold}
+          suggest={!hold && !change}
           monthLoads={{ month: monthLoads.month, loads: monthLoads.loads }}
         />
       </div>

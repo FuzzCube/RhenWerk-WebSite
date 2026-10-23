@@ -186,6 +186,14 @@ export async function unreadRequestCount(): Promise<number | null> {
   return error ? null : count ?? 0;
 }
 
+// Active wishes of customers to move a visit per request (task-20-16): "open" or "offered"
+export async function activeChanges(requestIds: string[]): Promise<Map<string, "open" | "offered">> {
+  if (requestIds.length === 0) return new Map();
+  const supabase = await createClient();
+  const { data } = await supabase.from("visit_change_requests").select("request_id, status").in("status", ["open", "offered"]).in("request_id", requestIds);
+  return new Map((data ?? []).map((row) => [row.request_id, row.status as "open" | "offered"]));
+}
+
 // Requests with an open window hold of the phone assistant (task-13-3) → start of the held window
 export async function openHoldStarts(requestIds: string[]): Promise<Map<string, string>> {
   if (requestIds.length === 0) return new Map();
@@ -289,6 +297,8 @@ export type RequestDetail = {
   customerSuggestions: CustomerSuggestion[];
   // Window holds of the phone assistant (task-13-3), newest first; staff only
   holds: Tables["visit_holds"]["Row"][];
+  // Active wish of the customer to move a visit (task-20-16); staff only
+  change: Pick<Tables["visit_change_requests"]["Row"], "id" | "status" | "wished_day" | "wished_time" | "wish_summary" | "offered_start" | "offered_end" | "offered_at"> | null;
   // Calls of the phone assistant about this request (task-13-7); staff only
   calls: Array<Pick<Tables["phone_calls"]["Row"], "id" | "conversation_id" | "started_at" | "duration_seconds" | "category" | "summary" | "callback_needed" | "callback_done_at" | "in_service_hours" | "analyzed_at">>;
   failed: string[];
@@ -309,7 +319,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
 
   const staff = role !== "technician";
   const contractNumber = staff ? normalizeContractNumber(request.sla_contract_number) : null;
-  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds, customer, calls, suggestions] = await Promise.all([
+  const [messages, automationRuns, visits, workEntries, attachments, invoice, events, contract, holds, customer, calls, suggestions, change] = await Promise.all([
     staff ? supabase.from("messages").select("*").eq("request_id", id).order("created_at") : null,
     staff ? supabase.from("automation_runs").select("*").eq("request_id", id).order("started_at") : null,
     supabase.from("visits").select("*").eq("request_id", id).order("scheduled_start"),
@@ -324,6 +334,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
     staff && !request.customer_id
       ? supabase.from("request_customer_suggestions").select("reason, customers(id, customer_number, company_name, is_active, customer_sites(street_house_number, postal_code, city, is_active))").eq("request_id", id).order("created_at")
       : null,
+    staff ? supabase.from("visit_change_requests").select("id, status, wished_day, wished_time, wish_summary, offered_start, offered_end, offered_at").eq("request_id", id).in("status", ["open", "offered"]).maybeSingle() : null,
   ]);
   const invoiceId = invoice?.data && invoice.data.status !== "draft" ? invoice.data.id : null;
   const [invoiceItems, reminderState, reminders] = invoice?.data
@@ -364,6 +375,7 @@ export const getRequestDetail = cache(async (id: string, role: EmployeeRole): Pr
       ? [{ reason: row.reason as CustomerSuggestion["reason"], customer: (({ customer_sites: sites, ...rest }) => ({ ...rest, sites }))(row.customers) }]
       : []),
     holds: holds ? pick("einsaetze", holds, []) : [],
+    change: change?.data ?? null,
     calls: calls?.data ?? [],
     failed,
   };

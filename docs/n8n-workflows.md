@@ -130,7 +130,7 @@ Kein Schlüssel steht im Repository oder in Workflow-Parametern; n8n verschlüss
 | 10 Selbsttest | – (liest die Tabelle `system_status`) | – |
 | 11 Assistent | – (Vector Store `rag_documents` mit `match_rag_documents`) | – |
 | 12 Dokumente importieren | – (leert und füllt `rag_documents`) | liest `n8n/rag-documents/*.md` |
-| 13 Kundenantwort zum Termin | `visit_replies_pending`, `apply_visit_reply` | – |
+| 13 Kundenantwort zum Termin | `visit_replies_pending`, `apply_visit_reply` (mit Wunschtag und -zeit) | – |
 
 ### Netzwerk
 
@@ -258,10 +258,11 @@ Jeder Steckbrief: **Zweck – Auslöser – Schritte – Ergebnis – Fehlerverh
 
 ### 13 · Kundenantwort zum Termin (`rwVisitReply2026`, 6 Knoten)
 
-- **Zweck:** Antwortet ein Kunde auf die Terminbestätigung, erkennt OpenAI die Absicht; eine eindeutige Absage storniert den Termin, ein Verschiebewunsch wird für den Dispatcher markiert (task-20-10).
+- **Zweck:** Antwortet ein Kunde auf die Terminbestätigung, erkennt OpenAI die Absicht samt Wunschtag und Uhrzeit (task-20-10, task-20-16): eine eindeutige Absage storniert den Termin; ein Verschiebewunsch wird zur Änderungsanfrage (`visit_change_requests`) mit automatischer Eingangsbestätigung („Wir prüfen und melden uns“), die der Dispatcher auf der Plantafel bestätigt oder mit einem Alternativtermin beantwortet; ein „Ja“ oder „Nein“ zu einem solchen Vorschlag wird angewendet (bei „Ja“ verschiebt die Datenbank den Termin selbst, wenn er noch frei ist).
 - **Auslöser:** *Alle 2 Minuten*.
 - **Schritte:** *Offene Antworten laden* (`visit_replies_pending`) → *Einzeln* → *Absicht erkennen (OpenAI)* → *Ergebnis prüfen* → *Anwenden* (`apply_visit_reply`).
-- **Fehlerverhalten:** Die Datenbank entscheidet (Absage nur von der Adresse des Kunden); eine Antwort ohne gültiges Ergebnis von OpenAI bleibt offen und wird beim nächsten Lauf erneut versucht, eine gespeicherte nie zweimal ausgewertet. Der Kunde bekommt die Bestätigung über 6.
+- **Zusätzlich:** `visit_replies_pending` liefert das heutige Datum, den Wochentag und einen offenen Vorschlag (`offer`); `apply_visit_reply` bekommt `wished_day` und `wished_time`. Absicht `decline` gibt es nur zu einem Vorschlag. Eine Erinnerung an unbeantwortete Vorschläge schickt nicht n8n, sondern ein pg_cron-Auftrag (`run_visit_change_reminders`, stündlich, einmal je Vorschlag: zwei Tage nach dem Angebot oder einen Tag vor dem Termin).
+- **Fehlerverhalten:** Die Datenbank entscheidet (Absage und Zusage nur von der Adresse des Kunden); eine Antwort ohne gültiges Ergebnis von OpenAI bleibt offen und wird beim nächsten Lauf erneut versucht, eine gespeicherte nie zweimal ausgewertet. Der Kunde bekommt die Bestätigung über 6.
 
 ## 6. Drei Abläufe Schritt für Schritt
 

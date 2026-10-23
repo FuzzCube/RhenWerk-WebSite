@@ -40,7 +40,7 @@ select ok((select count(*) = 3 from jsonb_array_elements(public.visit_replies_pe
 
 select is(public.apply_visit_reply('00000000-0000-0000-0000-0000000000c1', 'cancel_visit', 0.95, 'Kunde storniert den Termin.') ->> 'action', 'cancelled', 'clear cancellation');
 select is(public.apply_visit_reply('00000000-0000-0000-0000-0000000000c1', 'cancel_visit', 0.95, 'nochmal') ->> 'action', 'duplicate', 'evaluated once');
-select is(public.apply_visit_reply('00000000-0000-0000-0000-0000000000c2', 'reschedule', 0.9, 'Kunde bittet um eine Woche später.') ->> 'action', 'flagged', 'move wish: flagged');
+select is(public.apply_visit_reply('00000000-0000-0000-0000-0000000000c2', 'reschedule', 0.9, 'Kunde bittet um eine Woche später.') ->> 'action', 'change_requested', 'move wish: change request with acknowledgement');
 select is(public.apply_visit_reply('00000000-0000-0000-0000-0000000000c3', 'cancel_visit', 0.95, 'Storno von fremder Adresse.') ->> 'action', 'flagged', 'foreign sender: flagged only');
 select is((select count(*)::int from jsonb_array_elements(public.visit_replies_pending(10) -> 'items') i where i ->> 'message_id' like '00000000-0000-0000-0000-0000000000c%'), 0, 'nothing pending any more');
 select ok((select count(*) = 1 from public.claim_queued_messages(20) c where c ->> 'request_id' = '00000000-0000-0000-0000-0000000000a1' and c ->> 'subject' like 'Stornierung Ihres Termins RIS-%' and c ->> 'approved_by' = 'system'),
