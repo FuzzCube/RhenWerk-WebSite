@@ -6,9 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 // shows no hint instead of breaking every dashboard page.
 export const BACKLOG_MINUTES = 10;
 
-export async function loadSendBacklog(): Promise<SendBacklog> {
+export async function loadSendBacklog({ strict = false } = {}): Promise<SendBacklog> {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("send_backlog", { min_minutes: BACKLOG_MINUTES });
+  const { data, error } = await supabase.rpc("send_backlog", { min_minutes: BACKLOG_MINUTES });
+  if (strict && (error || !data?.[0])) throw new Error("Versandstatus nicht verfügbar");
   const row = data?.[0];
   return { waiting: row?.waiting ?? 0, oldestAt: row?.oldest_at ?? null };
 }

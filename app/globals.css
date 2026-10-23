@@ -2088,3 +2088,18 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .rw-banner--change { align-items: flex-start; background: var(--rw-color-warning-surface); border-color: var(--rw-color-warning-border); border-top-color: var(--rw-color-warning-800); color: var(--rw-color-warning-900); }
 .rw-banner--change > svg { flex: none; margin-top: 2px; color: var(--rw-color-warning-800); }
 .rw-banner--change .unread-banner__title { color: var(--rw-color-warning-900); }
+
+/* Shared dashboard updates: keyboard-accessible notices, separated new/reply badges, no layout shift. */
+.dash-nav__count-label { font-family: var(--rw-font-sans, inherit); font-size: 11px; }
+.dash-notices { position: fixed; z-index: 90; right: 20px; bottom: 90px; display: grid; gap: 8px; width: min(380px, calc(100vw - 32px)); max-height: 50vh; overflow-y: auto; }
+.dash-notice { display: flex; flex-direction: row; align-items: center; gap: 16px; padding: 14px 16px; box-shadow: 0 4px 20px rgb(0 0 0 / 14%); border-left: 4px solid var(--rw-color-lime-500); }
+.dash-notice a { flex: 1; font-weight: 600; overflow-wrap: anywhere; }
+.dash-notice button { padding: 4px 8px; font-size: 22px; }
+.dash-update-status { position: sticky; bottom: 0; z-index: 80; background: var(--rw-color-white); box-shadow: 0 -2px 12px rgb(0 0 0 / 8%); }
+.dash-update-status:empty { display: none; }
+.dash-update-status p, .dash-update-status > div { margin: 0; padding: 12px 20px; }
+.dash-update-status > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+@media (max-width: 600px) {
+  .dash-notices { right: 16px; bottom: 150px; }
+  .dash-update-status p, .dash-update-status > div { padding: 10px 16px; font-size: 13px; }
+}

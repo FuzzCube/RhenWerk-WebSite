@@ -3,10 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { areasFor, type EmployeeRole } from "@/lib/auth/roles";
+import { useDashboardUpdates } from "./dashboard-updates";
 
 // counts: open items per area (e.g. the inbox); shown as a badge next to the label
-export function DashboardNav({ role, counts = {} }: { role: EmployeeRole; counts?: Record<string, number> }) {
+export function DashboardNav({ role }: { role: EmployeeRole }) {
   const pathname = usePathname();
+  const { snapshot } = useDashboardUpdates();
+  const counts = snapshot?.counts;
+  const badges: Record<string, Array<{ count: number; label: string; unread?: boolean }>> = counts ? {
+    "/dashboard/posteingang": [{ count: counts.inbox, label: "offene E-Mails" }, { count: counts.failedInbox, label: "Versandfehler", unread: true }],
+    "/dashboard/anfragen": [{ count: counts.newRequests, label: "neu zu bearbeiten" }, { count: counts.unreadRequests, label: "Anfragen mit ungelesenen Kundennachrichten", unread: true }, { count: counts.failedRequests, label: "Versandfehler", unread: true }],
+    "/dashboard/planung": [{ count: counts.changes, label: "offene Terminwünsche", unread: true }],
+    "/dashboard/anrufe": [{ count: snapshot?.callbacks.length ?? 0, label: "Rückrufbitten", unread: true }],
+    "/dashboard/heute": [{ count: snapshot?.callbacks.length ?? 0, label: "Rückrufbitten", unread: true }],
+    "/dashboard/system": [{ count: snapshot?.systemAlerts.length ?? 0, label: "Systemwarnungen", unread: true }],
+  } : {};
   return (
     <nav className="dash-nav" aria-label="Dashboard-Navigation">
       <ul>
@@ -16,11 +27,12 @@ export function DashboardNav({ role, counts = {} }: { role: EmployeeRole; counts
             <li key={area.href}>
               <Link href={area.href} aria-current={active ? "page" : undefined}>
                 {area.label}
-                {counts[area.href] ? (
-                  <span className={`dash-nav__count mono${area.href === "/dashboard/anfragen" ? " dash-nav__count--unread" : ""}`}
-                    title={area.href === "/dashboard/anfragen" ? "Anfragen mit ungelesenen Kundennachrichten" : undefined}
-                    aria-label={area.href === "/dashboard/anfragen" ? `${counts[area.href]} Anfragen mit ungelesenen Nachrichten` : `${counts[area.href]} offen`}>{counts[area.href]}</span>
-                ) : null}
+                {(badges[area.href] ?? []).filter((badge) => badge.count > 0).map((badge) => (
+                  <span key={badge.label} className={`dash-nav__count mono${badge.unread ? " dash-nav__count--unread" : ""}`}
+                    data-badge={badge.label} title={`${badge.count} ${badge.label}`} aria-label={`${badge.count} ${badge.label}`}>
+                    {badge.count}{area.href === "/dashboard/anfragen" && <span className="dash-nav__count-label">{badge.label === "neu zu bearbeiten" ? " neu" : badge.label === "Versandfehler" ? " Fehler" : badge.count === 1 ? " Antwort" : " Antworten"}</span>}
+                  </span>
+                ))}
               </Link>
             </li>
           );

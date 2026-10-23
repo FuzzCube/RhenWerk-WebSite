@@ -753,6 +753,8 @@ export function PlanBoard(props: Props) {
 
   return (
     <>
+      <span hidden data-dashboard-dirty={Boolean(drag || move || chosenVisit || duration !== props.initialDuration || JSON.stringify(pick) !== JSON.stringify(props.initialPick))}
+        data-dashboard-busy={Boolean(drag || moving || navigating)} />
       <section id="woche" className="rw-card rw-card--neutral plan3__board" aria-labelledby="plantafel-title" aria-busy={navigating || undefined}>
         <header className="plan3__board-head">
           <div>

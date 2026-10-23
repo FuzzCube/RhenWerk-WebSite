@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CallbackAlerts } from "@/components/dashboard/callback-alerts";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
-import { SendBacklogAlert } from "@/components/dashboard/send-backlog-alert";
-import { SystemAlertBanner } from "@/components/dashboard/system-alert-banner";
+import { DashboardAlertBanners, DashboardUpdates } from "@/components/dashboard/dashboard-updates";
 import { Logo } from "@/components/ui";
 import { logout } from "@/lib/auth/actions";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { requireEmployee } from "@/lib/auth/session";
-import { loadCallbackAlerts } from "@/lib/dashboard/callbacks";
-import { inboxCount } from "@/lib/dashboard/inbox";
-import { unreadRequestCount } from "@/lib/dashboard/requests";
-import { loadSendBacklog } from "@/lib/dashboard/send-backlog";
-import { loadOpenSystemAlerts } from "@/lib/dashboard/system-alerts";
+import { loadDashboardSnapshot } from "@/lib/dashboard/notifications";
 
 export const metadata: Metadata = {
   title: { default: "Dashboard", template: "%s | RheinWerk Dashboard" },
@@ -23,18 +17,11 @@ export const metadata: Metadata = {
 // are not re-rendered on client navigation.
 export default async function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const employee = await requireEmployee();
-  // Open inbox e-mails for the navigation badge (RLS: own inbox for dispatchers, all for manager and admin)
-  const inbox = employee.role === "technician" ? null : await inboxCount();
-  // Requests with unread customer messages (task-20-14)
-  const unreadRequests = employee.role === "technician" ? null : await unreadRequestCount();
-  // Callback requests of the phone assistant (task-13-4): technicians their own, dispatchers escalations
-  const alertRole = employee.role === "technician" || employee.role === "dispatcher" ? employee.role : null;
-  const callbacks = alertRole ? await loadCallbackAlerts(alertRole) : [];
-  // E-mails waiting for the Gmail dispatch (task-12-9): everyone who writes to customers
-  const backlog = employee.role === "technician" ? null : await loadSendBacklog();
-  // Open warnings of the watchdog and the nightly backup (task-17-10): only manager and admin
-  const systemAlerts = employee.role === "manager" || employee.role === "admin" ? await loadOpenSystemAlerts() : [];
+  // A temporary read failure must not prevent opening the dashboard. The first successful poll then establishes
+  // a silent baseline; no historical popup flood and no invented zero counts.
+  const initial = await loadDashboardSnapshot(employee).catch(() => null);
   return (
+    <DashboardUpdates initial={initial} employeeId={employee.id}>
     <div className="dash-shell">
       <a className="skip-link" href="#dash-main">Zum Inhalt springen</a>
       <header className="dash-header">
@@ -48,14 +35,13 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
             <button className="dash-logout" type="submit">Abmelden</button>
           </form>
         </div>
-        <DashboardNav role={employee.role} counts={{ ...(inbox ? { "/dashboard/posteingang": inbox } : {}), ...(unreadRequests ? { "/dashboard/anfragen": unreadRequests } : {}) }} />
+        <DashboardNav role={employee.role} />
       </header>
       <main id="dash-main" className="dash-main">
-        {backlog && <SendBacklogAlert backlog={backlog} role={employee.role} />}
-        <SystemAlertBanner alerts={systemAlerts} />
-        {alertRole && <CallbackAlerts initial={callbacks} role={alertRole} />}
+        <DashboardAlertBanners />
         {children}
       </main>
     </div>
+    </DashboardUpdates>
   );
 }

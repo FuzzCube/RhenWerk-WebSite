@@ -30,7 +30,7 @@ export type CallAlert = {
 };
 export type CallbackAlert = VisitCallbackAlert | CallAlert;
 
-export async function loadCallbackAlerts(role: EmployeeRole): Promise<CallbackAlert[]> {
+export async function loadCallbackAlerts(role: EmployeeRole, { strict = false } = {}): Promise<CallbackAlert[]> {
   if (role !== "technician" && role !== "dispatcher") return [];
   const supabase = await createClient();
   let query = supabase
@@ -46,6 +46,7 @@ export async function loadCallbackAlerts(role: EmployeeRole): Promise<CallbackAl
         .eq("callback_needed", true).eq("callback_urgent", true).is("callback_done_at", null).order("started_at")
       : null,
   ]);
+  if (strict && (error || calls?.error)) throw new Error("Rückrufbitten nicht verfügbar");
   const visits: CallbackAlert[] = error || !data ? [] : data.map(({ technician, ...row }) => ({ ...row, kind: "visit" as const, technician: technician?.display_name ?? null }));
   const urgent: CallbackAlert[] = (calls?.data ?? []).map((row) => {
     const named = row.analysis && typeof row.analysis === "object" && !Array.isArray(row.analysis) ? row.analysis.firma : null;

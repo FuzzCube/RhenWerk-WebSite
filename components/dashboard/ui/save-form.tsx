@@ -40,13 +40,14 @@ export function SaveForm({
   const [state, formAction, pending] = useActionState(action, initialFormState);
   // Time of the last input; changes count as unsaved until a later save result arrives
   const [lastInputAt, setLastInputAt] = useState<number | null>(null);
-  const dirty = lastInputAt !== null && (state.submittedAt === null || lastInputAt > state.submittedAt);
+  const dirty = lastInputAt !== null && (state.status !== "success" || state.submittedAt === null || lastInputAt > state.submittedAt);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (state.status !== "success") return;
     if (resetOnSuccess) formRef.current?.reset();
     if (closeOnSuccess) formRef.current?.closest("details")?.removeAttribute("open");
+    window.dispatchEvent(new Event("dashboard:changed"));
   }, [state, resetOnSuccess, closeOnSuccess]);
 
   useEffect(() => {
@@ -62,6 +63,8 @@ export function SaveForm({
         method="post"
         className={`save-form${className ? ` ${className}` : ""}`}
         noValidate
+        data-dashboard-dirty={dirty}
+        data-dashboard-busy={pending}
         onInput={() => setLastInputAt(Date.now())}
         onSubmit={(event) => {
           event.preventDefault();

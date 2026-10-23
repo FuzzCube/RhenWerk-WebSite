@@ -15,6 +15,7 @@
     "test:api": "node --env-file=.env.local scripts/test-api.mjs",
     "test:auth": "node --env-file=.env.local scripts/test-auth.mjs",
     "test:ui": "node --env-file=.env.local scripts/test-ui.mjs",
+    "test:notifications": "node --env-file=.env.local scripts/test-notifications.mjs",
     "test:agent": "node --env-file=.env.local scripts/test-agent.mjs",
     "agent:sync": "node --env-file=.env.local scripts/elevenlabs-agent.mjs",
     "agent:latency": "node --env-file=.env.local scripts/agent-latency.mjs",

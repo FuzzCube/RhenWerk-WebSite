@@ -216,11 +216,11 @@ export const getTeamNow = cache(async (): Promise<TeamNow> => {
   }
   const planRows = planning.data ?? [];
   const planIds = planRows.map((row) => row.id!).filter(Boolean);
-  const earlier = planIds.length
-    ? await supabase.from("visits").select("request_id").in("request_id", planIds).neq("status", "cancelled")
-    : { data: [], error: null };
-  if (earlier.error) throw new Error("Team konnte nicht geladen werden.");
-  const withVisit = new Set((earlier.data ?? []).map((row) => row.request_id));
+  // Hundreds of queued requests exceed the gateway's URL limit in one PostgREST `in` filter (HTTP 414).
+  const earlier = await Promise.all(Array.from({ length: Math.ceil(planIds.length / 100) }, (_, index) =>
+    supabase.from("visits").select("request_id").in("request_id", planIds.slice(index * 100, (index + 1) * 100)).neq("status", "cancelled")));
+  if (earlier.some((result) => result.error)) throw new Error("Team konnte nicht geladen werden.");
+  const withVisit = new Set(earlier.flatMap((result) => (result.data ?? []).map((row) => row.request_id)));
 
   const monthRows = (team.data ?? []) as TeamRow[];
   const byEmployee = new Map(monthRows.map((row) => [row.employee_id, row]));

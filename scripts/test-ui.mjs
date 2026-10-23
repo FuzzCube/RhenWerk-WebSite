@@ -833,7 +833,7 @@ try {
     console.log("\nHinweis bei hängendem E-Mail-Versand");
     const container = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_A.Sadkovojs_Project";
     const psql = (sql) => execFileSync("docker", ["exec", "-i", container, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-Atq"], { input: sql }).toString().trim();
-    const banner = () => page.eval(`(() => { const el = document.querySelector(".send-backlog-alert"); return el ? { text: el.textContent, scroll: document.documentElement.scrollWidth, width: innerWidth } : null; })()`);
+    const banner = () => page.eval(`(() => { const el = document.querySelector(".send-backlog-alert"); return el ? { waiting: Number(el.dataset.sendBacklog), text: el.textContent, scroll: document.documentElement.scrollWidth, width: innerWidth } : null; })()`);
     const real = await newRequest("backlog", { is_demo: false, source: "website_form", dispatcher_id: null });
     await page.send("Network.clearBrowserCookies");
     await page.send("Network.setCookies", { cookies: await loginCookies(dispoEmail) });
@@ -846,7 +846,8 @@ try {
     try {
       await page.open(`${BASE}/dashboard/erstbearbeitung`);
       const dispo = await banner();
-      check("Dispatcher: Hinweis mit Wartezeit und Bitte an die Verwaltung", before === null && !!dispo && /warte(t|n) seit 1\d min/.test(dispo.text) && dispo.text.includes("Verwaltung informieren"), JSON.stringify({ before, dispo }));
+      check("Dispatcher: zusätzliche wartende E-Mail, Wartezeit und Bitte an die Verwaltung", !!dispo && dispo.waiting === (before?.waiting ?? 0) + 1
+        && (before ? /warte(t|n) seit/.test(dispo.text) : /warte(t|n) seit 1\d min/.test(dispo.text)) && dispo.text.includes("Verwaltung informieren"), JSON.stringify({ before, dispo }));
       await page.send("Network.clearBrowserCookies");
       await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
       for (const width of [1440, 768, 390]) {
@@ -872,7 +873,7 @@ try {
     await page.send("Network.clearBrowserCookies");
     await page.send("Network.setCookies", { cookies: await loginCookies("admin.demo@example.com") });
     await page.open(`${BASE}/dashboard/kunden`);
-    check("  Nach dem Versand kein Hinweis mehr", (await banner()) === null);
+    check("  Nach Testversand ursprünglicher Versandstand", ((await banner())?.waiting ?? 0) === (before?.waiting ?? 0));
   }
   const startedAt = new Date(Date.now() - 120_000).toISOString();
   const { data: analysis, error: analysisError } = await admin.from("automation_runs").insert({ request_id: request.id, operation_key: `ui:${runId}`, step: "intake_analysis", status: "succeeded", decision: "human_review", started_at: startedAt, finished_at: new Date(Date.now() - 60_000).toISOString() }).select().single();
@@ -1001,11 +1002,14 @@ try {
   const draftForm = (index) => `document.querySelectorAll(".draft-actions form")[${index}]`;
   await fillIn(draftForm(0), { subject: "Rückfrage UI-Test (geändert)" });
   check("Entwurf bearbeitet", await waitFor(async () => (await admin.from("messages").select("subject").eq("request_id", request.id).single()).data.subject === "Rückfrage UI-Test (geändert)"));
-  await sleep(500);
+  // A committed database write can precede the streamed RSC update. Wait for the actual form/version, not a delay.
+  await settled(draftForm(0), "save-status--success");
+  check("  Warteschlangenformular hat die aktuelle Version", await waitFor(async () =>
+    Number(await page.eval(`${draftForm(1)}?.querySelector('[name=version]')?.value`)) === (await dbRequest()).version));
   await page.eval(`${draftForm(1)}.requestSubmit()`);
   const queued = await waitFor(async () => (await admin.from("messages").select("status").eq("request_id", request.id).single()).data.status === "queued");
   const message = (await admin.from("messages").select("status, sent_at").eq("request_id", request.id).single()).data;
-  check("In Warteschlange gestellt, kein Versand (sent_at leer)", queued && message.sent_at === null, JSON.stringify(message));
+  check("In Warteschlange gestellt, kein Versand (sent_at leer)", queued && message.sent_at === null, JSON.stringify({ message, form: await formStatus(draftForm(1)) }));
   await page.open(requestUrl);
   const badges = await page.eval(`[...document.querySelectorAll("#korrespondenz .message .status-badge")].map((badge) => badge.textContent.trim())`);
   check("Oberfläche meldet keinen Versand (Status „In Warteschlange, nicht versendet“)", JSON.stringify(badges) === JSON.stringify(["In Warteschlange, nicht versendet"]), badges.join(","));
@@ -1903,7 +1907,10 @@ try {
     check("  Versionskonflikt verständlich gemeldet, nichts verschoben", /inzwischen geändert/.test(conflict) && (await visitB()).technician_id === tech.id, conflict);
 
     // The board reloaded with the new version: saving the same move again (default reason) succeeds, technician changes too
-    await sleep(500);
+    check("  Nach Konflikt aktuelle Version auf der Plantafel", await waitFor(async () => {
+      const { data: current } = await admin.from("requests").select("version").eq("id", planB.id).single();
+      return Number(await page.eval(`document.querySelector('.plan3__move [name="version"]')?.value`)) === current.version;
+    }));
     await page.eval(`document.querySelector(".plan3__move").requestSubmit()`);
     const movedOver = await waitFor(async () => (await visitB()).technician_id === other.id);
     const after = await visitB();

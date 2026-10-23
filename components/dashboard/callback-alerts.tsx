@@ -1,55 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import { acknowledgeCallback, acknowledgeCallCallback } from "@/app/(dashboard)/dashboard/rueckrufe/actions";
 import { Icon } from "@/components/ui";
 import type { CallAlert, CallbackAlert } from "@/lib/dashboard/callbacks";
 import { telHref } from "@/lib/contact-links";
 import { formatTime } from "@/lib/format";
+import { useDashboardUpdates } from "./dashboard-updates";
 
-// Callback requests of the phone assistant (task-13-4) as notification on every dashboard page. The layout is not
-// re-rendered on client navigation, so the banner polls /dashboard/rueckrufe (every 20 s and when the tab becomes
-// visible). New requests also raise a browser notification if the user allowed it, and the tab title shows the count.
-const POLL_MS = 20_000;
-
-export function CallbackAlerts({ initial, role }: { initial: CallbackAlert[]; role: "technician" | "dispatcher" }) {
-  const [alerts, setAlerts] = useState(initial);
+// Rendering and acknowledgement only; the dashboard shell owns the single background poller.
+export function CallbackAlerts({ alerts, role }: { alerts: CallbackAlert[]; role: "technician" | "dispatcher" }) {
+  const { poll } = useDashboardUpdates();
   // Permission of browser notifications; "unsupported" on the server and without the Notification API
   const browserPermission = useSyncExternalStore(noSubscription, readPermission, () => "unsupported" as const);
   const [asked, setPermission] = useState<NotificationPermission | null>(null);
   const permission = asked ?? browserPermission;
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const seen = useRef(new Set(initial.map((alert) => alert.id)));
-
-  const poll = useCallback(async () => {
-    try {
-      const response = await fetch("/dashboard/rueckrufe", { cache: "no-store" });
-      if (!response.ok) return;
-      const { alerts: next } = (await response.json()) as { alerts: CallbackAlert[] };
-      const fresh = next.filter((alert) => !seen.current.has(alert.id));
-      fresh.forEach((alert) => seen.current.add(alert.id));
-      if (fresh.length > 0) notify(fresh, role);
-      setAlerts(next);
-    } catch {
-      // Offline or server restart: keep the last state and try again on the next tick
-    }
-  }, [role]);
-
-  useEffect(() => {
-    const timer = window.setInterval(poll, POLL_MS);
-    const onVisible = () => { if (document.visibilityState === "visible") void poll(); };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); };
-  }, [poll]);
-
-  // Count in the tab title while requests are open
-  useEffect(() => {
-    const base = document.title.replace(/^\(\d+\) /, "");
-    document.title = alerts.length ? `(${alerts.length}) ${base}` : base;
-  }, [alerts.length]);
-
   if (alerts.length === 0) return null;
 
   const acknowledge = (alert: CallbackAlert) => startTransition(async () => {
@@ -57,7 +25,7 @@ export function CallbackAlerts({ initial, role }: { initial: CallbackAlert[]; ro
     const id = alert.id;
     const result = alert.kind === "call" ? await acknowledgeCallCallback(id) : await acknowledgeCallback(id);
     if (!result.ok) setError(result.message);
-    else setAlerts((current) => current.filter((alert) => alert.id !== id));
+    else poll();
   });
 
   return (
@@ -129,14 +97,3 @@ function CallAlertCard({ alert, pending, onDone }: { alert: CallAlert; pending: 
 
 const noSubscription = () => () => {};
 const readPermission = (): NotificationPermission | "unsupported" => (typeof Notification === "undefined" ? "unsupported" : Notification.permission);
-
-function notify(fresh: CallbackAlert[], role: "technician" | "dispatcher") {
-  navigator.vibrate?.([200, 100, 200]);
-  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
-  for (const alert of fresh) {
-    new Notification(alert.kind === "call" ? "Dringender Anruf" : role === "dispatcher" ? "Dringend: Rückruf nicht bestätigt" : "Rückrufbitte: Kunde wartet", {
-      body: alert.kind === "call" ? `${alert.company_name} · ${alert.reason}${alert.callback_number ? ` · ${alert.callback_number}` : ""}` : `${alert.company_name} · ${alert.site} · ${alert.callback_number}`,
-      tag: `callback-${alert.id}`,
-    });
-  }
-}

@@ -4194,7 +4194,7 @@
       "title": "Rückmeldungen nach dem Rundgang",
       "description": "Nutzerentscheidung 22.10.2026 nach einem zweiten Rundgang: Formular der Website, Weg von der Anfrage in die Einsatzplanung mit vorgemerktem Termin und Bedienung der Plantafel.",
       "order": 21,
-      "weight": 6,
+      "weight": 27,
       "status": "completed",
       "tasks": [
         {
@@ -4683,6 +4683,42 @@
               "Plantafel im Browser: Vorschlag senden und Verschieben und bestätigen geprüft, Screenshots 390/1440 (Testdaten danach entfernt)"
             ],
             "summary": "Migration 20261023000600: visit_change_requests (RLS, Trigger schließt bei Verschiebung), apply_visit_reply erweitert (Verschiebewunsch mit Eingangsbestätigung, Ja/Nein zu einem Vorschlag, Wunschtag und -zeit), visit_replies_pending mit Datum und Angebot, visit_change_options, confirm_visit_change, offer_visit_change, close_visit_change, run_visit_change_reminders (pg_cron stündlich). Workflow 13 neu erzeugt (Schema mit decline, wished_day, wished_time; Prompt mit heute und Wochentag). Plantafel: Zeichen am Einsatz, Liste Änderungswünsche, Panel mit Wunsch, Optionen, Auswahl und drei Aktionen; Anfragenliste mit Marke, Anfrageseite mit Hinweis. Workflow 13 am 23.10.2026 im laufenden n8n auf dem VPS neu importiert, veröffentlicht und n8n neu gestartet (12 RheinWerk-Workflows aktiv)."
+          }
+        },
+        {
+          "id": "task-20-17",
+          "title": "Globale Dashboard-Benachrichtigungen ohne Neuladen",
+          "description": "Nutzerauftrag: gemeinsamer geschützter Serverabruf alle 20 Sekunden, globale getrennte Indikatoren und verlinkte Hinweise, bestehende Rollen/RLS und Bearbeitungsregeln, schonende Aktualisierung mit Schutz ungespeicherter Eingaben.",
+          "order": 17,
+          "weight": 4,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-16"
+          ],
+          "definitionOfDone": [
+            "Ein gemeinsamer Abruf im Dashboard einschließlich Rückrufen; Fokus/Online und Fehlerbehandlung",
+            "Neue Anfragen, ungelesene Antworten, Posteingang, Terminänderungen und rollenabhängige Warnungen mit stabilen Ereignis-IDs",
+            "Keine alten oder wiederholten Popups; Datenaktualisierung ohne Verlust von Eingaben oder Plantafelaktionen",
+            "Serverzugriff und Supabase-RLS geprüft; Zwei-Mitarbeiter-, Offline-, Deduplizierungs- und Eingabeszenarien geprüft",
+            "lint, typecheck, build und passende Tests ausgeführt; Grenzen dokumentiert"
+          ],
+          "startedAt": "2026-10-23T12:37:11.605Z",
+          "completedAt": "2026-10-23T13:53:32.789Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-23T13:53:32.789Z",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run test:unit",
+              "APP_URL=http://localhost:3117 npm run test:api",
+              "APP_URL=http://localhost:3117 npm run test:auth",
+              "APP_URL=http://localhost:3117 npm run test:ui",
+              "APP_URL=http://localhost:3117 npm run test:notifications",
+              "git diff --check"
+            ],
+            "summary": "Gemeinsamer geschützter 20-Sekunden-Abruf mit getrennten globalen Neu-/Antwortmarken, Posteingang, Terminwünschen/Storno und Verarbeitungsergebnissen, rollenabhängigen Rückrufen, Versand- und Systemwarnungen. Kein Realtime, keine Schema-, n8n- oder Infrastrukturänderung. 49 Benachrichtigungsszenarien bestanden: zwei authentifizierte Mitarbeiter, echter Takt und Hintergrund-Tab, gleiche Zahl ungelesener Anfragen bei neuer Nachricht, Eingangsschub >8, stille Baseline und Deduplizierung, Browser-Offline/Online, Next→Supabase-Ausfall (503 statt 401) und Wiederaufnahme derselben Sitzung ohne Reload, verweigerte/deaktivierte Profile, direkte RLS, Eingabe-/Plantafelschutz und explizite Aktualisierung, sichtbare Hinweise bei 390/768/1440. 158 Unit-, alle API-, 145 auth- und 460 UI-Prüfungen bestanden. Nach zusätzlicher strikter Verfügbarkeitsprüfung von getSession wurden build/lint/typecheck/unit sowie alle 49 Benachrichtigungsszenarien erneut bestanden; normale Auth-Aufrufer behalten das bisherige Verhalten. Nebenbefund HTTP 414 in Team durch ID-Pakete zu 100 behoben. UI-Tests berücksichtigen bestehenden Versandstau und warten auf echte Formularversionen statt 500 ms. Screenshots /tmp/rw-notifications-mvl10a01; sichtgeprüft einschließlich Link, Schließen und Aktualisierungsschaltfläche. Nur lokale Ereignis-Fixtures und Integrations-RPC, kein echter Gmail-/Mira-/Formular-End-to-End-Lauf, kein Deployment oder Push. Browser können Hintergrund-Timer drosseln; keine dauerhafte persönliche Popup-Historie. Standard-API/UI-Tests hinterlassen wie bisher Demodaten; eigene Notification-Fixtures vollständig entfernt."
           }
         }
       ]
