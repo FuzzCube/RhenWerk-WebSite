@@ -1250,7 +1250,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .plan3__key--past { background: repeating-linear-gradient(135deg, var(--rw-color-steel-200) 0 3px, var(--rw-surface-raised) 3px 6px); }
 .plan3__key--outside { background: var(--rw-color-steel-100); border-color: var(--rw-border-subtle); }
 .plan3__scroll { overflow-x: auto; }
-.plan3__table { display: grid; min-width: 48rem; row-gap: var(--rw-space-8); }
+.plan3__table { display: grid; min-width: 37rem; row-gap: var(--rw-space-8); }
 .plan3__table--day { min-width: 36rem; }
 .plan3__row { display: contents; }
 .plan3__rowh { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding-right: var(--rw-space-12); }
@@ -1517,6 +1517,9 @@ details.tech-step[open] { padding-bottom: 20px; }
 .side-page__list .data-table { border: 0; background: transparent; }
 .side-page__list > .dash-state { margin: var(--rw-space-16); }
 .side-page__list > .pagination { padding: 4px 16px; border-top: 1px solid var(--rw-border-subtle); }
+/* task-20-14: request with an unread customer message: orange edge, light orange row on wide screens; a hazard edge wins */
+.side-page__main .data-table tr.has-unread > td:first-child { box-shadow: inset 3px 0 0 var(--rw-color-warning-800); }
+@media (min-width: 768px) { .side-page__main .data-table tbody tr.has-unread { background: var(--rw-color-warning-surface); } }
 .side-page__main .data-table tr.is-hazard > td:first-child { box-shadow: inset 3px 0 0 var(--rw-color-danger-700); }
 @media (min-width: 768px) { .side-page__main .data-table tbody tr.is-hazard { background: var(--rw-color-danger-surface); } }
 /* Phones: the rows are cards themselves, so the list loses its frame */
@@ -2050,3 +2053,23 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 /* task-20-10: customer reply about the visit (cancelled automatically or to be checked) */
 .request-next__links { margin: 0; font-size: 15px; }
 .request-next__links a { font-weight: 600; }
+
+/* task-20-14: unread customer messages */
+.rw-flag--unread { gap: 4px; align-items: center; margin: 0 0 0 6px; color: var(--rw-color-white); background: var(--rw-color-danger-700); border-color: var(--rw-color-danger-700); }
+.dash-nav__count--unread { color: var(--rw-color-white); background: var(--rw-color-danger-700); }
+.plan3__badge { position: absolute; top: 1px; z-index: 3; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; transform: translateX(-70%); font: 700 11px/16px var(--rw-font-body); text-align: center; color: var(--rw-color-white); background: var(--rw-color-danger-700); box-shadow: 0 0 0 1.5px var(--rw-color-white); pointer-events: none; }
+.plan3__badge--inline { position: static; display: inline-block; margin-left: auto; transform: none; box-shadow: none; pointer-events: auto; }
+.plan3__key--badge { width: 16px; height: 16px; border: 0; border-radius: 999px; background: var(--rw-color-danger-700); box-shadow: 0 0 0 1.5px var(--rw-color-white), 0 0 0 2.5px var(--rw-border-default); }
+.rw-banner--unread { align-items: flex-start; background: var(--rw-color-warning-surface); border-color: var(--rw-color-warning-border); border-top-color: var(--rw-color-danger-700); color: var(--rw-color-warning-900); }
+.rw-banner--unread > svg { flex: none; margin-top: 2px; color: var(--rw-color-danger-700); }
+.unread-banner__text { flex: 1 1 18rem; min-width: 0; }
+.unread-banner__title { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--rw-color-danger-700); }
+.unread-banner__list { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.unread-banner__list a { color: inherit; }
+.unread-banner__excerpt { display: block; font-size: 14px; color: var(--rw-text-secondary); overflow-wrap: anywhere; }
+.unread-banner__more { margin: 4px 0 0; font-size: 14px; }
+.unread-banner__actions { display: flex; flex-wrap: wrap; gap: var(--rw-space-8); align-items: flex-start; }
+.unread-banner__actions .save-form { display: block; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.message--unread { border-left: 5px solid var(--rw-color-danger-700); background: var(--rw-color-warning-surface); }
+.message__new { margin-left: 8px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--rw-color-white); background: var(--rw-color-danger-700); }
+.request-card__unread { font-weight: 700; color: var(--rw-color-danger-700); }

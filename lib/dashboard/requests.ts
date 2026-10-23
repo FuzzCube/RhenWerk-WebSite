@@ -7,6 +7,7 @@ import type { EmployeeRole } from "@/lib/auth/roles";
 import { REQUEST_DISPLAY_STATUSES, requestStatusFilter } from "@/lib/display-status";
 import { parseSort, sortParam, type RequestSort } from "@/lib/request-sort";
 import type { ReminderState } from "@/lib/reminders";
+import type { UnreadInfo } from "./unread";
 
 // Reads for the request list and the request page. All queries run with the signed-in user's rights,
 // so RLS decides which requests, messages, events and documents are returned.
@@ -39,6 +40,7 @@ export type RequestFilters = {
 
 // Quick views of the list (canvas "Anfragen – Liste"). Without any filter the list opens with "offen".
 export const REQUEST_VIEWS = [
+  { key: "ungelesen", label: "Ungelesen", roles: ["dispatcher", "manager", "admin"] },
   { key: "offen", label: "Offen" },
   { key: "meine", label: "Meine offenen", roles: ["dispatcher"] },
   { key: "gefahr", label: "Sicherheitsgefahr", hazard: true },
@@ -51,9 +53,10 @@ export type RequestView = (typeof REQUEST_VIEWS)[number]["key"];
 
 const OPEN = "intake_status.not.in.(rejected,cancelled),work_status.not.in.(completed,cancelled)";
 
-// PostgREST "or" expression of a view; null = no restriction
-export function viewFilter(view: RequestView, userId: string): string | null {
+// PostgREST "or" expression of a view; null = no restriction. unreadIds: requests with unread customer messages (task-20-14)
+export function viewFilter(view: RequestView, userId: string, unreadIds: readonly string[] = []): string | null {
   switch (view) {
+    case "ungelesen": return `id.in.(${unreadIds.length ? unreadIds.join(",") : "00000000-0000-0000-0000-000000000000"})`;
     case "offen": return `and(${OPEN})`;
     case "meine": return `and(${OPEN},dispatcher_id.eq.${userId})`;
     case "gefahr": return `and(${OPEN},safety_risk.in.(known,unclear))`;
@@ -161,6 +164,28 @@ export async function customerCheckIds(requestIds: string[]): Promise<Set<string
   return new Set((data ?? []).map((row) => row.request_id));
 }
 
+// Unread customer messages per request (task-20-14); the view is limited by the user's rights (RLS of messages)
+export async function unreadMessages(requestIds: string[]): Promise<Map<string, UnreadInfo>> {
+  if (requestIds.length === 0) return new Map();
+  const supabase = await createClient();
+  const { data } = await supabase.from("request_unread_messages").select("request_id, unread_count, latest_at").in("request_id", requestIds);
+  return new Map((data ?? []).filter((row) => row.request_id && row.unread_count).map((row) => [row.request_id as string, { count: row.unread_count as number, latestAt: row.latest_at }]));
+}
+
+// Requests with unread customer messages (task-20-14), within the user's rights
+export async function unreadRequestIds(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("request_unread_messages").select("request_id");
+  return (data ?? []).map((row) => row.request_id).filter((id): id is string => Boolean(id));
+}
+
+// Number of requests with unread customer messages for the navigation; null when the count fails
+export async function unreadRequestCount(): Promise<number | null> {
+  const supabase = await createClient();
+  const { count, error } = await supabase.from("request_unread_messages").select("request_id", { count: "exact", head: true });
+  return error ? null : count ?? 0;
+}
+
 // Requests with an open window hold of the phone assistant (task-13-3) → start of the held window
 export async function openHoldStarts(requestIds: string[]): Promise<Map<string, string>> {
   if (requestIds.length === 0) return new Map();
@@ -186,7 +211,7 @@ export async function listRequests(filters: RequestFilters, userId: string): Pro
   if (filters.mode) query = query.eq("intake_mode", filters.mode);
   if (filters.open) query = query.not("intake_status", "in", "(rejected,cancelled)").not("work_status", "in", "(completed,cancelled)");
   if (filters.hazard) query = query.in("safety_risk", ["known", "unclear"]);
-  const view = viewFilter(filters.view, userId);
+  const view = viewFilter(filters.view, userId, filters.view === "ungelesen" ? await unreadRequestIds() : []);
   if (view) query = query.or(view);
   const display = filters.display ? requestStatusFilter(filters.display) : null;
   if (display) query = query.or(display);
@@ -205,9 +230,10 @@ export async function listRequests(filters: RequestFilters, userId: string): Pro
 export async function countViews(role: EmployeeRole, userId: string): Promise<Partial<Record<RequestView, number>>> {
   const supabase = await createClient();
   const views = viewsFor(role);
+  const unreadIds = views.some((view) => view.key === "ungelesen") ? await unreadRequestIds() : [];
   const results = await Promise.all(views.map((view) => {
     const query = supabase.from("requests").select("id", { count: "exact", head: true });
-    const filter = viewFilter(view.key, userId);
+    const filter = viewFilter(view.key, userId, unreadIds);
     return filter ? query.or(filter) : query;
   }));
   return Object.fromEntries(views.map((view, index) => [view.key, results[index].error ? undefined : results[index].count ?? 0]));

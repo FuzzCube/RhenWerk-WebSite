@@ -4,6 +4,8 @@ import type { Employee } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { nextWorkingDays, suggestSlots, type SlotBusy, type SlotExperience, type SlotSuggestion } from "@/lib/slot-suggestions";
 import { formatWish } from "@/lib/format";
+import { unreadMessages } from "./requests";
+import type { UnreadInfo } from "./unread";
 import { monthDays, monthLoad, type MonthLoad } from "@/lib/technician-load";
 import type { QueueRow } from "./queues";
 
@@ -30,6 +32,8 @@ export type BusyBlock = {
   move: { visitId: string; version: number } | null;
   // Only for holds
   hold?: HoldInfo;
+  // Unread customer messages of the request (task-20-14), only where the request is readable
+  unread?: number;
 };
 export type PlanningRequest = Pick<QueueRow, "id" | "request_number" | "company_name" | "city" | "service_kind" | "priority" | "customer_urgency" | "safety_check_required" | "work_status" | "due_at" | "waiting_since" | "version">;
 
@@ -40,6 +44,8 @@ export type PlanningData = {
   workingHours: WorkingHours[];
   busy: BusyBlock[];
   queue: PlanningRequest[];
+  // Unread customer messages by request id: visits, holds and the queue (task-20-14)
+  unread: Record<string, UnreadInfo>;
   selected: PlanningRequest | null;
   selectedPlanned: { id: string; request_number: string } | null;
   error: boolean;
@@ -87,15 +93,16 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
   // Request numbers of readable visits (RLS)
   const readable = visits.data ?? [];
   const requestIds = [...new Set(readable.map((visit) => visit.request_id))];
-  const numbers = requestIds.length
-    ? (await supabase.from("requests").select("id, request_number, version").in("id", requestIds)).data ?? []
-    : [];
+  const queueRows = (queue.data ?? []) as PlanningRequest[];
+  const [numbers, unread] = await Promise.all([
+    requestIds.length ? supabase.from("requests").select("id, request_number, version").in("id", requestIds).then((result) => result.data ?? []) : Promise.resolve([]),
+    unreadMessages([...new Set([...requestIds, ...(holds?.data ?? []).map((hold) => hold.request_id), ...queueRows.map((row) => row.id)].filter((id): id is string => Boolean(id)))]),
+  ]);
   const numberOf = new Map(numbers.map((request) => [request.id, request.request_number]));
   const versionOf = new Map(numbers.map((request) => [request.id, request.version]));
   const loadedAt = Date.now();
   const readableBySlot = new Map(readable.map((visit) => [`${visit.technician_id}|${new Date(visit.scheduled_start).getTime()}|${new Date(visit.scheduled_end).getTime()}`, visit]));
 
-  const queueRows = (queue.data ?? []) as PlanningRequest[];
   const selected = queueRows.find((row) => row.id === requestParam) ?? null;
   let selectedPlanned: PlanningData["selectedPlanned"] = null;
   if (!selected && requestParam && /^[0-9a-f-]{36}$/i.test(requestParam)) {
@@ -126,6 +133,7 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
         kind: interval.busy_kind === "absence" ? "absence" : "visit",
         requestId: visit?.request_id ?? null,
         requestNumber: visit ? numberOf.get(visit.request_id) ?? null : null,
+        unread: visit ? unread.get(visit.request_id)?.count ?? 0 : 0,
         move: visit && visit.status === "scheduled" && Date.parse(visit.scheduled_start) > loadedAt && versionOf.has(visit.request_id)
           ? { visitId: visit.id, version: versionOf.get(visit.request_id) as number }
           : null,
@@ -139,8 +147,10 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
       requestNumber: (hold.requests as unknown as HoldRequest).request_number,
       move: null,
       hold: holdInfo(hold),
+      unread: unread.get(hold.request_id)?.count ?? 0,
     }))),
     queue: queueRows,
+    unread: Object.fromEntries(unread),
     selected,
     selectedPlanned,
     error: Boolean(technicians.error || hours.error || busy.error || queue.error),

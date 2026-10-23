@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { createCustomerFromRequest, linkCustomer, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
+import { createCustomerFromRequest, linkCustomer, markMessagesRead, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
 import { availableActions, DraftActions, RequestActions } from "@/components/dashboard/request-actions";
 import { CheckboxField, HiddenField, SaveForm, SelectField, SuggestField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
@@ -16,6 +16,7 @@ import { invoiceDisplayStatus, requestDisplayStatus, requestProgress } from "@/l
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { formatCallDuration } from "@/lib/dashboard/calls";
+import { isUnreadMessage, unreadText } from "@/lib/dashboard/unread";
 import { getEmployeeNames, getRequestDetail, sectionsFor, type CustomerSuggestion, type RequestDetail, type SectionId } from "@/lib/dashboard/requests";
 import { describeEvent } from "@/lib/events";
 import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange, formatWish } from "@/lib/format";
@@ -58,6 +59,8 @@ export default async function RequestPage({ params }: Props) {
     verlauf: () => <History detail={detail} names={names} folded={technician} />,
   };
 
+  // Unread customer e-mails (task-20-14); technicians do not get the messages at all
+  const unread = (detail.messages ?? []).filter((message) => isUnreadMessage(message, request.created_at));
   const actions = availableActions(detail, employee);
   // Customer reply about the visit (task-20-10): shown until a person plans, moves or cancels a visit afterwards
   const lastReply = technician ? undefined : detail.events.find((event) => event.event_type === "visit_reply_analyzed");
@@ -141,6 +144,32 @@ export default async function RequestPage({ params }: Props) {
           {request.priority && <PriorityText priority={request.priority} />}
         </div>
       </header>
+
+      {unread.length > 0 && (
+        // task-20-14: the customer wrote (cancel, move, a question) and nobody has marked it as read yet
+        <section id="neue-nachrichten" className="rw-banner rw-banner--unread" aria-labelledby="neue-nachrichten-title">
+          <Icon name="mail" size={22} />
+          <div className="unread-banner__text">
+            <h2 id="neue-nachrichten-title" className="unread-banner__title">{unreadText(unread.length)}</h2>
+            <ul className="unread-banner__list">
+              {unread.slice(-3).reverse().map((message) => (
+                <li key={message.id}>
+                  <a href={`#nachricht-${message.id}`}><strong>{message.subject}</strong></a>
+                  <span className="mono"> · {formatDateTime(message.received_at ?? message.created_at)}</span>
+                  <span className="unread-banner__excerpt">{excerpt(message.body_text)}</span>
+                </li>
+              ))}
+            </ul>
+            {unread.length > 3 && <p className="unread-banner__more">und {unread.length - 3} weitere in der Korrespondenz</p>}
+          </div>
+          <div className="unread-banner__actions">
+            <a className="rw-button-secondary" href="#korrespondenz">Zur Korrespondenz</a>
+            <SaveForm action={markMessagesRead} submitLabel="Als gelesen markieren" submitVariant="secondary">
+              <HiddenField name="request_id" value={request.id} />
+            </SaveForm>
+          </div>
+        </section>
+      )}
 
       {progress && (
         <ol className="rw-progress" aria-label="Status der Anfrage">
@@ -261,6 +290,7 @@ function foldState(detail: RequestDetail): Partial<Record<SectionId, { open: boo
   const lastMessage = messages[messages.length - 1];
   const lastWhen = lastMessage ? lastMessage.received_at ?? lastMessage.sent_at ?? lastMessage.created_at : null;
   const draft = messages.some((message) => message.status === "draft");
+  const unread = messages.filter((message) => isUnreadMessage(message, r.created_at)).length;
   const lastEvent = detail.events[0];
   const join = (parts: Array<ReactNode | false | null | undefined>) => parts.filter(Boolean).map((part, index) => <span key={index}>{index > 0 && " · "}{part}</span>);
   return {
@@ -278,8 +308,9 @@ function foldState(detail: RequestDetail): Partial<Record<SectionId, { open: boo
       ]),
     },
     korrespondenz: {
-      open: draft || (lastMessage?.direction === "incoming" && openIntake),
+      open: draft || unread > 0 || (lastMessage?.direction === "incoming" && openIntake),
       summary: join([
+        unread > 0 && <span className="request-card__unread">{unread} ungelesen</span>,
         messages.length === 1 ? "1 Nachricht" : `${messages.length} Nachrichten`,
         draft && <span className="request-card__warn">Entwurf offen</span>,
         lastMessage && <>zuletzt {lastMessage.direction === "incoming" ? "eingehend" : "ausgehend"} <span className="mono">{formatDateTime(lastWhen)}</span></>,
@@ -582,6 +613,12 @@ function Intake({ detail, person }: { detail: RequestDetail; person: PersonFn })
   );
 }
 
+// First words of an e-mail for the banner of unread messages
+const excerpt = (text: string) => {
+  const flat = text.replace(/\s+/g, " ").trim();
+  return flat.length > 160 ? `${flat.slice(0, 157)}…` : flat;
+};
+
 const MESSAGE_KIND_LABELS: Record<string, string> = { receipt: "Eingangsbestätigung", clarification: "Rückfrage", customer_reply: "Kundenantwort", invoice: "Rechnung", payment_reminder: "Zahlungserinnerung", other: "Sonstige" };
 
 function Correspondence({ detail, person, editable }: { detail: RequestDetail; person: PersonFn; editable: boolean }) {
@@ -593,14 +630,16 @@ function Correspondence({ detail, person, editable }: { detail: RequestDetail; p
       <ul className="message-list">
         {messages.map((message) => {
           const incoming = message.direction === "incoming";
+          const unread = isUnreadMessage(message, detail.request.created_at);
           const when = message.received_at ?? message.sent_at ?? message.created_at;
           return (
             // Anchor for "Als Entwurf speichern" (task-20-8): the page opens at the new draft, :target marks it
-            <li key={message.id} id={`nachricht-${message.id}`} className={`message message--${message.direction}`}>
-              <details open={message.status === "draft" && editable}>
+            <li key={message.id} id={`nachricht-${message.id}`} className={`message message--${message.direction}${unread ? " message--unread" : ""}`}>
+              <details open={(message.status === "draft" && editable) || unread}>
                 <summary>
                   <span className="message__head">
                     <span className="message__direction">{incoming ? "Eingehend" : "Ausgehend"} · {MESSAGE_KIND_LABELS[message.kind] ?? message.kind}</span>
+                    {unread && <span className="message__new">Neu · ungelesen</span>}
                     <StatusBadge kind="message_status" value={message.status} />
                   </span>
                   <strong>{message.subject}</strong>

@@ -398,14 +398,14 @@ isOneToOne: true
                   ]
                 },"messages": {
                   Row: {
-                    "approved_at": string | null,"approved_by": string | null,"archive_reason": string | null,"archived_at": string | null,"archived_by": string | null,"author_id": string | null,"body_html": string | null,"body_text": string,"created_at": string,"direction": Database["public"]['Enums']["message_direction"],"error_text": string | null,"from_address": string | null,"gmail_message_id": string | null,"gmail_thread_id": string | null,"handled_at": string | null,"id": string,"in_reply_to": string | null,"inbox_dispatcher_id": string | null,"inbox_root_id": string | null,"invoice_id": string | null,"kind": Database["public"]['Enums']["message_kind"],"mailbox_key": string | null,"mime_message_id": string | null,"received_at": string | null,"references_header": (string)[] | null,"request_id": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["message_status"],"subject": string,"to_address": string | null,"updated_at": string
+                    "approved_at": string | null,"approved_by": string | null,"archive_reason": string | null,"archived_at": string | null,"archived_by": string | null,"author_id": string | null,"body_html": string | null,"body_text": string,"created_at": string,"direction": Database["public"]['Enums']["message_direction"],"error_text": string | null,"from_address": string | null,"gmail_message_id": string | null,"gmail_thread_id": string | null,"handled_at": string | null,"id": string,"in_reply_to": string | null,"inbox_dispatcher_id": string | null,"inbox_root_id": string | null,"invoice_id": string | null,"kind": Database["public"]['Enums']["message_kind"],"mailbox_key": string | null,"mime_message_id": string | null,"received_at": string | null,"references_header": (string)[] | null,"request_id": string | null,"sent_at": string | null,"staff_read_at": string | null,"staff_read_by": string | null,"status": Database["public"]['Enums']["message_status"],"subject": string,"system_template": string | null,"to_address": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "approved_at"?: string | null,"approved_by"?: string | null,"archive_reason"?: string | null,"archived_at"?: string | null,"archived_by"?: string | null,"author_id"?: string | null,"body_html"?: string | null,"body_text": string,"created_at"?: string,"direction": Database["public"]['Enums']["message_direction"],"error_text"?: string | null,"from_address"?: string | null,"gmail_message_id"?: string | null,"gmail_thread_id"?: string | null,"handled_at"?: string | null,"id"?: string,"in_reply_to"?: string | null,"inbox_dispatcher_id"?: string | null,"inbox_root_id"?: string | null,"invoice_id"?: string | null,"kind": Database["public"]['Enums']["message_kind"],"mailbox_key"?: string | null,"mime_message_id"?: string | null,"received_at"?: string | null,"references_header"?: (string)[] | null,"request_id"?: string | null,"sent_at"?: string | null,"status": Database["public"]['Enums']["message_status"],"subject": string,"to_address"?: string | null,"updated_at"?: string
+                    "approved_at"?: string | null,"approved_by"?: string | null,"archive_reason"?: string | null,"archived_at"?: string | null,"archived_by"?: string | null,"author_id"?: string | null,"body_html"?: string | null,"body_text": string,"created_at"?: string,"direction": Database["public"]['Enums']["message_direction"],"error_text"?: string | null,"from_address"?: string | null,"gmail_message_id"?: string | null,"gmail_thread_id"?: string | null,"handled_at"?: string | null,"id"?: string,"in_reply_to"?: string | null,"inbox_dispatcher_id"?: string | null,"inbox_root_id"?: string | null,"invoice_id"?: string | null,"kind": Database["public"]['Enums']["message_kind"],"mailbox_key"?: string | null,"mime_message_id"?: string | null,"received_at"?: string | null,"references_header"?: (string)[] | null,"request_id"?: string | null,"sent_at"?: string | null,"staff_read_at"?: string | null,"staff_read_by"?: string | null,"status": Database["public"]['Enums']["message_status"],"subject": string,"system_template"?: string | null,"to_address"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "approved_at"?: string | null,"approved_by"?: string | null,"archive_reason"?: string | null,"archived_at"?: string | null,"archived_by"?: string | null,"author_id"?: string | null,"body_html"?: string | null,"body_text"?: string,"created_at"?: string,"direction"?: Database["public"]['Enums']["message_direction"],"error_text"?: string | null,"from_address"?: string | null,"gmail_message_id"?: string | null,"gmail_thread_id"?: string | null,"handled_at"?: string | null,"id"?: string,"in_reply_to"?: string | null,"inbox_dispatcher_id"?: string | null,"inbox_root_id"?: string | null,"invoice_id"?: string | null,"kind"?: Database["public"]['Enums']["message_kind"],"mailbox_key"?: string | null,"mime_message_id"?: string | null,"received_at"?: string | null,"references_header"?: (string)[] | null,"request_id"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"subject"?: string,"to_address"?: string | null,"updated_at"?: string
+                    "approved_at"?: string | null,"approved_by"?: string | null,"archive_reason"?: string | null,"archived_at"?: string | null,"archived_by"?: string | null,"author_id"?: string | null,"body_html"?: string | null,"body_text"?: string,"created_at"?: string,"direction"?: Database["public"]['Enums']["message_direction"],"error_text"?: string | null,"from_address"?: string | null,"gmail_message_id"?: string | null,"gmail_thread_id"?: string | null,"handled_at"?: string | null,"id"?: string,"in_reply_to"?: string | null,"inbox_dispatcher_id"?: string | null,"inbox_root_id"?: string | null,"invoice_id"?: string | null,"kind"?: Database["public"]['Enums']["message_kind"],"mailbox_key"?: string | null,"mime_message_id"?: string | null,"received_at"?: string | null,"references_header"?: (string)[] | null,"request_id"?: string | null,"sent_at"?: string | null,"staff_read_at"?: string | null,"staff_read_by"?: string | null,"status"?: Database["public"]['Enums']["message_status"],"subject"?: string,"system_template"?: string | null,"to_address"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -455,6 +455,12 @@ isOneToOne: false
       columns: ["request_id"]
 isOneToOne: false
       referencedRelation: "requests"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "messages_staff_read_by_fkey"
+      columns: ["staff_read_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -997,6 +1003,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"request_unread_messages": {
+                  Row: {
+                    "latest_at": string | null,"oldest_at": string | null,"request_id": string | null,"unread_count": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "messages_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "dispatcher_queue"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "messages_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "requests"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Functions: {
@@ -1455,6 +1481,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"apply_visit_reply":
+{ Args: { "confidence": number,"intent": string,"message_id": string,"summary": string,"workflow_execution_id"?: string }; Returns: Json
+                           },
 "archive_message":
 { Args: { "message_id": string,"reason": string }; Returns: {
               "approved_at": string | null,
@@ -1484,8 +1513,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -1937,8 +1969,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -1977,8 +2012,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -2213,8 +2251,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -2644,8 +2685,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -2843,8 +2887,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -2913,6 +2960,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"mark_request_messages_read":
+{ Args: { "request_id": string }; Returns: number
+                           },
 "match_rag_documents":
 { Args: { "filter"?: Json,"match_count"?: number,"query_embedding": string }; Returns: {
               "content": string,"id": number,"metadata": Json,"similarity": number
@@ -3017,8 +3067,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -3287,8 +3340,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -3492,8 +3548,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -3877,8 +3936,11 @@ isOneToOne: false
 "references_header": (string)[] | null,
 "request_id": string | null,
 "sent_at": string | null,
+"staff_read_at": string | null,
+"staff_read_by": string | null,
 "status": Database["public"]['Enums']["message_status"],
 "subject": string,
+"system_template": string | null,
 "to_address": string | null,
 "updated_at": string
             }
@@ -3914,6 +3976,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"visit_replies_pending":
+{ Args: { "batch_limit"?: number }; Returns: Json
+                           },
 "wait_for_parts":
 { Args: { "expected_version": number,"reason": string,"visit_id": string }; Returns: {
               "actual_end": string | null,
@@ -3949,7 +4014,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "actor_type": "user"|"automation"|"system","automation_decision": "ready_for_planning"|"ask_customer"|"human_review"|"matched"|"unmatched"|"sent","automation_status": "running"|"succeeded"|"failed","automation_step": "intake_analysis"|"reply_analysis"|"email_matching"|"email_send","availability_kind": "working_hours"|"absence","billing_model": "fixed"|"hourly","customer_urgency": "planbar"|"zeitnah"|"erheblich"|"production_stop","employee_role": "admin"|"manager"|"dispatcher"|"technician","equipment_kind": "pump"|"compressor"|"ventilation"|"other","intake_mode": "automatic"|"manual"|"human_review","intake_status": "new"|"analyzing"|"needs_review"|"awaiting_customer"|"processed"|"rejected"|"cancelled","invoice_status": "draft"|"issued"|"sent"|"paid","message_direction": "incoming"|"outgoing","message_kind": "receipt"|"clarification"|"customer_reply"|"invoice"|"other"|"payment_reminder","message_status": "draft"|"queued"|"sent"|"received"|"failed","request_priority": "low"|"normal"|"high"|"critical","safety_risk": "none_known"|"known"|"unclear","service_kind": "inspection"|"scheduled_maintenance"|"diagnosis_repair","visibility_level": "operational"|"dispatch"|"management","visit_status": "scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_entry_kind": "labor"|"part"|"fixed_service","work_item_status": "planned"|"ordered"|"performed"|"used"|"cancelled","work_status": "not_planned"|"scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_unit": "hour"|"piece"|"service"
+            "actor_type": "user"|"automation"|"system","automation_decision": "ready_for_planning"|"ask_customer"|"human_review"|"matched"|"unmatched"|"sent","automation_status": "running"|"succeeded"|"failed","automation_step": "intake_analysis"|"reply_analysis"|"email_matching"|"email_send"|"visit_reply","availability_kind": "working_hours"|"absence","billing_model": "fixed"|"hourly","customer_urgency": "planbar"|"zeitnah"|"erheblich"|"production_stop","employee_role": "admin"|"manager"|"dispatcher"|"technician","equipment_kind": "pump"|"compressor"|"ventilation"|"other","intake_mode": "automatic"|"manual"|"human_review","intake_status": "new"|"analyzing"|"needs_review"|"awaiting_customer"|"processed"|"rejected"|"cancelled","invoice_status": "draft"|"issued"|"sent"|"paid","message_direction": "incoming"|"outgoing","message_kind": "receipt"|"clarification"|"customer_reply"|"invoice"|"other"|"payment_reminder","message_status": "draft"|"queued"|"sent"|"received"|"failed","request_priority": "low"|"normal"|"high"|"critical","safety_risk": "none_known"|"known"|"unclear","service_kind": "inspection"|"scheduled_maintenance"|"diagnosis_repair","visibility_level": "operational"|"dispatch"|"management","visit_status": "scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_entry_kind": "labor"|"part"|"fixed_service","work_item_status": "planned"|"ordered"|"performed"|"used"|"cancelled","work_status": "not_planned"|"scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_unit": "hour"|"piece"|"service"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -4069,7 +4134,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_type": ["user", "automation", "system"],"automation_decision": ["ready_for_planning", "ask_customer", "human_review", "matched", "unmatched", "sent"],"automation_status": ["running", "succeeded", "failed"],"automation_step": ["intake_analysis", "reply_analysis", "email_matching", "email_send"],"availability_kind": ["working_hours", "absence"],"billing_model": ["fixed", "hourly"],"customer_urgency": ["planbar", "zeitnah", "erheblich", "production_stop"],"employee_role": ["admin", "manager", "dispatcher", "technician"],"equipment_kind": ["pump", "compressor", "ventilation", "other"],"intake_mode": ["automatic", "manual", "human_review"],"intake_status": ["new", "analyzing", "needs_review", "awaiting_customer", "processed", "rejected", "cancelled"],"invoice_status": ["draft", "issued", "sent", "paid"],"message_direction": ["incoming", "outgoing"],"message_kind": ["receipt", "clarification", "customer_reply", "invoice", "other", "payment_reminder"],"message_status": ["draft", "queued", "sent", "received", "failed"],"request_priority": ["low", "normal", "high", "critical"],"safety_risk": ["none_known", "known", "unclear"],"service_kind": ["inspection", "scheduled_maintenance", "diagnosis_repair"],"visibility_level": ["operational", "dispatch", "management"],"visit_status": ["scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_entry_kind": ["labor", "part", "fixed_service"],"work_item_status": ["planned", "ordered", "performed", "used", "cancelled"],"work_status": ["not_planned", "scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_unit": ["hour", "piece", "service"]
+            "actor_type": ["user", "automation", "system"],"automation_decision": ["ready_for_planning", "ask_customer", "human_review", "matched", "unmatched", "sent"],"automation_status": ["running", "succeeded", "failed"],"automation_step": ["intake_analysis", "reply_analysis", "email_matching", "email_send", "visit_reply"],"availability_kind": ["working_hours", "absence"],"billing_model": ["fixed", "hourly"],"customer_urgency": ["planbar", "zeitnah", "erheblich", "production_stop"],"employee_role": ["admin", "manager", "dispatcher", "technician"],"equipment_kind": ["pump", "compressor", "ventilation", "other"],"intake_mode": ["automatic", "manual", "human_review"],"intake_status": ["new", "analyzing", "needs_review", "awaiting_customer", "processed", "rejected", "cancelled"],"invoice_status": ["draft", "issued", "sent", "paid"],"message_direction": ["incoming", "outgoing"],"message_kind": ["receipt", "clarification", "customer_reply", "invoice", "other", "payment_reminder"],"message_status": ["draft", "queued", "sent", "received", "failed"],"request_priority": ["low", "normal", "high", "critical"],"safety_risk": ["none_known", "known", "unclear"],"service_kind": ["inspection", "scheduled_maintenance", "diagnosis_repair"],"visibility_level": ["operational", "dispatch", "management"],"visit_status": ["scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_entry_kind": ["labor", "part", "fixed_service"],"work_item_status": ["planned", "ordered", "performed", "used", "cancelled"],"work_status": ["not_planned", "scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_unit": ["hour", "piece", "service"]
           }
         }
 } as const

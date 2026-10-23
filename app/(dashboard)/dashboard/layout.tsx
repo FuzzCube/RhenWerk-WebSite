@@ -10,6 +10,7 @@ import { ROLE_LABELS } from "@/lib/auth/roles";
 import { requireEmployee } from "@/lib/auth/session";
 import { loadCallbackAlerts } from "@/lib/dashboard/callbacks";
 import { inboxCount } from "@/lib/dashboard/inbox";
+import { unreadRequestCount } from "@/lib/dashboard/requests";
 import { loadSendBacklog } from "@/lib/dashboard/send-backlog";
 import { loadOpenSystemAlerts } from "@/lib/dashboard/system-alerts";
 
@@ -24,6 +25,8 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
   const employee = await requireEmployee();
   // Open inbox e-mails for the navigation badge (RLS: own inbox for dispatchers, all for manager and admin)
   const inbox = employee.role === "technician" ? null : await inboxCount();
+  // Requests with unread customer messages (task-20-14)
+  const unreadRequests = employee.role === "technician" ? null : await unreadRequestCount();
   // Callback requests of the phone assistant (task-13-4): technicians their own, dispatchers escalations
   const alertRole = employee.role === "technician" || employee.role === "dispatcher" ? employee.role : null;
   const callbacks = alertRole ? await loadCallbackAlerts(alertRole) : [];
@@ -45,7 +48,7 @@ export default async function DashboardLayout({ children }: Readonly<{ children:
             <button className="dash-logout" type="submit">Abmelden</button>
           </form>
         </div>
-        <DashboardNav role={employee.role} counts={inbox ? { "/dashboard/posteingang": inbox } : {}} />
+        <DashboardNav role={employee.role} counts={{ ...(inbox ? { "/dashboard/posteingang": inbox } : {}), ...(unreadRequests ? { "/dashboard/anfragen": unreadRequests } : {}) }} />
       </header>
       <main id="dash-main" className="dash-main">
         {backlog && <SendBacklogAlert backlog={backlog} role={employee.role} />}

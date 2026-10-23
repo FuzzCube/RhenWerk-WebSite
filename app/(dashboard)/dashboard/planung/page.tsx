@@ -4,13 +4,14 @@ import { PlanBoard, type BoardPick } from "@/components/dashboard/plan-board";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { PriorityText, RequestStatusChip } from "@/components/dashboard/ui/status-chip";
 import { Icon } from "@/components/ui";
-import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay } from "@/lib/berlin-time";
+import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay, weekStart } from "@/lib/berlin-time";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { getEmployeeNames } from "@/lib/dashboard/requests";
 import { loadAvailability, loadMonthLoads, loadPlanningDays, loadPlanningTarget, loadSelectedContext, type Availability, type WorkingHours } from "@/lib/dashboard/planning";
 import { formatCalendarDate, formatDate, formatDateTime, formatNumber, formatWeekdayDate } from "@/lib/format";
 import { hoursOn, nextWorkingDays } from "@/lib/slot-suggestions";
+import { unreadText } from "@/lib/dashboard/unread";
 import { label } from "@/lib/status";
 
 export const metadata: Metadata = { title: "Einsatzplanung" };
@@ -26,7 +27,7 @@ const workday = (day: string) => (isoWeekday(day) > 5 ? nextWorkingDays(day, 1)[
 // Visit planning (task-5-x; redesigned in task-10-3 after the user's dashboard draft "Einsatzplanung Redesign"):
 // queue of requests to plan, one planning board for 7 working days or a single day (components/dashboard/plan-board.tsx)
 // and the booking panel with suggestions (lib/slot-suggestions.ts). Picking a slot happens in the browser;
-// ?woche= is the first day of the 7-working-day window, ?ansicht=tag&tag= the day view.
+// ?woche= is a day of the shown working week (Monday to Friday, task-20-14), ?ansicht=tag&tag= the day view.
 export default async function PlanningPage({ searchParams }: Props) {
   const employee = await requireRole(rolesFor("/dashboard/planung"));
   const params = await searchParams;
@@ -41,7 +42,7 @@ export default async function PlanningPage({ searchParams }: Props) {
   const startDay = fresh && targetDay && targetDay > today ? targetDay : today;
   const focusDay = workday(isDayKey(single(params.tag)) ? single(params.tag) : startDay);
   const anchor = workday(isDayKey(single(params.woche)) ? single(params.woche) : startDay);
-  const days = dayView ? [focusDay] : nextWorkingDays(anchor, 7);
+  const days = dayView ? [focusDay] : nextWorkingDays(weekStart(anchor), 5);
   const data = await loadPlanningDays(employee, days, single(params.anfrage) || undefined);
   const durationParam = Number.parseInt(single(params.dauer), 10);
   const holdMinutes = target?.hold ? (Date.parse(target.hold.end) - Date.parse(target.hold.start)) / 60_000 : null;
@@ -78,6 +79,7 @@ export default async function PlanningPage({ searchParams }: Props) {
   const figures = capacityFigures(availability, data.technicians.map((tech) => tech.id), data.workingHours);
   const first = availability.suggestions.slice().sort((a, b) => a.start.localeCompare(b.start))[0];
   const waiting = data.queue.length;
+  const unreadOf = (id: string | null) => (id ? data.unread[id] : undefined);
 
   const requestSummary = selected && (
     <div className="plan3__req">
@@ -164,7 +166,7 @@ export default async function PlanningPage({ searchParams }: Props) {
               {data.queue.map((row) => (
                 <li key={row.id}>
                   <Link href={link({ anfrage: row.id })} className="plan3__item" aria-current={row.id === selected?.id ? "true" : undefined} scroll={false}>
-                    <span className="plan3__item-head"><span className="mono">{row.request_number}</span><PriorityText priority={row.priority} /></span>
+                    <span className="plan3__item-head"><span className="mono">{row.request_number}</span>{unreadOf(row.id) && <span className="plan3__badge plan3__badge--inline" title={unreadText(unreadOf(row.id)!.count)}>{unreadOf(row.id)!.count}<span className="sr-only"> ungelesene Nachrichten vom Kunden</span></span>}<PriorityText priority={row.priority} /></span>
                     <strong>{row.company_name}</strong>
                     <span className="plan3__muted">{row.city} · {label("service_kind", row.service_kind)}</span>
                     {row.work_status === "waiting_parts" && <span className="rw-flag rw-flag--info">Folgeeinsatz · wartet auf Teile</span>}

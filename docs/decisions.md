@@ -571,3 +571,7 @@ Nutzerentscheidung: Neue Anfragen gehen an den Dispatcher mit den wenigsten Anfr
 ## 23.10.2026 · Kundenwunsch statt Vorschlägen auf der Plantafel (task-20-13)
 
 Nutzerentscheidung: Hat der Kunde einen Termin gewünscht und es gibt eine Vormerkung, schlägt die Plantafel keine anderen Zeiten vor; sie zeigt nur die Vormerkung und den Wunsch des Kunden. Konnte der Wunsch nicht erfüllt werden, ist die Vormerkung orange und muss mit dem Kunden abgestimmt werden. Von Mira am Telefon vereinbarte Termine gelten als abgestimmt, sind aber als „Mira“ gekennzeichnet.
+
+## 23.10.2026 · Arbeitswoche auf der Plantafel, ungelesene Kundennachrichten (task-20-14)
+
+Nutzerentscheidung: Die Plantafel zeigt die Arbeitswoche Montag bis Freitag statt 7 Arbeitstage ab einem Tag; Vorschläge und die Kennzahlen im Kopf rechnen weiter mit den nächsten 7 Arbeitstagen ab heute. Schreibt der Kunde zu einer Anfrage, ist das ein Handlungsbedarf: roter Kreis mit der Zahl an Einsatz und Vormerkung auf der Plantafel, Marke und Ansicht „Ungelesen“ in der Anfragenliste, Hinweis oben auf der Anfrage. Ungelesen bleibt die Nachricht, bis eine Person „Als gelesen markieren“ wählt; das Öffnen der Anfrage allein markiert nicht, damit der Hinweis beim Öffnen sichtbar ist.

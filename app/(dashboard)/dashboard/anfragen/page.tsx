@@ -8,7 +8,8 @@ import { HazardFlag, PriorityText, RequestStatusChip } from "@/components/dashbo
 import { Icon } from "@/components/ui";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
-import { DATE_FIELDS, countViews, customerCheckIds, filterQuery, getEmployeeNames, listRequests, openHoldStarts, PAGE_SIZE, parseRequestFilters, viewsFor, type RequestFilters, type RequestListItem, type RequestView } from "@/lib/dashboard/requests";
+import { DATE_FIELDS, countViews, customerCheckIds, filterQuery, getEmployeeNames, listRequests, openHoldStarts, PAGE_SIZE, parseRequestFilters, unreadMessages, viewsFor, type RequestFilters, type RequestListItem, type RequestView } from "@/lib/dashboard/requests";
+import { unreadText, type UnreadInfo } from "@/lib/dashboard/unread";
 import { REQUEST_DISPLAY_STATUSES } from "@/lib/display-status";
 import { DEFAULT_SORT, nextSort, REQUEST_SORTS, sortLabel, sortParam, type SortKey } from "@/lib/request-sort";
 import { formatDate, formatDateTime, formatNumber, formatTime } from "@/lib/format";
@@ -25,13 +26,14 @@ const SCOPE = {
 
 // Side menu: views grouped by urgency, so the places that need someone come first
 const GROUPS: Array<{ title: string; views: RequestView[] }> = [
-  { title: "Handlungsbedarf", views: ["gefahr", "pruefung", "planen"] },
+  { title: "Handlungsbedarf", views: ["ungelesen", "gefahr", "pruefung", "planen"] },
   { title: "Wartet", views: ["kunde"] },
   { title: "Bestand", views: ["meine", "offen", "alle"] },
 ];
-const ACTION_VIEWS: readonly RequestView[] = ["gefahr", "pruefung", "planen"];
+const ACTION_VIEWS: readonly RequestView[] = ["ungelesen", "gefahr", "pruefung", "planen"];
 
 const DESCRIPTION: Record<RequestView, string> = {
+  ungelesen: "Der Kunde hat geschrieben (Stornierung, Verschiebung, Rückfrage …) und noch niemand hat die Nachricht als gelesen markiert.",
   gefahr: "Offene Anfragen mit bekannter oder unklarer Sicherheitsgefahr. Vor jedem weiteren Schritt prüfen.",
   pruefung: "Die Erstbearbeitung braucht eine Prüfung durch einen Menschen, bevor es weitergeht.",
   planen: "Erstbearbeitung abgeschlossen, aber noch kein Einsatz geplant.",
@@ -52,9 +54,9 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const showsDispatcher = employee.role === "manager" || employee.role === "admin";
   if (filters.sort.key === "dispatcher" && !showsDispatcher) filters.sort = DEFAULT_SORT;
   const [{ rows, total, error }, names, counts] = await Promise.all([listRequests(filters, employee.id), getEmployeeNames(), countViews(employee.role, employee.id)]);
-  const [holds, customerChecks] = employee.role === "technician"
-    ? [new Map<string, string>(), new Set<string>()]
-    : await Promise.all([openHoldStarts(rows.map((row) => row.id)), customerCheckIds(rows.map((row) => row.id))]);
+  const [holds, customerChecks, unread] = employee.role === "technician"
+    ? [new Map<string, string>(), new Set<string>(), new Map<string, UnreadInfo>()]
+    : await Promise.all([openHoldStarts(rows.map((row) => row.id)), customerCheckIds(rows.map((row) => row.id)), unreadMessages(rows.map((row) => row.id))]);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const views = viewsFor(employee.role);
   const current = views.find((view) => view.key === filters.view) ?? views[0];
@@ -76,7 +78,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const sortOptions = (Object.keys(REQUEST_SORTS) as SortKey[]).filter((key) => key !== "dispatcher" || showsDispatcher)
     .flatMap((key) => [REQUEST_SORTS[key].first, REQUEST_SORTS[key].first === "ab" ? "auf" : "ab"].map((dir) => ({ key, dir: dir as "auf" | "ab" })));
   const columns: Column<RequestListItem>[] = [
-    { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} />{holds.has(row.id) && <span className="rw-flag rw-flag--hold" title={`Vorgemerkt: ${formatDateTime(holds.get(row.id)!)}`}>Terminwunsch</span>}{customerChecks.has(row.id) && <span className="rw-flag rw-flag--customer" title="Möglicher Bestandskunde: Zuordnung auf der Anfrageseite prüfen">Kunde prüfen</span>}</>, mobile: "title", sort: sortable("anfrage") },
+    { key: "number", header: "Anfrage", cell: (row) => <><span className="mono">{row.request_number}</span><HazardFlag risk={row.safety_risk} />{unread.has(row.id) && <span className="rw-flag rw-flag--unread" title={`${unreadText(unread.get(row.id)!.count)}, zuletzt ${formatDateTime(unread.get(row.id)!.latestAt)}`}><Icon name="mail" size={12} />{unread.get(row.id)!.count} neu</span>}{holds.has(row.id) && <span className="rw-flag rw-flag--hold" title={`Vorgemerkt: ${formatDateTime(holds.get(row.id)!)}`}>Terminwunsch</span>}{customerChecks.has(row.id) && <span className="rw-flag rw-flag--customer" title="Möglicher Bestandskunde: Zuordnung auf der Anfrageseite prüfen">Kunde prüfen</span>}</>, mobile: "title", sort: sortable("anfrage") },
     { key: "company", header: "Kunde", cell: (row) => <><strong className="rw-strong">{row.company_name}</strong><span className="cell-sub">{row.customer_number && <><span className="mono">{row.customer_number}</span> · </>}{row.city}</span></>, sort: sortable("kunde") },
     { key: "service", header: "Leistung", cell: (row) => <>{label("service_kind", row.service_kind)}<span className="cell-sub">{label("equipment_kind", row.equipment_kind)}</span></>, mobile: "hide", tablet: "hide", sort: sortable("leistung") },
     { key: "status", header: "Status", cell: (row) => <RequestStatusChip intakeStatus={row.intake_status} workStatus={row.work_status} /> },
@@ -206,7 +208,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
                 rows={rows}
                 rowKey={(row) => row.id}
                 rowHref={(row) => `/dashboard/anfragen/${row.id}`}
-                rowClassName={(row) => (row.safety_risk === "known" || row.safety_risk === "unclear" ? "is-hazard" : undefined)}
+                rowClassName={(row) => [row.safety_risk === "known" || row.safety_risk === "unclear" ? "is-hazard" : "", unread.has(row.id) ? "has-unread" : ""].filter(Boolean).join(" ") || undefined}
                 empty={
                   <EmptyState
                     tone={!filtered && ACTION_VIEWS.includes(current.key) ? "good" : "neutral"}

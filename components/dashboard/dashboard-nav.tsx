@@ -16,7 +16,11 @@ export function DashboardNav({ role, counts = {} }: { role: EmployeeRole; counts
             <li key={area.href}>
               <Link href={area.href} aria-current={active ? "page" : undefined}>
                 {area.label}
-                {counts[area.href] ? <span className="dash-nav__count mono" aria-label={`${counts[area.href]} offen`}>{counts[area.href]}</span> : null}
+                {counts[area.href] ? (
+                  <span className={`dash-nav__count mono${area.href === "/dashboard/anfragen" ? " dash-nav__count--unread" : ""}`}
+                    title={area.href === "/dashboard/anfragen" ? "Anfragen mit ungelesenen Kundennachrichten" : undefined}
+                    aria-label={area.href === "/dashboard/anfragen" ? `${counts[area.href]} Anfragen mit ungelesenen Nachrichten` : `${counts[area.href]} offen`}>{counts[area.href]}</span>
+                ) : null}
               </Link>
             </li>
           );

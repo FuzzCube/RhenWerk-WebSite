@@ -294,7 +294,7 @@ const to = new Date(monday.getTime() + 7 * 86400000 + 2 * 3600000).toISOString()
 const { data: weekVisits } = await admin.from("visits").select("request_id, requests!inner(request_number, company_name, dispatcher_id)").in("status", ["scheduled", "in_progress"]).lt("scheduled_start", to).gt("scheduled_end", from);
 const foreignWeekVisits = weekVisits.filter((visit) => visit.requests.dispatcher_id !== dispo1);
 const dispoWeekVisits = weekVisits.filter((visit) => visit.requests.dispatcher_id === dispo1);
-// Plantafel from Monday (task-10-3: 7 working days from ?woche=); blocks carry their label in the title
+// Plantafel from Monday (task-10-3, since task-20-14 the working week Monday to Friday of ?woche=); blocks carry their label in the title
 const weekPlan = await get(dispoJar, `/dashboard/planung?woche=${monday.toISOString().slice(0, 10)}`);
 const calendarHtml = weekPlan.html.slice(weekPlan.html.indexOf('class="plan3__board'));
 check(`Kalender zeigt belegte Zeiten fremder Anfragen (${foreignWeekVisits.length}) als „Belegt“`, foreignWeekVisits.length === 0 || calendarHtml.includes('title="Belegt · '));

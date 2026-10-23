@@ -284,6 +284,16 @@ export async function rejectHold(_previous: FormState, formData: FormData): Prom
     supabase.rpc("reject_visit_hold", { hold_id: values.hold_id, reason, alternative: (values.alternative ?? "").trim() || undefined }));
 }
 
+// "Als gelesen markieren" (task-20-14): the customer's e-mails of the request were read; clears the marks on the
+// planning board, in the request list and on the request page
+export async function markMessagesRead(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const values = formValues(formData);
+  if (!UUID.test(values.request_id ?? "")) return invalid(values);
+  const supabase = await createClient();
+  return run(values, "Als gelesen markiert.", () => supabase.rpc("mark_request_messages_read", { request_id: values.request_id }));
+}
+
 // "Neuen Kunden anlegen" (task-14-2): customer from the request data, linked in the same step
 export async function createCustomerFromRequest(_previous: FormState, formData: FormData): Promise<FormState> {
   await requireRole(STAFF);

@@ -4589,6 +4589,40 @@
             ],
             "summary": "planning.ts lädt zu Vormerkungen origin, wish_met, Wunschtag und preferred_time (HOLD_SELECT, holdInfo: wish/deviates/mira). PlanBoard bekommt suggest=false bei offener Vormerkung: keine Vorschlagsflächen, keine Liste, kein „am frühesten frei“ im Kopf. Seitenleiste: „Kundenwunsch: …“ (formatWish in lib/format.ts, auch auf der Anfrageseite) und farbiger Hinweis (grün, orange mit „mit dem Kunden abstimmen“, grün mit Marke Mira). Tafel: Vormerkungen grün/orange(!)/grün(M), Legende mit drei Einträgen, Auswahl auf abweichender Vormerkung orange. test:ui: nur die 2 bekannten Fehler wegen lokal wartender Test-E-Mails. Keine Datenbankänderung."
           }
+        },
+        {
+          "id": "task-20-14",
+          "title": "Arbeitswoche auf der Plantafel, ungelesene Kundennachrichten",
+          "description": "Nutzerwunsch 23.10.2026: Die Plantafel zeigt die Arbeitswoche Montag bis Freitag statt 7 Arbeitstage. Schreibt der Kunde zu einer Anfrage (Stornierung, Verschiebung, Frage), soll das sichtbar sein: roter Kreis mit der Zahl an den Einsätzen der Plantafel, Hervorhebung in der Anfragenliste, deutlicher Hinweis beim Öffnen der Anfrage.",
+          "order": 14,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-13"
+          ],
+          "definitionOfDone": [
+            "Plantafel mit fünf Arbeitstagen (Montag bis Freitag), Navigation wochenweise",
+            "Ungelesene Kundennachrichten: Datenmodell, als gelesen markieren",
+            "Roter Kreis mit Zahl auf Einsatz und Vormerkung, in Legende und Warteschlange",
+            "Anfragenliste: Marke, Ansicht Ungelesen, Zähler im Menü",
+            "Anfrageseite: Hinweis oben, ungelesene Nachrichten markiert",
+            "390/768/Desktop geprüft; pgTAP und Unit-Test"
+          ],
+          "startedAt": "2026-10-23T08:00:00Z",
+          "completedAt": "2026-10-23T08:12:01Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-23T08:12:01Z",
+            "commands": [
+              "npx supabase test db (1256 Tests)",
+              "npm run typecheck",
+              "npm run lint",
+              "npm run test:unit (155)",
+              "APP_URL=http://localhost:3100 npm run test:ui (2 bekannte umgebungsbedingte Fehler)",
+              "Screenshots 390/768/1440 mit vorübergehenden Nachrichten (danach gelöscht); Knopf „Als gelesen markieren“ im Browser geprüft"
+            ],
+            "summary": "Plantafel: nextWorkingDays(weekStart(anchor), 5), Tafel min-width 37rem (kein Scrollen auf dem Desktop), Schalter „Woche“, Klick auf einen Vorschlag springt in dessen Woche. Migration 20261023000400: messages.staff_read_at/by (Bestand als gelesen), View request_unread_messages, mark_request_messages_read, move_inbox_conversation markiert verknüpfte Unterhaltungen. Die erste Version der View (security_invoker) kostete 1 s je Seite (RLS prüft alle 3300 Nachrichten), test:ui zeigte 3 Folgefehler; jetzt Besitzerrechte mit eigener Zugriffsprüfung und Teilindex, 2 ms, test:ui wieder nur die 2 bekannten Fehler. Anzeige: Plantafel (Kreis, Legende, Warteschlange), Anfragenliste (Marke, Ansicht Ungelesen, Menüzähler), Anfrageseite (Hinweis, Neu-Marke, Abschnitt offen). Produktion noch nicht eingespielt."
+          }
         }
       ]
     }

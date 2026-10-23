@@ -9,11 +9,12 @@ import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTi
 import type { BusyBlock, Technician, WorkingHours } from "@/lib/dashboard/planning";
 import { initialFormState, type FormState } from "@/lib/forms";
 import { formatWeekdayDate, TIME_ZONE } from "@/lib/format";
+import { unreadText } from "@/lib/dashboard/unread";
 import { hoursOn, nextWorkingDays, slotReasonText, suggestSlots, type SlotBusy, type SlotExperience } from "@/lib/slot-suggestions";
 import type { MonthLoad } from "@/lib/technician-load";
 
 // Planning board of the Einsatzplanung (task-10-3, redesign after the user's dashboard draft
-// "Einsatzplanung Redesign"): one board for 7 working days or a single day, suggestions and the booking
+// "Einsatzplanung Redesign"): one board for the working week (Monday to Friday) or a single day, suggestions and the booking
 // form in one panel. Picking a slot and changing the duration happen in the browser (no server round trip);
 // the URL is kept in sync with history.replaceState. Paging the board loads the new days from the server.
 // The database stays the authority for conflicts (schedule_visit, RW410); the board only warns early.
@@ -28,7 +29,7 @@ type Props = {
   workingHours: WorkingHours[];
   // Occupancy of the shown days, with request numbers for readable visits
   busy: BusyBlock[];
-  // Next 7 working days for suggestions and the conflict check
+  // Next 7 working days from today for suggestions and the conflict check (the board shows the week Monday to Friday)
   availability: { days: string[]; now: string; busy: SlotBusy[]; experience: Record<string, SlotExperience> };
   view: "woche" | "tag";
   days: string[];
@@ -274,7 +275,8 @@ export function PlanBoard(props: Props) {
         const end = dayKeyOf(new Date(block.end)) > day ? 24 * 60 : minutesOfDay(new Date(block.end));
         const kind = block.kind === "absence" ? "absence" : block.kind === "hold" ? "hold" : block.requestNumber ? "own" : "busy";
         const label = kind === "absence" ? "Abwesend" : kind === "hold" ? holdLabel(block) : block.requestNumber ?? "Belegt";
-        return { start, end, kind, label, block };
+        const unreadSuffix = block.unread ? ` · ${unreadText(block.unread)}` : "";
+        return { start, end, kind, label: label + unreadSuffix, block };
       });
   }
 
@@ -605,6 +607,10 @@ export function PlanBoard(props: Props) {
               </span>
             );
           })}
+        {/* Unread customer messages (task-20-14): red circle with the count at the top right of the block */}
+        {!absentAllDay && segments.filter((segment) => (segment.block.unread ?? 0) > 0).map((segment) => (
+          <span key={`unread-${segment.start}-${segment.end}`} className="plan3__badge" style={{ left: `${pct(Math.min(segment.end, bounds.to))}%` }} aria-hidden="true">{segment.block.unread}</span>
+        ))}
         {moveHere && (
           <span
             className={`plan3__blk plan3__blk--own plan3__blk--moveto${moveCheck?.ok ? "" : " is-conflict"}`}
@@ -678,7 +684,7 @@ export function PlanBoard(props: Props) {
               </button>
             </div>
             <div className="plan3__seg" role="group" aria-label="Ansicht">
-              <button type="button" aria-pressed={view === "woche"} onClick={() => view !== "woche" && navigate({ view: "woche", anchor: focusDay })}>7 Arbeitstage</button>
+              <button type="button" aria-pressed={view === "woche"} onClick={() => view !== "woche" && navigate({ view: "woche", anchor: focusDay })}>Woche</button>
               <button type="button" aria-pressed={view === "tag"} onClick={() => view !== "tag" && navigate({ view: "tag", day: pick && days.includes(pick.day) ? pick.day : days.includes(todayWorkday) ? todayWorkday : days[0] })}>Tag</button>
             </div>
           </div>
@@ -702,6 +708,7 @@ export function PlanBoard(props: Props) {
           <li><i className="plan3__key plan3__key--hold is-mira" />Vorgemerkt: mit Mira vereinbart</li>
           {canPick && props.suggest && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
           {canPick && <li><i className="plan3__key plan3__key--pick" />Auswahl</li>}
+          <li><i className="plan3__key plan3__key--badge" />Ungelesene Nachricht vom Kunden</li>
           <li><i className="plan3__key plan3__key--past" />Vorbei</li>
           <li><i className="plan3__key plan3__key--outside" />Außerhalb der Arbeitszeit</li>
         </ul>
@@ -804,7 +811,7 @@ export function PlanBoard(props: Props) {
                         <button type="button" className="plan3__sug" aria-pressed={active}
                           onClick={() => {
                             const next = { technicianId: suggestion.technicianId, day: suggestion.day, start: suggestion.startTime, end: suggestion.endTime };
-                            if (view === "woche" && !days.includes(next.day)) { setPick(next); setFormKey((key) => key + 1); navigate({ anchor: todayWorkday, pick: next }); }
+                            if (view === "woche" && !days.includes(next.day)) { setPick(next); setFormKey((key) => key + 1); navigate({ anchor: next.day, pick: next }); }
                             else if (view === "tag" && next.day !== focusDay) { setPick(next); setFormKey((key) => key + 1); navigate({ day: next.day, pick: next }); }
                             else choose(next);
                           }}>
