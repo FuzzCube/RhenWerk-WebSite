@@ -6,6 +6,7 @@
 // Usage: npm run build && npm run start, then npm run test:ui
 //   APP_URL (default http://localhost:3000), CHROME_PATH (default: Google Chrome on macOS),
 //   UI_SCREENSHOTS=<dir> additionally stores a screenshot per page and width.
+//   PLAN_BOARD_SCREENSHOTS=<dir> stores only the planning board at 390/768/1440 px.
 import { execFileSync, spawn } from "node:child_process";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -1744,8 +1745,16 @@ try {
   const planA = await newRequest("plan-a", processed);
   const planB = await newRequest("plan-b", processed);
   const { data: tech } = await admin.from("profiles").select("id, display_name").eq("display_name", "Tobias Krüger").single();
-  // Own Monday per run (2030 onwards), so repeated runs never collide with earlier test bookings
+  // Pick an actually empty week: a random Monday alone can collide with earlier UI runs.
   const weekDate = new Date(Date.UTC(2030, 0, 7) + Math.floor(Math.random() * 1500) * 7 * 86400000);
+  for (let attempt = 0; ; attempt += 1) {
+    if (attempt === 100) throw new Error("Keine freie Testwoche gefunden");
+    const end = new Date(weekDate.getTime() + 7 * 86400000).toISOString();
+    const { data: existing, error } = await admin.from("visits").select("id").lt("scheduled_start", end).gt("scheduled_end", weekDate.toISOString()).limit(1);
+    if (error) throw new Error(error.message);
+    if (!existing.length) break;
+    weekDate.setUTCDate(weekDate.getUTCDate() + 7);
+  }
   const week = weekDate.toISOString().slice(0, 10);
   const utcOffsetHours = new Date(`${week}T12:00:00Z`).toLocaleString("en-US", { timeZone: "Europe/Berlin", hour: "2-digit", hourCycle: "h23" }) - 12;
   const visitsOf = async (requestId) => (await admin.from("visits").select("technician_id, scheduled_start, scheduled_end, status").eq("request_id", requestId)).data;
@@ -1769,6 +1778,34 @@ try {
   }
   await page.open(`${BASE}/dashboard/planung?woche=${week}&anfrage=${planA.id}`);
   check("Anfrage in „Zu planen“ ausgewählt", await page.eval(`document.querySelector('.plan3__item[aria-current="true"]')?.textContent.includes(${JSON.stringify(planA.request_number)})`));
+  // task-20-18: help starts closed; date headers open the exact day without a document reload.
+  {
+    const refs = `document.querySelectorAll('.plan3__reference')`;
+    check("Plantafel: Legende und Bedienung zunächst geschlossen", await page.eval(`[...${refs}].length === 2 && [...${refs}].every(d => !d.open) && !document.querySelector('.plan3__legend').checkVisibility() && !document.querySelector('.plan3__hint').checkVisibility()`));
+    await page.eval(`${refs}[0].querySelector('summary').click()`);
+    check("  Legende bei Bedarf sichtbar, Bedienung bleibt geschlossen", await page.eval(`document.querySelector('.plan3__legend').getBoundingClientRect().height > 0 && !${refs}[1].open`));
+    await page.eval(`${refs}[0].querySelector('summary').click(); ${refs}[1].querySelector('summary').click()`);
+    check("  Bedienhinweise bei Bedarf sichtbar", await page.eval(`document.querySelector('.plan3__hint').getBoundingClientRect().height > 0`));
+    await page.eval(`${refs}[1].querySelector('summary').click()`);
+    const tuesday = new Date(Date.parse(`${week}T12:00:00Z`) + 86400000).toISOString().slice(0, 10);
+    check("  Alle fünf Wochen-Datumsköpfe als Schaltflächen", await page.eval(`document.querySelectorAll('button.plan3__date[data-day]').length === 5 && [...document.querySelectorAll('button.plan3__date')].every(b => b.getAttribute('aria-label').includes('Tagesansicht öffnen'))`));
+    await page.eval(`window.__planBoardDocument = 'same'; document.querySelector('.plan3__date[data-day="${tuesday}"]').focus()`);
+    await page.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r", unmodifiedText: "\r" });
+    await page.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+    check("  Enter auf Dienstag öffnet genau diesen Tag, Anfrage und Dauer bleiben", await page.until(`document.querySelector('.plan3__table--day') && new URLSearchParams(location.search).get('tag') === '${tuesday}' && new URLSearchParams(location.search).get('anfrage') === '${planA.id}' && new URLSearchParams(location.search).get('dauer') === '120' && window.__planBoardDocument === 'same'`));
+    await page.eval(`[...document.querySelectorAll('.plan3__seg[aria-label="Ansicht"] button')].find(b => b.textContent === 'Woche').click()`);
+    check("  Zurück zur vollständigen Arbeitswoche", await page.until(`document.querySelectorAll('.plan3__date').length === 5 && document.querySelector('.plan3__date').dataset.day === '${week}'`));
+    for (const width of [390, 768, 1440]) {
+      await page.send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width < 800 });
+      await page.eval(`document.querySelector('.plan3__board').scrollIntoView({block:'center',behavior:'instant'}); document.fonts.ready`);
+      check(`  Plantafel ohne Seitenüberlauf bei ${width} px`, await page.eval(`document.documentElement.scrollWidth <= innerWidth`));
+      if (process.env.PLAN_BOARD_SCREENSHOTS) {
+        await mkdir(process.env.PLAN_BOARD_SCREENSHOTS, { recursive: true });
+        const shot = await page.send("Page.captureScreenshot", { format: "png" });
+        await writeFile(path.join(process.env.PLAN_BOARD_SCREENSHOTS, `plantafel-${width}.png`), Buffer.from(shot.data, "base64"));
+      }
+    }
+  }
   // Click at 09:00 (plus a few minutes; the board snaps to the nearest half hour) in Tobias' lane on Monday of the planning board
   await page.eval(`(() => {
     const lane = document.querySelector('.plan3__lane[data-tech="${tech.id}"][data-day="${week}"]');
@@ -1779,6 +1816,12 @@ try {
   })()`);
   let picked = await formStatus(bookingForm);
   check("Klick in den Kalender übernimmt Techniker, Datum und Zeit", picked.values.technician_id === tech.id && picked.values.date === week && picked.values.start === "09:00" && picked.values.end === "11:00", JSON.stringify(picked.values));
+  await page.eval(`document.querySelector('.plan3__date[data-day="${week}"]').click()`);
+  check("Datumsklick öffnet ganzen Montag", await page.until(`Boolean(document.querySelector('.plan3__table--day')) && new URLSearchParams(location.search).get('tag') === '${week}'`));
+  const dayPick = await formStatus(bookingForm);
+  check("  Ungespeicherte Auswahl bleibt beim Öffnen des Tages erhalten", ["technician_id", "date", "start", "end"].every(k => picked.values[k] === dayPick.values[k]) && await page.eval(`window.__planBoardDocument === 'same'`));
+  await page.eval(`[...document.querySelectorAll('.plan3__seg[aria-label="Ansicht"] button')].find(b => b.textContent === 'Woche').click()`);
+  check("  Wochenansicht mit derselben Auswahl wiederhergestellt", await page.until(`document.querySelectorAll('.plan3__date').length === 5 && Boolean(document.querySelector('.plan3__blk--pick'))`));
   await page.eval(`${bookingForm}.requestSubmit()`);
   const booked = await waitFor(async () => (await visitsOf(planA.id)).length === 1);
   const visitA = (await visitsOf(planA.id))[0];

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 26,
+  "roadmapVersion": 27,
   "status": "active",
   "phases": [
     {
@@ -4194,7 +4194,7 @@
       "title": "Rückmeldungen nach dem Rundgang",
       "description": "Nutzerentscheidung 22.10.2026 nach einem zweiten Rundgang: Formular der Website, Weg von der Anfrage in die Einsatzplanung mit vorgemerktem Termin und Bedienung der Plantafel.",
       "order": 21,
-      "weight": 27,
+      "weight": 29,
       "status": "completed",
       "tasks": [
         {
@@ -4719,6 +4719,40 @@
               "git diff --check"
             ],
             "summary": "Gemeinsamer geschützter 20-Sekunden-Abruf mit getrennten globalen Neu-/Antwortmarken, Posteingang, Terminwünschen/Storno und Verarbeitungsergebnissen, rollenabhängigen Rückrufen, Versand- und Systemwarnungen. Kein Realtime, keine Schema-, n8n- oder Infrastrukturänderung. 49 Benachrichtigungsszenarien bestanden: zwei authentifizierte Mitarbeiter, echter Takt und Hintergrund-Tab, gleiche Zahl ungelesener Anfragen bei neuer Nachricht, Eingangsschub >8, stille Baseline und Deduplizierung, Browser-Offline/Online, Next→Supabase-Ausfall (503 statt 401) und Wiederaufnahme derselben Sitzung ohne Reload, verweigerte/deaktivierte Profile, direkte RLS, Eingabe-/Plantafelschutz und explizite Aktualisierung, sichtbare Hinweise bei 390/768/1440. 158 Unit-, alle API-, 145 auth- und 460 UI-Prüfungen bestanden. Nach zusätzlicher strikter Verfügbarkeitsprüfung von getSession wurden build/lint/typecheck/unit sowie alle 49 Benachrichtigungsszenarien erneut bestanden; normale Auth-Aufrufer behalten das bisherige Verhalten. Nebenbefund HTTP 414 in Team durch ID-Pakete zu 100 behoben. UI-Tests berücksichtigen bestehenden Versandstau und warten auf echte Formularversionen statt 500 ms. Screenshots /tmp/rw-notifications-mvl10a01; sichtgeprüft einschließlich Link, Schließen und Aktualisierungsschaltfläche. Nur lokale Ereignis-Fixtures und Integrations-RPC, kein echter Gmail-/Mira-/Formular-End-to-End-Lauf, kein Deployment oder Push. Browser können Hintergrund-Timer drosseln; keine dauerhafte persönliche Popup-Historie. Standard-API/UI-Tests hinterlassen wie bisher Demodaten; eigene Notification-Fixtures vollständig entfernt."
+          }
+        },
+        {
+          "id": "task-20-18",
+          "title": "Plantafel aufräumen und Tage deutlicher trennen",
+          "description": "Nutzerauftrag: Legende und Bedienhinweise standardmäßig einklappen, Datumsköpfe zum Öffnen eines ganzen Tages anklickbar machen und Tage in der Wochenansicht deutlicher unterscheiden.",
+          "order": 18,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-17"
+          ],
+          "definitionOfDone": [
+            "Legende und Bedienhinweise standardmäßig geschlossen und per Tastatur zugänglich.",
+            "Jeder Datumskopf der Wochenansicht öffnet den zugehörigen ganzen Tag; Anfrage, Dauer und Auswahl bleiben erhalten.",
+            "Wochenansicht trennt Tage mit klaren Spaltenflächen und Grenzen; heutiger Tag bleibt markiert.",
+            "Lokale UI-/Responsive-Prüfung sowie lint/typecheck/build bestanden; vorhandene Planung bleibt funktionsfähig."
+          ],
+          "startedAt": "2026-10-23T20:11:11.073Z",
+          "completedAt": "2026-10-23T20:29:49.687Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Legende und Bedienung geschlossen, bedarfsweise aufklappbar. Datumsköpfe öffnen exakt den Tag per Klick/Enter ohne Dokument-Neuladen; Anfrage, Dauer und ungespeicherte Auswahl bleiben erhalten. Durchgehende wechselnde Tagesflächen, Ränder und Gutters; heutiger Tag separat markiert. build/lint/typecheck bestanden. 13 fokussierte Leseprüfungen und danach kompletter Plantafel-Block aus test-ui (34 Prüfungen inkl. Buchung, Drag, Zeit-/Technikerwechsel, Konflikt und Versionskonflikt) bestanden; 390/768/1440-Screenshots angesehen. Erster voller test:ui-Lauf scheiterte an zufällig belegter alter Testwoche sowie unzutreffendem Sichtbarkeits-/Enter-Test; Fixture-Auswahl und Browser-Test korrigiert, alle betroffenen Planungsszenarien gezielt wiederholt. Gesamtsuite danach nicht komplett wiederholt. Nur lokale Prüfung, kein Commit/Push/Deployment.",
+            "commands": [
+              "npm run build",
+              "npm run typecheck",
+              "npm run lint",
+              "node --check scripts/test-ui.mjs",
+              "APP_URL=http://localhost:3117 PLAN_BOARD_SCREENSHOTS=/tmp/rw-plan-board-20261023 npm run test:ui (erster Lauf, Testdaten-Konflikt)",
+              "APP_URL=http://localhost:3117 node --env-file=.env.local --input-type=module < /tmp/rw-plan-focused.mjs (13 bestanden)",
+              "APP_URL=http://localhost:3117 PLAN_BOARD_SCREENSHOTS=/tmp/rw-plan-board-20261023 node --env-file=.env.local --input-type=module < /tmp/rw-planning-integration.mjs (34 bestanden)",
+              "git diff --check"
+            ],
+            "checkedAt": "2026-10-23T20:29:49.687Z"
           }
         }
       ]

@@ -1238,6 +1238,12 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .plan3__days button { min-height: 36px; padding: 0 12px; border: 1px solid var(--rw-border-default); border-radius: var(--rw-radius-sm); background: var(--rw-surface-raised); font-size: 14px; font-weight: 500; color: var(--rw-action-secondary-fg); cursor: pointer; }
 .plan3__days button:hover { background: var(--rw-action-secondary-bg-hover); }
 .plan3__days button[aria-pressed="true"] { background: var(--rw-action-primary-bg); border-color: var(--rw-color-lime-700); color: var(--rw-text-on-lime); font-weight: 600; }
+.plan3__references { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: var(--rw-space-8); }
+.plan3__reference { min-width: 0; border: 1px solid var(--rw-border-subtle); border-radius: var(--rw-radius-sm); }
+.plan3__reference[open] { grid-column: 1 / -1; }
+.plan3__reference > summary { min-height: 40px; padding: 8px 12px; color: var(--rw-text-link); font-size: 14px; font-weight: 600; cursor: pointer; }
+.plan3__reference > summary:hover { background: var(--rw-surface-page); }
+.plan3__reference > .plan3__legend, .plan3__reference > .plan3__hint { padding: 8px 12px 12px; border-top: 1px solid var(--rw-border-subtle); }
 .plan3__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--rw-text-secondary); }
 .plan3__legend li { display: inline-flex; align-items: center; gap: 7px; }
 .plan3__key { width: 14px; height: 14px; border: 1px solid var(--rw-border-default); border-radius: 2px; }
@@ -1270,6 +1276,19 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .plan3__ticks span:first-child { transform: none; }
 .plan3__ticks span:last-child { transform: translateX(-100%); }
 .plan3__cell { padding: 0 3px; }
+.plan3__date { display: flex; align-items: center; width: 100%; min-height: 36px; padding: 0; border: 0; border-radius: var(--rw-radius-sm); background: transparent; text-align: left; font: inherit; cursor: pointer; }
+.plan3__date strong { color: var(--rw-text-link); text-decoration: underline; text-underline-offset: 3px; }
+.plan3__date:hover { background: var(--rw-action-secondary-bg-hover); }
+.plan3__date:disabled { cursor: progress; }
+/* Continuous day bands and gutters keep the week readable across every technician row. */
+.plan3__table:not(.plan3__table--day) { min-width: 40rem; column-gap: 8px; row-gap: 0; }
+.plan3__table:not(.plan3__table--day) .plan3__colh { margin: 0; padding: 6px 6px 4px; border: 1px solid var(--rw-border-subtle); border-top: 3px solid var(--rw-color-blue-600); border-bottom: 0; border-radius: var(--rw-radius-sm) var(--rw-radius-sm) 0 0; background: var(--rw-surface-page); }
+.plan3__table:not(.plan3__table--day) .plan3__cell { padding: 8px 6px; border-inline: 1px solid var(--rw-border-subtle); background: var(--rw-surface-page); }
+.plan3__table:not(.plan3__table--day) .is-alternate { background: var(--rw-color-blue-050); }
+.plan3__table:not(.plan3__table--day) .plan3__row:last-child .plan3__cell { border-bottom: 1px solid var(--rw-border-subtle); border-radius: 0 0 var(--rw-radius-sm) var(--rw-radius-sm); }
+.plan3__table:not(.plan3__table--day) .plan3__rowh { padding-block: 8px; }
+.plan3__table:not(.plan3__table--day) .plan3__colh.is-today { border-top-color: var(--rw-color-lime-500); background: var(--rw-color-lime-100); }
+.plan3__table:not(.plan3__table--day) .plan3__cell.is-today { background: var(--rw-color-lime-100); }
 .plan3__lane { position: relative; height: 48px; overflow: hidden; background: var(--rw-surface-raised); border: 1px solid var(--rw-border-subtle); border-radius: var(--rw-radius-sm); transition: border-color var(--rw-duration-fast) var(--rw-ease-standard), box-shadow var(--rw-duration-fast) var(--rw-ease-standard); }
 .plan3__table--day .plan3__lane { height: 56px; }
 .plan3__lane.is-pickable { cursor: pointer; }

@@ -788,29 +788,50 @@ export function PlanBoard(props: Props) {
           </nav>
         )}
 
-        <ul className="plan3__legend" aria-label="Legende">
-          <li><i className="plan3__key plan3__key--own" />Einsätze</li>
-          <li><i className="plan3__key plan3__key--own-past" />Einsätze, vorbei</li>
-          <li><i className="plan3__key plan3__key--busy" />Belegt (andere)</li>
-          <li><i className="plan3__key plan3__key--absence" />Abwesend</li>
-          <li><i className="plan3__key plan3__key--hold is-wish" />Vorgemerkt: Wunschtermin</li>
-          <li><i className="plan3__key plan3__key--hold is-deviates" />Vorgemerkt: abweichend vom Wunsch, abstimmen</li>
-          <li><i className="plan3__key plan3__key--hold is-mira" />Vorgemerkt: mit Mira vereinbart</li>
-          {canPick && props.suggest && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
-          {canPick && <li><i className="plan3__key plan3__key--pick" />Auswahl</li>}
-          <li><i className="plan3__key plan3__key--badge" />Ungelesene Nachricht vom Kunden</li>
-          <li><i className="plan3__key plan3__key--change" />Kunde möchte den Termin verschieben</li>
-          <li><i className="plan3__key plan3__key--past" />Vorbei</li>
-          <li><i className="plan3__key plan3__key--outside" />Außerhalb der Arbeitszeit</li>
-        </ul>
+        <div className="plan3__references">
+          <details className="plan3__reference">
+            <summary>Legende</summary>
+            <ul className="plan3__legend" aria-label="Legende">
+              <li><i className="plan3__key plan3__key--own" />Einsätze</li>
+              <li><i className="plan3__key plan3__key--own-past" />Einsätze, vorbei</li>
+              <li><i className="plan3__key plan3__key--busy" />Belegt (andere)</li>
+              <li><i className="plan3__key plan3__key--absence" />Abwesend</li>
+              <li><i className="plan3__key plan3__key--hold is-wish" />Vorgemerkt: Wunschtermin</li>
+              <li><i className="plan3__key plan3__key--hold is-deviates" />Vorgemerkt: abweichend vom Wunsch, abstimmen</li>
+              <li><i className="plan3__key plan3__key--hold is-mira" />Vorgemerkt: mit Mira vereinbart</li>
+              {canPick && props.suggest && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
+              {canPick && <li><i className="plan3__key plan3__key--pick" />Auswahl</li>}
+              <li><i className="plan3__key plan3__key--badge" />Ungelesene Nachricht vom Kunden</li>
+              <li><i className="plan3__key plan3__key--change" />Kunde möchte den Termin verschieben</li>
+              <li><i className="plan3__key plan3__key--past" />Vorbei</li>
+              <li><i className="plan3__key plan3__key--outside" />Außerhalb der Arbeitszeit</li>
+            </ul>
+          </details>
+          <details className="plan3__reference">
+            <summary>Bedienung</summary>
+            <p className="plan3__hint">
+              {canPick
+                ? <>{props.suggest ? "Vorschlag oder leere Fläche" : "Leere Fläche"} anklicken, die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl) und ihre Länge an den Rändern ändern (aktuell {durationText(duration)}). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
+                : "Links eine Anfrage wählen, dann lassen sich freie Flächen anklicken."}
+              {hasMovable && " Geplante Einsätze: ziehen verschiebt; ein Klick wählt den Einsatz, dann ändern die Griffe an den Rändern die Länge (oder Umschalt + Pfeiltasten); Doppelklick oder Enter öffnet die Anfrage."}
+              {" In der Wochenansicht öffnet ein Klick auf das Datum den ganzen Tag."}
+            </p>
+          </details>
+        </div>
 
         <div className="plan3__scroll">
           <div className={`plan3__table${view === "tag" ? " plan3__table--day" : ""}`} style={{ gridTemplateColumns: `9.5rem repeat(${days.length}, minmax(${view === "tag" ? "0" : "5.4rem"}, 1fr))` }}>
             <div aria-hidden="true" />
-            {days.map((day) => (
-              <div key={day} className={`plan3__colh${day === today ? " is-today" : ""}`} aria-current={day === today ? "date" : undefined}>
+            {days.map((day, index) => (
+              <div key={day} className={`plan3__colh${index % 2 ? " is-alternate" : ""}${day === today ? " is-today" : ""}`} aria-current={day === today ? "date" : undefined}>
                 <span className="plan3__colh-top">{day === today ? "Heute" : ""}</span>
-                <strong>{view === "tag" ? longDay(day) : shortDay(day)}</strong>
+                {view === "tag" ? <strong>{longDay(day)}</strong> : (
+                  <button type="button" className="plan3__date" data-day={day} disabled={navigating}
+                    aria-label={`${longDay(day)} in Tagesansicht öffnen`} title="Tagesansicht öffnen"
+                    onClick={() => navigate({ view: "tag", day })}>
+                    <strong>{shortDay(day)}</strong>
+                  </button>
+                )}
                 <span className="plan3__ticks" aria-hidden="true">
                   {ticks.map((minute) => <span key={minute} style={{ left: `${pct(minute)}%` }}>{toTime(minute).slice(0, 2)}</span>)}
                 </span>
@@ -830,18 +851,12 @@ export function PlanBoard(props: Props) {
                       </span>
                     )}
                   </div>
-                  {days.map((day) => <div key={day} className="plan3__cell">{lane(tech.id, day)}</div>)}
+                  {days.map((day, index) => <div key={day} className={`plan3__cell${index % 2 ? " is-alternate" : ""}${day === today ? " is-today" : ""}`}>{lane(tech.id, day)}</div>)}
                 </div>
               );
             })}
           </div>
         </div>
-        <p className="plan3__hint">
-          {canPick
-            ? <>{props.suggest ? "Vorschlag oder leere Fläche" : "Leere Fläche"} anklicken, die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl) und ihre Länge an den Rändern ändern (aktuell {durationText(duration)}). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
-            : "Links eine Anfrage wählen, dann lassen sich freie Flächen anklicken."}
-          {hasMovable && " Geplante Einsätze: ziehen verschiebt; ein Klick wählt den Einsatz, dann ändern die Griffe an den Rändern die Länge (oder Umschalt + Pfeiltasten); Doppelklick oder Enter öffnet die Anfrage."}
-        </p>
         {notice && <p className="plan3__notice" role="status">{notice}</p>}
         {move && (
           <form className="plan3__move" action={moveAction} aria-labelledby="verschieben-title">
