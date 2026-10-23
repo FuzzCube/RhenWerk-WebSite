@@ -2,7 +2,7 @@
 
 Diese Seite erklärt, welche Workflows RheinWerk in n8n betreibt, was jeder tut, wie sie miteinander und mit Supabase, Gmail, OpenAI und ElevenLabs verbunden sind und wie man sie von Grund auf einrichtet. Den genauen Datenvertrag jeder Datenbankfunktion (Ein- und Ausgaben, Idempotenz, Fehlercodes) beschreibt [n8n-contract.md](n8n-contract.md); die Datenbank selbst [supabase-lokal.md](supabase-lokal.md) und [database.md](database.md).
 
-Stand: 20.10.2026, n8n 2.40.7 im Docker-Container `n8n`, alle Angaben gegen das laufende n8n geprüft.
+Stand: 23.10.2026, n8n 2.44.6 im Docker-Container `rheinwerk-n8n` auf dem VPS, 13 Workflows (12 veröffentlicht, 1 von Hand), alle Angaben gegen das laufende n8n und die Exporte in `n8n/workflows/` geprüft.
 
 ## 1. Grundidee in drei Sätzen
 
@@ -12,7 +12,7 @@ Stand: 20.10.2026, n8n 2.40.7 im Docker-Container `n8n`, alle Angaben gegen das 
 
 ## 2. Die Workflows im Überblick
 
-Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei weitere gehören zum Telefonassistenten (Phase 13), dazu der Error-Workflow (task-17-8), der Selbsttest für Systemupdates (task-18-8) und der Website-Assistent mit seinem Import (task-18-10) sowie die Auswertung von Kundenantworten zu geplanten Terminen (task-20-10). Alle sind veröffentlicht (aktiv); andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
+Es sind **13 Workflows**. Sechs bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail, 1–6); zwei gehören zum Telefonassistenten (Phase 13, 7 und 8), dazu kommen der Error-Workflow (task-17-8, 9), der Selbsttest für Systemupdates (task-18-8, 10), der Website-Assistent mit seinem Import (task-18-10, 11 und 12) und die Auswertung von Kundenantworten zu geplanten Terminen (task-20-10, 13). **12 sind veröffentlicht (aktiv)**; nur 12 „Dokumente importieren“ läuft von Hand und ist nicht veröffentlicht. Andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
 
 | # | Workflow (Name in n8n) | ID | Auslöser | Aufgabe in einem Satz |
 | --- | --- | --- | --- | --- |
@@ -24,11 +24,11 @@ Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei wei
 | 6 | RheinWerk · Gmail Versand | `IlH4b7AKuSXyMiOd` | Zeitplan jede Minute | versendet freigegebene E-Mails (Bestätigung, Rückfrage, Rechnung, Erinnerung) genau einmal |
 | 7 | RheinWerk · Telefonassistent Werkzeuge | `rwAgentTools2026` | 12 Webhooks `POST /webhook/agent-*` | Werkzeuge der Telefonassistentin „Mira“ (Einsatzgebiet, freie Termine, Anfrage anlegen …) |
 | 8 | RheinWerk · Telefonassistent Auswertung | `rwCallAnalysis26` | Zeitplan alle 2 Minuten | holt beendete Gespräche aus ElevenLabs, fasst sie mit OpenAI zusammen und speichert sie |
-| 9 | RheinWerk · Fehlermeldung | `rwFehlerMeldung1` | Error Trigger (Error-Workflow von 1–8) | schreibt jeden fehlgeschlagenen Lauf als Warnung `n8n:fehler:<id>` über `raise_alert` (kritisch bei 1, 6, 7); die E-Mail schickt der Wächter (`n8n/generate_error_workflow.py`) |
+| 9 | RheinWerk · Fehlermeldung | `rwFehlerMeldung1` | Error Trigger (Error-Workflow aller übrigen zwölf) | schreibt jeden fehlgeschlagenen Lauf als Warnung `n8n:fehler:<id>` über `raise_alert` (kritisch bei 1, 6, 7); die E-Mail schickt der Wächter (`n8n/generate_error_workflow.py`) |
+| 10 | RheinWerk · Selbsttest | `rwSelbsttest2026` | Webhook `GET /webhook/rheinwerk-selbsttest` | liest eine Zeile aus `system_status` mit dem Supabase-Credential und antwortet `{"ok": true}`; Selbsttest nach einem Systemupdate (task-18-8, `docs/betrieb.md` 6, `n8n/generate_selftest_workflow.py`) |
 | 11 | RheinWerk · Assistent | `rwAssistent2026` | Webhook `POST /webhook/rheinwerk-assistant` | Website-Assistent: beantwortet Fragen aus der Wissensbasis `rag_documents` (Supabase Vector Store, `text-embedding-3-large`, Sprachmodell `gpt-5.6-luna`), Gesprächsverlauf je Besucher (`session_id`); Aufruf nur über `/api/assistant` der Website (task-18-10, Abschnitt 9) |
 | 12 | RheinWerk · Dokumente importieren | `rwRagImport2026` | von Hand (`sh ops/vps/rag-import.sh`) | leert `rag_documents` und schreibt die Abschnitte aus `n8n/rag-documents/*.md` mit Embedding und `metadata.file` neu; nicht veröffentlicht, vom Wächter nicht erwartet |
 | 13 | RheinWerk · Kundenantwort zum Termin | `rwVisitReply2026` | Zeitplan alle 2 Minuten | liest Antworten auf Anfragen mit kommendem Termin (`visit_replies_pending`), lässt OpenAI die Absicht erkennen und übergibt sie `apply_visit_reply`: eindeutige Absage storniert den Termin, Verschiebewunsch wird markiert (`n8n/generate_visit_reply_workflow.py`) |
-| 10 | RheinWerk · Selbsttest | `rwSelbsttest2026` | Webhook `GET /webhook/rheinwerk-selbsttest` | liest eine Zeile aus `system_status` mit dem Supabase-Credential und antwortet `{"ok": true}`; Selbsttest nach einem Systemupdate (task-18-8, `docs/betrieb.md` 6, `n8n/generate_selftest_workflow.py`) |
 
 ## 3. Gesamtbild
 
@@ -36,10 +36,11 @@ Sechs Workflows bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail); zwei wei
 flowchart TB
   Kunde(["Kunde"])
   Kunde -->|Formular| Web["Website<br/>Next.js"]
+  Kunde -->|Frage im Chat| Chat["Website-Assistent"]
   Kunde -->|E-Mail| Gmail[("Gmail-Postfach")]
   Kunde -->|Anruf / Widget| Eleven["ElevenLabs<br/>„Mira“"]
 
-  subgraph n8n["n8n (Docker, Port 5678)"]
+  subgraph n8n["n8n (Docker auf dem VPS, Port 5678) · 13 Workflows"]
     direction LR
     subgraph A["Kanal Website"]
       direction TB
@@ -51,22 +52,36 @@ flowchart TB
       direction TB
       W5["5 Gmail Eingang"]
       W6["6 Gmail Versand"]
+      W13["13 Kundenantwort<br/>zum Termin"]
     end
     subgraph C["Kanal Telefon"]
       direction TB
       W7["7 Werkzeuge"]
       W8["8 Auswertung"]
     end
+    subgraph D["Website-Assistent"]
+      direction TB
+      W11["11 Assistent"]
+      W12["12 Dokumente<br/>importieren (von Hand)"]
+    end
+    subgraph E["Betrieb"]
+      direction TB
+      W9["9 Fehlermeldung<br/>(Error-Workflow aller anderen)"]
+      W10["10 Selbsttest"]
+    end
   end
 
   Web -->|Webhook| W1
+  Chat -->|"/api/assistant"| W11
   Gmail --> W5
   W6 -->|sendet| Gmail
+  W5 -.->|"Antwort zum Termin"| W13
+  W13 -.->|"Absage: Bestätigung"| W6
   Eleven -->|"Webhooks über<br/>Cloudflare Tunnel"| W7
   W8 -->|holt Gespräche| Eleven
-  A & C -.KI-Auswertung.-> OpenAI["OpenAI<br/>gpt-4.1-mini"]
+  A & C & D & W13 -.->|"KI-Auswertung"| OpenAI["OpenAI"]
 
-  n8n <==>|"nur RPC-Funktionen<br/>und privater Speicher"| DB[("Supabase<br/>Daten · Regeln · Warteschlangen")]
+  n8n <==>|"nur RPC-Funktionen<br/>und privater Speicher"| DB[("Supabase<br/>Daten · Regeln · Warteschlangen<br/>Wissensbasis")]
   Dash["Dashboard<br/>Mitarbeitende"] <==> DB
 ```
 
@@ -79,6 +94,9 @@ Die Workflows rufen sich **nicht gegenseitig über die Datenbank** auf (keine Da
 | Mitarbeiter gibt Rückfrage/Rechnung frei, Bestätigung oder Erinnerung entsteht | Nachricht `status = queued` mit Freigabe | 6 (jede Minute, `claim_queued_messages`) |
 | Telefonassistent legt Anfrage an | Anfrage + Eingangsbestätigung `queued` | 3 und 6 wie oben |
 | Gespräch beendet | Gespräch in ElevenLabs, aber nicht in `phone_calls.analyzed_at` | 8 (alle 2 Min., `agent_calls_pending`) |
+| Kunde antwortet auf einen Termin | eingehende Nachricht einer Anfrage mit kommendem Termin, noch nicht ausgewertet | 13 (alle 2 Min., `visit_replies_pending`) |
+| eindeutige Absage zum Termin | Termin storniert, Bestätigung `queued` | 6 wie oben |
+| Workflow schlägt fehl | Fehlerlauf in n8n | 9 (Error Trigger, schreibt die Warnung `n8n:fehler:<id>`) |
 
 Vorteil: Fällt ein Workflow aus, gehen keine Aufträge verloren; sie warten in der Datenbank. Die Warteschlange des Versands ist im Dashboard überwacht (Hinweis „E-Mail-Versand hängt“ nach 10 Minuten, task-12-9).
 
@@ -88,9 +106,9 @@ Vorteil: Fällt ein Workflow aus, gehen keine Aufträge verloren; sie warten in 
 
 | Credential | Typ | Benutzt von | Einrichtung |
 | --- | --- | --- | --- |
-| RheinWerk Supabase Local | Supabase API (geheimer Schlüssel, Host `http://kong:8000` im Docker-Netz des VPS; bis 22.10.2026 `http://host.docker.internal:54321` auf dem Rechner) | allen neun | `python3 n8n/bootstrap_credentials.py`, beim Umzug `ops/vps/import-backup.sh` |
+| RheinWerk Supabase Local | Supabase API (geheimer Schlüssel, Host `http://kong:8000` im Docker-Netz des VPS; bis 22.10.2026 `http://host.docker.internal:54321` auf dem Rechner) | allen 13 | `python3 n8n/bootstrap_credentials.py`, beim Umzug `ops/vps/import-backup.sh` |
 | RheinWerk Gmail (`rw46346a76655347`) | Gmail OAuth2 | 1 (Diagnose), 5, 6 | in n8n „Sign in with Google“; Google-Cloud-Projekt im Status *In production* (sonst läuft der Zugang nach 7 Tagen ab) |
-| OpenAI account 3 | OpenAI API | 3, 4, 8 | API-Schlüssel in n8n |
+| OpenAI account 3 | OpenAI API | 3, 4, 8, 11, 12, 13 | API-Schlüssel in n8n |
 | RheinWerk Agent-Secret (`rwAgentSecret001`) | Header Auth `x-agent-secret` | 7 (alle Webhooks) | `python3 n8n/bootstrap_agent_secret.py` |
 | RheinWerk ElevenLabs (`rwElevenLabs0001`) | Header Auth `xi-api-key` | 8 | `python3 n8n/bootstrap_elevenlabs.py` |
 
@@ -108,6 +126,11 @@ Kein Schlüssel steht im Repository oder in Workflow-Parametern; n8n verschlüss
 | 6 Gmail Versand | `claim_queued_messages`, `confirm_message_sent`, `mark_message_failed` | – |
 | 7 Telefon Werkzeuge | `agent_check_area`, `agent_check_contract`, `agent_free_slots`, `agent_create_request`, `agent_find_request`, `agent_request_callback`, `agent_service_hours`, `agent_request_service_callback`, `agent_find_customer`, `agent_check_email`, `agent_forward` (Werkzeug `anlage-pruefen` arbeitet ohne Datenbank, Katalog im Workflow) | – |
 | 8 Telefon Auswertung | `agent_calls_pending`, `agent_record_call` | – |
+| 9 Fehlermeldung | `raise_alert` | – |
+| 10 Selbsttest | – (liest die Tabelle `system_status`) | – |
+| 11 Assistent | – (Vector Store `rag_documents` mit `match_rag_documents`) | – |
+| 12 Dokumente importieren | – (leert und füllt `rag_documents`) | liest `n8n/rag-documents/*.md` |
+| 13 Kundenantwort zum Termin | `visit_replies_pending`, `apply_visit_reply` | – |
 
 ### Netzwerk
 
@@ -207,6 +230,39 @@ Jeder Steckbrief: **Zweck – Auslöser – Schritte – Ergebnis – Fehlerverh
 - **Schritte:** *Gespräche abrufen* (ElevenLabs API) → *Beendete Gespräche* → *Noch nicht ausgewertet* (`agent_calls_pending`) → höchstens 10 je Lauf: *Gespräch laden* → *Transkript aufbereiten* → *Auswerten (OpenAI)* → *Speichern* (`agent_record_call`, einmal je Gespräch).
 - **Fehlerverhalten:** nicht gespeicherte Gespräche bleiben „nicht ausgewertet“ und werden beim nächsten Lauf erneut versucht. Transkripte löscht die Datenbank nach 30 Tagen.
 
+### 9 · Fehlermeldung (`rwFehlerMeldung1`, 3 Knoten)
+
+- **Zweck:** Jeder fehlgeschlagene Lauf eines anderen RheinWerk-Workflows wird zur Warnung im Bereich „System“.
+- **Auslöser:** Error Trigger; als Error-Workflow bei allen übrigen zwölf eingetragen (`n8n/assign_error_workflow.mjs`) und selbst veröffentlicht, sonst ruft n8n 2.x ihn nicht auf.
+- **Schritte:** *Fehler in einem Workflow* → *Warnung aufbauen* → *Warnung speichern (`raise_alert`)*; Schlüssel `n8n:fehler:<id>`, kritisch bei 1, 6 und 7.
+- **Hinweis:** Die E-Mail schickt nicht dieser Workflow, sondern der Wächter (`alerts_to_notify`). Ausführungsdaten werden nur bei Fehlern gespeichert.
+
+### 10 · Selbsttest (`rwSelbsttest2026`, 3 Knoten)
+
+- **Zweck:** Nach einem Systemupdate prüfen, ob n8n läuft und mit dem Supabase-Credential Daten lesen kann (`docs/betrieb.md` 6).
+- **Auslöser:** Webhook `GET /webhook/rheinwerk-selbsttest`.
+- **Schritte:** *Selbsttest aufrufen* → *Supabase lesen (`system_status`)* → *Ergebnis*; Antwort `{"ok": true}`.
+
+### 11 · Assistent (`rwAssistent2026`, 7 Knoten)
+
+- **Zweck:** Der Website-Assistent beantwortet Fragen zum Unternehmen aus der Wissensbasis (task-18-10, Abschnitt 9).
+- **Auslöser:** Webhook `POST /webhook/rheinwerk-assistant`; Aufruf nur über `/api/assistant` der Website mit Cloudflare-Access-Service-Token.
+- **Aufbau:** *Frage annehmen* → *Assistent* (Agent mit Sprachmodell, Gesprächsverlauf je Besucher über `session_id` und der Wissensbasis `rag_documents` als Werkzeug mit Embeddings) → *Antwort*.
+- **Datenschutz:** Ausführungsdaten werden nur bei Fehlern gespeichert.
+
+### 12 · Dokumente importieren (`rwRagImport2026`, 6 Knoten)
+
+- **Zweck:** Wissensbasis des Assistenten aus den Dokumenten im Repository neu aufbauen.
+- **Auslöser:** von Hand (`sh ops/vps/rag-import.sh`); als einziger Workflow **nicht veröffentlicht** und vom Wächter nicht erwartet.
+- **Schritte:** *Start* → *Wissensbasis leeren* → *Dokumente lesen* (`n8n/rag-documents/*.md`) → *Abschnitte mit Quelldatei* → *Embeddings* → *Wissensbasis füllen (`rag_documents`)*.
+
+### 13 · Kundenantwort zum Termin (`rwVisitReply2026`, 6 Knoten)
+
+- **Zweck:** Antwortet ein Kunde auf die Terminbestätigung, erkennt OpenAI die Absicht; eine eindeutige Absage storniert den Termin, ein Verschiebewunsch wird für den Dispatcher markiert (task-20-10).
+- **Auslöser:** *Alle 2 Minuten*.
+- **Schritte:** *Offene Antworten laden* (`visit_replies_pending`) → *Einzeln* → *Absicht erkennen (OpenAI)* → *Ergebnis prüfen* → *Anwenden* (`apply_visit_reply`).
+- **Fehlerverhalten:** Die Datenbank entscheidet (Absage nur von der Adresse des Kunden); eine Antwort ohne gültiges Ergebnis von OpenAI bleibt offen und wird beim nächsten Lauf erneut versucht, eine gespeicherte nie zweimal ausgewertet. Der Kunde bekommt die Bestätigung über 6.
+
 ## 6. Drei Abläufe Schritt für Schritt
 
 ### Anfrage über die Website
@@ -294,6 +350,8 @@ sequenceDiagram
 ## 7. Einrichtung von Grund auf
 
 Voraussetzung: Supabase läuft ([supabase-lokal.md](supabase-lokal.md)).
+
+*Seit 22.10.2026 läuft das produktive n8n im Compose-Projekt `rheinwerk` auf dem VPS (Container `rheinwerk-n8n`, Version 2.44.6, Dienst `n8n` in `ops/vps/docker-compose.yml`, Steuerung mit `ops/vps/compose.sh`, [betrieb.md](betrieb.md)). Die folgende Einrichtung beschreibt den Aufbau von Grund auf auf einem Rechner (Container `n8n`); sie gilt entsprechend für den VPS.*
 
 1. **n8n starten** (Daten im Ordner `~/n8n/data` des Rechners, Neustart automatisch):
 
