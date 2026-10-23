@@ -28,7 +28,7 @@ Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (er
 
 ## Zuletzt abgeschlossen
 
-- `task-20-16` (23.10.2026): **Verschiebewünsche per E-Mail**: Workflow 13 erkennt Wunsch und Zeit, Eingangsbestätigung, Plantafel (Zeichen, Liste, Optionen, bestätigen oder Vorschlag senden), „Ja“ des Kunden verschiebt automatisch, Erinnerung. Workflow 13 muss auf dem VPS neu importiert werden.
+- `task-20-16` (23.10.2026): **Verschiebewünsche per E-Mail**: Workflow 13 erkennt Wunsch und Zeit, Eingangsbestätigung, Plantafel (Zeichen, Liste, Optionen, bestätigen oder Vorschlag senden), „Ja“ des Kunden verschiebt automatisch, Erinnerung. Workflow 13 ist auf dem VPS importiert und aktiv.
 - `task-20-15` (23.10.2026): **Techniker in zwei Stufen**: wenigste Aufträge der Kalenderwoche, bei Gleichstand Auslastung des Monats (ersetzt den Wochenanteil aus task-20-11).
 - `task-20-14` (23.10.2026): **Plantafel Mo–Fr; ungelesene Kundennachrichten**: roter Kreis mit Zahl auf Einsatz/Vormerkung, Marke und Ansicht „Ungelesen“ in der Anfragenliste, Hinweis oben auf der Anfrage mit „Als gelesen markieren“. Migration noch nicht auf der Produktion.
 - `task-20-13` (23.10.2026): **Plantafel mit Kundenwunsch**: bei Vormerkung keine Vorschläge; Wunsch in der Seitenleiste; Vormerkung grün (Wunsch), orange (abweichend, abstimmen), grün mit „Mira“.
@@ -69,4 +69,4 @@ Einrichtung und Betrieb `docs/telefonassistent/setup.md`; Regeln, Werkzeugvertr�
 
 ## Empfohlener nächster Schritt
 
-Phase 20 abgeschlossen und deployt bis auf task-20-11, task-20-12 und task-20-14 (Migrationen `20261023000200_technician_by_week_share.sql`, `20261023000300_dispatcher_by_month_requests.sql` und `20261023000400_unread_customer_messages.sql` auf dem VPS einspielen; Workflow rwVisitReply2026 auf dem VPS aktiv). Phasen 18 und 19 abgeschlossen und deployt; OpenAI-Admin-Key auf dem VPS eintragen; Oracle-Instanz in der Oracle Cloud löschen, wenn nichts mehr gebraucht wird. Alle Tasks der Roadmap v25 erledigt. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
+Phase 20 abgeschlossen und deployt (alle Migrationen bis `20261023000600` per CI eingespielt, Workflow rwVisitReply2026 am 23.10.2026 neu importiert und aktiv). Phasen 18 und 19 abgeschlossen und deployt; OpenAI-Admin-Key auf dem VPS eintragen; Oracle-Instanz in der Oracle Cloud löschen, wenn nichts mehr gebraucht wird. Alle Tasks der Roadmap v25 erledigt. Weitere mögliche Tasks nur nach Rücksprache: Pflege der SLA-Verträge im Dashboard, eigene Rechnungsanschrift je Kunde, SMTP für echte Passwort-Mails, KI-Vorbelegung im Posteingang über n8n, optionale E-Mail-Adresse bei telefonischen Anfragen.
