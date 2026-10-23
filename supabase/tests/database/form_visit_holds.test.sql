@@ -1,7 +1,7 @@
--- task-19-3: the website form holds the wished window (least booked technician of the month), otherwise the next free
+-- task-19-3: the website form holds the wished window (least booked technician of the week), otherwise the next free
 -- one; manual planning queues the same Terminbestätigung. Run with: supabase test db
 begin;
-select plan(27);
+select plan(30);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'd1@x.test'),
@@ -17,7 +17,7 @@ insert into public.employee_availability (employee_id, kind, weekday, local_star
 select t, 'working_hours', d, time '08:00', time '16:00'
 from generate_series(1, 5) d, unnest(array['00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b2']::uuid[]) t;
 
--- Test day: a Tuesday 10 to 16 days ahead whose Monday is in the same month (load of the month counts)
+-- Test day: a Tuesday 10 to 16 days ahead whose Monday is in the same month (and the same week)
 create function pg_temp.day() returns date language sql as $$
   select d from generate_series((now() at time zone 'Europe/Berlin')::date + 10, (now() at time zone 'Europe/Berlin')::date + 40, interval '1 day') g(d0), lateral (select d0::date d) x
   where extract(isodow from d) = 2 and date_trunc('month', d) = date_trunc('month', d - 1) limit 1;
@@ -38,7 +38,7 @@ create function pg_temp.hold(n integer) returns public.visit_holds language sql 
   select h.* from public.visit_holds h where h.request_id = ('ddbb0000-0000-4000-8000-00000000000' || n)::uuid and h.status = 'open';
 $$;
 
--- Technician 1 is busier this month (Monday before the test day), so technician 2 gets a free window first
+-- Technician 1 is busier this week (Monday before the test day), so technician 2 gets a free window first
 insert into public.requests (id, source_event_key, source, company_name, contact_name, business_email, phone_number, street_house_number, postal_code, city,
   equipment_kind, service_kind, requested_visit_date, description, customer_urgency, safety_risk, raw_payload, dispatcher_id, technician_id,
   intake_status, intake_completed_at, intake_mode, manual_minutes_baseline, work_status)
@@ -59,7 +59,7 @@ select pg_temp.submit(6, 'kaputt');
 reset role;
 
 select ok((select h.starts_at = pg_temp.at('10:00') and h.ends_at = pg_temp.at('12:00') and h.origin = 'form' and h.wish_met
-  and h.technician_id = '00000000-0000-0000-0000-0000000000b2' from pg_temp.hold(1) h), 'exact wish held for the least booked technician of the month');
+  and h.technician_id = '00000000-0000-0000-0000-0000000000b2' from pg_temp.hold(1) h), 'exact wish held for the least booked technician of the week');
 select ok((select h.starts_at = pg_temp.at('10:00') and h.wish_met and h.technician_id = '00000000-0000-0000-0000-0000000000b1' from pg_temp.hold(2) h),
   'second request at the same time: the other technician');
 select ok((select h.starts_at = pg_temp.at('08:00') and not h.wish_met from pg_temp.hold(3) h), 'wish taken by both: next free window, marked as not met');
@@ -133,11 +133,39 @@ reset role;
 select is(private.month_capacity_minutes('00000000-0000-0000-0000-0000000000b1', pg_temp.day()),
   (select count(*)::int * 480 from generate_series(date_trunc('month', pg_temp.day()), date_trunc('month', pg_temp.day()) + interval '1 month' - interval '1 day', interval '1 day') g(d)
    where extract(isodow from d) <= 5), 'capacity: working hours of the month');
+-- task-20-11: now the share of the week; technician 2 works only on Tuesday and Thursday (240 of 960 minutes booked,
+-- technician 1 570 of 2400)
 insert into public.employee_availability (employee_id, kind, starts_at, ends_at, label)
-values ('00000000-0000-0000-0000-0000000000b2', 'absence', date_trunc('month', pg_temp.day())::timestamp at time zone 'Europe/Berlin', pg_temp.at('00:00'), 'Test'),
-  ('00000000-0000-0000-0000-0000000000b2', 'absence', pg_temp.at('00:00', 3), (date_trunc('month', pg_temp.day()) + interval '1 month')::timestamp at time zone 'Europe/Berlin', 'Test');
+values ('00000000-0000-0000-0000-0000000000b2', 'absence', pg_temp.at('00:00', -1), pg_temp.at('00:00'), 'Test'),
+  ('00000000-0000-0000-0000-0000000000b2', 'absence', pg_temp.at('00:00', 1), pg_temp.at('00:00', 2), 'Test'),
+  ('00000000-0000-0000-0000-0000000000b2', 'absence', pg_temp.at('00:00', 3), pg_temp.at('00:00', 6), 'Test');
 select is(private.technician_for_window(pg_temp.at('10:00', 2), pg_temp.at('12:00', 2)), '00000000-0000-0000-0000-0000000000b1'::uuid,
   'technician with absences and few minutes but a higher share does not get the window');
+
+-- task-20-11: the share of the calendar week of the window decides, not of the month. Week A (Monday to Friday)
+-- and the following week B lie in the same month, 45 to 110 days ahead, apart from the bookings above.
+create function pg_temp.wk(plus integer, hhmm text) returns timestamptz language sql as $$
+  select ((x.d + plus)::text || ' ' || hhmm)::timestamp at time zone 'Europe/Berlin'
+  from generate_series((now() at time zone 'Europe/Berlin')::date + 45, (now() at time zone 'Europe/Berlin')::date + 110, interval '1 day') g(d0),
+    lateral (select d0::date d) x
+  where extract(isodow from x.d) = 2 and date_trunc('month', x.d - 1) = date_trunc('month', x.d + 10) limit 1;
+$$;
+delete from public.employee_availability where employee_id = '00000000-0000-0000-0000-0000000000b2' and kind = 'absence';
+insert into public.requests (id, source_event_key, source, company_name, contact_name, business_email, phone_number, street_house_number, postal_code, city,
+  equipment_kind, service_kind, requested_visit_date, description, customer_urgency, safety_risk, raw_payload, dispatcher_id, technician_id,
+  intake_status, intake_completed_at, intake_mode, manual_minutes_baseline, work_status)
+select ('00000000-0000-0000-0000-0000000000' || n)::uuid, 'week-' || n, 'website_form', 'Woche GmbH', 'W', 'w@x.test', '1', 'Str. 1', '68159', 'Mannheim',
+  'pump', 'inspection', current_date, 'Test', 'planbar', 'none_known', '{}', '00000000-0000-0000-0000-0000000000d1', t::uuid,
+  'processed', now(), 'manual', 15, 'scheduled'
+from (values ('96', '00000000-0000-0000-0000-0000000000b1'), ('97', '00000000-0000-0000-0000-0000000000b2')) v(n, t);
+-- Technician 1: three days in week B (busier month); technician 2: two hours on Monday of week A (busier week)
+insert into public.visits (request_id, technician_id, scheduled_start, scheduled_end, created_by) values
+  ('00000000-0000-0000-0000-000000000096', '00000000-0000-0000-0000-0000000000b1', pg_temp.wk(6, '08:00'), pg_temp.wk(8, '16:00'), '00000000-0000-0000-0000-0000000000d1'),
+  ('00000000-0000-0000-0000-000000000097', '00000000-0000-0000-0000-0000000000b2', pg_temp.wk(-1, '08:00'), pg_temp.wk(-1, '10:00'), '00000000-0000-0000-0000-0000000000d1');
+select is(private.week_capacity_minutes('00000000-0000-0000-0000-0000000000b1', (pg_temp.wk(0, '12:00') at time zone 'Europe/Berlin')::date), 2400, 'capacity: working hours of the week');
+select is(private.week_booked_minutes('00000000-0000-0000-0000-0000000000b2', (pg_temp.wk(0, '12:00') at time zone 'Europe/Berlin')::date), 120, 'booked minutes of the week only');
+select is(private.technician_for_window(pg_temp.wk(0, '10:00'), pg_temp.wk(0, '12:00')), '00000000-0000-0000-0000-0000000000b1'::uuid,
+  'technician with a busier month but an emptier week gets the window');
 
 select * from finish();
 rollback;

@@ -505,3 +505,7 @@
 {"timestamp": "2026-10-22T21:23:14Z", "type": "roadmap_updated", "taskId": "task-20-10", "summary": "Nutzerwunsch: task-20-10 Termin per E-Mail-Antwort stornieren ergänzt (nur Einsatz, Nutzerentscheidung)."}
 {"timestamp": "2026-10-22T21:23:14Z", "type": "task_completed", "taskId": "task-20-10", "summary": "Absage per Antwort storniert den Termin, Verschiebewunsch markiert; Workflow rwVisitReply2026; Prüfungen bestanden (test:ui bis auf 2 umgebungsbedingte Fehler)."}
 {"timestamp": "2026-10-22T21:30:36Z", "type": "verification", "taskId": "task-20-10", "summary": "Live auf der Produktion: zwei Absagen per E-Mail automatisch storniert und bestätigt."}
+{"timestamp": "2026-10-23T06:46:25Z", "type": "roadmap_updated", "taskId": "task-20-11", "summary": "Nutzerwunsch: task-20-11 Techniker nach Wochenanteil ergänzt."}
+{"timestamp": "2026-10-23T06:46:25Z", "type": "task_completed", "taskId": "task-20-11", "summary": "Vormerkung nach Anteil der Kalenderwoche statt des Monats; test:db bestanden (1239 Tests)."}
+{"timestamp": "2026-10-23T06:55:40Z", "type": "roadmap_updated", "taskId": "task-20-12", "summary": "Nutzerwunsch: task-20-12 Dispatcher nach Anfragen des Monats ergänzt."}
+{"timestamp": "2026-10-23T06:55:40Z", "type": "task_completed", "taskId": "task-20-12", "summary": "Dispatcher nach Anfragen des Kalendermonats; test:db (1245), typecheck, lint bestanden."}

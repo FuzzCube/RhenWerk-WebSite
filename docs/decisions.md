@@ -559,3 +559,11 @@ Nutzerentscheidung: Wie beim Telefonassistenten soll auch das Formular den Wunsc
 ## 22.10.2026 · Versionskonflikt nur bei echten Änderungen (task-20-8)
 
 Der Versand einer E-Mail im Hintergrund (Eingangsbestätigung, Terminbestätigung) erhöht die Version der Anfrage einige Sekunden später. Alle Aktionen der Anfrageseite senden deshalb `seen_at` (updated_at der geladenen Seite) mit. Bei RW409 wird einmal mit der aktuellen Version wiederholt, wenn seitdem mindestens ein und ausschließlich Mail-Ereignisse der Automatisierung (`message_queued`, `message_sent`) geschahen und die Version höchstens um deren Anzahl stieg. Jede andere Änderung, auch ohne Ereignis, bleibt ein Konflikt.
+
+## 23.10.2026 · Vormerkung nach Auslastung der Woche (task-20-11)
+
+Nutzerentscheidung: Für die automatische Vormerkung (Formular und Mira) zählt der Anteil der Kalenderwoche (Montag bis Sonntag) des Fensters, nicht mehr des Monats; Abwesenheiten mindern die Kapazität wie bisher. Der Monatsanteil war ungerecht, weil ein Techniker mit voller Woche, aber leerem Restmonat weiter neue Einsätze bekam. Die Plantafel zeigt weiterhin die Auslastung des Monats; die Vorschläge der manuellen Planung bleiben unverändert.
+
+## 23.10.2026 · Dispatcher nach Anfragen des Monats (task-20-12)
+
+Nutzerentscheidung: Neue Anfragen gehen an den Dispatcher mit den wenigsten Anfragen im laufenden Kalendermonat, damit alle ungefähr gleich viele bearbeiten. Unbearbeitete Anfragen zählen mit, stornierte und abgelehnte nicht, nicht zugeordnete E-Mails im Posteingang ebenfalls nicht. Bei Gleichstand erhält sie, wer am längsten keine neue Anfrage bekommen hat. Vorher zählten nur offene Erstbearbeitungen; wer schnell bearbeitete, bekam jede neue Anfrage. Die E-Mails des Posteingangs werden weiter nach offener Last verteilt, damit sie nicht alle bei einer Person landen.

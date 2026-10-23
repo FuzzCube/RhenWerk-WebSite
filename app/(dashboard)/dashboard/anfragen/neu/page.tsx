@@ -42,7 +42,7 @@ export default async function PhoneRequestPage() {
               name="dispatcher_id"
               label="Dispatcher"
               emptyLabel="Automatisch (geringste Auslastung)"
-              hint="Ohne Auswahl erhält der Dispatcher mit den wenigsten offenen Erstbearbeitungen die Anfrage."
+              hint="Ohne Auswahl erhält der Dispatcher mit den wenigsten Anfragen im laufenden Monat die Anfrage."
               options={dispatchers.map((row) => ({ value: row.id, label: row.display_name }))}
             />
           )}
