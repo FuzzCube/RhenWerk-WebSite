@@ -567,3 +567,7 @@ Nutzerentscheidung: Für die automatische Vormerkung (Formular und Mira) zählt 
 ## 23.10.2026 · Dispatcher nach Anfragen des Monats (task-20-12)
 
 Nutzerentscheidung: Neue Anfragen gehen an den Dispatcher mit den wenigsten Anfragen im laufenden Kalendermonat, damit alle ungefähr gleich viele bearbeiten. Unbearbeitete Anfragen zählen mit, stornierte und abgelehnte nicht, nicht zugeordnete E-Mails im Posteingang ebenfalls nicht. Bei Gleichstand erhält sie, wer am längsten keine neue Anfrage bekommen hat. Vorher zählten nur offene Erstbearbeitungen; wer schnell bearbeitete, bekam jede neue Anfrage. Die E-Mails des Posteingangs werden weiter nach offener Last verteilt, damit sie nicht alle bei einer Person landen.
+
+## 23.10.2026 · Kundenwunsch statt Vorschlägen auf der Plantafel (task-20-13)
+
+Nutzerentscheidung: Hat der Kunde einen Termin gewünscht und es gibt eine Vormerkung, schlägt die Plantafel keine anderen Zeiten vor; sie zeigt nur die Vormerkung und den Wunsch des Kunden. Konnte der Wunsch nicht erfüllt werden, ist die Vormerkung orange und muss mit dem Kunden abgestimmt werden. Von Mira am Telefon vereinbarte Termine gelten als abgestimmt, sind aber als „Mira“ gekennzeichnet.

@@ -1888,6 +1888,13 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 /* Window held by the phone assistant on the planning board (task-13-3): shown, not blocking */
 .plan3__key--hold, .plan3__blk--hold { background: repeating-linear-gradient(135deg, var(--rw-color-info-border) 0 3px, var(--rw-color-info-surface) 3px 7px); border: 1px dashed var(--rw-color-info-800); }
 .plan3__blk--hold { z-index: 2; color: var(--rw-color-info-800); }
+/* task-20-13: hold at the wished time (green), deviating from the wish (amber, agree with the customer), agreed by Mira (green, "M") */
+.plan3__key--hold.is-wish, .plan3__blk--hold.is-wish, .plan3__key--hold.is-mira, .plan3__blk--hold.is-mira { background: repeating-linear-gradient(135deg, var(--rw-color-success-border) 0 3px, var(--rw-color-success-surface) 3px 7px); border: 1px solid var(--rw-color-success-700); color: var(--rw-color-success-800); }
+.plan3__key--hold.is-deviates, .plan3__blk--hold.is-deviates { background: repeating-linear-gradient(135deg, var(--rw-color-warning-border) 0 3px, var(--rw-color-warning-surface) 3px 7px); border: 1.5px solid var(--rw-color-warning-800); color: var(--rw-color-warning-900); }
+.plan3__key--hold.is-mira { border-width: 2px; }
+.plan3__blk--hold.is-mira { border-width: 2px; }
+.plan3__blk-mark { margin: auto; font-weight: 700; font-size: 11px; line-height: 1; }
+.plan3__blk--pick.is-deviates:not(.is-conflict) { background: var(--rw-color-warning-surface); color: var(--rw-color-warning-900); outline-color: var(--rw-color-warning-800); }
 .request-hold__when { font-family: var(--rw-font-body); font-size: 20px; }
 
 /* E-mails waiting for the Gmail dispatch (task-12-9): banner above every dashboard page */
@@ -2011,6 +2018,10 @@ body.is-plan-dragging, body.is-plan-dragging * { cursor: grabbing !important; us
 .system-image-update__list li { display: flex; flex-wrap: wrap; gap: 8px; }
 /* Hold of the selected request on the planning board (task-20-2) */
 .plan3__hold-note { margin-top: 4px; padding: 8px 10px; font-size: 13px; line-height: 1.45; background: color-mix(in srgb, var(--rw-color-lime-500) 14%, white); border-left: 3px solid var(--rw-color-lime-500); }
+.plan3__hold-note--deviates { background: var(--rw-color-warning-surface); border-left-color: var(--rw-color-warning-800); color: var(--rw-color-warning-900); }
+.plan3__hold-note--wish, .plan3__hold-note--mira { background: var(--rw-color-success-surface); border-left-color: var(--rw-color-success-700); }
+.plan3__wish { margin-top: 4px; font-size: 14px; }
+.plan3__mira { display: inline-block; margin-right: 4px; padding: 0 6px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--rw-color-success-700); color: #fff; }
 /* Chosen visit with handles to change its length (task-20-3) */
 .plan3__blk--own.is-chosen { overflow: visible; z-index: 4; box-shadow: 0 0 0 2px var(--rw-color-lime-500), 0 2px 8px rgba(11, 31, 51, 0.25); }
 .plan3__handle { position: absolute; top: -3px; bottom: -3px; width: 10px; display: block; cursor: ew-resize; touch-action: none; pointer-events: auto; background: var(--rw-color-lime-500); border: 1px solid var(--rw-color-navy-950); border-radius: 2px; }

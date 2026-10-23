@@ -40,6 +40,8 @@ type Props = {
   emptyPanel: ReactNode;
   initialDuration: number;
   initialPick: BoardPick | null;
+  // false when the request has an open hold (task-20-13): the customer's wish decides, no suggestions
+  suggest: boolean;
   // Load per technician in the calendar month of the shown day (task-12-1); month as its first day
   monthLoads: { month: string; loads: Record<string, MonthLoad> };
 };
@@ -56,6 +58,16 @@ const pickOf = (block: BusyBlock): BoardPick => ({
 const shortDay = (day: string) => formatWeekdayDate(`${day}T12:00:00Z`).replace(/\d{4}$/, "");
 const longDayFormat = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: TIME_ZONE });
 const longDay = (day: string) => longDayFormat.format(new Date(`${day}T12:00:00Z`));
+// Hold on the board (task-20-13): colour and text tell wish met, deviating from the wish (agree with the customer)
+// or agreed by Mira on the phone
+const HOLD_TEXT = { wish: "Wunschtermin", deviates: "abweichend vom Wunsch, mit Kunde abstimmen", mira: "mit Mira vereinbart" } as const;
+const HOLD_MARK = { wish: "", deviates: "!", mira: "M" } as const;
+const holdLabel = (block: BusyBlock) => {
+  const base = `Vorgemerkt ${block.requestNumber ?? ""}`.trim();
+  if (!block.hold) return base;
+  const wish = block.hold.state === "deviates" && block.hold.wish ? ` (Wunsch: ${block.hold.wish})` : "";
+  return `${base} · ${HOLD_TEXT[block.hold.state]}${wish}`;
+};
 const nextWorkday = (day: string, step: 1 | -1) => {
   let next = addDays(day, step);
   while (isoWeekday(next) > 5) next = addDays(next, step);
@@ -135,9 +147,9 @@ export function PlanBoard(props: Props) {
     return blocks;
   }, [busy, availability.busy]);
 
-  const suggestions = useMemo(() => request
+  const suggestions = useMemo(() => request && props.suggest
     ? suggestSlots({ technicians, workingHours, busy: availability.busy, days: availability.days, now, durationMinutes: duration, experience: availability.experience })
-    : [], [request, technicians, workingHours, availability, now, duration]);
+    : [], [request, props.suggest, technicians, workingHours, availability, now, duration]);
 
   const techName = (id: string) => technicians.find((tech) => tech.id === id)?.name ?? "Unbekannt";
 
@@ -261,7 +273,7 @@ export function PlanBoard(props: Props) {
         const start = dayKeyOf(new Date(block.start)) < day ? 0 : minutesOfDay(new Date(block.start));
         const end = dayKeyOf(new Date(block.end)) > day ? 24 * 60 : minutesOfDay(new Date(block.end));
         const kind = block.kind === "absence" ? "absence" : block.kind === "hold" ? "hold" : block.requestNumber ? "own" : "busy";
-        const label = kind === "absence" ? "Abwesend" : kind === "hold" ? `Vorgemerkt ${block.requestNumber ?? ""}`.trim() : block.requestNumber ?? "Belegt";
+        const label = kind === "absence" ? "Abwesend" : kind === "hold" ? holdLabel(block) : block.requestNumber ?? "Belegt";
         return { start, end, kind, label, block };
       });
   }
@@ -494,6 +506,10 @@ export function PlanBoard(props: Props) {
     const busyText = segments.filter((segment) => segment.kind !== "absence" && segment.kind !== "hold").map((segment) => `${toTime(segment.start)}–${toTime(segment.end)}`).join(", ");
     const label = `${name}, ${shortDay(day)}: ${absentAllDay ? "nicht verfügbar" : `${busyText ? `belegt ${busyText}` : "frei"}${canPick ? (firstWindow ? `, frei ab ${firstWindow.start}` : `, kein freies Fenster für ${durationText(duration)}`) : ""}`}`;
     const pickHere = !drag && pick && pick.technicianId === technicianId && pick.day === day ? pick : null;
+    // The selection still on a hold that deviates from the wish keeps that warning colour (task-20-13)
+    const pickDeviates = pickHere && busy.some((block) => block.kind === "hold" && block.hold?.state === "deviates" && block.requestId === request?.id
+      && block.technicianId === technicianId && dayKeyOf(new Date(block.start)) === day
+      && toTime(minutesOfDay(new Date(block.start))) === pickHere.start && toTime(minutesOfDay(new Date(block.end))) === pickHere.end);
     const dragHere = drag && drag.technicianId === technicianId && drag.day === day ? drag : null;
     const moveHere = !drag && move && move.to.technicianId === technicianId && move.to.day === day ? move : null;
     const ghosts = suggestions
@@ -549,7 +565,13 @@ export function PlanBoard(props: Props) {
             // Colours by time (task-20-3): coming visits blue, past ones dark grey
             const past = segment.kind === "own" && Date.parse(visit.end) <= now.getTime() ? " is-past" : "";
             if (!movable) {
-              return <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}${past}`} style={place(segment.start, segment.end)} title={`${segment.label} · ${span}`}>{text}</span>;
+              const holdState = segment.kind === "hold" ? visit.hold?.state : undefined;
+              return (
+                <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--${segment.kind}${past}${holdState ? ` is-${holdState}` : ""}`}
+                  style={place(segment.start, segment.end)} title={`${segment.label} · ${span}`} data-hold-state={holdState}>
+                  {text || (holdState && HOLD_MARK[holdState] && <span className="plan3__blk-mark" aria-hidden="true">{HOLD_MARK[holdState]}</span>)}
+                </span>
+              );
             }
             const isMoving = move?.visitId === visit.move?.visitId || (drag?.ignore?.start === Date.parse(visit.start) && drag.ignore.technicianId === visit.technicianId);
             const chosen = chosenVisit === visit.move?.visitId && !isMoving;
@@ -610,11 +632,12 @@ export function PlanBoard(props: Props) {
         ))}
         {pickHere && (
           <span
-            className={`plan3__blk plan3__blk--pick${pickCheck?.ok ? "" : " is-conflict"}`}
+            className={`plan3__blk plan3__blk--pick${pickCheck?.ok ? "" : " is-conflict"}${pickDeviates ? " is-deviates" : ""}`}
             style={place(toMinutes(pickHere.start), toMinutes(pickHere.end))}
             role="button"
             tabIndex={0}
-            aria-label={`Auswahl ${name}, ${shortDay(day)} ${pickHere.start}–${pickHere.end}. Ziehen oder mit Pfeiltasten verschieben, Griffe an den Rändern oder Umschalt und Pfeiltasten ändern die Länge.`}
+            title={pickDeviates ? "Vorgemerkt, abweichend vom Wunsch: mit dem Kunden abstimmen" : undefined}
+            aria-label={`Auswahl ${name}, ${shortDay(day)} ${pickHere.start}–${pickHere.end}${pickDeviates ? ", abweichend vom Kundenwunsch" : ""}. Ziehen oder mit Pfeiltasten verschieben, Griffe an den Rändern oder Umschalt und Pfeiltasten ändern die Länge.`}
             onPointerDown={(event) => startDrag(event, pick)}
             onClick={(event) => event.stopPropagation()}
             onKeyDown={keyMove}
@@ -674,8 +697,10 @@ export function PlanBoard(props: Props) {
           <li><i className="plan3__key plan3__key--own-past" />Einsätze, vorbei</li>
           <li><i className="plan3__key plan3__key--busy" />Belegt (andere)</li>
           <li><i className="plan3__key plan3__key--absence" />Abwesend</li>
-          <li><i className="plan3__key plan3__key--hold" />Vorgemerkt (Telefon, Formular)</li>
-          {canPick && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
+          <li><i className="plan3__key plan3__key--hold is-wish" />Vorgemerkt: Wunschtermin</li>
+          <li><i className="plan3__key plan3__key--hold is-deviates" />Vorgemerkt: abweichend vom Wunsch, abstimmen</li>
+          <li><i className="plan3__key plan3__key--hold is-mira" />Vorgemerkt: mit Mira vereinbart</li>
+          {canPick && props.suggest && <li><i className="plan3__key plan3__key--sug" />Vorschlag</li>}
           {canPick && <li><i className="plan3__key plan3__key--pick" />Auswahl</li>}
           <li><i className="plan3__key plan3__key--past" />Vorbei</li>
           <li><i className="plan3__key plan3__key--outside" />Außerhalb der Arbeitszeit</li>
@@ -715,7 +740,7 @@ export function PlanBoard(props: Props) {
         </div>
         <p className="plan3__hint">
           {canPick
-            ? <>Vorschlag oder leere Fläche anklicken, die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl) und ihre Länge an den Rändern ändern (aktuell {durationText(duration)}). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
+            ? <>{props.suggest ? "Vorschlag oder leere Fläche" : "Leere Fläche"} anklicken, die Auswahl ziehen (15-Minuten-Raster, auch zu anderem Techniker oder Tag; Pfeiltasten auf der Auswahl) und ihre Länge an den Rändern ändern (aktuell {durationText(duration)}). Jede Zeile zeigt <span className="mono">{toTime(bounds.from)}</span> bis <span className="mono">{toTime(bounds.to)}</span>.</>
             : "Links eine Anfrage wählen, dann lassen sich freie Flächen anklicken."}
           {hasMovable && " Geplante Einsätze: ziehen verschiebt; ein Klick wählt den Einsatz, dann ändern die Griffe an den Rändern die Länge (oder Umschalt + Pfeiltasten); Doppelklick oder Enter öffnet die Anfrage."}
         </p>
@@ -766,7 +791,7 @@ export function PlanBoard(props: Props) {
         {request ? (
           <>
             <div className="plan3__panel-sec plan3__panel-sec--head">{props.requestSummary}</div>
-            <div className="plan3__panel-sec">
+            {props.suggest && <div className="plan3__panel-sec">
               <h3 className="plan3__eyebrow">Vorschläge</h3>
               {suggestions.length === 0 ? (
                 <p className="plan3__muted">Kein freies Fenster für {durationText(duration)} in den nächsten 7 Arbeitstagen. Im Termin unten ein früheres Ende eintragen oder eine spätere Woche öffnen.</p>
@@ -793,7 +818,7 @@ export function PlanBoard(props: Props) {
                   })}
                 </ul>
               )}
-            </div>
+            </div>}
             <div className="plan3__panel-sec">
               <h3 className="plan3__eyebrow">Termin</h3>
               <SaveForm key={formKey} action={scheduleVisit} submitLabel="Einsatz planen" className="plan3__form">
@@ -810,7 +835,7 @@ export function PlanBoard(props: Props) {
                 <CheckboxField name="notify_customer" label="Terminbestätigung an den Kunden senden" defaultChecked />
                 <p className={`plan3__check plan3__check--${pickCheck ? (pickCheck.ok ? "ok" : "bad") : "none"}`} aria-live="polite">
                   <Icon name={pickCheck ? (pickCheck.ok ? "check-circle" : "alert") : "calendar"} size={18} />
-                  <span>{pickCheck ? pickCheck.message : "Noch kein Termin gewählt: Vorschlag oder freie Fläche in der Plantafel anklicken."}</span>
+                  <span>{pickCheck ? pickCheck.message : `Noch kein Termin gewählt: ${props.suggest ? "Vorschlag oder freie Fläche" : "Vormerkung oder freie Fläche"} in der Plantafel anklicken.`}</span>
                 </p>
               </SaveForm>
             </div>

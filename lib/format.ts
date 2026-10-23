@@ -66,6 +66,15 @@ export function formatCalendarDate(value: string | null | undefined): string {
   return plainDateFormat.format(new Date(`${value}T00:00:00Z`));
 }
 
+const WISHED_TIME: Record<string, string> = { any: "Uhrzeit beliebig", morning: "vormittags", afternoon: "nachmittags" };
+
+/** Wished appointment from the website form (task-19-3): "Fr., 24.10.2026, 10:00 Uhr" or "Fr., 24.10.2026, vormittags" */
+export function formatWish(day: string | null | undefined, time: string | null | undefined): string {
+  const date = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? formatWeekdayDate(`${day}T12:00:00Z`) : EMPTY;
+  const wished = time || "any";
+  return `${date}, ${WISHED_TIME[wished] ?? `${wished} Uhr`}`;
+}
+
 /** Day in Berlin as YYYY-MM-DD, e.g. for grouping by day */
 export function berlinDayKey(value: DateInput): string {
   const date = toDate(value);

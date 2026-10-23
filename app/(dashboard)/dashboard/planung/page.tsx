@@ -87,9 +87,17 @@ export default async function PlanningPage({ searchParams }: Props) {
       </div>
       <strong className="plan3__req-name">{selected.company_name}</strong>
       <span className="plan3__muted">{selected.city} · {label("service_kind", selected.service_kind)} · <PriorityText priority={selected.priority} /></span>
+      {/* task-20-13: what the customer wished and whether the hold meets it; with a hold the board makes no suggestions */}
+      {hold && hold.info.wish && (
+        <span className="plan3__wish">Kundenwunsch: <strong className="mono">{hold.info.wish}</strong></span>
+      )}
       {hold && (
-        <span className="plan3__hold-note">
-          Terminwunsch vorgemerkt: <span className="mono">{formatDateTime(hold.start)}–{toTime(minutesOfDay(new Date(hold.end)))}</span>, {techName(hold.technicianId)}. Als Auswahl gesetzt; „Einsatz planen“ übernimmt ihn, eine andere Zeit ersetzt ihn.
+        <span className={`plan3__hold-note plan3__hold-note--${hold.info.state}`} data-hold-state={hold.info.state}>
+          {hold.info.state === "mira" && <><span className="plan3__mira">Mira</span> Am Telefon mit dem Kunden vereinbart: </>}
+          {hold.info.state === "wish" && "Vorgemerkt zum Wunschtermin: "}
+          {hold.info.state === "deviates" && <><strong>Abweichend vom Wunsch</strong>, zur gewünschten Zeit war niemand frei. Vorgemerkt ist der nächste freie Termin: </>}
+          <span className="mono">{formatDateTime(hold.start)}–{toTime(minutesOfDay(new Date(hold.end)))}</span>, {techName(hold.technicianId)}.
+          {hold.info.state === "deviates" ? " Vor dem Planen mit dem Kunden abstimmen." : " Als Auswahl gesetzt; „Einsatz planen“ übernimmt ihn, eine andere Zeit ersetzt ihn."}
         </span>
       )}
       {selected.due_at && <span className="plan3__muted">Servicefrist <span className="mono">{formatDateTime(selected.due_at)}</span></span>}
@@ -125,7 +133,7 @@ export default async function PlanningPage({ searchParams }: Props) {
           <h1>Einsatzplanung</h1>
           <p className="plan3__takeaway">
             <strong>{waiting === 0 ? "Alle Anfragen sind eingeplant." : waiting === 1 ? "1 Anfrage wartet auf einen Termin." : `${waiting} Anfragen warten auf einen Termin.`}</strong>
-            {selected && first && <> Für {selected.request_number} ist {first.name} am {shortDay(first.day)} ab <span className="mono">{first.startTime}</span> am frühesten frei.</>}
+            {selected && first && !hold && <> Für {selected.request_number} ist {first.name} am {shortDay(first.day)} ab <span className="mono">{first.startTime}</span> am frühesten frei.</>}
           </p>
         </div>
         <dl className="plan3__kpis" aria-label="Kennzahlen der nächsten 7 Arbeitstage">
@@ -183,6 +191,7 @@ export default async function PlanningPage({ searchParams }: Props) {
           emptyPanel={emptyPanel}
           initialDuration={duration}
           initialPick={pick}
+          suggest={!hold}
           monthLoads={{ month: monthLoads.month, loads: monthLoads.loads }}
         />
       </div>

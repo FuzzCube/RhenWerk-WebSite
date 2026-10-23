@@ -4,7 +4,7 @@ Kurzfassung für den Einstieg. Übersicht über Phasen und Tasks: `npm run works
 
 ## Projekt
 
-RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v25, 21 Phasen, 130 Tasks, Fortschritt 100 % (Gewicht 296 von 296).
+RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` in der RheinWerk-Website (Next.js 16; Supabase und n8n seit 22.10.2026 auf dem VPS `ssh vps`, lokal nur Entwicklungsumgebung), dazu n8n/OpenAI/Gmail-Integration und der KI-Telefonassistent „Mira“ (ElevenLabs). Portfolio-Projekt mit Demodaten. Roadmap v25, 21 Phasen, 131 Tasks, Fortschritt 100 % (Gewicht 297 von 297).
 
 Repository: `github.com/FuzzCube/RhenWerk-WebSite` (`origin`), Commits auf `main`, Push nur auf Wunsch des Nutzers (Stand mit `git status` prüfen).
 
@@ -24,10 +24,11 @@ Nutzerrundgang vor der Präsentation, fünf Blöcke: `task-19-1` Oberfläche (er
 
 ## Phase 20 „Rückmeldungen nach dem Rundgang“ (Roadmap v25, 22.10.2026, abgeschlossen)
 
-`task-20-1` Formular (erledigt), `task-20-2` Anfrage → Einsatzplanung mit Vormerkung als Auswahl (erledigt), `task-20-3` Plantafel (erledigt), `task-20-4` Erstbearbeitung → Einsatzplanung (erledigt), `task-20-5` Länge per Griffen (erledigt), `task-20-6` Eingangs- und Terminbestätigung, `task-20-7` Terminänderung per E-Mail, `task-20-8` Entwurf und Konflikte, `task-20-9` Techniker nach Monatsanteil, `task-20-10` Storno per E-Mail-Antwort, `task-20-11` Techniker nach Wochenanteil, `task-20-12` Dispatcher nach Anfragen des Monats (erledigt). Uhrzeit im Formular seit Nutzerwunsch bis 16:00.
+`task-20-1` Formular (erledigt), `task-20-2` Anfrage → Einsatzplanung mit Vormerkung als Auswahl (erledigt), `task-20-3` Plantafel (erledigt), `task-20-4` Erstbearbeitung → Einsatzplanung (erledigt), `task-20-5` Länge per Griffen (erledigt), `task-20-6` Eingangs- und Terminbestätigung, `task-20-7` Terminänderung per E-Mail, `task-20-8` Entwurf und Konflikte, `task-20-9` Techniker nach Monatsanteil, `task-20-10` Storno per E-Mail-Antwort, `task-20-11` Techniker nach Wochenanteil, `task-20-12` Dispatcher nach Anfragen des Monats, `task-20-13` Kundenwunsch statt Vorschlägen (erledigt). Uhrzeit im Formular seit Nutzerwunsch bis 16:00.
 
 ## Zuletzt abgeschlossen
 
+- `task-20-13` (23.10.2026): **Plantafel mit Kundenwunsch**: bei Vormerkung keine Vorschläge; Wunsch in der Seitenleiste; Vormerkung grün (Wunsch), orange (abweichend, abstimmen), grün mit „Mira“.
 - `task-20-12` (23.10.2026): **Dispatcher nach Anfragen des Monats** (unbearbeitete zählen, stornierte/abgelehnte nicht; Gleichstand: am längsten ohne neue Anfrage); Posteingang weiter nach offener Last. Migration noch nicht auf der Produktion.
 - `task-20-11` (23.10.2026): **Vormerkung nach Wochenanteil**: Kalenderwoche Mo–So statt Monat (Abwesenheiten mindern die Kapazität); Plantafel zeigt weiter den Monat. Migration noch nicht auf der Produktion.
 - `task-20-10` (22.10.2026): **Storno per E-Mail-Antwort**: Workflow „Kundenantwort zum Termin“ (rwVisitReply2026) storniert bei eindeutiger Absage den Termin (Anfrage zurück in die Planung) und bestätigt dem Kunden; Verschiebewunsch nur markiert.

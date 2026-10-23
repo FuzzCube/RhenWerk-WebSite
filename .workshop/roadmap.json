@@ -4557,6 +4557,38 @@
             ],
             "summary": "Ursache lokal belegt: Lea Schneider hatte 0 offene Erstbearbeitungen (Murat, Sophie je 1) und bekam am 22.10. alle drei Formularanfragen. Migration 20261023000300: least_loaded_dispatcher zählt Anfragen des Kalendermonats (Europe/Berlin, ohne cancelled/rejected/Demo), Gleichstand nach letzter neuer Anfrage; ingest_submission ohne eigene Kopie der alten Regel. Posteingang (record_incoming_message, admin_deactivate_employee) über least_loaded_inbox_dispatcher mit der alten Regel, sonst landeten alle E-Mails bei einer Person (inbox_load_balancing.test.sql). Neuer Test dispatcher_month_balance.test.sql (6). Hinweis auf „Anfrage aufnehmen“ angepasst. build und test:ui nicht ausgeführt. Produktion noch nicht eingespielt."
           }
+        },
+        {
+          "id": "task-20-13",
+          "title": "Kundenwunsch statt Vorschlägen auf der Plantafel",
+          "description": "Nutzerwunsch 23.10.2026: Hat der Kunde einen Wunschtermin genannt, zeigt die Plantafel keine Vorschläge, nur die Vormerkung zum Wunsch oder zum nächsten freien Termin. Der Wunsch steht gut sichtbar in der Seitenleiste; die Farbe zeigt, ob die Vormerkung abweicht und abgestimmt werden muss; von Mira vereinbarte Termine sind als solche erkennbar.",
+          "order": 13,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-12"
+          ],
+          "definitionOfDone": [
+            "Keine Vorschläge bei offener Vormerkung",
+            "Kundenwunsch in der Seitenleiste",
+            "Farben: Wunschtermin, abweichend, Mira; Legende und Tooltip",
+            "390/768/Desktop geprüft",
+            "Unit-Test formatWish"
+          ],
+          "startedAt": "2026-10-23T07:15:39Z",
+          "completedAt": "2026-10-23T07:27:35Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-23T07:27:35Z",
+            "commands": [
+              "npm run typecheck",
+              "npm run lint",
+              "npm run test:unit (151)",
+              "APP_URL=http://localhost:3100 npm run test:ui (2 bekannte umgebungsbedingte Fehler)",
+              "Screenshots 390/768/1440 mit vorübergehenden Vormerkungen (danach gelöscht)"
+            ],
+            "summary": "planning.ts lädt zu Vormerkungen origin, wish_met, Wunschtag und preferred_time (HOLD_SELECT, holdInfo: wish/deviates/mira). PlanBoard bekommt suggest=false bei offener Vormerkung: keine Vorschlagsflächen, keine Liste, kein „am frühesten frei“ im Kopf. Seitenleiste: „Kundenwunsch: …“ (formatWish in lib/format.ts, auch auf der Anfrageseite) und farbiger Hinweis (grün, orange mit „mit dem Kunden abstimmen“, grün mit Marke Mira). Tafel: Vormerkungen grün/orange(!)/grün(M), Legende mit drei Einträgen, Auswahl auf abweichender Vormerkung orange. test:ui: nur die 2 bekannten Fehler wegen lokal wartender Test-E-Mails. Keine Datenbankänderung."
+          }
         }
       ]
     }

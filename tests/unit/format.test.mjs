@@ -2,7 +2,7 @@
 // Run with: npm run test:unit   (Node strips the TypeScript types of the imported modules)
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { berlinDayKey, formatCalendarDate, formatCurrency, formatDate, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTime, formatTimeRange, EMPTY } from "../../lib/format.ts";
+import { berlinDayKey, formatCalendarDate, formatCurrency, formatDate, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTime, formatTimeRange, formatWish, EMPTY } from "../../lib/format.ts";
 import { databaseErrorMessage, formError, formValues } from "../../lib/forms.ts";
 import { label, statusInfo, STATUS } from "../../lib/status.ts";
 
@@ -107,4 +107,11 @@ test("Berliner Kalenderarithmetik für die Einsatzplanung", async () => {
   assert.equal(t.isTime("24:00"), false);
   assert.equal(t.isDayKey("2026-02-30"), false);
   assert.equal(t.isDayKey("2026-02-28"), true);
+});
+
+test("wished appointment from the website form (task-20-13)", () => {
+  assert.equal(formatWish("2026-10-29", "10:00"), "Do., 29.10.2026, 10:00 Uhr");
+  assert.equal(formatWish("2026-10-29", "morning"), "Do., 29.10.2026, vormittags");
+  assert.equal(formatWish("2026-10-29", null), "Do., 29.10.2026, Uhrzeit beliebig");
+  assert.equal(formatWish(null, "afternoon"), `${EMPTY}, nachmittags`);
 });

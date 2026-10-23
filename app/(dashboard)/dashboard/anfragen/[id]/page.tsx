@@ -18,7 +18,7 @@ import { requireRole } from "@/lib/auth/session";
 import { formatCallDuration } from "@/lib/dashboard/calls";
 import { getEmployeeNames, getRequestDetail, sectionsFor, type CustomerSuggestion, type RequestDetail, type SectionId } from "@/lib/dashboard/requests";
 import { describeEvent } from "@/lib/events";
-import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange } from "@/lib/format";
+import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange, formatWish } from "@/lib/format";
 import { nextReminderText, stageLabel } from "@/lib/reminders";
 import { contractHint } from "@/lib/service-contract";
 import { label, statusInfo } from "@/lib/status";
@@ -481,8 +481,6 @@ function CustomerSuggestions({ request, suggestions }: { request: RequestDetail[
   );
 }
 
-const WISHED_TIME: Record<string, string> = { any: "Uhrzeit beliebig", morning: "vormittags", afternoon: "nachmittags" };
-
 // Held window of the phone assistant (task-13-3) or the website form (task-19-3). Since task-20-2 it is planned on the
 // planning board, where it is the preselected slot; planning there closes it (also at another time).
 function VisitReplyNotice({ event, requestId }: { event: RequestDetail["events"][number]; requestId: string }) {
@@ -504,8 +502,7 @@ function VisitReplyNotice({ event, requestId }: { event: RequestDetail["events"]
 
 function HoldNote({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
   const payload = request.raw_payload as { request?: { preferred_time?: string } } | null;
-  const time = payload?.request?.preferred_time ?? "any";
-  const wish = `${request.requested_visit_date ? formatCalendarDate(request.requested_visit_date) : "–"}, ${WISHED_TIME[time] ?? `ab ${time} Uhr`}`;
+  const wish = formatWish(request.requested_visit_date, payload?.request?.preferred_time);
   return (
     <p className="rw-card__note request-hold__line">
       Terminwunsch vorgemerkt: <span className="mono">{formatTimeRange(hold.starts_at, hold.ends_at)}</span>, {person(hold.technician_id)}.

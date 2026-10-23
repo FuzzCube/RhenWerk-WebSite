@@ -509,3 +509,5 @@
 {"timestamp": "2026-10-23T06:46:25Z", "type": "task_completed", "taskId": "task-20-11", "summary": "Vormerkung nach Anteil der Kalenderwoche statt des Monats; test:db bestanden (1239 Tests)."}
 {"timestamp": "2026-10-23T06:55:40Z", "type": "roadmap_updated", "taskId": "task-20-12", "summary": "Nutzerwunsch: task-20-12 Dispatcher nach Anfragen des Monats ergänzt."}
 {"timestamp": "2026-10-23T06:55:40Z", "type": "task_completed", "taskId": "task-20-12", "summary": "Dispatcher nach Anfragen des Kalendermonats; test:db (1245), typecheck, lint bestanden."}
+{"timestamp": "2026-10-23T07:27:35Z", "type": "roadmap_updated", "taskId": "task-20-13", "summary": "Nutzerwunsch: task-20-13 Kundenwunsch statt Vorschlägen ergänzt."}
+{"timestamp": "2026-10-23T07:27:35Z", "type": "task_completed", "taskId": "task-20-13", "summary": "Plantafel ohne Vorschläge bei Vormerkung, Kundenwunsch und Farben; typecheck, lint, test:unit, test:ui (2 bekannte Fehler)."}

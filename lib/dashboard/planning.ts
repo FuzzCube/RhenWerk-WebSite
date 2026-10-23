@@ -3,6 +3,7 @@ import { addDays, berlinToInstant, isDayKey, weekStart, dayKeyOf } from "@/lib/b
 import type { Employee } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { nextWorkingDays, suggestSlots, type SlotBusy, type SlotExperience, type SlotSuggestion } from "@/lib/slot-suggestions";
+import { formatWish } from "@/lib/format";
 import { monthDays, monthLoad, type MonthLoad } from "@/lib/technician-load";
 import type { QueueRow } from "./queues";
 
@@ -11,6 +12,10 @@ import type { QueueRow } from "./queues";
 // for visits the user may read anyway via RLS (own requests for dispatchers, all for managers).
 export type Technician = { id: string; name: string };
 export type WorkingHours = { technicianId: string; weekday: number; start: string; end: string; validFrom: string | null; validTo: string | null };
+// Open hold on the board (task-20-13): at the wished time (form), deviating from the wish (form, nothing free then;
+// to be agreed with the customer) or agreed with the customer on the phone by Mira. wish: the customer's wish (form)
+export type HoldState = "wish" | "deviates" | "mira";
+export type HoldInfo = { state: HoldState; wish: string | null };
 export type BusyBlock = {
   technicianId: string;
   start: string;
@@ -23,6 +28,8 @@ export type BusyBlock = {
   // Planned visit that may still be moved on the board (task-10-8): status scheduled, not started yet;
   // version is the request version reschedule_visit checks
   move: { visitId: string; version: number } | null;
+  // Only for holds
+  hold?: HoldInfo;
 };
 export type PlanningRequest = Pick<QueueRow, "id" | "request_number" | "company_name" | "city" | "service_kind" | "priority" | "customer_urgency" | "safety_check_required" | "work_status" | "due_at" | "waiting_since" | "version">;
 
@@ -37,6 +44,16 @@ export type PlanningData = {
   selectedPlanned: { id: string; request_number: string } | null;
   error: boolean;
 };
+
+// Hold with what the customer wished (website form: day and preferred_time from the submission)
+const HOLD_SELECT = "request_id, technician_id, starts_at, ends_at, origin, wish_met, requests!inner(request_number, requested_visit_date, preferred_time:raw_payload->request->>preferred_time)";
+type HoldRequest = { request_number: string | null; requested_visit_date: string | null; preferred_time: string | null };
+
+function holdInfo(hold: { origin: string; wish_met: boolean | null; requests: unknown }): HoldInfo {
+  if (hold.origin === "phone") return { state: "mira", wish: null };
+  const request = hold.requests as HoldRequest;
+  return { state: hold.wish_met === false ? "deviates" : "wish", wish: formatWish(request.requested_visit_date, request.preferred_time) };
+}
 
 export async function loadPlanning(employee: Employee, weekParam: string | undefined, requestParam: string | undefined): Promise<PlanningData> {
   const today = dayKeyOf(new Date());
@@ -64,7 +81,7 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
     supabase.rpc("technician_busy_intervals", { range_start: rangeStart, range_end: rangeEnd }),
     supabase.from("visits").select("id, request_id, technician_id, scheduled_start, scheduled_end, status").in("status", ["scheduled", "in_progress"]).lt("scheduled_start", rangeEnd).gt("scheduled_end", rangeStart),
     queueQuery,
-    employee.role === "technician" ? null : supabase.from("visit_holds").select("request_id, technician_id, starts_at, ends_at, requests!inner(request_number)").eq("status", "open").lt("starts_at", rangeEnd).gt("ends_at", rangeStart),
+    employee.role === "technician" ? null : supabase.from("visit_holds").select(HOLD_SELECT).eq("status", "open").lt("starts_at", rangeEnd).gt("ends_at", rangeStart),
   ]);
 
   // Request numbers of readable visits (RLS)
@@ -119,8 +136,9 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
       end: hold.ends_at,
       kind: "hold" as const,
       requestId: hold.request_id,
-      requestNumber: (hold.requests as unknown as { request_number: string | null }).request_number,
+      requestNumber: (hold.requests as unknown as HoldRequest).request_number,
       move: null,
+      hold: holdInfo(hold),
     }))),
     queue: queueRows,
     selected,
@@ -196,16 +214,16 @@ export async function loadMonthLoads(day: string, technicians: Technician[], wor
 }
 
 // Where the planning board opens for a request (task-20-2): its open hold (technician, window) or the wished day
-export type PlanningTarget = { hold: { technicianId: string; start: string; end: string } | null; wishedDay: string | null };
+export type PlanningTarget = { hold: { technicianId: string; start: string; end: string; info: HoldInfo } | null; wishedDay: string | null };
 
 export async function loadPlanningTarget(requestId: string): Promise<PlanningTarget> {
   const supabase = await createClient();
   const [hold, request] = await Promise.all([
-    supabase.from("visit_holds").select("technician_id, starts_at, ends_at").eq("request_id", requestId).eq("status", "open").maybeSingle(),
+    supabase.from("visit_holds").select(HOLD_SELECT).eq("request_id", requestId).eq("status", "open").maybeSingle(),
     supabase.from("requests").select("requested_visit_date").eq("id", requestId).maybeSingle(),
   ]);
   return {
-    hold: hold.data ? { technicianId: hold.data.technician_id, start: hold.data.starts_at, end: hold.data.ends_at } : null,
+    hold: hold.data ? { technicianId: hold.data.technician_id, start: hold.data.starts_at, end: hold.data.ends_at, info: holdInfo(hold.data) } : null,
     wishedDay: request.data?.requested_visit_date ?? null,
   };
 }
