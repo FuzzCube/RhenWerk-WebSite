@@ -513,3 +513,5 @@
 {"timestamp": "2026-10-23T07:27:35Z", "type": "task_completed", "taskId": "task-20-13", "summary": "Plantafel ohne Vorschläge bei Vormerkung, Kundenwunsch und Farben; typecheck, lint, test:unit, test:ui (2 bekannte Fehler)."}
 {"timestamp": "2026-10-23T08:12:01Z", "type": "roadmap_updated", "taskId": "task-20-14", "summary": "Nutzerwunsch: task-20-14 Arbeitswoche und ungelesene Kundennachrichten ergänzt."}
 {"timestamp": "2026-10-23T08:12:01Z", "type": "task_completed", "taskId": "task-20-14", "summary": "Plantafel Mo–Fr, ungelesene Kundennachrichten (Plantafel, Liste, Anfrageseite); test:db (1256), typecheck, lint, test:unit, test:ui (2 bekannte Fehler)."}
+{"timestamp": "2026-10-23T08:37:57Z", "type": "roadmap_updated", "taskId": "task-20-15", "summary": "Nutzerwunsch: task-20-15 Techniker in zwei Stufen ergänzt."}
+{"timestamp": "2026-10-23T08:37:57Z", "type": "task_completed", "taskId": "task-20-15", "summary": "Techniker nach Aufträgen der Woche, bei Gleichstand nach Auslastung des Monats; test:db bestanden (1257 Tests)."}

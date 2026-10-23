@@ -4623,6 +4623,33 @@
             ],
             "summary": "Plantafel: nextWorkingDays(weekStart(anchor), 5), Tafel min-width 37rem (kein Scrollen auf dem Desktop), Schalter „Woche“, Klick auf einen Vorschlag springt in dessen Woche. Migration 20261023000400: messages.staff_read_at/by (Bestand als gelesen), View request_unread_messages, mark_request_messages_read, move_inbox_conversation markiert verknüpfte Unterhaltungen. Die erste Version der View (security_invoker) kostete 1 s je Seite (RLS prüft alle 3300 Nachrichten), test:ui zeigte 3 Folgefehler; jetzt Besitzerrechte mit eigener Zugriffsprüfung und Teilindex, 2 ms, test:ui wieder nur die 2 bekannten Fehler. Anzeige: Plantafel (Kreis, Legende, Warteschlange), Anfragenliste (Marke, Ansicht Ungelesen, Menüzähler), Anfrageseite (Hinweis, Neu-Marke, Abschnitt offen). Produktion noch nicht eingespielt."
           }
+        },
+        {
+          "id": "task-20-15",
+          "title": "Techniker in zwei Stufen: Aufträge der Woche, dann Monat",
+          "description": "Nutzerwunsch 23.10.2026: Die automatische Vormerkung wählt den Techniker in zwei Stufen. Zuerst die wenigsten Aufträge in der Arbeitswoche des Fensters; gibt es keinen eindeutigen Kandidaten (Gleichstand), entscheidet die Auslastung des Monats.",
+          "order": 15,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-14"
+          ],
+          "definitionOfDone": [
+            "Stufe 1: wenigste Aufträge (Einsätze und offene Vormerkungen) in der Kalenderwoche des Fensters",
+            "Stufe 2 nur bei Gleichstand: Auslastung des Monats, dann Tagesminuten, dann id",
+            "pgTAP für beide Stufen"
+          ],
+          "startedAt": "2026-10-23T10:40:00Z",
+          "completedAt": "2026-10-23T08:37:57Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-10-23T08:37:57Z",
+            "commands": [
+              "npx supabase test db (1257 Tests)",
+              "Migration lokal per psql eingespielt"
+            ],
+            "summary": "Migration 20261023000500: private.week_order_count (Einsätze mit Beginn in der Woche plus offene Vormerkungen); technician_for_window nimmt unter den freien Technikern die mit dem Minimum der Wochenaufträge, bei mehreren Gleichauf nach Monatsanteil, Tagesminuten, id. pgTAP: Techniker mit vollerem Monat, aber weniger Aufträgen in der Woche gewinnt; bei Gleichstand der Wochenaufträge gewinnt der mit der geringeren Monatsauslastung; der alte Abwesenheitstest (Minutenanteil der Woche) entfiel. Nur SQL geändert, daher kein lint/typecheck/build/test:ui. Wird beim Push von der CI auf dem VPS eingespielt."
+          }
         }
       ]
     }

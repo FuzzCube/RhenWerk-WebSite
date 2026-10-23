@@ -575,3 +575,7 @@ Nutzerentscheidung: Hat der Kunde einen Termin gewünscht und es gibt eine Vorme
 ## 23.10.2026 · Arbeitswoche auf der Plantafel, ungelesene Kundennachrichten (task-20-14)
 
 Nutzerentscheidung: Die Plantafel zeigt die Arbeitswoche Montag bis Freitag statt 7 Arbeitstage ab einem Tag; Vorschläge und die Kennzahlen im Kopf rechnen weiter mit den nächsten 7 Arbeitstagen ab heute. Schreibt der Kunde zu einer Anfrage, ist das ein Handlungsbedarf: roter Kreis mit der Zahl an Einsatz und Vormerkung auf der Plantafel, Marke und Ansicht „Ungelesen“ in der Anfragenliste, Hinweis oben auf der Anfrage. Ungelesen bleibt die Nachricht, bis eine Person „Als gelesen markieren“ wählt; das Öffnen der Anfrage allein markiert nicht, damit der Hinweis beim Öffnen sichtbar ist.
+
+## 23.10.2026 · Techniker in zwei Stufen: Aufträge der Woche, dann Auslastung des Monats (task-20-15)
+
+Nutzerentscheidung: Die automatische Vormerkung wählt zuerst nach der Zahl der Aufträge (Einsätze und offene Vormerkungen) in der Kalenderwoche des Fensters; der Techniker mit den wenigsten gewinnt, wenn er allein auf dem Minimum liegt. Nur bei Gleichstand entscheidet die Auslastung des Monats (wie auf der Plantafel). Ersetzt den Minutenanteil der Woche aus task-20-11, der lange Aufträge stärker gewichtete als die Zahl der Aufträge.
