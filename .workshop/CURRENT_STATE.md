@@ -4,11 +4,15 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v25, 21 Phasen, 135 Tasks. Alle 135 Tasks sind abgeschlossen, Gewicht 307/307, Fortschritt 100 %. Implementierung und Prüfungen von `task-20-17` sind abgeschlossen. Der Nutzer hat Commit und Push am 23.10.2026 ausdrücklich beauftragt; der synchronisierte Stand ist über Git zu prüfen. Ein separates Deployment wurde nicht beauftragt.
+Roadmap v26, 22 Phasen, 136 Tasks. Alle 136 Tasks abgeschlossen, Gewicht 311/311, Fortschritt 100 %. `task-21-1` auf dem VPS eingerichtet und geprüft; Nutzer bestätigt beide Ansichten. Commit der Monitoring-Änderungen vom Nutzer beauftragt; Push nicht beauftragt.
 
-Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Benachrichtigungsauftrag ändert weder diese Infrastruktur noch die n8n-Workflows oder das Datenbankschema.
+Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Letzter Abschluss
+## Letzter Abschluss: VPS-Monitoring
+
+`task-21-1` abgeschlossen: Serverteil eingerichtet und geprüft: Beszel up mit Metriken, Kuma 7/7 up, SMTP-Tests angenommen. Bestehende Container nicht neu gestartet, nur Loopback-Ports. Eigener Health-Dienst prüft feste Container ohne Datenbankschlüssel. Nutzer akzeptiert heutige OVH-Sicherung statt kostenpflichtigem Snapshot und untersagt Browser-Automation. Nutzer meldet Cloudflare Access als eingerichtet (noch nicht extern geprüft). Token vom Nutzer auf dem VPS gespeichert; dedizierter Monitoring-Tunnel gestartet. Hostname-Routen eingerichtet; Access-Abdeckung nach Nutzerkorrektur für beide Domains per anonymem HTTPS geprüft (302 zu Cloudflare Access). Tunnel wieder gestartet. Nutzer bestätigt erfolgreichen Login, Beszel-Grafiken und sieben grüne Kuma-Prüfungen. Öffentlicher Zugang über `monitor.rheinwerk-service.online` und `uptime.rheinwerk-service.online`, jeweils Cloudflare Access; alternativ SSH-Tunnel; Logins ausschließlich /opt/monitoring/access.json (0600). Betriebsdetails und Rückweg in docs/betrieb.md 3.10. lint/typecheck/build bestanden. Commit auf Nutzerauftrag; Push nicht beauftragt.
+
+## Vorheriger Abschluss: Dashboard-Benachrichtigungen
 
 **task-20-17: Globale Dashboard-Benachrichtigungen ohne Neuladen.** Nutzerauftrag mit konkretem Umsetzungsweg: ein gemeinsamer geschützter Abruf ungefähr alle 20 Sekunden, kein Realtime, bestehende Rollen/RLS und Bearbeitungsregeln.
 
@@ -20,9 +24,9 @@ Prüfstand: build, lint, typecheck, 158 Unit-Tests, API-Prüfungen, 145 auth-, 4
 
 ## Letzte drei abgeschlossene Tasks
 
+- `task-21-1` (23.10.2026): Beszel/Kuma auf dem VPS, Access, 7/7 Monitore, Admin-E-Mail; Nutzer bestätigt beide Ansichten.
 - `task-20-17` (23.10.2026): Globale Aktualisierungen, siehe oben; lokal verifiziert, anschließend Commit und Push beauftragt.
 - `task-20-16` (23.10.2026): Verschiebewünsche per E-Mail, Wunsch und Zeit in Workflow 13, Eingangsbestätigung, Plantafel mit Optionen, Annahme des Vorschlags und Erinnerung. Laut bisherigem Projektstand ist `rwVisitReply2026` auf dem VPS importiert und aktiv.
-- `task-20-15` (23.10.2026): Techniker nach wenigsten Aufträgen der Kalenderwoche, bei Gleichstand Monatsauslastung.
 
 ## Arbeitsregeln
 
@@ -44,6 +48,6 @@ Prüfstand: build, lint, typecheck, 158 Unit-Tests, API-Prüfungen, 145 auth-, 4
 
 ## Nächster Schritt
 
-Abgeschlossen, keine offenen/startbaren Tasks in der Roadmap. Commit und Push gemäß anschließendem Nutzerauftrag; keine weiteren Aufgaben automatisch beginnen.
+Abgeschlossen; keine offenen/startbaren Tasks. Keine weiteren Aufgaben automatisch beginnen. Monitoring-Konfiguration und Dokumentation gemäß Nutzerauftrag committen; Push nicht beauftragt.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

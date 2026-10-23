@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 25,
+  "roadmapVersion": 26,
   "status": "active",
   "phases": [
     {
@@ -4719,6 +4719,52 @@
               "git diff --check"
             ],
             "summary": "Gemeinsamer geschützter 20-Sekunden-Abruf mit getrennten globalen Neu-/Antwortmarken, Posteingang, Terminwünschen/Storno und Verarbeitungsergebnissen, rollenabhängigen Rückrufen, Versand- und Systemwarnungen. Kein Realtime, keine Schema-, n8n- oder Infrastrukturänderung. 49 Benachrichtigungsszenarien bestanden: zwei authentifizierte Mitarbeiter, echter Takt und Hintergrund-Tab, gleiche Zahl ungelesener Anfragen bei neuer Nachricht, Eingangsschub >8, stille Baseline und Deduplizierung, Browser-Offline/Online, Next→Supabase-Ausfall (503 statt 401) und Wiederaufnahme derselben Sitzung ohne Reload, verweigerte/deaktivierte Profile, direkte RLS, Eingabe-/Plantafelschutz und explizite Aktualisierung, sichtbare Hinweise bei 390/768/1440. 158 Unit-, alle API-, 145 auth- und 460 UI-Prüfungen bestanden. Nach zusätzlicher strikter Verfügbarkeitsprüfung von getSession wurden build/lint/typecheck/unit sowie alle 49 Benachrichtigungsszenarien erneut bestanden; normale Auth-Aufrufer behalten das bisherige Verhalten. Nebenbefund HTTP 414 in Team durch ID-Pakete zu 100 behoben. UI-Tests berücksichtigen bestehenden Versandstau und warten auf echte Formularversionen statt 500 ms. Screenshots /tmp/rw-notifications-mvl10a01; sichtgeprüft einschließlich Link, Schließen und Aktualisierungsschaltfläche. Nur lokale Ereignis-Fixtures und Integrations-RPC, kein echter Gmail-/Mira-/Formular-End-to-End-Lauf, kein Deployment oder Push. Browser können Hintergrund-Timer drosseln; keine dauerhafte persönliche Popup-Historie. Standard-API/UI-Tests hinterlassen wie bisher Demodaten; eigene Notification-Fixtures vollständig entfernt."
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-21",
+      "title": "VPS-Monitoring",
+      "description": "Vom Nutzer beauftragte getrennte Betriebsübersicht für die Projekte auf dem VPS mit Beszel und Uptime Kuma.",
+      "order": 22,
+      "weight": 4,
+      "status": "completed",
+      "tasks": [
+        {
+          "id": "task-21-1",
+          "title": "Beszel und Uptime Kuma geschützt auf dem VPS einrichten",
+          "description": "Vorhandene OVHcloud-Sicherung nach ausdrücklicher Nutzerentscheidung verwenden; Monitoring isoliert installieren, drei Projekte prüfen, Domains über Cloudflare Access und E-Mail an bestehenden Administrator einrichten.",
+          "order": 1,
+          "weight": 4,
+          "status": "completed",
+          "dependsOn": [
+            "task-18-6"
+          ],
+          "definitionOfDone": [
+            "Bestehende Sicherung und Ausgangszustand dokumentiert; keine Wiederherstellung oder kostenpflichtiger Snapshot.",
+            "Separater Compose-Stack mit persistenten Daten, festen Versionen, Speichergrenzen und nur lokalen Ports.",
+            "Beszel zeigt VPS und Container; Kuma prüft die drei Projekte ohne geschäftliche Schreibzugriffe.",
+            "Geschützter Zugang über die gewünschten Domains und E-Mail-Benachrichtigungen geprüft.",
+            "Bestehende Container laufen unverändert; Rückweg, Zugang und Prüfgrenzen dokumentiert."
+          ],
+          "startedAt": "2026-10-23T14:23:19.162Z",
+          "completedAt": "2026-10-23T19:47:26.041Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Beszel up mit System-/Container-Metriken, Kuma 7/7 up. Beide SMTP-Tests vom Anbieter angenommen. Eigener Stack mit festen Versionen, Speichergrenzen und persistenten Daten; ausschließlich Loopback-Ports. Vorhandene 15 Projektcontainer nicht neu gestartet. lint/typecheck/build, Syntax- und Compose-Prüfung bestanden. Nutzer akzeptiert heutige OVH-Sicherung statt Snapshot. Eigener Tunnel und beide Domain-Routen eingerichtet; beide anonymen HTTPS-Aufrufe liefern 302 zu Cloudflare Access. Nutzer bestätigt erfolgreichen Login, Beszel-Grafiken und sieben grüne Kuma-Prüfungen. Keine Browser-Automation. Keine absichtliche Unterbrechung vorhandener Projekte und kein externer VPS-Ausfalltest. Noch kein Commit/Push.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "node --check ops/monitoring/bootstrap.mjs",
+              "node --check ops/monitoring/health.mjs",
+              "node --check ops/monitoring/verify.mjs",
+              "cd /opt/monitoring && docker compose config --quiet (VPS)",
+              "cd /opt/monitoring && node verify.mjs (VPS)",
+              "curl http://127.0.0.1:18091/<projekt> (alle drei, VPS)"
+            ],
+            "checkedAt": "2026-10-23T19:47:26.041Z"
           }
         }
       ]

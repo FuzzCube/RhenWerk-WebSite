@@ -7,5 +7,5 @@
   "owner": null,
   "description": "Geschützter Mitarbeiterbereich /dashboard in der bestehenden RheinWerk-Website (Next.js 16, Supabase) für Erstbearbeitung, Einsatzplanung, Arbeitserfassung, Rechnungen, Analytik, Kundenstamm und Anrufe eines fiktiven Industrieservice-Unternehmens. Portfolio-Projekt mit Demodaten; lokales n8n, OpenAI und Gmail für Formular- und E-Mail-Verarbeitung, KI-Telefonassistent Mira (ElevenLabs) mit Demo-Anruf über die Website.",
   "createdAt": "2026-10-07T08:39:55Z",
-  "updatedAt": "2026-10-23T13:53:32.789Z"
+  "updatedAt": "2026-10-23T19:47:26.041Z"
 }

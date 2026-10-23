@@ -1,0 +1,20 @@
+[Unit]
+Description=Local read-only project health for Uptime Kuma
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=ubuntu
+SupplementaryGroups=docker
+ExecStart=/usr/bin/node /opt/monitoring/health.mjs
+Restart=on-failure
+RestartSec=5
+MemoryMax=128M
+CPUQuota=20%
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
