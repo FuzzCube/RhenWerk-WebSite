@@ -533,3 +533,12 @@
 {"timestamp":"2026-10-23T20:29:49.687Z","type":"verification_passed","taskId":"task-20-18","summary":"34 Plantafel-Prüfungen, 13 fokussierte UI-Prüfungen, build/lint/typecheck und Sichtprüfung 390/768/1440 bestanden; Gesamtsuite nach Testfixture-Korrektur nicht wiederholt."}
 {"timestamp":"2026-10-23T20:29:49.687Z","type":"task_completed","taskId":"task-20-18","summary":"Legende/Bedienung eingeklappt, Datum öffnet ganzen Tag ohne Auswahlverlust, klare Tagesbänder; lokal abgeschlossen, kein Commit/Push."}
 {"timestamp":"2026-10-23T20:34:13.881Z","type":"decision_recorded","taskId":"task-20-18","summary":"Nutzer beauftragt Commit und Push der geprüften Plantafel-Änderungen mit Tests und Dokumentation."}
+{"timestamp":"2026-10-24T11:05:55.858Z","type":"roadmap_updated","summary":"Roadmap v28: Phase 22 mit task-22-1 (Anfrage-Seite neu ordnen) auf Nutzerwunsch."}
+{"timestamp":"2026-10-24T11:05:55.858Z","type":"task_started","taskId":"task-22-1","summary":"Nutzer bestätigt Plan: Nächster Schritt auflösen, Entwürfe in Korrespondenz inkl. Löschen, Korrektur in Erstbearbeitung, Ablehnen unten."}
+{"timestamp":"2026-10-24T11:42:56.016Z","type":"verification_passed","taskId":"task-22-1","summary":"lint, typecheck, build, test:auth, test:ui (474) bestanden; RPC delete_message_draft per SQL geprüft."}
+{"timestamp":"2026-10-24T11:42:56.016Z","type":"task_completed","taskId":"task-22-1","summary":"Anfrage-Seite: Aktionen in den Abschnitten, Entwürfe löschbar, rechte Spalte nur Kundendaten; lokal abgeschlossen, kein Commit/Push."}
+{"timestamp":"2026-10-24T11:42:56.016Z","type":"phase_completed","summary":"phase-22 Anfrage-Seite neu ordnen abgeschlossen."}
+{"timestamp":"2026-10-24T12:15:09.872Z","type":"roadmap_updated","summary":"Roadmap v29: task-22-2 (Kontaktknöpfe, neue E-Mail unten) und task-22-3 (KI-Antwortassistent) auf Nutzerwunsch."}
+{"timestamp":"2026-10-24T12:15:09.872Z","type":"task_started","taskId":"task-22-2","summary":"Nutzer bestätigt Plan für 22-2 und 22-3; Start mit 22-2."}
+{"timestamp":"2026-10-24T12:29:19.721Z","type":"task_completed","taskId":"task-22-2","summary":"Kontaktknöpfe untereinander, neue E-Mail unter den Nachrichten; test:ui 474 bestanden."}
+{"timestamp":"2026-10-24T12:29:19.721Z","type":"task_started","taskId":"task-22-3","summary":"KI-Antwortassistent: Nutzer erlaubt Push zum Live-Test auf dem VPS (Portfolio ohne echte Kunden)."}

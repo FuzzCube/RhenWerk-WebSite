@@ -12,7 +12,7 @@ Stand: 23.10.2026, n8n 2.44.6 im Docker-Container `rheinwerk-n8n` auf dem VPS, 1
 
 ## 2. Die Workflows im Überblick
 
-Es sind **13 Workflows**. Sechs bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail, 1–6); zwei gehören zum Telefonassistenten (Phase 13, 7 und 8), dazu kommen der Error-Workflow (task-17-8, 9), der Selbsttest für Systemupdates (task-18-8, 10), der Website-Assistent mit seinem Import (task-18-10, 11 und 12) und die Auswertung von Kundenantworten zu geplanten Terminen (task-20-10, 13). **12 sind veröffentlicht (aktiv)**; nur 12 „Dokumente importieren“ läuft von Hand und ist nicht veröffentlicht. Andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
+Es sind **14 Workflows**. Sechs bilden den Kern (Website-Anfragen, KI-Analyse, E-Mail, 1–6); zwei gehören zum Telefonassistenten (Phase 13, 7 und 8), dazu kommen der Error-Workflow (task-17-8, 9), der Selbsttest für Systemupdates (task-18-8, 10), der Website-Assistent mit seinem Import (task-18-10, 11 und 12) die Auswertung von Kundenantworten zu geplanten Terminen (task-20-10, 13) und der Antwortassistent für Kunden-E-Mails (task-22-3, 14). **13 sind veröffentlicht (aktiv)**; nur 12 „Dokumente importieren“ läuft von Hand und ist nicht veröffentlicht. Andere Workflows im selben n8n gehören nicht zum Projekt und werden nicht überwacht.
 
 | # | Workflow (Name in n8n) | ID | Auslöser | Aufgabe in einem Satz |
 | --- | --- | --- | --- | --- |
@@ -29,6 +29,7 @@ Es sind **13 Workflows**. Sechs bilden den Kern (Website-Anfragen, KI-Analyse, E
 | 11 | RheinWerk · Assistent | `rwAssistent2026` | Webhook `POST /webhook/rheinwerk-assistant` | Website-Assistent: beantwortet Fragen aus der Wissensbasis `rag_documents` (Supabase Vector Store, `text-embedding-3-large`, Sprachmodell `gpt-5.6-luna`), Gesprächsverlauf je Besucher (`session_id`); Aufruf nur über `/api/assistant` der Website (task-18-10, Abschnitt 9) |
 | 12 | RheinWerk · Dokumente importieren | `rwRagImport2026` | von Hand (`sh ops/vps/rag-import.sh`) | leert `rag_documents` und schreibt die Abschnitte aus `n8n/rag-documents/*.md` mit Embedding und `metadata.file` neu; nicht veröffentlicht, vom Wächter nicht erwartet |
 | 13 | RheinWerk · Kundenantwort zum Termin | `rwVisitReply2026` | Zeitplan alle 2 Minuten | liest Antworten auf Anfragen mit kommendem Termin (`visit_replies_pending`), lässt OpenAI die Absicht erkennen und übergibt sie `apply_visit_reply`: eindeutige Absage storniert den Termin, Verschiebewunsch wird markiert (`n8n/generate_visit_reply_workflow.py`) |
+| 14 | RheinWerk · Antwortassistent | `rwReplyAssist2026` | Zeitplan alle 2 Minuten | schreibt zu unbeantworteten Kunden-E-Mails nach der Erstbearbeitung einen Antwortentwurf aus den Fakten der Anfrage und freien Terminen; bei überfälligem Einsatz Rückrufbitte an den Techniker; versendet nichts (`n8n/generate_reply_assist_workflow.py`) |
 
 ## 3. Gesamtbild
 
@@ -53,6 +54,7 @@ flowchart TB
       W5["5 Gmail Eingang"]
       W6["6 Gmail Versand"]
       W13["13 Kundenantwort<br/>zum Termin"]
+      W14["14 Antwort-<br/>assistent"]
     end
     subgraph C["Kanal Telefon"]
       direction TB
@@ -77,9 +79,10 @@ flowchart TB
   W6 -->|sendet| Gmail
   W5 -.->|"Antwort zum Termin"| W13
   W13 -.->|"Absage: Bestätigung"| W6
+  W5 -.->|"Kundenmail"| W14
   Eleven -->|"Webhooks über<br/>Cloudflare Tunnel"| W7
   W8 -->|holt Gespräche| Eleven
-  A & C & D & W13 -.->|"KI-Auswertung"| OpenAI["OpenAI"]
+  A & C & D & W13 & W14 -.->|"KI-Auswertung"| OpenAI["OpenAI"]
 
   n8n <==>|"nur RPC-Funktionen<br/>und privater Speicher"| DB[("Supabase<br/>Daten · Regeln · Warteschlangen<br/>Wissensbasis")]
   Dash["Dashboard<br/>Mitarbeitende"] <==> DB
@@ -131,6 +134,7 @@ Kein Schlüssel steht im Repository oder in Workflow-Parametern; n8n verschlüss
 | 11 Assistent | – (Vector Store `rag_documents` mit `match_rag_documents`) | – |
 | 12 Dokumente importieren | – (leert und füllt `rag_documents`) | liest `n8n/rag-documents/*.md` |
 | 13 Kundenantwort zum Termin | `visit_replies_pending`, `apply_visit_reply` (mit Wunschtag und -zeit) | – |
+| 14 Antwortassistent | `reply_assist_pending`, `reply_assist_slots`, `save_reply_assist` | – |
 
 ### Netzwerk
 
@@ -263,6 +267,14 @@ Jeder Steckbrief: **Zweck – Auslöser – Schritte – Ergebnis – Fehlerverh
 - **Schritte:** *Offene Antworten laden* (`visit_replies_pending`) → *Einzeln* → *Absicht erkennen (OpenAI)* → *Ergebnis prüfen* → *Anwenden* (`apply_visit_reply`).
 - **Zusätzlich:** `visit_replies_pending` liefert das heutige Datum, den Wochentag und einen offenen Vorschlag (`offer`); `apply_visit_reply` bekommt `wished_day` und `wished_time`. Absicht `decline` gibt es nur zu einem Vorschlag. Eine Erinnerung an unbeantwortete Vorschläge schickt nicht n8n, sondern ein pg_cron-Auftrag (`run_visit_change_reminders`, stündlich, einmal je Vorschlag: zwei Tage nach dem Angebot oder einen Tag vor dem Termin).
 - **Fehlerverhalten:** Die Datenbank entscheidet (Absage und Zusage nur von der Adresse des Kunden); eine Antwort ohne gültiges Ergebnis von OpenAI bleibt offen und wird beim nächsten Lauf erneut versucht, eine gespeicherte nie zweimal ausgewertet. Der Kunde bekommt die Bestätigung über 6.
+
+### 14 · Antwortassistent (`rwReplyAssist2026`, 10 Knoten)
+
+- **Zweck:** Spart dem Service Desk das Schreiben von Antworten (task-22-3, Nutzerwunsch 24.10.2026). Zu jeder Kunden-E-Mail nach der Erstbearbeitung, auf die noch niemand geantwortet hat, entsteht ein **Entwurf** in der Korrespondenz der Anfrage (Kennzeichen „KI-Entwurf“ mit Begründung). Versendet wird erst, wenn ein Mitarbeiter ihn liest und „Senden“ drückt.
+- **Auslöser:** *Alle 2 Minuten*.
+- **Schritte:** *Offene Kundenmails laden* (`reply_assist_pending`: Anfrage, Lage, Einsätze mit Techniker, Rechnung, letzte Nachrichten) → *Einzeln* → *Anliegen erkennen (OpenAI)* (Terminwunsch, Verfügbarkeit, „Wo bleibt der Techniker?“, Stand, Rechnung, Absage, Dank, Frage; Wunschtag und -zeit) → *Anliegen prüfen* → *Freie Termine* (`reply_assist_slots`: Wunschfenster frei oder nicht, bis zu drei Alternativen an verschiedenen Tagen, beim geplanten Einsatz für dessen Techniker) → *Kontext bauen* → *Antwort entwerfen (OpenAI)* → *Entwurf prüfen* → *Entwurf speichern* (`save_reply_assist`).
+- **Regeln:** Workflow 13 geht vor: was er selbst beantwortet hat (Stornierung, Verschiebewunsch, Ja/Nein zum Vorschlag), bekommt keinen Entwurf. Keine Entwürfe, wenn ein Mitarbeiter nach der Kundenmail schon geschrieben hat, bei Dank ohne Frage, bei Demodaten und für die Erstbearbeitung (dort fragt 3 nach). Der Entwurf nennt nur Fakten aus der Datenbank und bucht nie selbst einen Termin. Fragt der Kunde nach einem überfälligen Einsatz, legt die Datenbank eine Rückrufbitte an den Techniker an (`callback_requests`, `conversation_id` `email:<id>`, gleiche Benachrichtigung und Eskalation nach 15 Minuten wie beim Telefonassistenten).
+- **Fehlerverhalten:** Ohne gültiges Ergebnis von OpenAI bleibt die E-Mail offen und wird beim nächsten Lauf erneut versucht (nur E-Mails der letzten drei Tage); eine gespeicherte nie zweimal (`automation_runs` `reply_assist:<id>`).
 
 ## 6. Drei Abläufe Schritt für Schritt
 

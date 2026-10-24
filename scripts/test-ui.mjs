@@ -982,13 +982,15 @@ try {
   await page.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
   const requestUrl = `${BASE}/dashboard/anfragen/${request.id}`;
   await page.open(requestUrl);
-  check("Aktionen für zugewiesenen Dispatcher sichtbar", await page.eval(`!!document.getElementById("aktionen")`));
+  // task-22-1: classification and status in "Erstbearbeitung", no next-step card for staff
+  const intakeForm = `document.querySelector(".intake-form form")`;
+  check("Aktionen für zugewiesenen Dispatcher sichtbar", await page.eval(`!!${intakeForm} && !document.getElementById("aktionen")`));
 
   // Correction: missing reason keeps the chosen priority, then success marks the automation run
-  await fillIn(actionForm("Analyse korrigieren"), { priority: "high", reason: "" });
-  state = await settled(actionForm("Analyse korrigieren"), "save-status--error");
+  await fillIn(intakeForm, { priority: "high", note: "" });
+  state = await settled(intakeForm, "save-status--error");
   check("Korrektur ohne Grund: Fehlermeldung, Auswahl bleibt erhalten", Boolean(state) && state.values.priority === "high", JSON.stringify(state));
-  await fillIn(actionForm("Analyse korrigieren"), { priority: "high", reason: "Produktion steht laut Telefonat" });
+  await fillIn(intakeForm, { priority: "high", note: "Produktion steht laut Telefonat" });
   const corrected = await waitFor(async () => (await dbRequest()).priority === "high");
   const run = (await admin.from("automation_runs").select("corrected_at, correction_reason").eq("id", analysis.id).single()).data;
   const correctionEvent = (await admin.from("request_events").select("event_type").eq("request_id", request.id).eq("event_type", "automatic_result_corrected")).data;
@@ -996,7 +998,7 @@ try {
 
   // Draft → edit → queue (two saves in a row use the refreshed version)
   await page.open(requestUrl);
-  await fillIn(actionForm("E-Mail an Kunden vorbereiten"), { subject: "Rückfrage UI-Test", body_text: "Bitte senden Sie uns das Typenschild." });
+  await fillIn(actionForm("Neue E-Mail an den Kunden"), { subject: "Rückfrage UI-Test", body_text: "Bitte senden Sie uns das Typenschild." });
   const drafted = await waitFor(async () => (await admin.from("messages").select("id").eq("request_id", request.id).eq("status", "draft")).data.length === 1);
   check("E-Mail vorbereiten erzeugt nur einen Entwurf", drafted);
   await page.until(`!!document.querySelector(".draft-actions")`);
@@ -1015,8 +1017,31 @@ try {
   const badges = await page.eval(`[...document.querySelectorAll("#korrespondenz .message .status-badge")].map((badge) => badge.textContent.trim())`);
   check("Oberfläche meldet keinen Versand (Status „In Warteschlange, nicht versendet“)", JSON.stringify(badges) === JSON.stringify(["In Warteschlange, nicht versendet"]), badges.join(","));
 
+  // task-22-1: a second draft is discarded again; the queued e-mail stays, the history keeps an entry
+  await fillIn(actionForm("Neue E-Mail an den Kunden"), { subject: "Wird gelöscht", body_text: "Entwurf zum Löschen." });
+  check("Zweiter Entwurf angelegt", await waitFor(async () => (await admin.from("messages").select("id").eq("request_id", request.id).eq("status", "draft")).data.length === 1));
+  await page.until(`document.querySelectorAll(".draft-actions form").length === 3`);
+  await page.eval(`${draftForm(2)}.requestSubmit()`);
+  const discarded = await waitFor(async () => (await admin.from("messages").select("id").eq("request_id", request.id).eq("status", "draft")).data.length === 0);
+  const { data: deletedEvents } = await admin.from("request_events").select("from_value").eq("request_id", request.id).eq("event_type", "message_draft_deleted");
+  const { data: kept } = await admin.from("messages").select("status").eq("request_id", request.id);
+  check("Entwurf löschen: Entwurf weg, Verlaufseintrag, versendete Nachricht bleibt", discarded && deletedEvents.length === 1 && JSON.stringify(kept.map((row) => row.status)) === JSON.stringify(["queued"]), JSON.stringify({ deletedEvents, kept }));
+
+  // task-22-3: a draft of the reply assistant shows as "KI-Entwurf" with its reason; it is discarded like any draft
+  const { data: customerMail } = await admin.from("messages").insert({ request_id: request.id, direction: "incoming", kind: "customer_reply", status: "received",
+    from_address: "kunde@example.com", subject: "Wann kommen Sie?", body_text: "Wann kann jemand kommen?", received_at: new Date().toISOString() }).select("id").single();
+  const assist = await admin.rpc("save_reply_assist", { message_id: customerMail.id, intent: "availability", summary: "Kunde fragt nach einem Termin.", reply_needed: true,
+    subject: "Re: Wann kommen Sie?", body_text: "Guten Tag,\n\nwir melden uns.\n\nMit freundlichen Grüßen\nRheinWerk Industrieservice · Service Desk", reason: "Kein Termin geplant." });
+  await page.open(requestUrl);
+  const assistNote = await page.eval(`document.querySelector("#korrespondenz .message__assist-note")?.textContent ?? ""`);
+  check("KI-Entwurf: Kennzeichen und Begründung am Entwurf", assist.data?.action === "drafted" && await page.eval(`!!document.querySelector("#korrespondenz .message__assist")`) && assistNote.includes("Kein Termin geplant."), JSON.stringify({ assist, assistNote }));
+  await page.eval(`${draftForm(2)}.requestSubmit()`);
+  check("  KI-Entwurf gelöscht", await waitFor(async () => (await admin.from("messages").select("id").eq("request_id", request.id).eq("status", "draft")).data.length === 0));
+  await admin.from("messages").update({ staff_read_at: new Date().toISOString() }).eq("id", customerMail.id);
+
   // Release: complete_intake with priority → planning queue
-  await fillIn(actionForm("Prüfen und freigeben"), { priority: "high", note: "Geprüft im UI-Test" });
+  await page.open(requestUrl);
+  await fillIn(intakeForm, { priority: "high", status: "processed", note: "Geprüft im UI-Test" });
   const released = await waitFor(async () => (await dbRequest()).intake_status === "processed");
   const after = await dbRequest();
   const queueRow = (await admin.from("dispatcher_queue").select("queue").eq("id", request.id).single()).data;
@@ -1036,7 +1061,7 @@ try {
   const rejected = await waitFor(async () => (await dbRequest()).intake_status === "rejected");
   check("Ablehnung mit Grund über reject_request", rejected && (await dbRequest()).rejection_reason === "Außerhalb des Servicegebiets");
   await page.open(requestUrl);
-  check("Nach Ablehnung keine Prüfaktionen mehr", await page.eval(`!document.getElementById("aktionen")`));
+  check("Nach Ablehnung keine Prüfaktionen mehr", await page.eval(`!document.querySelector(".intake-form") && !document.getElementById("ablehnen")`));
   // Inbox (task-10-5) as the temporary dispatcher: list, badge, prefilled new-request form, assignment via link_message
   console.log("\nTerminwunsch vom Telefonassistenten: Hinweis, bestätigen, ablehnen (task-13-3)");
   {
@@ -1064,8 +1089,8 @@ try {
       check("  Plantafel zeigt die Vormerkung (schraffiert, nicht blockierend)", await page.eval(`[...document.querySelectorAll(".plan3__blk--hold")].some((e) => (e.getAttribute("title") ?? "").includes(${JSON.stringify(confirmCase.req.request_number)}))`));
       await page.open(`${BASE}/dashboard/anfragen/${confirmCase.req.id}`);
       // task-20-2: the hold is shown in "Einsatz planen" and planned on the planning board, where it is preselected
-      const note = await page.eval(`document.querySelector("#aktionen .request-hold__line")?.textContent ?? ""`);
-      check("  Anfrage: „Terminwunsch vorgemerkt“ in „Einsatz planen“ mit Zeitfenster", /13:00/.test(note) && await page.eval(`!!document.querySelector('#aktionen a[href*="/dashboard/planung?anfrage="]')`), note);
+      const note = await page.eval(`document.querySelector("#einsaetze .request-hold__line")?.textContent ?? ""`);
+      check("  Anfrage: „Terminwunsch vorgemerkt“ in „Einsatz planen“ mit Zeitfenster", /13:00/.test(note) && await page.eval(`!!document.querySelector('#einsaetze a[href*="/dashboard/planung?anfrage="]')`), note);
       await page.open(`${BASE}/dashboard/planung?anfrage=${confirmCase.req.id}`);
       const preset = await page.eval(`document.querySelector(".plan3__blk--pick")?.getAttribute("aria-label") ?? ""`);
       check("  Plantafel: Vormerkung als Auswahl gesetzt", preset.includes("13:00–15:00"), preset);
@@ -1079,7 +1104,7 @@ try {
       await page.open(`${BASE}/dashboard/anfragen/${confirmCase.req.id}`);
       check("  danach kein offener Terminwunsch mehr", await page.eval(`!document.querySelector(".request-hold__line")`));
       await page.open(`${BASE}/dashboard/anfragen/${rejectCase.req.id}`);
-      await fillIn(`document.querySelector("#aktionen details.request-hold__reject")`, { reason: "Techniker auf Schulung", alternative: "Donnerstag ab 10 Uhr" });
+      await fillIn(`document.querySelector("#einsaetze details.request-hold__reject")`, { reason: "Techniker auf Schulung", alternative: "Donnerstag ab 10 Uhr" });
       const rejected = await waitFor(async () => (await admin.from("visit_holds").select("status").eq("id", rejectCase.hold.id).single()).data?.status === "rejected");
       const { data: rejectMail } = await admin.from("messages").select("body_text").eq("request_id", rejectCase.req.id).eq("kind", "other").maybeSingle();
       check("  Ablehnen mit Grund und Gegenvorschlag, E-Mail an den Kunden", rejected && !!rejectMail?.body_text.includes("Techniker auf Schulung") && rejectMail.body_text.includes("Donnerstag ab 10 Uhr"), JSON.stringify(rejectMail));

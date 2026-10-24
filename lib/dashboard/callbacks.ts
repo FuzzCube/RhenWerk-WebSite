@@ -18,6 +18,8 @@ export type VisitCallbackAlert = {
   created_at: string;
   escalated_at: string | null;
   technician: string | null;
+  // task-22-3: asked for by the reply assistant after a customer e-mail ("email:<message id>"), else by the phone assistant
+  by_email: boolean;
 };
 export type CallAlert = {
   kind: "call";
@@ -35,7 +37,7 @@ export async function loadCallbackAlerts(role: EmployeeRole, { strict = false } 
   const supabase = await createClient();
   let query = supabase
     .from("callback_requests")
-    .select("id, request_id, visit_id, callback_number, company_name, site, scheduled_start, created_at, escalated_at, technician:profiles!callback_requests_technician_id_fkey(display_name)")
+    .select("id, request_id, visit_id, callback_number, company_name, site, scheduled_start, created_at, escalated_at, conversation_id, technician:profiles!callback_requests_technician_id_fkey(display_name)")
     .eq("status", "open")
     .order("created_at");
   if (role === "dispatcher") query = query.not("escalated_at", "is", null);
@@ -47,7 +49,7 @@ export async function loadCallbackAlerts(role: EmployeeRole, { strict = false } 
       : null,
   ]);
   if (strict && (error || calls?.error)) throw new Error("Rückrufbitten nicht verfügbar");
-  const visits: CallbackAlert[] = error || !data ? [] : data.map(({ technician, ...row }) => ({ ...row, kind: "visit" as const, technician: technician?.display_name ?? null }));
+  const visits: CallbackAlert[] = error || !data ? [] : data.map(({ technician, conversation_id, ...row }) => ({ ...row, kind: "visit" as const, technician: technician?.display_name ?? null, by_email: conversation_id.startsWith("email:") }));
   const urgent: CallbackAlert[] = (calls?.data ?? []).map((row) => {
     const named = row.analysis && typeof row.analysis === "object" && !Array.isArray(row.analysis) ? row.analysis.firma : null;
     return {

@@ -2493,6 +2493,9 @@ isOneToOne: false
 "current_migration":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"delete_message_draft":
+{ Args: { "expected_version": number,"message_id": string }; Returns: undefined
+                           },
 "demo_seed_apply":
 { Args: { "payload": Json }; Returns: Json
                            },
@@ -3445,6 +3448,12 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"reply_assist_pending":
+{ Args: { "batch_limit"?: number }; Returns: Json
+                           },
+"reply_assist_slots":
+{ Args: { "message_id": string,"wished_day"?: string,"wished_time"?: string }; Returns: Json
+                           },
 "reply_to_inbox_message":
 { Args: { "body_text": string,"message_id": string,"subject": string }; Returns: {
               "approved_at": string | null,
@@ -3817,6 +3826,9 @@ isOneToOne: false
 "run_visit_change_reminders":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"save_reply_assist":
+{ Args: { "body_text"?: string,"callback_technician"?: boolean,"confidence"?: number,"intent": string,"message_id": string,"reason"?: string,"reply_needed": boolean,"subject"?: string,"summary": string,"workflow_execution_id"?: string }; Returns: Json
+                           },
 "schedule_visit":
 { Args: { "expected_version": number,"request_id": string,"scheduled_end": string,"scheduled_start": string,"technician_id": string }; Returns: {
               "actual_end": string | null,
@@ -4154,7 +4166,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "actor_type": "user"|"automation"|"system","automation_decision": "ready_for_planning"|"ask_customer"|"human_review"|"matched"|"unmatched"|"sent","automation_status": "running"|"succeeded"|"failed","automation_step": "intake_analysis"|"reply_analysis"|"email_matching"|"email_send"|"visit_reply","availability_kind": "working_hours"|"absence","billing_model": "fixed"|"hourly","customer_urgency": "planbar"|"zeitnah"|"erheblich"|"production_stop","employee_role": "admin"|"manager"|"dispatcher"|"technician","equipment_kind": "pump"|"compressor"|"ventilation"|"other","intake_mode": "automatic"|"manual"|"human_review","intake_status": "new"|"analyzing"|"needs_review"|"awaiting_customer"|"processed"|"rejected"|"cancelled","invoice_status": "draft"|"issued"|"sent"|"paid","message_direction": "incoming"|"outgoing","message_kind": "receipt"|"clarification"|"customer_reply"|"invoice"|"other"|"payment_reminder","message_status": "draft"|"queued"|"sent"|"received"|"failed","request_priority": "low"|"normal"|"high"|"critical","safety_risk": "none_known"|"known"|"unclear","service_kind": "inspection"|"scheduled_maintenance"|"diagnosis_repair","visibility_level": "operational"|"dispatch"|"management","visit_status": "scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_entry_kind": "labor"|"part"|"fixed_service","work_item_status": "planned"|"ordered"|"performed"|"used"|"cancelled","work_status": "not_planned"|"scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_unit": "hour"|"piece"|"service"
+            "actor_type": "user"|"automation"|"system","automation_decision": "ready_for_planning"|"ask_customer"|"human_review"|"matched"|"unmatched"|"sent","automation_status": "running"|"succeeded"|"failed","automation_step": "intake_analysis"|"reply_analysis"|"email_matching"|"email_send"|"visit_reply"|"reply_assist","availability_kind": "working_hours"|"absence","billing_model": "fixed"|"hourly","customer_urgency": "planbar"|"zeitnah"|"erheblich"|"production_stop","employee_role": "admin"|"manager"|"dispatcher"|"technician","equipment_kind": "pump"|"compressor"|"ventilation"|"other","intake_mode": "automatic"|"manual"|"human_review","intake_status": "new"|"analyzing"|"needs_review"|"awaiting_customer"|"processed"|"rejected"|"cancelled","invoice_status": "draft"|"issued"|"sent"|"paid","message_direction": "incoming"|"outgoing","message_kind": "receipt"|"clarification"|"customer_reply"|"invoice"|"other"|"payment_reminder","message_status": "draft"|"queued"|"sent"|"received"|"failed","request_priority": "low"|"normal"|"high"|"critical","safety_risk": "none_known"|"known"|"unclear","service_kind": "inspection"|"scheduled_maintenance"|"diagnosis_repair","visibility_level": "operational"|"dispatch"|"management","visit_status": "scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_entry_kind": "labor"|"part"|"fixed_service","work_item_status": "planned"|"ordered"|"performed"|"used"|"cancelled","work_status": "not_planned"|"scheduled"|"in_progress"|"waiting_parts"|"completed"|"cancelled","work_unit": "hour"|"piece"|"service"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -4274,7 +4286,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "actor_type": ["user", "automation", "system"],"automation_decision": ["ready_for_planning", "ask_customer", "human_review", "matched", "unmatched", "sent"],"automation_status": ["running", "succeeded", "failed"],"automation_step": ["intake_analysis", "reply_analysis", "email_matching", "email_send", "visit_reply"],"availability_kind": ["working_hours", "absence"],"billing_model": ["fixed", "hourly"],"customer_urgency": ["planbar", "zeitnah", "erheblich", "production_stop"],"employee_role": ["admin", "manager", "dispatcher", "technician"],"equipment_kind": ["pump", "compressor", "ventilation", "other"],"intake_mode": ["automatic", "manual", "human_review"],"intake_status": ["new", "analyzing", "needs_review", "awaiting_customer", "processed", "rejected", "cancelled"],"invoice_status": ["draft", "issued", "sent", "paid"],"message_direction": ["incoming", "outgoing"],"message_kind": ["receipt", "clarification", "customer_reply", "invoice", "other", "payment_reminder"],"message_status": ["draft", "queued", "sent", "received", "failed"],"request_priority": ["low", "normal", "high", "critical"],"safety_risk": ["none_known", "known", "unclear"],"service_kind": ["inspection", "scheduled_maintenance", "diagnosis_repair"],"visibility_level": ["operational", "dispatch", "management"],"visit_status": ["scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_entry_kind": ["labor", "part", "fixed_service"],"work_item_status": ["planned", "ordered", "performed", "used", "cancelled"],"work_status": ["not_planned", "scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_unit": ["hour", "piece", "service"]
+            "actor_type": ["user", "automation", "system"],"automation_decision": ["ready_for_planning", "ask_customer", "human_review", "matched", "unmatched", "sent"],"automation_status": ["running", "succeeded", "failed"],"automation_step": ["intake_analysis", "reply_analysis", "email_matching", "email_send", "visit_reply", "reply_assist"],"availability_kind": ["working_hours", "absence"],"billing_model": ["fixed", "hourly"],"customer_urgency": ["planbar", "zeitnah", "erheblich", "production_stop"],"employee_role": ["admin", "manager", "dispatcher", "technician"],"equipment_kind": ["pump", "compressor", "ventilation", "other"],"intake_mode": ["automatic", "manual", "human_review"],"intake_status": ["new", "analyzing", "needs_review", "awaiting_customer", "processed", "rejected", "cancelled"],"invoice_status": ["draft", "issued", "sent", "paid"],"message_direction": ["incoming", "outgoing"],"message_kind": ["receipt", "clarification", "customer_reply", "invoice", "other", "payment_reminder"],"message_status": ["draft", "queued", "sent", "received", "failed"],"request_priority": ["low", "normal", "high", "critical"],"safety_risk": ["none_known", "known", "unclear"],"service_kind": ["inspection", "scheduled_maintenance", "diagnosis_repair"],"visibility_level": ["operational", "dispatch", "management"],"visit_status": ["scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_entry_kind": ["labor", "part", "fixed_service"],"work_item_status": ["planned", "ordered", "performed", "used", "cancelled"],"work_status": ["not_planned", "scheduled", "in_progress", "waiting_parts", "completed", "cancelled"],"work_unit": ["hour", "piece", "service"]
           }
         }
 } as const

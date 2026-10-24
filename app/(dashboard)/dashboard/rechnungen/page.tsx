@@ -76,7 +76,7 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
       key: "action",
       header: "Aktion",
       cell: (row) => row.status === "draft"
-        ? <Link href={`/dashboard/anfragen/${row.request_id}#aktionen`}>Ausstellen</Link>
+        ? <Link href={`/dashboard/anfragen/${row.request_id}#rechnung`}>Ausstellen</Link>
         : (row.status === "issued" || row.status === "sent") && !row.paid_at
           ? (
             <details className="action rw-row-action">

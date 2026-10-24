@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 27,
+  "roadmapVersion": 29,
   "status": "active",
   "phases": [
     {
@@ -4799,6 +4799,106 @@
               "curl http://127.0.0.1:18091/<projekt> (alle drei, VPS)"
             ],
             "checkedAt": "2026-10-23T19:47:26.041Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-22",
+      "title": "Anfrage-Seite neu ordnen",
+      "description": "Vom Nutzer beauftragte Neuordnung der Anfrage-Detailseite und KI-Antwortentwürfe für Kunden-E-Mails.",
+      "order": 23,
+      "weight": 9,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-22-1",
+          "title": "Anfrage-Seite: Aktionen in die Blöcke, rechte Spalte nur Kundendaten",
+          "description": "Block „Nächster Schritt“ entfällt in der Mitarbeiteransicht. E-Mail-Entwürfe direkt in der Korrespondenz anlegen, speichern, löschen und senden; Analyse-Korrektur und Freigabe in der Erstbearbeitung; Planen, Abschließen und Rechnung in ihren Blöcken; Ablehnen ganz unten. Technikeransicht unverändert.",
+          "order": 1,
+          "weight": 3,
+          "status": "completed",
+          "dependsOn": [
+            "task-20-18"
+          ],
+          "definitionOfDone": [
+            "Rechte Spalte der Mitarbeiteransicht zeigt nur Kontakt, Kundenstamm, Zuständigkeit und Fristen.",
+            "Korrespondenz immer sichtbar: neue E-Mail, Entwurf speichern, löschen und senden (Warteschlange).",
+            "Neue RPC delete_message_draft mit Versionsprüfung und Verlaufseintrag; Migration lokal eingespielt, Typen aktualisiert.",
+            "Erstbearbeitung enthält Priorität/Leistungsart per Auswahl, Freigabe und Warten auf Kunden.",
+            "Planen, Abschließen, Rechnung in den jeweiligen Blöcken; Ablehnen eingeklappt am Ende.",
+            "lint, typecheck, build und betroffene Tests bestanden; Sichtprüfung 768/1440."
+          ],
+          "startedAt": "2026-10-24T11:05:55.858Z",
+          "completedAt": "2026-10-24T11:42:56.016Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Mitarbeiteransicht ohne „Nächster Schritt“: rechts nur Kontakt, Kundenstamm, Zuständigkeit/Fristen. Korrespondenz immer offen mit „Neue E-Mail an den Kunden“; am Entwurf Speichern, Senden (queue_message, Versand per n8n) und Löschen. Neue RPC delete_message_draft (nur Entwürfe ohne Anhänge/Zahlungserinnerung, Versionsprüfung, Ereignis message_draft_deleted), lokal per psql eingespielt, Typen erzeugt; Ablehnung für queued und Techniker per SQL geprüft. Erstbearbeitung: Form „Einstufung und Status“ (Priorität, Leistungsart, Status Freigeben/Wartet auf Kunde, Grund) über Server Action saveIntake. Einsatz planen in Einsätze, Abschließen in Arbeit, Rechnung in Rechnung, Ablehnen eingeklappt am Ende. Technikeransicht unverändert. lint, typecheck, build, test:auth und test:ui (474 Prüfungen, erster Lauf fand Tabellennamenfehler in der Migration, behoben, zweiter Lauf vollständig grün) gegen next start :3117. Screenshots 768/1440 angesehen. Migration auf dem VPS erst nach Push über migrate.sh; kein Commit/Push.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "npm run db:types",
+              "APP_URL=http://localhost:3117 npm run test:auth",
+              "APP_URL=http://localhost:3117 npm run test:ui",
+              "psql: delete_message_draft als Manager/Techniker, queued"
+            ],
+            "checkedAt": "2026-10-24T11:42:56.016Z"
+          }
+        },
+        {
+          "id": "task-22-2",
+          "title": "Anfrage-Seite: Kontaktknöpfe untereinander, neue E-Mail unter den Nachrichten",
+          "description": "Telefon und E-Mail im Kontakt untereinander in voller Breite; „Neue E-Mail an den Kunden“ unter der Nachrichtenliste der Korrespondenz.",
+          "order": 2,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [
+            "task-22-1"
+          ],
+          "definitionOfDone": [
+            "Kontaktknöpfe untereinander, Telefonnummer vollständig sichtbar (390/768/1440).",
+            "„Neue E-Mail an den Kunden“ steht unter den Nachrichten.",
+            "lint, typecheck und betroffene UI-Prüfungen bestanden."
+          ],
+          "startedAt": "2026-10-24T12:15:09.872Z",
+          "completedAt": "2026-10-24T12:29:19.721Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Kontaktknöpfe Telefon/E-Mail untereinander in voller Breite (CSS request-contact__actions), „Neue E-Mail an den Kunden“ unter der Nachrichtenliste. Screenshots 1440 und 390 angesehen (kein Querscrollen). lint, typecheck, build und test:ui (474 Prüfungen) gegen next start :3117 bestanden. Die Telefonnummer im Nutzerscreenshot war nicht abgeschnitten, sondern Testdaten „+49 211 1“.",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "APP_URL=http://localhost:3117 npm run test:ui"
+            ],
+            "checkedAt": "2026-10-24T12:29:19.721Z"
+          }
+        },
+        {
+          "id": "task-22-3",
+          "title": "KI-Antwortassistent für Kunden-E-Mails",
+          "description": "n8n-Workflow erstellt zu Kunden-E-Mails nach der Erstbearbeitung einen geprüften Antwortentwurf aus dem Anfragekontext (Termin, Verfügbarkeit, Verspätung, Rechnung); bei Verspätung Rückrufbitte an den Techniker. Versand nur nach menschlicher Freigabe.",
+          "order": 3,
+          "weight": 5,
+          "status": "in_progress",
+          "dependsOn": [
+            "task-22-2"
+          ],
+          "definitionOfDone": [
+            "Kontext-RPC für die Integration: Anfrage, Einsatz, Lage, freie Fenster zum Wunschtermin, Rechnung, letzte Nachrichten.",
+            "Speicher-RPC legt Entwurf, Automatisierungslauf und Ereignis an; optional Rückrufbitte an den Techniker über callback_requests.",
+            "n8n-Workflow mit strikter JSON-Antwort, generiert, lokal importiert und aktiv; keine doppelte Antwort zu automatisch beantworteten Mails.",
+            "Korrespondenz kennzeichnet KI-Entwürfe mit Begründung; Versand nur über „Senden“.",
+            "Datenbanktests und UI-Prüfung bestanden; VPS-Import dokumentiert."
+          ],
+          "startedAt": "2026-10-24T12:29:19.721Z",
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
           }
         }
       ]

@@ -1,4 +1,4 @@
-import { closeRequest, completeIntake, correctAnalysis, createDraft, createInvoice, issueInvoice, markAwaitingCustomer, queueDraft, rejectRequest, updateDraft } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
+import { closeRequest, createDraft, createInvoice, deleteDraft, issueInvoice, queueDraft, rejectRequest, saveIntake, updateDraft } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
 import type { ReactNode } from "react";
 import { HiddenField, SaveForm, SelectField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import type { Employee } from "@/lib/auth/session";
@@ -43,22 +43,43 @@ function Context({ detail }: { detail: RequestDetail }) {
 }
 
 // Order of recommendation (specification section 06): the first possible action is the next step,
-// the others follow under "Oder stattdessen", rejecting comes last in red.
-const PRIMARY_ORDER = ["complete", "close", "createInvoice", "issueInvoice"] as const;
-const ALTERNATIVE_ORDER = ["complete", "close", "createInvoice", "issueInvoice", "email", "await", "correct", "reject"] as const;
-type ActionKey = (typeof ALTERNATIVE_ORDER)[number];
+// the others follow under "Oder stattdessen", rejecting comes last in red. Release, waiting and correction of the
+// intake are one form in "Erstbearbeitung" since task-22-1 (IntakeForm).
+const PRIMARY_ORDER = ["close", "createInvoice", "issueInvoice"] as const;
+const ALTERNATIVE_ORDER = ["close", "createInvoice", "issueInvoice", "email", "reject"] as const;
+export type ActionKey = (typeof ALTERNATIVE_ORDER)[number];
 
 export function nextStepOf(can: ReturnType<typeof availableActions>): { primary: ActionKey | null; alternatives: ActionKey[] } {
   const primary = PRIMARY_ORDER.find((key) => can[key]) ?? null;
   return { primary, alternatives: ALTERNATIVE_ORDER.filter((key) => can[key] && key !== primary) };
 }
 
+// One action as a foldable form. Staff (task-22-1) find each action in its section; the technician keeps the list.
+export function RequestAction({ detail, employee, kind }: { detail: RequestDetail; employee: Employee; kind: ActionKey }) {
+  return actionRenderers(detail, employee, nextStepOf(availableActions(detail, employee)).primary)[kind]();
+}
+
 export function RequestActions({ detail, employee }: { detail: RequestDetail; employee: Employee }) {
-  const r = detail.request;
   const can = availableActions(detail, employee);
   const { primary, alternatives } = nextStepOf(can);
+  const render = actionRenderers(detail, employee, primary);
+
+  return (
+    <div className="action-list">
+      {primary && render[primary]()}
+      {alternatives.length > 0 && (
+        <div className="rw-alternatives">
+          <p className="rw-alternatives__label">{primary ? "Oder stattdessen" : "Mögliche Aktionen"}</p>
+          {alternatives.map((key) => render[key]())}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function actionRenderers(detail: RequestDetail, employee: Employee, primary: ActionKey | null): Record<ActionKey, () => ReactNode> {
+  const r = detail.request;
   const openVisits = detail.visits.filter((visit) => OPEN_VISITS.includes(visit.status)).length;
-  const lastRun = [...(detail.automationRuns ?? [])].reverse().find((run) => run.status === "succeeded" && !run.corrected_at && ["intake_analysis", "reply_analysis"].includes(run.step));
   const subject = `Rückfrage zu Ihrer Serviceanfrage ${r.request_number}`;
   // Customer number only for linked requests (task-15-3); requests.customer_number is set only then
   const customerNote = r.customer_number ? `Ihre Kundennummer: ${r.customer_number} – bitte bei Rückfragen und Anrufen angeben.\n\n` : "";
@@ -70,46 +91,13 @@ export function RequestActions({ detail, employee }: { detail: RequestDetail; em
   const className = (key: ActionKey) => `action${key === primary ? " action--primary" : ""}${key === "reject" ? " action--danger" : ""}`;
 
   const render: Record<ActionKey, () => ReactNode> = {
-    complete: () => (
-      <details key="complete" className={className("complete")} open={primary === "complete" || undefined}>
-        <summary>Prüfen und freigeben</summary>
-        <p className="section-note">Schließt die Erstbearbeitung ab und öffnet die Einsatzplanung mit dieser Anfrage.</p>
-        <SaveForm action={completeIntake} submitLabel="Erstbearbeitung abschließen" submitVariant={variant("complete")}>
-          <Context detail={detail} />
-          <div className="form-grid">
-            <SelectField name="priority" label="Priorität" required defaultValue={r.priority ?? ""} options={priorityOptions} />
-          </div>
-          <TextAreaField name="note" label="Notiz für den Verlauf" rows={2} />
-        </SaveForm>
-      </details>
-    ),
-    correct: () => (
-      <details key="correct" className={className("correct")}>
-        <summary>Analyse korrigieren</summary>
-        <p className="section-note">
-          Für falsche automatische oder frühere Einstufungen. Die Korrektur wird im Verlauf festgehalten
-          {lastRun ? " und der letzte Automatisierungslauf als korrigiert markiert (zählt nicht als Zeitersparnis)" : ""}.
-        </p>
-        <SaveForm action={correctAnalysis} submitLabel="Korrektur speichern" submitVariant="secondary">
-          <Context detail={detail} />
-          <HiddenField name="current_priority" value={r.priority ?? ""} />
-          <HiddenField name="current_service_kind" value={r.service_kind} />
-          {lastRun && <HiddenField name="automation_run_id" value={lastRun.id} />}
-          <div className="form-grid">
-            <SelectField name="priority" label={`Priorität (aktuell: ${r.priority ? statusInfo("request_priority", r.priority).label : "nicht bestimmt"})`} defaultValue={r.priority ?? ""} options={priorityOptions} />
-            <SelectField name="service_kind" label="Leistungsart" required defaultValue={r.service_kind} options={serviceOptions} />
-          </div>
-          <TextAreaField name="reason" label="Grund der Korrektur" required rows={2} />
-        </SaveForm>
-      </details>
-    ),
     email: () => (
       <details key="email" className={className("email")}>
-        <summary>E-Mail an Kunden vorbereiten</summary>
-        <p className="section-note">Erstellt einen Entwurf unter Korrespondenz; die Seite springt danach dorthin. Versendet wird erst nach „In Warteschlange stellen“.</p>
+        <summary>Neue E-Mail an den Kunden</summary>
+        <p className="section-note">Wird als Entwurf gespeichert und erscheint unten in der Liste. Dort lässt er sich bearbeiten, löschen oder senden.</p>
         {drafts.length > 0 && (
           <p className="rw-blocked">
-            {drafts.length === 1 ? "Es gibt schon einen Entwurf" : `Es gibt schon ${drafts.length} Entwürfe`}: <a href={`#nachricht-${drafts[0].id}`}>unter Korrespondenz weiter bearbeiten</a>.
+            {drafts.length === 1 ? "Es gibt schon einen Entwurf" : `Es gibt schon ${drafts.length} Entwürfe`}: <a href={`#nachricht-${drafts[0].id}`}>Entwurf weiter bearbeiten</a>.
           </p>
         )}
         <SaveForm action={createDraft} submitLabel="Als Entwurf speichern" submitVariant="secondary">
@@ -120,16 +108,6 @@ export function RequestActions({ detail, employee }: { detail: RequestDetail; em
           </div>
           <TextField name="subject" label="Betreff" required defaultValue={subject} />
           <TextAreaField name="body_text" label="Text" required rows={8} defaultValue={body} />
-        </SaveForm>
-      </details>
-    ),
-    await: () => (
-      <details key="await" className={className("await")}>
-        <summary>Auf Kundenantwort warten</summary>
-        <p className="section-note">Setzt die Erstbearbeitung auf „Wartet auf Kunde“, z. B. nachdem eine Rückfrage in die Warteschlange gestellt wurde.</p>
-        <SaveForm action={markAwaitingCustomer} submitLabel="Status setzen" submitVariant="secondary">
-          <Context detail={detail} />
-          <TextAreaField name="note" label="Notiz für den Verlauf" rows={2} />
         </SaveForm>
       </details>
     ),
@@ -187,17 +165,7 @@ export function RequestActions({ detail, employee }: { detail: RequestDetail; em
     ),
   };
 
-  return (
-    <div className="action-list">
-      {primary && render[primary]()}
-      {alternatives.length > 0 && (
-        <div className="rw-alternatives">
-          <p className="rw-alternatives__label">{primary ? "Oder stattdessen" : "Mögliche Aktionen"}</p>
-          {alternatives.map((key) => render[key]())}
-        </div>
-      )}
-    </div>
-  );
+  return render;
 }
 
 // Editing and queueing of a draft in the correspondence section
@@ -211,10 +179,49 @@ export function DraftActions({ detail, message }: { detail: RequestDetail; messa
         <TextField name="subject" label="Betreff" required defaultValue={message.subject} />
         <TextAreaField name="body_text" label="Text" required rows={8} defaultValue={message.body_text} />
       </SaveForm>
-      <SaveForm action={queueDraft} submitLabel="In Warteschlange stellen">
+      <div className="draft-actions__row">
+        <SaveForm action={queueDraft} submitLabel="Senden">
+          <Context detail={detail} />
+          <HiddenField name="message_id" value={message.id} />
+          <p className="section-note">Gibt den gespeicherten Stand für den Versand frei. Die E-Mail gilt als versendet, sobald die Integration den Versand bestätigt.</p>
+        </SaveForm>
+        <SaveForm action={deleteDraft} submitLabel="Entwurf löschen" submitVariant="danger">
+          <Context detail={detail} />
+          <HiddenField name="message_id" value={message.id} />
+          <p className="section-note">Der Entwurf wird entfernt; im Verlauf bleibt ein Eintrag.</p>
+        </SaveForm>
+      </div>
+    </div>
+  );
+}
+
+// Classification and next intake status in the section "Erstbearbeitung" (task-22-1): replaces "Analyse korrigieren",
+// "Prüfen und freigeben" and "Auf Kundenantwort warten" of the former next-step card for staff.
+export function IntakeForm({ detail, employee }: { detail: RequestDetail; employee: Employee }) {
+  const r = detail.request;
+  const can = availableActions(detail, employee);
+  const lastRun = [...(detail.automationRuns ?? [])].reverse().find((run) => run.status === "succeeded" && !run.corrected_at && ["intake_analysis", "reply_analysis"].includes(run.step));
+  const statusOptions = [
+    ...(can.complete ? [{ value: "processed", label: "Freigeben – weiter zur Einsatzplanung" }] : []),
+    ...(can.await ? [{ value: "awaiting_customer", label: "Wartet auf Kunde" }] : []),
+  ];
+  return (
+    <div className="intake-form">
+      <h3>{statusOptions.length > 0 ? "Einstufung und Status" : "Einstufung korrigieren"}</h3>
+      <SaveForm action={saveIntake} submitLabel="Speichern" submitVariant={can.complete ? "primary" : "secondary"}>
         <Context detail={detail} />
-        <HiddenField name="message_id" value={message.id} />
-        <p className="section-note">Gibt den Entwurf für den Versand frei. Die Nachricht gilt erst als versendet, wenn die Integration den Versand bestätigt.</p>
+        <HiddenField name="current_priority" value={r.priority ?? ""} />
+        <HiddenField name="current_service_kind" value={r.service_kind} />
+        {lastRun && <HiddenField name="automation_run_id" value={lastRun.id} />}
+        <div className="form-grid">
+          <SelectField name="priority" label="Priorität" defaultValue={r.priority ?? ""} emptyLabel="Noch nicht bestimmt" options={priorityOptions} />
+          <SelectField name="service_kind" label="Leistungsart" required defaultValue={r.service_kind} options={serviceOptions} />
+          {statusOptions.length > 0 && (
+            <SelectField name="status" label={`Status (aktuell: ${statusInfo("intake_status", r.intake_status).label})`} defaultValue="" emptyLabel="Unverändert" options={statusOptions} />
+          )}
+        </div>
+        <TextAreaField name="note" label="Grund oder Notiz für den Verlauf" rows={2}
+          hint={`Pflicht, wenn Priorität oder Leistungsart korrigiert werden${lastRun ? "; der letzte Automatisierungslauf wird dann als korrigiert markiert" : ""}. Bei der Freigabe gilt die gewählte Priorität ohne Korrektur.`} />
       </SaveForm>
     </div>
   );

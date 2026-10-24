@@ -48,6 +48,7 @@ export const EVENT_LABELS: Record<string, string> = {
   callback_closed_by_visit: "Rückrufbitte durch Einsatzbeginn erledigt",
   message_drafted: "E-Mail-Entwurf erstellt",
   message_queued: "E-Mail in Warteschlange gestellt",
+  message_draft_deleted: "E-Mail-Entwurf gelöscht",
   message_sent: "E-Mail-Versand bestätigt",
   invoice_created: "Rechnungsentwurf erstellt",
   invoice_issued: "Rechnung ausgestellt",
@@ -86,7 +87,7 @@ const VISIT_REPLY_ACTIONS: Record<string, string> = {
   moved: "Termin laut Vorschlag verschoben", declined: "Vorschlag abgelehnt, Termin bleibt",
 };
 
-type EventLike = { event_type: string; from_value: string | null; to_value: string | null };
+type EventLike = { event_type: string; from_value: string | null; to_value: string | null; data?: unknown };
 
 // "[2026-10-29T12:00:00Z,2026-10-29T15:00:00Z)" → formatted range
 function formatRange(value: string): string | null {
@@ -135,5 +136,17 @@ export function describeEvent(event: EventLike, names: Map<string, string>): { t
   const from = formatValue(event, event.from_value, names);
   const to = formatValue(event, event.to_value, names);
   const change = from && to ? (from === to ? to : `${from} → ${to}`) : to ?? (from ? `${from} → –` : null);
-  return { title: EVENT_LABELS[event.event_type] ?? event.event_type, change };
+  return { title: SOURCE_LABELS[`${event.event_type}:${sourceOf(event)}`] ?? EVENT_LABELS[event.event_type] ?? event.event_type, change };
+}
+
+// Same event from another source (task-22-3): the reply assistant drafts e-mails and asks technicians to call back
+const SOURCE_LABELS: Record<string, string> = {
+  "callback_requested:email": "Rückrufbitte an den Techniker (Antwortassistent, E-Mail des Kunden)",
+  "message_drafted:assistant": "Antwortentwurf des Assistenten erstellt",
+};
+
+function sourceOf(event: EventLike): string | null {
+  if (!event.data || typeof event.data !== "object") return null;
+  const record = event.data as Record<string, unknown>;
+  return record.assistant === true ? "assistant" : typeof record.source === "string" ? record.source : null;
 }

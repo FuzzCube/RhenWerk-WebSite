@@ -1081,7 +1081,9 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .rw-gaps { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; padding: 2px 10px; border: 1px solid var(--rw-color-warning-border); border-radius: var(--rw-radius-full); font-size: 13px; font-weight: 600; color: var(--rw-color-warning-900); background: var(--rw-color-warning-surface); }
 .request-contact { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
 .request-contact strong { font-size: 16px; }
-.request-contact__actions { display: flex; flex-wrap: wrap; gap: var(--rw-space-8); }
+.request-contact__actions { display: flex; flex-direction: column; align-items: stretch; gap: var(--rw-space-8); }
+/* Phone and e-mail one below the other (task-22-2): long numbers stay readable in the side column */
+.request-contact__actions > a { justify-content: center; width: 100%; }
 .request-next { gap: var(--rw-space-12); }
 .rw-nowrap { white-space: nowrap; }
 /* Technician: own visit on top of the request page */
@@ -1561,6 +1563,18 @@ details.tech-step[open] { padding-bottom: 20px; }
 .request-card__body { display: flex; flex-direction: column; gap: var(--rw-space-12); padding: 0 24px 24px; }
 .request-next__plan { display: flex; flex-direction: column; gap: 8px; padding-bottom: var(--rw-space-16); margin-bottom: var(--rw-space-8); border-bottom: 1px solid var(--rw-border-subtle); }
 .request-next__plan .button { width: 100%; }
+
+/* Actions in their sections (task-22-1): planning in "Einsätze", classification and status in "Erstbearbeitung",
+   drafts in "Korrespondenz", rejecting folded at the end of the main column */
+.request-plan { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 14px 16px; background: var(--rw-surface-raised); border-left: 3px solid var(--rw-color-lime-500); border-radius: var(--rw-radius-sm); }
+.request-plan > h3, .request-plan > p { flex: 1 1 100%; margin: 0; }
+.request-plan .request-hold__reject { flex: 1 1 100%; }
+.intake-form { display: flex; flex-direction: column; gap: 8px; padding-top: var(--rw-space-12); border-top: 1px solid var(--rw-border-subtle); }
+.intake-form .save-form { padding: 0; border: 0; background: transparent; }
+.draft-actions__row { display: grid; gap: var(--rw-space-8); }
+@media (min-width: 768px) { .draft-actions__row { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+.request-reject .action { border-radius: var(--rw-radius-sm); }
+.request-reject .action > summary { color: var(--rw-color-danger-700); }
 
 /* Technician calendar (task-10-3, user feedback 12.10.2026): one agenda per day, days side by side from tablet width */
 .cal-page { container-type: inline-size; }
@@ -2068,6 +2082,9 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 /* task-20-8: a saved draft is marked where the page jumps to it */
 .message:target { scroll-margin-top: 96px; outline: 2px solid var(--rw-color-lime-500); outline-offset: 2px; border-radius: var(--rw-radius-sm); }
 .message__draft-note { margin: 12px 0 0; font-size: 14px; font-weight: 600; color: var(--rw-text-primary); }
+/* Draft of the reply assistant (task-22-3) */
+.message__assist { margin-left: 8px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--rw-color-info-800); background: var(--rw-color-info-surface); border: 1px solid var(--rw-color-info-border); }
+.message__assist-note { margin: 12px 0 0; padding: 10px 12px; font-size: 14px; color: var(--rw-color-info-800); background: var(--rw-color-info-surface); border-left: 3px solid var(--rw-color-blue-700); border-radius: var(--rw-radius-sm); }
 
 /* task-20-10: customer reply about the visit (cancelled automatically or to be checked) */
 .request-next__links { margin: 0; font-size: 15px; }

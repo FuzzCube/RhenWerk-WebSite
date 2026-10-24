@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { createCustomerFromRequest, linkCustomer, markMessagesRead, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
-import { availableActions, DraftActions, RequestActions } from "@/components/dashboard/request-actions";
+import { availableActions, DraftActions, IntakeForm, RequestAction, RequestActions } from "@/components/dashboard/request-actions";
 import { CheckboxField, HiddenField, SaveForm, SelectField, SuggestField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
@@ -46,30 +46,35 @@ export default async function RequestPage({ params }: Props) {
   // Technician view (user request 09.10.2026): own visit first, only the technical facts, history folded
   const technician = employee.role === "technician";
   const heroVisit = technician ? ownNextVisit(detail.visits, employee.id) : undefined;
+  const actions = availableActions(detail, employee);
+  // Planning happens on the planning page; the request page points there as the next step
+  const openHold = detail.holds.find((hold) => hold.status === "open") ?? null;
+  const canPlan = (employee.role === "dispatcher" || employee.role === "manager" || employee.role === "admin") && request.intake_status === "processed" && ["not_planned", "waiting_parts"].includes(request.work_status);
+  // Staff (user request 24.10.2026, task-22-1): every action sits in the section it belongs to, the side column only
+  // shows the customer. The technician keeps the next-step card.
+  const staff = !technician;
+  const action = (kind: Parameters<typeof RequestAction>[0]["kind"]) => staff && actions[kind] && <RequestAction detail={detail} employee={employee} kind={kind} />;
   const render: Record<SectionId, () => ReactNode> = {
     zusammenfassung: () => <Summary detail={detail} />,
-    kontakt: () => <><Contact detail={detail} dispatcher={technician ? person(request.dispatcher_id, "nicht zugewiesen") : undefined} />{!technician && <CustomerLink detail={detail} />}</>,
+    kontakt: () => <><Contact detail={detail} dispatcher={technician ? person(request.dispatcher_id, "nicht zugewiesen") : undefined} />{staff && <CustomerLink detail={detail} />}</>,
     anlage: () => <Equipment detail={detail} technical={technician} />,
-    erstbearbeitung: () => <Intake detail={detail} person={person} />,
-    korrespondenz: () => <Correspondence detail={detail} person={person} editable={employee.role !== "technician"} />,
-    einsaetze: () => <Visits detail={detail} person={person} employee={employee} />,
-    arbeit: () => <Work detail={detail} person={person} />,
+    erstbearbeitung: () => <><Intake detail={detail} person={person} />{staff && (actions.correct || actions.complete || actions.await) && <IntakeForm detail={detail} employee={employee} />}</>,
+    // task-22-2: a new e-mail is written below the messages it answers
+    korrespondenz: () => <><Correspondence detail={detail} person={person} editable={staff} />{action("email")}</>,
+    einsaetze: () => <>{staff && canPlan && <PlanNext request={request} hold={openHold} person={person} />}<Visits detail={detail} person={person} employee={employee} /></>,
+    arbeit: () => <>{action("close")}<Work detail={detail} person={person} /></>,
     dokumente: () => <Documents detail={detail} person={person} />,
-    rechnung: () => <Invoice detail={detail} canPay={employee.role === "manager" || employee.role === "admin"} />,
+    rechnung: () => <>{action("createInvoice")}{action("issueInvoice")}<Invoice detail={detail} canPay={employee.role === "manager" || employee.role === "admin"} /></>,
     verlauf: () => <History detail={detail} names={names} folded={technician} />,
   };
 
   // Unread customer e-mails (task-20-14); technicians do not get the messages at all
   const unread = (detail.messages ?? []).filter((message) => isUnreadMessage(message, request.created_at));
-  const actions = availableActions(detail, employee);
   // Customer reply about the visit (task-20-10): shown until a person plans, moves or cancels a visit afterwards
   const lastReply = technician ? undefined : detail.events.find((event) => event.event_type === "visit_reply_analyzed");
   const replyNotice = lastReply && ["cancelled", "flagged"].includes(lastReply.to_value ?? "")
     && !detail.events.some((event) => event.actor_type === "user" && ["visit_scheduled", "visit_rescheduled", "visit_status_changed"].includes(event.event_type) && event.occurred_at > lastReply.occurred_at)
     ? lastReply : undefined;
-  // Planning happens on the planning page; the request page points there as the next step
-  const openHold = detail.holds.find((hold) => hold.status === "open") ?? null;
-  const canPlan = (employee.role === "dispatcher" || employee.role === "manager" || employee.role === "admin") && request.intake_status === "processed" && ["not_planned", "waiting_parts"].includes(request.work_status);
   const hasActions = Object.values(actions).some(Boolean);
   const closedFor = !technician ? null
     : request.work_status === "completed" ? "completed"
@@ -82,12 +87,13 @@ export default async function RequestPage({ params }: Props) {
   const lastAnalysis = [...(detail.automationRuns ?? [])].reverse().find((run) => run.step === "intake_analysis" && run.confidence !== null);
 
   // Sections without entries are summarized in one line (specification section 06); anchors stay
+  // Staff: the correspondence is always open to write an e-mail; a section with an action is never summarized away
   const empty: Partial<Record<SectionId, string>> = {
-    korrespondenz: detail.messages && detail.messages.length === 0 ? "keine Nachrichten" : undefined,
-    einsaetze: detail.visits.length === 0 ? "noch kein Einsatz geplant" : undefined,
-    arbeit: detail.workEntries.length === 0 && !request.completion_summary ? "keine Arbeitspositionen" : undefined,
+    korrespondenz: technician && detail.messages && detail.messages.length === 0 ? "keine Nachrichten" : undefined,
+    einsaetze: detail.visits.length === 0 && !canPlan ? "noch kein Einsatz geplant" : undefined,
+    arbeit: detail.workEntries.length === 0 && !request.completion_summary && !(staff && actions.close) ? "keine Arbeitspositionen" : undefined,
     dokumente: detail.attachments.length === 0 ? "keine Dokumente" : undefined,
-    rechnung: !detail.invoice ? "keine Rechnung" : undefined,
+    rechnung: !detail.invoice && !(staff && actions.createInvoice) ? "keine Rechnung" : undefined,
   };
   // A technician sees the own visit on top; the visit table only adds value with further visits
   const side: readonly SectionId[] = technician && heroVisit && detail.visits.length === 1 ? ["kontakt", "einsaetze"] : ["kontakt"];
@@ -217,6 +223,7 @@ export default async function RequestPage({ params }: Props) {
       {/* Technician: one column on every width (as on tablets); next step and contact share one row */}
       <div className={`request-layout${technician ? " request-layout--single" : ""}`}>
         <div className="request-layout__main">
+          {replyNotice && <VisitReplyNotice event={replyNotice} requestId={request.id} />}
           {main.map((item) => section(item.id, item.label))}
           {collapsed.length > 0 && (
             <div className="rw-collapsed" aria-label="Bereiche ohne Einträge">
@@ -228,6 +235,8 @@ export default async function RequestPage({ params }: Props) {
               <span className="rw-collapsed__note"> Diese Bereiche erscheinen, sobald es Einträge gibt.</span>
             </div>
           )}
+          {/* Rejecting is rare and final: folded at the very end */}
+          {action("reject") && <div id="ablehnen" className="request-reject">{action("reject")}</div>}
         </div>
 
         <aside className="request-layout__side">
@@ -261,21 +270,10 @@ export default async function RequestPage({ params }: Props) {
               <button type="button" className="button button--primary" disabled>Rechnungsentwurf erstellen</button>
             </section>
           )}
-          {replyNotice && <VisitReplyNotice event={replyNotice} requestId={request.id} />}
-          {(hasActions || canPlan) && (
+          {technician && hasActions && (
             <section id="aktionen" className="rw-card rw-card--action request-next" aria-labelledby="aktionen-title">
               <p className="request-next__eyebrow">Nächster Schritt</p>
               <h2 id="aktionen-title" className="sr-only">Aktionen</h2>
-              {canPlan && (
-                <div className="request-next__plan">
-                  <p className="request-next__title">Einsatz planen</p>
-                  {openHold
-                    ? <HoldNote hold={openHold} request={request} person={person} />
-                    : <p className="rw-card__note">Erstbearbeitung abgeschlossen. Techniker und Termin in der Einsatzplanung wählen.</p>}
-                  <Link className="button button--primary" href={`/dashboard/planung?anfrage=${request.id}`}>Zur Einsatzplanung</Link>
-                  {openHold && <HoldReject hold={openHold} />}
-                </div>
-              )}
               <RequestActions detail={detail} employee={employee} />
             </section>
           )}
@@ -294,8 +292,8 @@ export default async function RequestPage({ params }: Props) {
 
 type PersonFn = (id: string | null | undefined, fallback?: string) => string;
 
-// Which staff sections fold and what their closed line says. Open stays what the current step needs:
-// equipment and intake while the intake is open, correspondence with a draft or a fresh customer reply.
+// Which staff sections fold and what their closed line says. Open stays what the current step needs: equipment and
+// intake while the intake is open. The correspondence no longer folds (task-22-1); its messages fold one by one.
 function foldState(detail: RequestDetail): Partial<Record<SectionId, { open: boolean; summary: ReactNode }>> {
   const r = detail.request;
   const openIntake = ["new", "analyzing", "needs_review", "awaiting_customer"].includes(r.intake_status);
@@ -303,11 +301,6 @@ function foldState(detail: RequestDetail): Partial<Record<SectionId, { open: boo
   const machine = [r.manufacturer, r.model_type].filter(Boolean).join(" ");
   const runs = detail.automationRuns ?? [];
   const analysis = [...runs].reverse().find((run) => run.step === "intake_analysis" && run.confidence !== null);
-  const messages = detail.messages ?? [];
-  const lastMessage = messages[messages.length - 1];
-  const lastWhen = lastMessage ? lastMessage.received_at ?? lastMessage.sent_at ?? lastMessage.created_at : null;
-  const draft = messages.some((message) => message.status === "draft");
-  const unread = messages.filter((message) => isUnreadMessage(message, r.created_at)).length;
   const lastEvent = detail.events[0];
   const join = (parts: Array<ReactNode | false | null | undefined>) => parts.filter(Boolean).map((part, index) => <span key={index}>{index > 0 && " · "}{part}</span>);
   return {
@@ -316,21 +309,13 @@ function foldState(detail: RequestDetail): Partial<Record<SectionId, { open: boo
       summary: join([label("equipment_kind", r.equipment_kind), machine, gaps > 0 && <span className="request-card__warn">{gaps === 1 ? "1 Angabe fehlt" : `${gaps} Angaben fehlen`}</span>]),
     },
     erstbearbeitung: {
-      open: r.intake_status === "needs_review" || (openIntake && r.human_review_required),
+      // The classification and status form lives here (task-22-1)
+      open: openIntake,
       summary: join([
         statusInfo("intake_status", r.intake_status).label,
         r.intake_mode && label("intake_mode", r.intake_mode),
         analysis?.confidence != null && <>Konfidenz <span className="mono">{formatPercent(analysis.confidence * 100, 0)}</span></>,
         runs.length > 0 && (runs.length === 1 ? "1 Automatisierungslauf" : `${runs.length} Automatisierungsläufe`),
-      ]),
-    },
-    korrespondenz: {
-      open: draft || unread > 0 || (lastMessage?.direction === "incoming" && openIntake),
-      summary: join([
-        unread > 0 && <span className="request-card__unread">{unread} ungelesen</span>,
-        messages.length === 1 ? "1 Nachricht" : `${messages.length} Nachrichten`,
-        draft && <span className="request-card__warn">Entwurf offen</span>,
-        lastMessage && <>zuletzt {lastMessage.direction === "incoming" ? "eingehend" : "ausgehend"} <span className="mono">{formatDateTime(lastWhen)}</span></>,
       ]),
     },
     verlauf: {
@@ -548,6 +533,20 @@ function VisitReplyNotice({ event, requestId }: { event: RequestDetail["events"]
   );
 }
 
+// "Einsatz planen" in the section "Einsätze" (task-22-1): the hold of the customer, the way to the planning board
+function PlanNext({ request, hold, person }: { request: RequestDetail["request"]; hold: RequestDetail["holds"][number] | null; person: PersonFn }) {
+  return (
+    <div className="request-plan">
+      <h3>Einsatz planen</h3>
+      {hold
+        ? <HoldNote hold={hold} request={request} person={person} />
+        : <p className="rw-card__note">Erstbearbeitung abgeschlossen. Techniker und Termin in der Einsatzplanung wählen.</p>}
+      <Link className="button button--primary" href={`/dashboard/planung?anfrage=${request.id}`}>Zur Einsatzplanung</Link>
+      {hold && <HoldReject hold={hold} />}
+    </div>
+  );
+}
+
 function HoldNote({ hold, request, person }: { hold: RequestDetail["holds"][number]; request: RequestDetail["request"]; person: PersonFn }) {
   const payload = request.raw_payload as { request?: { preferred_time?: string } } | null;
   const wish = formatWish(request.requested_visit_date, payload?.request?.preferred_time);
@@ -641,9 +640,14 @@ const MESSAGE_KIND_LABELS: Record<string, string> = { receipt: "Eingangsbestäti
 function Correspondence({ detail, person, editable }: { detail: RequestDetail; person: PersonFn; editable: boolean }) {
   const messages = detail.messages ?? [];
   if (messages.length === 0) return <EmptyState title="Keine Nachrichten zu dieser Anfrage." />;
+  // Drafts of the reply assistant (task-22-3) with the reason the model gave for the person who sends them
+  const assisted = new Map((detail.automationRuns ?? []).filter((run) => run.step === "reply_assist").flatMap((run) => {
+    const result = run.result as { draft_id?: string | null; reason?: string } | null;
+    return result?.draft_id ? [[result.draft_id, result.reason ?? ""] as const] : [];
+  }));
   return (
     <>
-      <p className="section-note">Es werden keine E-Mails aus dem Dashboard versendet. „In Warteschlange“ bedeutet noch nicht versendet; nur „Versand bestätigt“ meldet die Integration.</p>
+      <p className="section-note">„Senden“ übergibt die E-Mail an die Versand-Integration. „In Warteschlange“ heißt noch nicht versendet; „Versand bestätigt“ meldet die Integration.</p>
       <ul className="message-list">
         {messages.map((message) => {
           const incoming = message.direction === "incoming";
@@ -657,6 +661,7 @@ function Correspondence({ detail, person, editable }: { detail: RequestDetail; p
                   <span className="message__head">
                     <span className="message__direction">{incoming ? "Eingehend" : "Ausgehend"} · {MESSAGE_KIND_LABELS[message.kind] ?? message.kind}</span>
                     {unread && <span className="message__new">Neu · ungelesen</span>}
+                    {assisted.has(message.id) && <span className="message__assist">KI-Entwurf</span>}
                     <StatusBadge kind="message_status" value={message.status} />
                   </span>
                   <strong>{message.subject}</strong>
@@ -667,7 +672,10 @@ function Correspondence({ detail, person, editable }: { detail: RequestDetail; p
                   {message.author_id && <p className="message__meta">Verfasst von {person(message.author_id, "Unbekannt")}</p>}
                   {message.error_text && <p className="message__error">Fehler: {message.error_text}</p>}
                   {message.status === "draft" && editable && <>
-                    <p className="message__draft-note">Entwurf gespeichert, noch nicht versendet. Hier weiter bearbeiten oder in die Warteschlange stellen.</p>
+                    {assisted.has(message.id) && (
+                      <p className="message__assist-note"><strong>Entwurf des Antwortassistenten.</strong> {assisted.get(message.id)} Bitte Fakten prüfen, bei Bedarf anpassen und erst dann senden.</p>
+                    )}
+                    <p className="message__draft-note">Entwurf gespeichert, noch nicht versendet. Hier bearbeiten, senden oder löschen.</p>
                     <DraftActions detail={detail} message={message} />
                   </>}
                 </div>

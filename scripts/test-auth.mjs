@@ -212,11 +212,12 @@ const techSections = sectionTitles(techDetail.html);
 check("Techniker: eigener Einsatz oben, 7 Abschnitte ohne Erstbearbeitung und Korrespondenz", techDetail.html.includes('id="visit-title"') && sameSet(techSections, ALL_SECTIONS.filter((title) => !["Erstbearbeitung", "Korrespondenz", "Einsätze"].includes(title))), techSections.join(","));
 const { data: techMessages } = await admin.from("messages").select("subject").eq("request_id", techRequest.id);
 // The technician's action slot only shows the state or the inactive invoice step (task-10-3), never review actions
-check("  keine Prüfaktionen für Techniker", !techDetail.html.includes("Prüfen und freigeben") && !techDetail.html.includes("Als Entwurf speichern"));
+check("  keine Prüfaktionen für Techniker", !techDetail.html.includes("intake-form") && !techDetail.html.includes("Als Entwurf speichern"));
 const { data: reviewRequest } = await admin.from("requests").select("id").eq("intake_status", "needs_review").eq("is_demo", true).limit(1).single();
 const managerReview = await get(managerJar, `/dashboard/anfragen/${reviewRequest.id}`);
-check("Manager: Prüfaktionen bei offener Prüfung", managerReview.html.includes('id="aktionen"') && managerReview.html.includes("Prüfen und freigeben"));
-check("  kein Versandknopf, nur Entwurf", !/>\s*(Senden|E-Mail senden|Jetzt senden)\s*</.test(managerReview.html) && managerReview.html.includes("Als Entwurf speichern"));
+// task-22-1: release and status in "Erstbearbeitung", e-mails as drafts in "Korrespondenz"; "Senden" only on a draft
+check("Manager: Prüfaktionen bei offener Prüfung", managerReview.html.includes('class="intake-form"') && managerReview.html.includes("Freigeben – weiter zur Einsatzplanung"));
+check("  E-Mail nur als Entwurf, Senden erst am Entwurf", managerReview.html.includes("Als Entwurf speichern") && (!/>\s*(Senden|E-Mail senden|Jetzt senden)\s*</.test(managerReview.html) || managerReview.html.includes("draft-actions")));
 {
   // A request created from an e-mail (task-10-5) may carry the subject in its description, which the technician sees
   const leaked = techMessages.find((message) => techDetail.html.includes(message.subject) && !techRequest.description.includes(message.subject));

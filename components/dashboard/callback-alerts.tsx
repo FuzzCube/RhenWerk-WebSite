@@ -46,7 +46,7 @@ export function CallbackAlerts({ alerts, role }: { alerts: CallbackAlert[]; role
               {" · "}{alert.site}
             </p>
             <p className="tech-meta">
-              Geplant <span className="mono">{formatTime(alert.scheduled_start)}</span> · gemeldet <span className="mono">{formatTime(alert.created_at)}</span>
+              Geplant <span className="mono">{formatTime(alert.scheduled_start)}</span> · gemeldet {alert.by_email ? "per E-Mail " : ""}<span className="mono">{formatTime(alert.created_at)}</span>
               {role === "dispatcher" && alert.technician && <> · Techniker {alert.technician}</>}
             </p>
           </div>

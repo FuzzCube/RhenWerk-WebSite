@@ -84,7 +84,7 @@ export const LABELS = {
   work_entry_kind: { labor: "Arbeitszeit", part: "Material", fixed_service: "Pauschale" },
   work_unit: { hour: "Std.", piece: "Stk.", service: "Pauschale" },
   visibility_level: { operational: "Technik", dispatch: "Disposition", management: "Leitung" },
-  automation_step: { intake_analysis: "Analyse der Anfrage", reply_analysis: "Analyse der Kundenantwort", email_matching: "E-Mail-Zuordnung", email_send: "E-Mail-Versand" },
+  automation_step: { intake_analysis: "Analyse der Anfrage", reply_analysis: "Analyse der Kundenantwort", email_matching: "E-Mail-Zuordnung", email_send: "E-Mail-Versand", visit_reply: "Kundenantwort zum Termin", reply_assist: "Antwortassistent" },
   automation_decision: { ready_for_planning: "Bereit zur Planung", ask_customer: "Rückfrage an Kunden", human_review: "Menschliche Prüfung", matched: "Zugeordnet", unmatched: "Nicht zugeordnet", sent: "Versendet" },
   // Channel of a request; demo requests stand for the website form
   request_source: { website_form: "Website-Formular", demo_seed: "Website-Formular", email: "E-Mail", phone: "Telefon", phone_agent: "Telefon (KI)" },

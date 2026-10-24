@@ -68,54 +68,62 @@ async function runVersioned(supabase: Client, input: Context, success: string, c
 
 const invalid = (values: Record<string, string>) => formError("Ungültige Anfrage. Bitte die Seite neu laden.", values);
 
-export async function completeIntake(_previous: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(STAFF);
-  const input = context(formData);
-  if (!input) return invalid(formValues(formData));
-  const { values } = input;
-  if (!PRIORITIES.includes(values.priority ?? "")) return formError("Bitte die Priorität festlegen.", values, { priority: "Pflichtangabe für den Abschluss." });
-  const supabase = await createClient();
-  const complete = (version: number) =>
-    supabase.rpc("complete_intake", { request_id: input.id, expected_version: version, priority: values.priority as Enums["request_priority"], note: values.note?.trim() || undefined });
-  const { error } = await withCurrentVersion(supabase, input, complete);
-  if (error) return formError(databaseErrorMessage(error), values);
-  // Next step is planning (user request 22.10.2026): straight to the board, where an open hold is the preselected slot
-  redirect(`/dashboard/planung?anfrage=${input.id}`);
-}
+// task-22-1: one form in "Erstbearbeitung" for classification and, while the intake is open, the next status.
+// A changed service kind (and a changed priority without release) is a correction with a reason; the release takes
+// the priority itself, as before. The status follows the correction with the version the correction returned.
+const INTAKE_TARGETS: readonly string[] = ["processed", "awaiting_customer"];
 
-export async function correctAnalysis(_previous: FormState, formData: FormData): Promise<FormState> {
+export async function saveIntake(_previous: FormState, formData: FormData): Promise<FormState> {
   await requireRole(STAFF);
   const input = context(formData);
   if (!input) return invalid(formValues(formData));
   const { values } = input;
-  const fieldErrors: Record<string, string> = {};
+  const target = values.status ?? "";
+  const release = target === "processed";
   const priority = values.priority && values.priority !== values.current_priority ? values.priority : "";
   const serviceKind = values.service_kind && values.service_kind !== values.current_service_kind ? values.service_kind : "";
-  if (priority && !PRIORITIES.includes(priority)) fieldErrors.priority = "Ungültige Priorität.";
+  const correctPriority = priority && !release ? priority : "";
+  const correction = Boolean(correctPriority || serviceKind);
+  const fieldErrors: Record<string, string> = {};
+  if (values.priority && !PRIORITIES.includes(values.priority)) fieldErrors.priority = "Ungültige Priorität.";
   if (serviceKind && !SERVICE_KINDS.includes(serviceKind)) fieldErrors.service_kind = "Ungültige Leistungsart.";
-  if (!priority && !serviceKind) fieldErrors.priority = "Priorität oder Leistungsart ändern.";
-  if (!values.reason?.trim()) fieldErrors.reason = "Bitte den Grund der Korrektur angeben.";
+  if (target && !INTAKE_TARGETS.includes(target)) fieldErrors.status = "Ungültiger Status.";
+  if (release && !PRIORITIES.includes(values.priority ?? "")) fieldErrors.priority = "Pflichtangabe für die Freigabe.";
+  if (!priority && !serviceKind && !target) fieldErrors.priority = "Priorität, Leistungsart oder Status ändern.";
+  if (correction && !values.note?.trim()) fieldErrors.note = "Bitte den Grund der Korrektur angeben.";
   if (Object.keys(fieldErrors).length > 0) return formError("Bitte die markierten Felder prüfen.", values, fieldErrors);
-  const runId = UUID.test(values.automation_run_id ?? "") ? values.automation_run_id : undefined;
   const supabase = await createClient();
-  return runVersioned(supabase, input, "Korrektur gespeichert.", (version) =>
-    supabase.rpc("correct_analysis", {
-      request_id: input.id,
-      expected_version: version,
-      reason: values.reason.trim(),
-      priority: (priority || undefined) as Enums["request_priority"] | undefined,
-      service_kind: (serviceKind || undefined) as Enums["service_kind"] | undefined,
-      automation_run_id: runId,
-    }));
-}
-
-export async function markAwaitingCustomer(_previous: FormState, formData: FormData): Promise<FormState> {
-  await requireRole(STAFF);
-  const input = context(formData);
-  if (!input) return invalid(formValues(formData));
-  const supabase = await createClient();
-  return runVersioned(supabase, input, "Status „Wartet auf Kunde“ gesetzt.", (version) =>
-    supabase.rpc("mark_awaiting_customer", { request_id: input.id, expected_version: version, note: input.values.note?.trim() || undefined }));
+  const note = values.note?.trim() || undefined;
+  let version = input.version;
+  if (correction) {
+    const runId = UUID.test(values.automation_run_id ?? "") ? values.automation_run_id : undefined;
+    const { data, error } = await withCurrentVersion(supabase, input, (current) =>
+      supabase.rpc("correct_analysis", {
+        request_id: input.id,
+        expected_version: current,
+        reason: note ?? "",
+        priority: (correctPriority || undefined) as Enums["request_priority"] | undefined,
+        service_kind: (serviceKind || undefined) as Enums["service_kind"] | undefined,
+        automation_run_id: runId,
+      }));
+    if (error || !data) return formError(databaseErrorMessage(error ?? {}), values);
+    version = data.version;
+  }
+  const next = { ...input, version };
+  if (release) {
+    const { error } = await withCurrentVersion(supabase, next, (current) =>
+      supabase.rpc("complete_intake", { request_id: input.id, expected_version: current, priority: values.priority as Enums["request_priority"], note }));
+    if (error) return formError(`${correction ? "Korrektur gespeichert, aber " : ""}${databaseErrorMessage(error)}`, values);
+    // Next step is planning (user request 22.10.2026): straight to the board, where an open hold is the preselected slot
+    redirect(`/dashboard/planung?anfrage=${input.id}`);
+  }
+  if (target === "awaiting_customer") {
+    const { error } = await withCurrentVersion(supabase, next, (current) =>
+      supabase.rpc("mark_awaiting_customer", { request_id: input.id, expected_version: current, note }));
+    if (error) return formError(`${correction ? "Korrektur gespeichert, aber " : ""}${databaseErrorMessage(error)}`, values);
+  }
+  refresh();
+  return formSuccess(correction && target ? "Korrektur und Status gespeichert." : correction ? "Korrektur gespeichert." : "Status „Wartet auf Kunde“ gesetzt.", values);
 }
 
 export async function rejectRequest(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -185,6 +193,16 @@ export async function queueDraft(_previous: FormState, formData: FormData): Prom
   const supabase = await createClient();
   return runVersioned(supabase, input, "In die Warteschlange gestellt – noch nicht versendet.", (version) =>
     supabase.rpc("queue_message", { message_id: input.values.message_id, expected_version: version }));
+}
+
+// task-22-1: discard a draft in the correspondence; queued and sent messages stay
+export async function deleteDraft(_previous: FormState, formData: FormData): Promise<FormState> {
+  await requireRole(STAFF);
+  const input = context(formData);
+  if (!input || !UUID.test(input.values.message_id ?? "")) return invalid(formValues(formData));
+  const supabase = await createClient();
+  return runVersioned(supabase, input, "Entwurf gelöscht.", (version) =>
+    supabase.rpc("delete_message_draft", { message_id: input.values.message_id, expected_version: version }));
 }
 
 // Completion and invoicing (task-6-3): current technician, manager or admin, no manager approval.
