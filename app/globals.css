@@ -2100,6 +2100,7 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .message__draft-note { margin: 12px 0 0; font-size: 14px; font-weight: 600; color: var(--rw-text-primary); }
 /* Draft of the reply assistant (task-22-3) */
 .message__assist { margin-left: 8px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--rw-color-info-800); background: var(--rw-color-info-surface); border: 1px solid var(--rw-color-info-border); }
+.message__auto { margin-left: 8px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid; color: var(--rw-text-secondary); background: var(--rw-surface-default); border-color: var(--rw-border-default); }
 .message__assist-note { margin: 12px 0 0; padding: 10px 12px; font-size: 14px; color: var(--rw-color-info-800); background: var(--rw-color-info-surface); border-left: 3px solid var(--rw-color-blue-700); border-radius: var(--rw-radius-sm); }
 
 /* task-20-10: customer reply about the visit (cancelled automatically or to be checked) */

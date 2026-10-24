@@ -15,6 +15,8 @@ export type DashboardSnapshot = {
   backlog: SendBacklog | null;
   systemAlerts: SystemAlert[];
   events: DashboardEvent[];
+  // task-26-3: the automation works on a request (request_automation_pending); the shell then polls more often
+  automationPending: boolean;
 };
 
 // Keep seen identities for the lifetime of this shell, including events that disappear after processing.

@@ -101,5 +101,6 @@ export async function loadDashboardSnapshot(employee: Employee, cursor?: string)
   const counts = { inbox, unreadRequests, newRequests, changes,
     failedRequests: failed.filter((row) => row.request_id).length, failedInbox: failed.filter((row) => !row.request_id).length };
   const revision = createHash("sha256").update(JSON.stringify({ revisions, counts, callbacks, backlog, systemAlerts })).digest("hex");
-  return { employeeId: employee.id, role: employee.role, cursor: now, revision, counts, callbacks, backlog, systemAlerts, events };
+  const automationPending = staff && (revisions[revisions.length - 1].count ?? 0) > 0;
+  return { employeeId: employee.id, role: employee.role, cursor: now, revision, counts, callbacks, backlog, systemAlerts, events, automationPending };
 }

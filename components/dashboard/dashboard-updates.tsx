@@ -116,8 +116,6 @@ export function DashboardUpdates({ initial, employeeId, children }: { initial: D
   useEffect(() => {
     const onReturn = () => { if (document.visibilityState === "visible") void poll(); };
     const onOnline = () => { void poll(); };
-    // Keep the existing urgent callback notifications working in background tabs too; browsers may throttle timers.
-    const timer = window.setInterval(() => void poll(), 20_000);
     document.addEventListener("visibilitychange", onReturn);
     window.addEventListener("focus", onReturn);
     window.addEventListener("online", onOnline);
@@ -125,7 +123,6 @@ export function DashboardUpdates({ initial, employeeId, children }: { initial: D
     // Includes actions already performed since server rendering and a failed initial load.
     queueMicrotask(() => void poll());
     return () => {
-      window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onReturn);
       window.removeEventListener("focus", onReturn);
       window.removeEventListener("online", onOnline);
@@ -133,6 +130,14 @@ export function DashboardUpdates({ initial, employeeId, children }: { initial: D
       request.current?.abort();
     };
   }, [poll]);
+
+  // Keep the existing urgent callback notifications working in background tabs too; browsers may throttle timers.
+  // While the automation works on a request, every 5 s, so "KI arbeitet …" and its result show up promptly (task-26-3)
+  const fastPoll = Boolean(snapshot?.automationPending);
+  useEffect(() => {
+    const timer = window.setInterval(() => void poll(), fastPoll ? 5_000 : 20_000);
+    return () => window.clearInterval(timer);
+  }, [poll, fastPoll]);
 
   // Native/custom forms outside SaveForm are protected too. SaveForm manages its own dirty/saving state.
   useEffect(() => {

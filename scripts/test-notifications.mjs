@@ -323,10 +323,12 @@ try {
   const analysing = await newRequest("website_form", { intake_status: "analyzing" });
   await page.open(`${BASE}/dashboard/anfragen/${analysing.id}`);
   check("KI arbeitet: Anzeige neben dem Status während der Analyse", await page.until(`!!document.querySelector('.badge-row [data-automation="analyse"]')`, 8000));
+  check("KI arbeitet: Stand meldet laufende Automatisierung (schneller Abruf)", (await api()).data.automationPending === true);
   await page.eval("window.__busyProbe = 'kept'");
   must(await admin.from("requests").update({ intake_status: "needs_review" }).eq("id", analysing.id));
-  await poll();
-  check("KI arbeitet: verschwindet nach der Analyse ohne Neuladen", await page.until(`!document.querySelector('[data-automation]') && window.__busyProbe === 'kept'`, 27000));
+  // task-26-3: no manual poll here; the 5-second poll while the automation works picks the change up
+  check("KI arbeitet: verschwindet nach der Analyse ohne Neuladen, ohne Anstoß in wenigen Sekunden", await page.until(`!document.querySelector('[data-automation]') && window.__busyProbe === 'kept'`, 9000));
+  check("KI arbeitet: Stand meldet danach keine laufende Automatisierung", (await api()).data.automationPending === false);
   await page.open(`${BASE}/dashboard/anfragen?ansicht=alle&suche=Notification`);
   check("KI arbeitet: keine Anzeige ohne laufende Automatisierung in der Liste", await page.eval("!document.querySelector('[data-automation]')"));
 

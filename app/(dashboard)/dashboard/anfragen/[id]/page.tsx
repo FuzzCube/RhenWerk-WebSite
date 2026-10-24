@@ -662,6 +662,10 @@ function Correspondence({ detail, person, editable }: { detail: RequestDetail; p
                     {/* Shown by .message--unread, which stays for the visit (task-25-1) */}
                     {incoming && <span className="message__new">Neu · ungelesen</span>}
                     {assisted.has(message.id) && <span className="message__assist">KI-Entwurf</span>}
+                    {/* task-26-3: released by the system, not by a person (receipt, reminder, fixed template, automation) */}
+                    {!incoming && message.approved_at && !message.approved_by && (
+                      <span className="message__auto">{message.status === "sent" ? "Automatisch versendet" : "Automatisch"}</span>
+                    )}
                     <StatusBadge kind="message_status" value={message.status} />
                   </span>
                   <strong>{message.subject}</strong>

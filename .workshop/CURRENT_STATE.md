@@ -4,27 +4,25 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v32, 26 Phasen, 146 Tasks. Alle 146 Tasks abgeschlossen, Gewicht 335/335, Fortschritt 100 %. Letzter Abschluss `task-25-1`: Korrespondenz blinkt nicht mehr beim Eintreffen einer Kundenantwort. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v33, 27 Phasen, 149 Tasks (ohne ersetzte). Alle 149 Tasks abgeschlossen, Gewicht 338/338, Fortschritt 100 %. Letzter Abschluss `task-26-3`: „KI arbeitet …“ mit schnellerem Abruf, automatische Mails gekennzeichnet. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Letzter Abschluss: Automatisierung sichtbar, Plantafel-Karte
+## Letzter Abschluss: Tempo und Plantafel nach dem Live-Test (phase-26)
 
-`task-24-1`: View `request_automation_pending` (Analyse oder Kundenantwort für Workflow 13/14, höchstens 15 Minuten); Chip „KI arbeitet …“ mit drehendem Ring neben dem Status (Anfrage-Seite, Liste, „Zu planen“), Ring am Plantafel-Block; kommt und geht über den gemeinsamen Abruf.
+`task-26-1`: Zugriffsregeln prüften je Zeile (can_read_message, can_access_request, Rolle je Aufruf); der gemeinsame Abruf zählte auf dem VPS ~3.100 Nachrichten in 1,3 s. Migration `20261024000700_rls_per_statement.sql`: Rolle einmal je Anweisung, erlaubte Anfragen als Menge `private.accessible_request_ids()`. Gleiche Sichtbarkeit (zeilengenau je Nutzer verglichen); VPS jetzt 1–5 ms (Admin), ~27 ms (Dispatcher).
 
-`task-24-2`: `save_reply_assist` entfernt Kundennummer-Sätze des Modells, der Hinweis der Datenbank bleibt der einzige; Prompt von Workflow 14 angepasst, auf dem VPS importiert. Noch kein Live-Entwurf mit dem neuen Stand geprüft.
+`task-26-2`: `history.replaceState` während eines Seitenwechsels bricht ihn in Next.js ab (Router-Restore) – die Tafel blieb auf dem alten Tag. Plantafel schreibt die URL erst nach dem Wechsel, der gewählte Tag ist sofort markiert, die Tafel beim Laden abgeblendet.
 
-`task-24-3`: Plantafel-Block nur mit Anfragenummer, Klick zeigt die Karte „Einsatz“ in der Leiste.
+`task-26-3`: Stand meldet `automationPending`, dann Abruf alle 5 s statt 20 s. Vom System ohne Person freigegebene Mails tragen „Automatisch versendet“. Sehr kurze Analysen (~6 s) können weiter zwischen zwei Abrufen liegen.
 
-`task-25-1`: Das Blinken beim Eintreffen einer Kundenantwort kam vom Zuklappen nach dem Lesen-Markieren und der folgenden Aktualisierung; `MessageItem` hält Zustand und Markierung für den Besuch.
-
-Vorher `task-23-1`/`23-2`: Info-Hinweise blenden aus, Navigation mit Farbpunkten, Anfrage beim Öffnen gelesen.
+Hinweis des Nutzers zur Kundennummer K-20181 (RIS-2026-02771) war ein Irrtum; Mail und Daten stimmen, keine Änderung.
 
 ## Letzte drei abgeschlossene Tasks
 
-- `task-25-1` (24.10.2026): Korrespondenz blinkt nicht mehr.
-- `task-24-3` (24.10.2026): Plantafel-Block nur mit Nummer, Einsatzkarte.
-- `task-24-2` (24.10.2026): Kundennummer im KI-Entwurf nur einmal und richtig, auf dem VPS.
+- `task-26-3` (24.10.2026): „KI arbeitet …“ mit 5-s-Abruf, automatische Mails gekennzeichnet.
+- `task-26-2` (24.10.2026): Plantafel-Tageswechsel ohne Zurückspringen.
+- `task-26-1` (24.10.2026): Zugriffsregeln einmal je Abfrage, auf dem VPS.
 
 ## Arbeitsregeln
 

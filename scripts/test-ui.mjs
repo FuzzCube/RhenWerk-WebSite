@@ -1016,6 +1016,15 @@ try {
   await page.open(requestUrl);
   const badges = await page.eval(`[...document.querySelectorAll("#korrespondenz .message .status-badge")].map((badge) => badge.textContent.trim())`);
   check("Oberfläche meldet keinen Versand (Status „In Warteschlange, nicht versendet“)", JSON.stringify(badges) === JSON.stringify(["In Warteschlange, nicht versendet"]), badges.join(","));
+  // task-26-3: a mail released by a person carries no mark; one the system sent on its own reads "Automatisch versendet"
+  check("Von Person freigegebene Mail ohne Kennzeichen „Automatisch“", await page.eval(`!document.querySelector("#korrespondenz .message__auto")`));
+  const { data: systemMail } = await admin.from("messages").insert({ request_id: request.id, direction: "outgoing", kind: "receipt", status: "sent", to_address: "kunde@example.com",
+    subject: "Test automatische Mail", body_text: "Test", approved_at: new Date().toISOString(), sent_at: new Date().toISOString() }).select("id").single();
+  await page.open(requestUrl);
+  const autoMark = await page.eval(`document.querySelector("#nachricht-${systemMail.id} .message__auto")?.textContent ?? ""`);
+  await admin.from("messages").delete().eq("id", systemMail.id);
+  check("Automatisch versendete Mail gekennzeichnet", autoMark === "Automatisch versendet", autoMark);
+  await page.open(requestUrl);
 
   // task-22-1: a second draft is discarded again; the queued e-mail stays, the history keeps an entry
   await fillIn(actionForm("Neue E-Mail an den Kunden"), { subject: "Wird gelöscht", body_text: "Entwurf zum Löschen." });

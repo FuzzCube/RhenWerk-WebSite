@@ -5124,7 +5124,7 @@
       "description": "Vom Nutzer gemeldet: Einsatzplanung langsamer, Tageswechsel springt zurück; Anzeige „KI arbeitet …“ nie gesehen. Ursache u. a. Zugriffsprüfung je Zeile auf messages (1,3 s je Abruf auf dem VPS).",
       "order": 27,
       "weight": 1,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-26-1",
@@ -5188,7 +5188,7 @@
           "description": "Während eine Automatisierung läuft, fragt der gemeinsame Abruf öfter ab; automatisch versendete Mails tragen in der Korrespondenz den Hinweis „automatisch versendet“.",
           "order": 3,
           "weight": 1,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-26-2"
           ],
@@ -5197,7 +5197,21 @@
             "Hinweis an automatisch versendeten Mails.",
             "test:notifications und test:ui grün; lint/typecheck/build."
           ],
-          "startedAt": "2026-10-24T17:53:22.963Z"
+          "startedAt": "2026-10-24T17:53:22.963Z",
+          "completedAt": "2026-10-24T18:03:33.040Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Live-Fall RIS-2026-02771 (24.10., 17:08): Kundenantwort 17:08:02, Analyse fertig 17:08:08, Eingangsbestätigung gesendet 17:08:18; bei 20-s-Abruf (der bis task-26-1 bis zu 2 s dauerte) war „KI arbeitet …“ kaum zu sehen. Die Bestätigung 17:12:59 löste admin.demo per „Verschieben und bestätigen“ aus. Umsetzung: Dashboard-Stand meldet automationPending (aus request_automation_pending); DashboardUpdates fragt dann alle 5 s ab, sonst alle 20 s. Korrespondenz: ausgehende Mails, die das System ohne Person freigegeben hat (approved_at gesetzt, approved_by leer: Eingangsbestätigung, Erinnerung, feste Vorlage, Automatisierung), tragen „Automatisch versendet“ (bzw. „Automatisch“ vor dem Versand). Analysen unter 5 s können weiterhin zwischen zwei Abrufen liegen; das Ergebnis ist danach an der Mail erkennbar. Geprüft: lint, typecheck, build, test:notifications 60 bestanden (neu: Stand meldet Automatisierung, Anzeige verschwindet ohne Anstoß in unter 9 s, danach false), test:ui 484 bestanden (neu: von Person freigegebene Mail ohne Kennzeichen, System-Mail mit „Automatisch versendet“); Sichtprüfung 390 px.",
+            "commands": [
+              "npm run lint",
+              "npx tsc --noEmit",
+              "npm run build",
+              "APP_URL=http://localhost:3117 npm run test:notifications",
+              "APP_URL=http://localhost:3117 npm run test:ui",
+              "Sichtprüfung 390 px (headless Chrome)"
+            ],
+            "checkedAt": "2026-10-24T18:03:33.040Z"
+          }
         }
       ]
     }
