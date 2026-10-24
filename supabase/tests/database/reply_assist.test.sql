@@ -2,7 +2,7 @@
 -- a draft for staff (never queued) and a callback request to the technician of an overdue visit.
 -- Run with: supabase test db
 begin;
-select plan(21);
+select plan(22);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'f1@x.test'),
@@ -34,12 +34,18 @@ from generate_series(1, 5) n;
 insert into public.messages (request_id, direction, kind, status, to_address, subject, body_text, author_id)
 values ('00000000-0000-0000-0000-0000000000b5', 'outgoing', 'other', 'draft', 'anna@antwort.test', 'Re: Antwort', 'Schon in Arbeit', '00000000-0000-0000-0000-0000000000f1');
 
+-- A bounce of the mail server is no customer reply to answer
+insert into public.messages (id, request_id, direction, kind, status, from_address, subject, body_text, received_at, created_at)
+values ('00000000-0000-0000-0000-0000000000d9', '00000000-0000-0000-0000-0000000000b1', 'incoming', 'customer_reply', 'received', 'Mail Delivery Subsystem <mailer-daemon@googlemail.com>',
+  'Delivery Status Notification (Failure)', 'Address not found', now() - interval '20 minutes', now() - interval '20 minutes');
+
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 create temp table pending_ids on commit drop as
   select i ->> 'message_id' as id, i from jsonb_array_elements(public.reply_assist_pending(10) -> 'items') i where i ->> 'message_id' like '00000000-0000-0000-0000-0000000000d%';
 select is((select array_agg(right(id, 2) order by id) from pending_ids), array['d1', 'd2'], 'pending: unplanned and overdue; coming visit waits for workflow 13, answered one skipped');
 select is((select i -> 'lage' ->> 'lage' from pending_ids where id like '%d2'), 'ueberfaellig', 'context: situation of the request');
+select ok(not exists (select 1 from jsonb_array_elements(public.reply_assist_pending(10) -> 'items') i where i ->> 'message_id' like '%d9'), 'bounce of the mail server: not listed');
 select ok((select i -> 'anfrage' ->> 'ansprechpartner' = 'Anna Antwort' and jsonb_array_length(i -> 'einsaetze') = 1 and i -> 'einsaetze' -> 0 ->> 'techniker' = 'Technik F' from pending_ids where id like '%d2'),
   'context: contact and visit with technician');
 
