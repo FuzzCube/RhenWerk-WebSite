@@ -564,3 +564,8 @@
 {"timestamp":"2026-10-24T15:46:49.977Z","type":"verification_passed","taskId":"task-24-3","summary":"test:ui 482 bestanden; Einsatzkarte bei 390/768/1440 geprüft."}
 {"timestamp":"2026-10-24T15:46:49.977Z","type":"task_completed","taskId":"task-24-3","summary":"Plantafel: Block nur mit Nummer, Einsatzdetails in der Leiste"}
 {"timestamp":"2026-10-24T15:46:49.977Z","type":"phase_completed","summary":"phase-24 abgeschlossen."}
+{"timestamp":"2026-10-24T16:14:17.741Z","type":"roadmap_updated","summary":"phase-25 mit task-25-1 ergänzt (Blinken der Korrespondenz, Nutzerhinweis)."}
+{"timestamp":"2026-10-24T16:14:17.741Z","type":"task_started","taskId":"task-25-1","summary":"Korrespondenz blinkt nicht beim Eintreffen einer Kundenantwort."}
+{"timestamp":"2026-10-24T16:31:42.473Z","type":"verification_passed","taskId":"task-25-1","summary":"Blinken nachgestellt und behoben; test:notifications, test:ui 482 bestanden."}
+{"timestamp":"2026-10-24T16:31:42.473Z","type":"task_completed","taskId":"task-25-1","summary":"Korrespondenz blinkt nicht beim Eintreffen einer Kundenantwort"}
+{"timestamp":"2026-10-24T16:31:42.473Z","type":"phase_completed","summary":"phase-25 abgeschlossen."}

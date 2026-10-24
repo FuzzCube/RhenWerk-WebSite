@@ -2125,6 +2125,7 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .unread-banner__actions { display: flex; flex-wrap: wrap; gap: var(--rw-space-8); align-items: flex-start; }
 .unread-banner__actions .save-form { display: block; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .message--unread { border-left: 5px solid var(--rw-color-danger-700); background: var(--rw-color-warning-surface); }
+.message:not(.message--unread) .message__new { display: none; }
 .message__new { margin-left: 8px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--rw-color-white); background: var(--rw-color-danger-700); }
 .request-card__unread { font-weight: 700; color: var(--rw-color-danger-700); }
 

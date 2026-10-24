@@ -280,6 +280,9 @@ try {
   await sleep(900);
   check("Keine alten Hinweise nach voller Öffnung", await page.eval("document.querySelectorAll('[data-notification-id]').length === 0"));
   check("Anfrage öffnen markiert gelesen: roter Punkt weg, Übersicht der neuen Nachrichten bleibt, kein Knopf", await page.until(`${badge("Anfragen mit ungelesenen Kundennachrichten")} === 0 && !document.querySelector('.dash-nav a[href="/dashboard/anfragen"] .dash-nav__dot--unread') && !!document.getElementById('neue-nachrichten') && !document.body.textContent.includes('Als gelesen markieren')`, 8000));
+  // task-25-1: the refresh after marking read must not collapse the message or drop its mark (it blinked live)
+  await sleep(4000); // the page refresh after marking read
+  check("Gelesene Nachricht bleibt während des Besuchs aufgeklappt und markiert", await page.eval(`(() => { const m = document.getElementById('nachricht-${offlineReply.id}'); return !!m && m.classList.contains('message--unread') && m.querySelector('details').open && getComputedStyle(m.querySelector('.message__new')).display !== 'none'; })()`));
   check("Auch in der Datenbank gelesen", must(await admin.from("messages").select("id").eq("request_id", initialRequest.id).eq("direction", "incoming").is("staff_read_at", null)).length === 0);
 
   // Customer changes and cancellation pass through the same integration RPC used by n8n.

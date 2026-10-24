@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 31,
+  "roadmapVersion": 32,
   "status": "active",
   "phases": [
     {
@@ -5076,6 +5076,44 @@
               "npm run build"
             ],
             "checkedAt": "2026-10-24T15:46:49.977Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-25",
+      "title": "Feinschliff nach dem Live-Test",
+      "description": "Vom Nutzer gemeldet: Korrespondenz blinkt mehrmals, wenn eine Kundenantwort eintrifft und gelesen markiert wird.",
+      "order": 26,
+      "weight": 1,
+      "status": "completed",
+      "tasks": [
+        {
+          "id": "task-25-1",
+          "title": "Korrespondenz blinkt nicht beim Eintreffen einer Kundenantwort",
+          "description": "Neue Kundenantwort erschien aufgeklappt und markiert, wurde beim Öffnen gelesen markiert und klappte nach der folgenden Aktualisierung zu; mit Eingangsbestätigung und Entwurf mehrere Sprünge. Nachrichten behalten während des Besuchs Aufklappzustand und Markierung.",
+          "order": 1,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Ursache lokal nachgestellt und belegt.",
+            "Nachricht bleibt während des Besuchs aufgeklappt und als neu markiert, neue Entwürfe öffnen sich weiterhin.",
+            "test:notifications und test:ui grün; lint/typecheck/build."
+          ],
+          "startedAt": "2026-10-24T16:14:17.741Z",
+          "completedAt": "2026-10-24T16:31:42.473Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Ursache lokal nachgestellt (Chrome, Zustand alle 250 ms): neue Kundenantwort erschien aufgeklappt und markiert, ReadOnOpen markierte sie gelesen, die folgende Aktualisierung (rund 2 s) klappte sie zu und nahm die Markierung weg; live kamen Eingangsbestätigung (Warteschlange, gesendet) und Entwurf mit weiteren Aktualisierungen dazu. Lösung: MessageItem (Client) behält Aufklappzustand und Markierung ab dem Erscheinen für den Besuch, ein später geöffneter Zustand (neuer Entwurf) öffnet weiterhin; Label „Neu · ungelesen“ über .message--unread. Nachbau danach: leer, aufgeklappt und markiert, dazu der Entwurf, kein Zuklappen. Geprüft: test:notifications alle bestanden (neu: Nachricht bleibt nach dem Lesen-Markieren aufgeklappt und markiert), test:ui 482 bestanden, lint, typecheck, build.",
+            "commands": [
+              "APP_URL=http://localhost:3117 npm run test:notifications",
+              "APP_URL=http://localhost:3117 npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-24T16:31:42.473Z"
           }
         }
       ]

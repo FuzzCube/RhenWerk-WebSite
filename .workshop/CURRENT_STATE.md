@@ -4,7 +4,7 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v31, 25 Phasen, 145 Tasks. Alle 145 Tasks abgeschlossen, Gewicht 334/334, Fortschritt 100 %. Letzter Abschluss `task-24-3`: Einsatzkarte auf der Plantafel. Commit 4f782be auf origin/main, CI grün, Migrationen und Workflow 14 auf dem VPS. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v32, 26 Phasen, 146 Tasks. Alle 146 Tasks abgeschlossen, Gewicht 335/335, Fortschritt 100 %. Letzter Abschluss `task-25-1`: Korrespondenz blinkt nicht mehr beim Eintreffen einer Kundenantwort. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
@@ -16,15 +16,15 @@ Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VP
 
 `task-24-3`: Plantafel-Block nur mit Anfragenummer, Klick zeigt die Karte „Einsatz“ in der Leiste.
 
-Offen aus dem Live-Test: Der Nutzer meldete, dass während des KI-Entwurfs etwas in „Anfragen“ abwechselnd erschien und verschwand; was genau, ist noch ungeklärt (Rückfrage gestellt).
+`task-25-1`: Das Blinken beim Eintreffen einer Kundenantwort kam vom Zuklappen nach dem Lesen-Markieren und der folgenden Aktualisierung; `MessageItem` hält Zustand und Markierung für den Besuch.
 
 Vorher `task-23-1`/`23-2`: Info-Hinweise blenden aus, Navigation mit Farbpunkten, Anfrage beim Öffnen gelesen.
 
 ## Letzte drei abgeschlossene Tasks
 
+- `task-25-1` (24.10.2026): Korrespondenz blinkt nicht mehr.
 - `task-24-3` (24.10.2026): Plantafel-Block nur mit Nummer, Einsatzkarte.
 - `task-24-2` (24.10.2026): Kundennummer im KI-Entwurf nur einmal und richtig, auf dem VPS.
-- `task-24-1` (24.10.2026): Anzeige „KI arbeitet …“.
 
 ## Arbeitsregeln
 
@@ -46,6 +46,6 @@ Vorher `task-23-1`/`23-2`: Info-Hinweise blenden aus, Navigation mit Farbpunkten
 
 ## Nächster Schritt
 
-Keine offenen/startbaren Tasks; Stand auf origin/main und dem VPS. Offene Rückfrage zum Flackern in „Anfragen“. Keine weiteren Aufgaben automatisch beginnen.
+Keine offenen/startbaren Tasks; Stand auf origin/main und dem VPS.  Keine weiteren Aufgaben automatisch beginnen.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

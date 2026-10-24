@@ -6,6 +6,7 @@ import { createCustomerFromRequest, linkCustomer, rejectHold } from "@/app/(dash
 import { availableActions, DraftActions, IntakeForm, RequestAction, RequestActions } from "@/components/dashboard/request-actions";
 import { CheckboxField, HiddenField, SaveForm, SelectField, SuggestField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
+import { MessageItem } from "@/components/dashboard/message-item";
 import { ReadOnOpen } from "@/components/dashboard/read-on-open";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
@@ -654,13 +655,12 @@ function Correspondence({ detail, person, editable }: { detail: RequestDetail; p
           const unread = isUnreadMessage(message, detail.request.created_at);
           const when = message.received_at ?? message.sent_at ?? message.created_at;
           return (
-            // Anchor for "Als Entwurf speichern" (task-20-8): the page opens at the new draft, :target marks it
-            <li key={message.id} id={`nachricht-${message.id}`} className={`message message--${message.direction}${unread ? " message--unread" : ""}`}>
-              <details open={(message.status === "draft" && editable) || unread}>
+            <MessageItem key={message.id} id={message.id} direction={message.direction} unread={unread} open={(message.status === "draft" && editable) || unread}>
                 <summary>
                   <span className="message__head">
                     <span className="message__direction">{incoming ? "Eingehend" : "Ausgehend"} · {MESSAGE_KIND_LABELS[message.kind] ?? message.kind}</span>
-                    {unread && <span className="message__new">Neu · ungelesen</span>}
+                    {/* Shown by .message--unread, which stays for the visit (task-25-1) */}
+                    {incoming && <span className="message__new">Neu · ungelesen</span>}
                     {assisted.has(message.id) && <span className="message__assist">KI-Entwurf</span>}
                     <StatusBadge kind="message_status" value={message.status} />
                   </span>
@@ -679,8 +679,7 @@ function Correspondence({ detail, person, editable }: { detail: RequestDetail; p
                     <DraftActions detail={detail} message={message} />
                   </>}
                 </div>
-              </details>
-            </li>
+            </MessageItem>
           );
         })}
       </ul>
