@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { createCustomerFromRequest, linkCustomer, markMessagesRead, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
+import { createCustomerFromRequest, linkCustomer, rejectHold } from "@/app/(dashboard)/dashboard/anfragen/[id]/actions";
 import { availableActions, DraftActions, IntakeForm, RequestAction, RequestActions } from "@/components/dashboard/request-actions";
 import { CheckboxField, HiddenField, SaveForm, SelectField, SuggestField, TextAreaField, TextField } from "@/components/dashboard/ui/save-form";
 import { DataTable, type Column } from "@/components/dashboard/ui/data-table";
+import { ReadOnOpen } from "@/components/dashboard/read-on-open";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
 import { PaymentForm } from "@/components/dashboard/payment-form";
@@ -168,8 +169,8 @@ export default async function RequestPage({ params }: Props) {
         </section>
       )}
 
-      {unread.length > 0 && (
-        // task-20-14: the customer wrote (cancel, move, a question) and nobody has marked it as read yet
+      <ReadOnOpen requestId={request.id} messageIds={unread.map((message) => message.id)}>
+        {/* task-20-14: the customer wrote (cancel, move, a question) and nobody had read it before this visit */}
         <section id="neue-nachrichten" className="rw-banner rw-banner--unread" aria-labelledby="neue-nachrichten-title">
           <Icon name="mail" size={22} />
           <div className="unread-banner__text">
@@ -187,12 +188,9 @@ export default async function RequestPage({ params }: Props) {
           </div>
           <div className="unread-banner__actions">
             <a className="rw-button-secondary" href="#korrespondenz">Zur Korrespondenz</a>
-            <SaveForm action={markMessagesRead} submitLabel="Als gelesen markieren" submitVariant="secondary">
-              <HiddenField name="request_id" value={request.id} />
-            </SaveForm>
           </div>
         </section>
-      )}
+      </ReadOnOpen>
 
       {progress && (
         <ol className="rw-progress" aria-label="Status der Anfrage">

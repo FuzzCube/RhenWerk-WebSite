@@ -3,7 +3,8 @@ import type { CallbackAlert } from "./dashboard/callbacks";
 import type { SendBacklog } from "./send-backlog";
 import type { SystemAlert } from "./system-summary";
 
-export type DashboardEvent = { id: string; title: string; href: string };
+// info: a mere result (e.g. a rescheduled visit) that fades out by itself; everything else stays until handled.
+export type DashboardEvent = { id: string; title: string; href: string; info?: true };
 export type DashboardSnapshot = {
   employeeId: string;
   role: EmployeeRole;
@@ -26,6 +27,12 @@ export function freshDashboardEvents(events: DashboardEvent[], seen: Set<string>
     fresh.push(event);
   }
   return fresh;
+}
+
+// The user opened the event's target (path and every query parameter of the link match; the hash is ignored).
+export function eventTargetOpen(href: string, pathname: string, search: URLSearchParams): boolean {
+  const target = new URL(href, "http://x");
+  return target.pathname === pathname && [...target.searchParams].every(([key, value]) => search.get(key) === value);
 }
 
 export function callbackEvent(alert: CallbackAlert, role: EmployeeRole): DashboardEvent {

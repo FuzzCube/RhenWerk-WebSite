@@ -1584,8 +1584,8 @@ try {
     const extraMails = [];
     try {
       await page.open(`${BASE}/dashboard/posteingang`);
-      const listed = await page.eval(`({ badge: document.querySelector('.dash-nav a[href="/dashboard/posteingang"] .dash-nav__count')?.textContent ?? null, subjects: [...document.querySelectorAll(".inbox-item__subject")].map((e) => e.textContent) })`);
-      check("Liste zeigt die E-Mail, Zähler in der Navigation", listed.subjects.includes(subject) && Number(listed.badge) >= 1, JSON.stringify(listed));
+      const listed = await page.eval(`({ badge: document.querySelector('.dash-nav a[href="/dashboard/posteingang"] [data-badge="offene E-Mails"]')?.dataset.count ?? null, dot: !!document.querySelector('.dash-nav a[href="/dashboard/posteingang"] .dash-nav__dot'), subjects: [...document.querySelectorAll(".inbox-item__subject")].map((e) => e.textContent) })`);
+      check("Liste zeigt die E-Mail, Punkt in der Navigation (Anzahl für Screenreader)", listed.subjects.includes(subject) && listed.dot && Number(listed.badge) >= 1, JSON.stringify(listed));
       await page.open(`${BASE}/dashboard/posteingang?nachricht=${mail.id}`);
       const shown = await page.eval(`({ body: document.querySelector(".inbox-mail__body")?.textContent ?? "", email: document.querySelector('[name="business_email"]')?.value ?? "", target: document.querySelector('[name="target"]')?.value ?? "" })`);
       check("  Text sichtbar, neue Anfrage mit Absender vorbelegt, Anfrage des Absenders vorgeschlagen", shown.body.includes("Anfragenummer liegt mir nicht vor") && shown.email === target.business_email && shown.target.startsWith(target.id), JSON.stringify(shown));

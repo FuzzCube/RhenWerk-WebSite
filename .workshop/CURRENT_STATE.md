@@ -4,23 +4,23 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v29, 23 Phasen, 140 Tasks. Alle 140 Tasks abgeschlossen, Gewicht 322/322, Fortschritt 100 %. Letzter Abschluss `task-22-3`: KI-Antwortassistent. Commit 94fc4b8 und Bounce-Fix auf origin/main, CI grün, auf dem VPS aktiv. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v30, 24 Phasen, 142 Tasks. Alle 142 Tasks abgeschlossen, Gewicht 327/327, Fortschritt 100 %. Letzter Abschluss `task-23-2`: Navigation mit Farbpunkten, Anfrage beim Öffnen gelesen. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Letzter Abschluss: Antwortassistent
+## Letzter Abschluss: ruhigere Benachrichtigungen
 
-`task-22-3`: Workflow 14 „RheinWerk · Antwortassistent“ (`rwReplyAssist2026`, `n8n/generate_reply_assist_workflow.py`) schreibt zu unbeantworteten Kunden-E-Mails nach der Erstbearbeitung einen Entwurf (Kennzeichen „KI-Entwurf“ mit Begründung in der Korrespondenz). Datenbank: `reply_assist_pending`, `reply_assist_slots` (freie Termine zum Wunsch), `save_reply_assist` (Entwurf, Lauf `reply_assist`, Rückrufbitte an den Techniker bei überfälligem Einsatz, `conversation_id` `email:<id>`). Workflow 13 geht vor; Bounces/Abwesenheit/No-Reply werden ignoriert (Migration 20261024000400 nach dem ersten Live-Lauf). Versand nur über „Senden“. Details docs/n8n-workflows.md Abschnitt 14.
+`task-23-1`: Hinweise unten rechts. Reine Ergebnisse (Termin verschoben/storniert/bestätigt, Alternativtermin, Terminwunsch erledigt) tragen `info` und blenden nach 6 s aus (Pause bei Zeiger/Fokus). Andere bleiben, bis sie angeklickt/geschlossen werden oder die Zielseite per Navigation geöffnet wird (`eventTargetOpen` in `lib/dashboard-notifications.ts`).
 
-Vorher `task-22-1`/`22-2`: Anfrage-Seite ohne „Nächster Schritt“, Aktionen in den Abschnitten, Entwürfe löschbar (`delete_message_draft`), Kontaktknöpfe untereinander.
+`task-23-2`: Navigation zeigt je Bereich nur einen Punkt (rot bei ungelesen/Fehler, sonst grün), Zahlen in Tooltip/sr-only. Öffnen einer Anfrage markiert ihre Kundennachrichten als gelesen (`components/dashboard/read-on-open.tsx`, `markOpenedMessagesRead`); Hinweisblock bleibt für den Besuch, Knopf „Als gelesen markieren“ entfällt. Entscheidung in docs/decisions.md (24.10.2026).
 
-Prüfung: test:db (1309 + 22), test:unit 158, test:ui 476, lint/typecheck/build; Live-Lauf auf dem VPS mit 5 Mails geprüft. Rückrufbitte per E-Mail nur per pgTAP geprüft (kein überfälliger Einsatz live). Auf dem VPS liegt noch ein Entwurf zur Gmail-Unzustellbarkeitsmeldung von RIS-2026-02167 aus dem ersten Lauf (bei Bedarf in der Korrespondenz löschen).
+Prüfung: test:notifications (inkl. neuer Prüfungen), test:ui 476, test:unit 159, lint/typecheck/build gegen `next start` 3117. test:db nicht ausgeführt (keine Schemaänderung).
 
 ## Letzte drei abgeschlossene Tasks
 
+- `task-23-2` (24.10.2026): Navigation mit Farbpunkten, Anfrage beim Öffnen gelesen.
+- `task-23-1` (24.10.2026): Info-Hinweise blenden aus, Zielseite schließt Hinweise.
 - `task-22-3` (24.10.2026): KI-Antwortassistent, live auf dem VPS.
-- `task-22-2` (24.10.2026): Kontaktknöpfe untereinander, neue E-Mail unter den Nachrichten.
-- `task-22-1` (24.10.2026): Anfrage-Seite, Aktionen in den Abschnitten, Entwürfe löschbar; mit 22-3 gepusht.
 
 ## Arbeitsregeln
 
@@ -42,6 +42,6 @@ Prüfung: test:db (1309 + 22), test:unit 158, test:ui 476, lint/typecheck/build;
 
 ## Nächster Schritt
 
-Keine offenen/startbaren Tasks; Stand auf origin/main und dem VPS. Keine weiteren Aufgaben automatisch beginnen.
+Keine offenen/startbaren Tasks. Phase 23 lokal abgeschlossen; nach Push live prüfen. Keine weiteren Aufgaben automatisch beginnen.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { callbackEvent, freshDashboardEvents } from "../../lib/dashboard-notifications.ts";
+import { callbackEvent, eventTargetOpen, freshDashboardEvents } from "../../lib/dashboard-notifications.ts";
 
 test("same unread request total, different message IDs: both replies notify once", () => {
   const first = { id: "message:first", title: "Neue Kundenantwort", href: "/dashboard/anfragen/a" };
@@ -26,4 +26,13 @@ test("callback namespaces and links respect role and callback kind", () => {
   assert.equal(callbackEvent(visit, "dispatcher").href, "/dashboard/anfragen/r");
   assert.equal(callbackEvent(call, "dispatcher").href, "/dashboard/anrufe/same-id");
   assert.notEqual(callbackEvent(visit, "dispatcher").id, callbackEvent(call, "dispatcher").id);
+});
+
+test("opening the target page closes a notice: path and every link parameter must match, hash ignored", () => {
+  const search = (query) => new URLSearchParams(query);
+  assert.equal(eventTargetOpen("/dashboard/anfragen/a#korrespondenz", "/dashboard/anfragen/a", search("")), true);
+  assert.equal(eventTargetOpen("/dashboard/anfragen/a", "/dashboard/anfragen/b", search("")), false);
+  assert.equal(eventTargetOpen("/dashboard/planung?anfrage=a", "/dashboard/planung", search("anfrage=a&tag=2026-10-24")), true);
+  assert.equal(eventTargetOpen("/dashboard/planung?anfrage=a", "/dashboard/planung", search("")), false);
+  assert.equal(eventTargetOpen("/dashboard/posteingang?nachricht=m", "/dashboard/posteingang", search("nachricht=n")), false);
 });

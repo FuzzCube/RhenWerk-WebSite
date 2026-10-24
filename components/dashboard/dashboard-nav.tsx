@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { areasFor, type EmployeeRole } from "@/lib/auth/roles";
 import { useDashboardUpdates } from "./dashboard-updates";
 
-// counts: open items per area (e.g. the inbox); shown as a badge next to the label
+// counts: open items per area (e.g. the inbox); shown as a single dot next to the label (task-23-2), the area itself
+// shows the details
 export function DashboardNav({ role }: { role: EmployeeRole }) {
   const pathname = usePathname();
   const { snapshot } = useDashboardUpdates();
@@ -27,12 +28,7 @@ export function DashboardNav({ role }: { role: EmployeeRole }) {
             <li key={area.href}>
               <Link href={area.href} aria-current={active ? "page" : undefined}>
                 {area.label}
-                {(badges[area.href] ?? []).filter((badge) => badge.count > 0).map((badge) => (
-                  <span key={badge.label} className={`dash-nav__count mono${badge.unread ? " dash-nav__count--unread" : ""}`}
-                    data-badge={badge.label} title={`${badge.count} ${badge.label}`} aria-label={`${badge.count} ${badge.label}`}>
-                    {badge.count}{area.href === "/dashboard/anfragen" && <span className="dash-nav__count-label">{badge.label === "neu zu bearbeiten" ? " neu" : badge.label === "Versandfehler" ? " Fehler" : badge.count === 1 ? " Antwort" : " Antworten"}</span>}
-                  </span>
-                ))}
+                <NavDot badges={(badges[area.href] ?? []).filter((badge) => badge.count > 0)} />
               </Link>
             </li>
           );
@@ -40,4 +36,13 @@ export function DashboardNav({ role }: { role: EmployeeRole }) {
       </ul>
     </nav>
   );
+}
+
+// Red if anything is unread or failed, else green. The numbers stay in the tooltip and for screen readers.
+function NavDot({ badges }: { badges: Array<{ count: number; label: string; unread?: boolean }> }) {
+  if (!badges.length) return null;
+  const text = badges.map((badge) => `${badge.count} ${badge.label}`).join(", ");
+  return <span className={`dash-nav__dot${badges.some((badge) => badge.unread) ? " dash-nav__dot--unread" : ""}`} title={text}>
+    {badges.map((badge) => <span key={badge.label} className="sr-only" data-badge={badge.label} data-count={badge.count}>{badge.count} {badge.label}</span>)}
+  </span>;
 }

@@ -545,3 +545,11 @@
 {"timestamp":"2026-10-24T12:45:27.899Z","type":"verification_passed","taskId":"task-22-3","summary":"test:db, test:unit, test:ui 476 bestanden; Workflow 14 live auf dem VPS, erster Lauf geprüft, Bounce-Filter nachgezogen."}
 {"timestamp":"2026-10-24T12:45:27.899Z","type":"task_completed","taskId":"task-22-3","summary":"KI-Antwortassistent: Entwürfe zu Kunden-E-Mails, freie Termine, Rückrufbitte bei Verspätung; auf dem VPS aktiv."}
 {"timestamp":"2026-10-24T12:45:27.899Z","type":"phase_completed","summary":"phase-22 abgeschlossen."}
+{"timestamp":"2026-10-24T13:08:12.898Z","type":"roadmap_updated","summary":"phase-23 Benachrichtigungen beruhigen mit task-23-1 und task-23-2 ergänzt (Nutzerwunsch)."}
+{"timestamp":"2026-10-24T13:08:12.898Z","type":"task_started","taskId":"task-23-1","summary":"Hinweise unten rechts: Info verschwindet selbst, Ziel öffnen schließt."}
+{"timestamp":"2026-10-24T13:14:34.734Z","type":"verification_passed","taskId":"task-23-1","summary":"test:unit 159, test:notifications bestanden; Info-Hinweise blenden aus, Zielseite schließt Hinweise."}
+{"timestamp":"2026-10-24T13:14:34.734Z","type":"task_completed","taskId":"task-23-1","summary":"Hinweise unten rechts: Info verschwindet selbst, Ziel öffnen schließt"}
+{"timestamp":"2026-10-24T13:14:34.780Z","type":"task_started","taskId":"task-23-2","summary":"Navigation nur mit Farbpunkt, Anfrage beim Öffnen gelesen."}
+{"timestamp":"2026-10-24T13:31:58.331Z","type":"verification_passed","taskId":"task-23-2","summary":"test:notifications und test:ui 476 bestanden; Navigation mit Punkten, Anfrage beim Öffnen gelesen."}
+{"timestamp":"2026-10-24T13:31:58.331Z","type":"task_completed","taskId":"task-23-2","summary":"Navigation nur mit Farbpunkt, Anfrage beim Öffnen gelesen"}
+{"timestamp":"2026-10-24T13:31:58.331Z","type":"phase_completed","summary":"phase-23 abgeschlossen."}

@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { createContext, Suspense, useCallback, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { CallbackAlerts } from "./callback-alerts";
 import { SendBacklogAlert } from "./send-backlog-alert";
 import { SystemAlertBanner } from "./system-alert-banner";
-import { callbackEvent, freshDashboardEvents, type DashboardEvent, type DashboardSnapshot } from "@/lib/dashboard-notifications";
+import { callbackEvent, eventTargetOpen, freshDashboardEvents, type DashboardEvent, type DashboardSnapshot } from "@/lib/dashboard-notifications";
 
 const DashboardUpdatesContext = createContext<{ snapshot: DashboardSnapshot | null; poll: () => void }>({ snapshot: null, poll: () => {} });
 export const useDashboardUpdates = () => useContext(DashboardUpdatesContext);
@@ -28,6 +28,8 @@ export function DashboardUpdates({ initial, employeeId, children }: { initial: D
   const queued = useRef(false);
   const stopped = useRef(false);
   const request = useRef<AbortController | null>(null);
+
+  const dismiss = useCallback((id: string) => setToasts((current) => current.filter((item) => item.id !== id)), []);
 
   const apply = useCallback((next: DashboardSnapshot) => {
     if (dashboardIsBusy()) {
@@ -161,12 +163,7 @@ export function DashboardUpdates({ initial, employeeId, children }: { initial: D
 
   return <DashboardUpdatesContext.Provider value={{ snapshot, poll }}>
     {children}
-    <aside className="dash-notices" aria-label="Neue Ereignisse" aria-live="polite" aria-relevant="additions">
-      {toasts.map((event) => <div className="dash-notice rw-card rw-card--neutral" key={event.id} data-notification-id={event.id}>
-        <Link href={event.href}>{event.title}</Link>
-        <button className="rw-link-btn" type="button" aria-label="Hinweis schließen" onClick={() => setToasts((current) => current.filter((item) => item.id !== event.id))}>×</button>
-      </div>)}
-    </aside>
+    <Suspense fallback={null}><DashboardNotices toasts={toasts} setToasts={setToasts} dismiss={dismiss} /></Suspense>
     <div className="dash-update-status" aria-live="polite">
       {connection === "expired" ? <p>Sitzung oder Berechtigung geändert. <Link href="/login">Erneut anmelden</Link></p>
         : connection === "offline" ? <p>Aktualisierung unterbrochen. Letzter Stand bleibt erhalten.</p> : null}
@@ -177,6 +174,37 @@ export function DashboardUpdates({ initial, employeeId, children }: { initial: D
       </div>}
     </div>
   </DashboardUpdatesContext.Provider>;
+}
+
+function DashboardNotices({ toasts, setToasts, dismiss }: {
+  toasts: DashboardEvent[]; setToasts: (update: (current: DashboardEvent[]) => DashboardEvent[]) => void; dismiss: (id: string) => void;
+}) {
+  const pathname = usePathname();
+  const search = useSearchParams();
+  // Opening the target yourself counts as handling it. Only navigation closes: a notice arriving on its own target page stays.
+  useEffect(() => {
+    setToasts((current) => current.some((event) => eventTargetOpen(event.href, pathname, search))
+      ? current.filter((event) => !eventTargetOpen(event.href, pathname, search)) : current);
+  }, [pathname, search, setToasts]);
+  return <aside className="dash-notices" aria-label="Neue Ereignisse" aria-live="polite" aria-relevant="additions">
+    {toasts.map((event) => <DashboardNotice key={event.id} event={event} dismiss={dismiss} />)}
+  </aside>;
+}
+
+// Info notices fade out after a few seconds unless pointer or keyboard focus rests on them.
+function DashboardNotice({ event, dismiss }: { event: DashboardEvent; dismiss: (id: string) => void }) {
+  const [held, setHeld] = useState(false);
+  useEffect(() => {
+    if (!event.info || held) return;
+    const timer = window.setTimeout(() => dismiss(event.id), 6_000);
+    return () => window.clearTimeout(timer);
+  }, [event, held, dismiss]);
+  return <div className="dash-notice rw-card rw-card--neutral" data-notification-id={event.id} data-notification-info={event.info ? "true" : undefined}
+    onPointerEnter={() => setHeld(true)} onPointerLeave={() => setHeld(false)}
+    onFocus={() => setHeld(true)} onBlur={(blur) => { if (!blur.currentTarget.contains(blur.relatedTarget)) setHeld(false); }}>
+    <Link href={event.href} onClick={() => dismiss(event.id)}>{event.title}</Link>
+    <button className="rw-link-btn" type="button" aria-label="Hinweis schließen" onClick={() => dismiss(event.id)}>×</button>
+  </div>;
 }
 
 export function DashboardAlertBanners() {

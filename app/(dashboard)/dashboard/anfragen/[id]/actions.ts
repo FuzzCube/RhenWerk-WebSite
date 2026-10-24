@@ -302,14 +302,14 @@ export async function rejectHold(_previous: FormState, formData: FormData): Prom
     supabase.rpc("reject_visit_hold", { hold_id: values.hold_id, reason, alternative: (values.alternative ?? "").trim() || undefined }));
 }
 
-// "Als gelesen markieren" (task-20-14): the customer's e-mails of the request were read; clears the marks on the
-// planning board, in the request list and on the request page
-export async function markMessagesRead(_previous: FormState, formData: FormData): Promise<FormState> {
+// task-23-2 (replaces "Als gelesen markieren", task-20-14): opening the request marks the customer's e-mails as read;
+// clears the marks on the planning board, in the request list and in the navigation. No refresh: the open page keeps
+// showing what was new, the dashboard poll picks up the change.
+export async function markOpenedMessagesRead(requestId: string): Promise<void> {
   await requireRole(STAFF);
-  const values = formValues(formData);
-  if (!UUID.test(values.request_id ?? "")) return invalid(values);
+  if (!UUID.test(requestId)) return;
   const supabase = await createClient();
-  return run(values, "Als gelesen markiert.", () => supabase.rpc("mark_request_messages_read", { request_id: values.request_id }));
+  await supabase.rpc("mark_request_messages_read", { request_id: requestId });
 }
 
 // "Neuen Kunden anlegen" (task-14-2): customer from the request data, linked in the same step

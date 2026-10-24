@@ -88,7 +88,8 @@ export async function loadDashboardSnapshot(employee: Employee, cursor?: string)
   for (const row of activity) {
     const title = (row.event_type === "visit_status_changed" && row.to_value === "cancelled" ? "Termin storniert" : resultTitles[row.event_type])
       ?? (row.event_type === "visit_reply_analyzed" ? replyTitles[row.to_value ?? ""] : undefined);
-    if (title) events.push({ id: `event:${row.id}`, title, href: staff ? `/dashboard/planung?anfrage=${row.request_id}` : `/dashboard/anfragen/${row.request_id}` });
+    if (title) events.push({ id: `event:${row.id}`, title, href: staff ? `/dashboard/planung?anfrage=${row.request_id}` : `/dashboard/anfragen/${row.request_id}`,
+      ...(row.event_type === "visit_reply_analyzed" ? {} : { info: true as const }) });
   }
   for (const row of failed) events.push({ id: `send-failed:${row.id}`, title: "E-Mail konnte nicht gesendet werden", href: row.request_id
     ? `/dashboard/anfragen/${row.request_id}#nachricht-${row.id}` : `/dashboard/posteingang?nachricht=${row.inbox_root_id ?? row.id}` });

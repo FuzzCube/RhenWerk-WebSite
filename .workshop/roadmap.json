@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 29,
+  "roadmapVersion": 30,
   "status": "active",
   "phases": [
     {
@@ -4908,6 +4908,77 @@
               "n8n import:workflow + publish:workflow (VPS)"
             ],
             "checkedAt": "2026-10-24T12:45:27.899Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-23",
+      "title": "Benachrichtigungen beruhigen",
+      "description": "Vom Nutzer beauftragt: Info-Hinweise verschwinden selbst, wichtige Hinweise beim Öffnen des Ziels; Navigation nur mit Farbpunkten; Anfrage beim Öffnen gelesen.",
+      "order": 24,
+      "weight": 5,
+      "status": "completed",
+      "tasks": [
+        {
+          "id": "task-23-1",
+          "title": "Hinweise unten rechts: Info verschwindet selbst, Ziel öffnen schließt",
+          "description": "Info-Hinweise (Terminänderungen) blenden nach einigen Sekunden aus; wichtige Hinweise (E-Mail, Antwort, Anfrage, Rückruf, Versandfehler, Systemwarnung) schließen beim Klick oder wenn die Zielseite geöffnet wird.",
+          "order": 1,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Info-Hinweise verschwinden nach etwa 6 s, Pause bei Hover/Fokus.",
+            "Wichtige Hinweise bleiben, bis sie angeklickt oder geschlossen werden.",
+            "Öffnen der Zielseite (Pfad und Parameter passend) schließt zugehörige Hinweise automatisch.",
+            "test:ui und Unit-Tests decken das Verhalten ab; lint/typecheck grün."
+          ],
+          "startedAt": "2026-10-24T13:08:12.898Z",
+          "completedAt": "2026-10-24T13:14:34.734Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Ereignisse tragen info (Terminergebnisse: verschoben, storniert, bestätigt, Alternativtermin, Terminwunsch erledigt). DashboardNotice blendet info nach 6 s aus, Pause bei Zeiger/Fokus. Klick auf den Link schließt; eventTargetOpen (Pfad und alle Link-Parameter, ohne Hash) schließt Hinweise, sobald die Zielseite per Navigation geöffnet wird; ein Hinweis, der auf der bereits offenen Zielseite eintrifft, bleibt. Liste mit useSearchParams in eigener Suspense-Grenze. Geprüft: test:unit 159 (neuer Test eventTargetOpen), test:notifications gegen next start 3117 alle bestanden inkl. neuer Prüfungen (Storno verschwindet, Verschiebewunsch bleibt; Navigation zu planung?anfrage= schließt nur den passenden Hinweis), lint, typecheck, build.",
+            "commands": [
+              "npm run test:unit",
+              "APP_URL=http://localhost:3117 npm run test:notifications",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-24T13:14:34.734Z"
+          }
+        },
+        {
+          "id": "task-23-2",
+          "title": "Navigation nur mit Farbpunkt, Anfrage beim Öffnen gelesen",
+          "description": "Zähler und Wörter (neu, Antworten, Fehler) in der Navigation durch Farbpunkte ersetzen; ungelesene Kundennachrichten beim Öffnen der Anfrage automatisch als gelesen markieren.",
+          "order": 2,
+          "weight": 3,
+          "status": "completed",
+          "dependsOn": [
+            "task-23-1"
+          ],
+          "definitionOfDone": [
+            "Navigation zeigt je Bereich höchstens einen Punkt (rot vor grün); Anzahl bleibt in Tooltip und aria-label.",
+            "Öffnen einer Anfrage mit ungelesener Kundennachricht markiert sie gelesen; roter Punkt, Hinweis und Toast verschwinden.",
+            "Knopf „Als gelesen markieren“ entfällt.",
+            "Prüfung bei 390/768/1280 px; test:ui, test:db, lint/typecheck grün."
+          ],
+          "startedAt": "2026-10-24T13:14:34.780Z",
+          "completedAt": "2026-10-24T13:31:58.331Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Navigation: je Bereich ein Punkt (rot bei ungelesen/Fehler/Terminwunsch/Rückruf/Systemwarnung, sonst grün), keine Zahlen und Wörter mehr; Anzahl in Tooltip und sr-only (data-badge, data-count). Anfrage-Seite: ReadOnOpen ruft beim Öffnen markOpenedMessagesRead (mark_request_messages_read, ohne refresh) und danach den Dashboard-Abruf; der Hinweisblock mit den neuen Nachrichten bleibt für diesen Besuch, neu eintreffende werden beim Anzeigen markiert. Knopf „Als gelesen markieren“ und markMessagesRead entfernt. Geprüft gegen next start 3117: test:notifications alle bestanden (neu: Liste markiert nicht, Öffnen markiert, roter Punkt weg, Block bleibt, staff_read_at gesetzt), test:ui 476 bestanden (Posteingang-Punkt mit Anzahl), test:unit 159, lint, typecheck, build. Sichtprüfung Screenshots 390/1440: Punkte in der Navigation, kein Überlauf. test:db nicht ausgeführt (keine Schemaänderung).",
+            "commands": [
+              "APP_URL=http://localhost:3117 npm run test:notifications",
+              "APP_URL=http://localhost:3117 npm run test:ui",
+              "npm run test:unit",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-24T13:31:58.331Z"
           }
         }
       ]

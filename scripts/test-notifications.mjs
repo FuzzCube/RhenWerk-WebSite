@@ -274,10 +274,13 @@ try {
   const listRequest = await newRequest();
   await poll();
   check("Sauberer geöffneter Bereich aktualisiert Daten ohne Reload/Filterverlust", await page.until(`!!document.querySelector('a[href="/dashboard/anfragen/${listRequest.id}"]') && new URL(location.href).searchParams.get('suche') === 'Notification'`, 27000));
-  // No old popup flood after a full opening, and visiting requests must never mark customer messages read.
+  // No old popup flood after a full opening. The list does not mark anything read; opening the request does (task-23-2).
+  check("Liste markiert nicht gelesen", await page.eval(`${badge("Anfragen mit ungelesenen Kundennachrichten")} === 1 && !!document.querySelector('.dash-nav a[href="/dashboard/anfragen"] .dash-nav__dot--unread')`));
   await page.open(`${BASE}/dashboard/anfragen/${initialRequest.id}`);
   await sleep(900);
-  check("Bereichsöffnung markiert nicht gelesen und zeigt keine alten Hinweise", await page.eval(`${badge("Anfragen mit ungelesenen Kundennachrichten")} === 1 && document.querySelectorAll('[data-notification-id]').length === 0`));
+  check("Keine alten Hinweise nach voller Öffnung", await page.eval("document.querySelectorAll('[data-notification-id]').length === 0"));
+  check("Anfrage öffnen markiert gelesen: roter Punkt weg, Übersicht der neuen Nachrichten bleibt, kein Knopf", await page.until(`${badge("Anfragen mit ungelesenen Kundennachrichten")} === 0 && !document.querySelector('.dash-nav a[href="/dashboard/anfragen"] .dash-nav__dot--unread') && !!document.getElementById('neue-nachrichten') && !document.body.textContent.includes('Als gelesen markieren')`, 8000));
+  check("Auch in der Datenbank gelesen", must(await admin.from("messages").select("id").eq("request_id", initialRequest.id).eq("direction", "incoming").is("staff_read_at", null)).length === 0);
 
   // Customer changes and cancellation pass through the same integration RPC used by n8n.
   const visit = must(await admin.from("visits").insert({ request_id: created[1].id, technician_id: tech.id, created_by: colleague.id,
@@ -294,6 +297,10 @@ try {
   must(await admin.rpc("apply_visit_reply", { message_id: cancellation.id, intent: "cancel_visit", confidence: 0.99, summary: "Bitte Termin absagen" }));
   await poll();
   check("Storno per E-Mail: verarbeitetes Ergebnis erscheint global", await page.until("[...document.querySelectorAll('[data-notification-id]')].some(e => e.textContent.includes('Termin storniert'))", 27000));
+  // task-23-1: results fade out by themselves; anything to handle stays until its target is opened.
+  check("Info-Hinweis verschwindet selbst, Verschiebewunsch bleibt", await page.until("![...document.querySelectorAll('[data-notification-id]')].some(e => e.textContent.includes('Termin storniert')) && [...document.querySelectorAll('[data-notification-id]')].some(e => e.textContent.includes('Verschiebewunsch'))", 10000));
+  await page.eval(`window.next.router.push("/dashboard/planung?anfrage=${created[1].id}")`);
+  check("Ziel selbst geöffnet: zugehöriger Hinweis schließt, andere bleiben", await page.until(`location.search.includes(${JSON.stringify(created[1].id)}) && ![...document.querySelectorAll('[data-notification-id]')].some(e => e.textContent.includes('Verschiebewunsch')) && ${toast(`message:${wish.id}`)}`, 8000));
   const call = must(await admin.from("phone_calls").insert({ conversation_id: `notification-test-${run}`, callback_needed: true, callback_urgent: true,
     callback_reason: "Test Rückruf", callback_number: "+49 211 1", is_demo: true, analysis: { firma: "Notification Test" } }).select().single()); calls.push(call.id);
   await poll();

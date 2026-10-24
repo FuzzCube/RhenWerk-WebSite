@@ -1811,7 +1811,7 @@ details.tech-step[open] { padding-bottom: 20px; }
 .admin-page .side-page__main > p:first-child { margin: 0; font-size: 14px; }
 
 /* Inbox (task-10-5): list of e-mails beside the open e-mail; on narrow widths the e-mail follows the list */
-.dash-nav__count { margin-left: 6px; min-width: 22px; padding: 0 6px; border-radius: var(--rw-radius-sm); font-size: 12px; font-weight: 600; line-height: 20px; text-align: center; color: var(--rw-text-on-lime); background: var(--rw-color-lime-500); }
+.dash-nav__dot { display: inline-block; flex: none; width: 9px; height: 9px; margin-left: 6px; vertical-align: middle; border-radius: 50%; background: var(--rw-color-lime-500); }
 .inbox { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--rw-space-24); align-items: start; }
 @container (min-width: 1200px) { .inbox { grid-template-columns: minmax(0, 24rem) minmax(0, 1fr); } .inbox__list { position: sticky; top: 96px; } }
 .inbox-list { display: flex; flex-direction: column; }
@@ -2092,7 +2092,7 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 
 /* task-20-14: unread customer messages */
 .rw-flag--unread { gap: 4px; align-items: center; margin: 0 0 0 6px; color: var(--rw-color-white); background: var(--rw-color-danger-700); border-color: var(--rw-color-danger-700); }
-.dash-nav__count--unread { color: var(--rw-color-white); background: var(--rw-color-danger-700); }
+.dash-nav__dot--unread { background: var(--rw-color-danger-700); }
 .plan3__badge { position: absolute; top: 1px; z-index: 3; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; transform: translateX(-70%); font: 700 11px/16px var(--rw-font-body); text-align: center; color: var(--rw-color-white); background: var(--rw-color-danger-700); box-shadow: 0 0 0 1.5px var(--rw-color-white); pointer-events: none; }
 .plan3__badge--inline { position: static; display: inline-block; margin-left: auto; transform: none; box-shadow: none; pointer-events: auto; }
 .plan3__key--badge { width: 16px; height: 16px; border: 0; border-radius: 999px; background: var(--rw-color-danger-700); box-shadow: 0 0 0 1.5px var(--rw-color-white), 0 0 0 2.5px var(--rw-border-default); }
@@ -2126,7 +2126,6 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .rw-banner--change .unread-banner__title { color: var(--rw-color-warning-900); }
 
 /* Shared dashboard updates: keyboard-accessible notices, separated new/reply badges, no layout shift. */
-.dash-nav__count-label { font-family: var(--rw-font-sans, inherit); font-size: 11px; }
 .dash-notices { position: fixed; z-index: 90; right: 20px; bottom: 90px; display: grid; gap: 8px; width: min(380px, calc(100vw - 32px)); max-height: 50vh; overflow-y: auto; }
 .dash-notice { display: flex; flex-direction: row; align-items: center; gap: 16px; padding: 14px 16px; box-shadow: 0 4px 20px rgb(0 0 0 / 14%); border-left: 4px solid var(--rw-color-lime-500); }
 .dash-notice a { flex: 1; font-weight: 600; overflow-wrap: anywhere; }
