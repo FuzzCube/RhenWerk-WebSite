@@ -558,3 +558,9 @@
 {"timestamp":"2026-10-24T15:10:46.872Z","type":"verification_passed","taskId":"task-24-1","summary":"test:db, test:notifications, test:ui 476 bestanden; KI arbeitet sichtbar."}
 {"timestamp":"2026-10-24T15:10:46.872Z","type":"task_completed","taskId":"task-24-1","summary":"Anzeige „KI arbeitet …“ bei laufender Automatisierung"}
 {"timestamp":"2026-10-24T15:10:46.916Z","type":"task_started","taskId":"task-24-2","summary":"Kundennummer im KI-Entwurf nur einmal und richtig."}
+{"timestamp":"2026-10-24T15:46:49.884Z","type":"verification_passed","taskId":"task-24-2","summary":"test:db bestanden; Migration und Workflow 14 auf dem VPS."}
+{"timestamp":"2026-10-24T15:46:49.884Z","type":"task_completed","taskId":"task-24-2","summary":"Kundennummer im KI-Antwortentwurf nur einmal und richtig"}
+{"timestamp":"2026-10-24T15:46:49.933Z","type":"task_started","taskId":"task-24-3","summary":"Plantafel: Block nur mit Nummer, Einsatzkarte in der Leiste."}
+{"timestamp":"2026-10-24T15:46:49.977Z","type":"verification_passed","taskId":"task-24-3","summary":"test:ui 482 bestanden; Einsatzkarte bei 390/768/1440 geprüft."}
+{"timestamp":"2026-10-24T15:46:49.977Z","type":"task_completed","taskId":"task-24-3","summary":"Plantafel: Block nur mit Nummer, Einsatzdetails in der Leiste"}
+{"timestamp":"2026-10-24T15:46:49.977Z","type":"phase_completed","summary":"phase-24 abgeschlossen."}

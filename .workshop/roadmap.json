@@ -4989,7 +4989,7 @@
       "description": "Vom Nutzer nach dem Live-Test beauftragt: laufende Automatisierung anzeigen, Kundennummer im KI-Entwurf korrigieren, Plantafel-Blöcke nur mit Nummer und Details in der Leiste.",
       "order": 25,
       "weight": 7,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-24-1",
@@ -5027,7 +5027,7 @@
           "description": "Die Datenbank entfernt Kundennummer-Zeilen aus dem KI-Text und setzt den eigenen Hinweis; der Prompt verbietet erfundene Nummern.",
           "order": 2,
           "weight": 1,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-24-1"
           ],
@@ -5037,12 +5037,16 @@
             "pgTAP-Test; Migration und Workflow auf dem VPS."
           ],
           "startedAt": "2026-10-24T15:10:46.916Z",
-          "completedAt": null,
+          "completedAt": "2026-10-24T15:46:49.884Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Ursache: Das Modell kannte die Kundennummer nicht und schrieb eine eigene neben den Hinweis, den save_reply_assist aus der Kundennummer der Anfrage einsetzt. Migration 20261024000600: save_reply_assist entfernt Sätze mit Kundennummer/Kunden-Nr. aus dem Modelltext (Satzgrenzen, überzählige Leerzeilen zusammengefasst) und setzt den eigenen Hinweis einmal vor den Gruß. Prompt von Workflow 14: keine Kundennummer nennen, Anfrage- und Rechnungsnummern nur wörtlich aus den Fakten. Geprüft: reply_assist.test.sql (24, neu: falsche Nummer in zwei Formen entfernt, Hinweis mit K-1001 bleibt), gesamte test:db bestanden. Push 4f782be, CI grün, Migrationen auf dem VPS; Workflow 14 importiert, veröffentlicht, n8n neu gestartet, alle 13 Workflows aktiv. Ein Live-Entwurf mit dem neuen Stand wurde noch nicht erzeugt; die Texte der Live-Mails wurden nicht eingesehen.",
+            "commands": [
+              "npx supabase test db",
+              "python3 n8n/generate_reply_assist_workflow.py",
+              "n8n import:workflow + publish:workflow (VPS)"
+            ],
+            "checkedAt": "2026-10-24T15:46:49.884Z"
           }
         },
         {
@@ -5051,7 +5055,7 @@
           "description": "Block zeigt nur die Anfragenummer; Klick auf einen Einsatz zeigt rechts Zeit, Techniker, Firma, Ansprechpartner, Telefon, Adresse, Anlage, Leistung, Priorität, Status und Beschreibung mit „Anfrage öffnen“.",
           "order": 3,
           "weight": 3,
-          "status": "planned",
+          "status": "completed",
           "dependsOn": [
             "task-24-2"
           ],
@@ -5060,13 +5064,18 @@
             "Klick auf jeden lesbaren Einsatz (auch vergangen/laufend) zeigt die Karte „Einsatz“ in der Leiste; Ziehen und Länge ändern bleiben.",
             "Prüfung 390/768/1440; test:ui, lint/typecheck grün."
           ],
-          "startedAt": null,
-          "completedAt": null,
+          "startedAt": "2026-10-24T15:46:49.933Z",
+          "completedAt": "2026-10-24T15:46:49.977Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Tagesansicht: im Block nur die Anfragenummer (Ungelesen, Verschiebewunsch, KI arbeitet als Zeichen, Einzelheiten im Tooltip). Klick auf einen lesbaren Einsatz, auch vergangen oder laufend, zeigt in der Leiste die Karte Einsatz: Datum und Zeit, Techniker, Status, Priorität, Wartet auf Teile, KI arbeitet, Firma, Ansprechpartner, Telefon (tel:), Adresse (Route), Anlage und Leistung, Anfang der Beschreibung, Anfrage öffnen; × oder freie Fläche zurück zur Planung, auf schmalen Bildschirmen scrollt die Karte ins Bild. Ziehen und Länge ändern unverändert, die Karte blockiert keine Aktualisierung. Daten: VisitInfo in planning.ts nur für per RLS lesbare Einsätze. Der Code entstand während task-24-2 (gemeinsamer Push 4f782be). Geprüft: test:ui 482 bestanden (neu: nur Nummer im Block, Karte mit Zeit/Firma/Adresse/Anlage/Link, Schließen, kein Überlauf bei 390/768/1440 mit Screenshots), lint, typecheck, build; CI grün.",
+            "commands": [
+              "APP_URL=http://localhost:3117 UI_SCREENSHOTS=… npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-24T15:46:49.977Z"
           }
         }
       ]

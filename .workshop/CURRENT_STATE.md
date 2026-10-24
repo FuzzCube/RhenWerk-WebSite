@@ -4,23 +4,27 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v30, 24 Phasen, 142 Tasks. Alle 142 Tasks abgeschlossen, Gewicht 327/327, Fortschritt 100 %. Letzter Abschluss `task-23-2`: Navigation mit Farbpunkten, Anfrage beim Öffnen gelesen. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v31, 25 Phasen, 145 Tasks. Alle 145 Tasks abgeschlossen, Gewicht 334/334, Fortschritt 100 %. Letzter Abschluss `task-24-3`: Einsatzkarte auf der Plantafel. Commit 4f782be auf origin/main, CI grün, Migrationen und Workflow 14 auf dem VPS. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Letzter Abschluss: ruhigere Benachrichtigungen
+## Letzter Abschluss: Automatisierung sichtbar, Plantafel-Karte
 
-`task-23-1`: Hinweise unten rechts. Reine Ergebnisse (Termin verschoben/storniert/bestätigt, Alternativtermin, Terminwunsch erledigt) tragen `info` und blenden nach 6 s aus (Pause bei Zeiger/Fokus). Andere bleiben, bis sie angeklickt/geschlossen werden oder die Zielseite per Navigation geöffnet wird (`eventTargetOpen` in `lib/dashboard-notifications.ts`).
+`task-24-1`: View `request_automation_pending` (Analyse oder Kundenantwort für Workflow 13/14, höchstens 15 Minuten); Chip „KI arbeitet …“ mit drehendem Ring neben dem Status (Anfrage-Seite, Liste, „Zu planen“), Ring am Plantafel-Block; kommt und geht über den gemeinsamen Abruf.
 
-`task-23-2`: Navigation zeigt je Bereich nur einen Punkt (rot bei ungelesen/Fehler, sonst grün), Zahlen in Tooltip/sr-only. Öffnen einer Anfrage markiert ihre Kundennachrichten als gelesen (`components/dashboard/read-on-open.tsx`, `markOpenedMessagesRead`); Hinweisblock bleibt für den Besuch, Knopf „Als gelesen markieren“ entfällt. Entscheidung in docs/decisions.md (24.10.2026).
+`task-24-2`: `save_reply_assist` entfernt Kundennummer-Sätze des Modells, der Hinweis der Datenbank bleibt der einzige; Prompt von Workflow 14 angepasst, auf dem VPS importiert. Noch kein Live-Entwurf mit dem neuen Stand geprüft.
 
-Prüfung: test:notifications (inkl. neuer Prüfungen), test:ui 476, test:unit 159, lint/typecheck/build gegen `next start` 3117. test:db nicht ausgeführt (keine Schemaänderung).
+`task-24-3`: Plantafel-Block nur mit Anfragenummer, Klick zeigt die Karte „Einsatz“ in der Leiste.
+
+Offen aus dem Live-Test: Der Nutzer meldete, dass während des KI-Entwurfs etwas in „Anfragen“ abwechselnd erschien und verschwand; was genau, ist noch ungeklärt (Rückfrage gestellt).
+
+Vorher `task-23-1`/`23-2`: Info-Hinweise blenden aus, Navigation mit Farbpunkten, Anfrage beim Öffnen gelesen.
 
 ## Letzte drei abgeschlossene Tasks
 
-- `task-23-2` (24.10.2026): Navigation mit Farbpunkten, Anfrage beim Öffnen gelesen.
-- `task-23-1` (24.10.2026): Info-Hinweise blenden aus, Zielseite schließt Hinweise.
-- `task-22-3` (24.10.2026): KI-Antwortassistent, live auf dem VPS.
+- `task-24-3` (24.10.2026): Plantafel-Block nur mit Nummer, Einsatzkarte.
+- `task-24-2` (24.10.2026): Kundennummer im KI-Entwurf nur einmal und richtig, auf dem VPS.
+- `task-24-1` (24.10.2026): Anzeige „KI arbeitet …“.
 
 ## Arbeitsregeln
 
@@ -42,6 +46,6 @@ Prüfung: test:notifications (inkl. neuer Prüfungen), test:ui 476, test:unit 15
 
 ## Nächster Schritt
 
-Keine offenen/startbaren Tasks. Phase 23 lokal abgeschlossen; nach Push live prüfen. Keine weiteren Aufgaben automatisch beginnen.
+Keine offenen/startbaren Tasks; Stand auf origin/main und dem VPS. Offene Rückfrage zum Flackern in „Anfragen“. Keine weiteren Aufgaben automatisch beginnen.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.
