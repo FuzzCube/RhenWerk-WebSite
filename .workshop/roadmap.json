@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 32,
+  "roadmapVersion": 33,
   "status": "active",
   "phases": [
     {
@@ -5115,6 +5115,63 @@
             ],
             "checkedAt": "2026-10-24T16:31:42.473Z"
           }
+        }
+      ]
+    },
+    {
+      "id": "phase-26",
+      "title": "Tempo und Plantafel nach dem Live-Test",
+      "description": "Vom Nutzer gemeldet: Einsatzplanung langsamer, Tageswechsel springt zurück; Anzeige „KI arbeitet …“ nie gesehen. Ursache u. a. Zugriffsprüfung je Zeile auf messages (1,3 s je Abruf auf dem VPS).",
+      "order": 27,
+      "weight": 1,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-26-1",
+          "title": "Zugriffsregeln schneller: Rolle einmal je Abfrage",
+          "description": "messages_select prüft je Zeile über can_read_message erneut die Nachricht und die Rolle. Neue Regeln werten die Rolle einmal je Abfrage aus und nutzen die Spalten der Zeile; requests, request_events, visits ebenso prüfen.",
+          "order": 1,
+          "weight": 1,
+          "status": "in_progress",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Migration mit gleichwertigen Regeln (gleiche Sichtbarkeit je Rolle).",
+            "explain analyze vorher/nachher lokal belegt.",
+            "test:db grün; Migration auf dem VPS, Abfragezeiten dort gemessen."
+          ],
+          "startedAt": "2026-10-24T17:29:43.421Z"
+        },
+        {
+          "id": "task-26-2",
+          "title": "Plantafel: Tageswechsel ohne Zurückspringen",
+          "description": "Gewählter Tag sofort sichtbar; Aktualisierungen des gemeinsamen Abrufs laufen nicht während oder direkt nach einem Wechsel.",
+          "order": 2,
+          "weight": 1,
+          "status": "planned",
+          "dependsOn": [
+            "task-26-1"
+          ],
+          "definitionOfDone": [
+            "Zurückspringen lokal nachgestellt und Ursache belegt.",
+            "Tag wird beim Klick sofort markiert, kein Zurückspringen mehr.",
+            "test:ui grün; lint/typecheck/build."
+          ]
+        },
+        {
+          "id": "task-26-3",
+          "title": "„KI arbeitet …“ sichtbar, automatische Mails gekennzeichnet",
+          "description": "Während eine Automatisierung läuft, fragt der gemeinsame Abruf öfter ab; automatisch versendete Mails tragen in der Korrespondenz den Hinweis „automatisch versendet“.",
+          "order": 3,
+          "weight": 1,
+          "status": "planned",
+          "dependsOn": [
+            "task-26-2"
+          ],
+          "definitionOfDone": [
+            "Abruf etwa alle 5 s, solange etwas aussteht, sonst wie bisher.",
+            "Hinweis an automatisch versendeten Mails.",
+            "test:notifications und test:ui grün; lint/typecheck/build."
+          ]
         }
       ]
     }

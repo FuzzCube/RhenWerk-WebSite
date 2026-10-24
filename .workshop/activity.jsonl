@@ -569,3 +569,5 @@
 {"timestamp":"2026-10-24T16:31:42.473Z","type":"verification_passed","taskId":"task-25-1","summary":"Blinken nachgestellt und behoben; test:notifications, test:ui 482 bestanden."}
 {"timestamp":"2026-10-24T16:31:42.473Z","type":"task_completed","taskId":"task-25-1","summary":"Korrespondenz blinkt nicht beim Eintreffen einer Kundenantwort"}
 {"timestamp":"2026-10-24T16:31:42.473Z","type":"phase_completed","summary":"phase-25 abgeschlossen."}
+{"timestamp":"2026-10-24T17:29:43.421Z","type":"roadmap_updated","summary":"phase-26 mit task-26-1 bis 26-3 ergänzt (Tempo, Plantafel-Tageswechsel, KI-Anzeige; Nutzerhinweis). Roadmap v33."}
+{"timestamp":"2026-10-24T17:29:43.421Z","type":"task_started","taskId":"task-26-1","summary":"Zugriffsregeln schneller: Rolle einmal je Abfrage."}
