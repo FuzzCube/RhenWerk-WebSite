@@ -4,21 +4,23 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v28, 23 Phasen, 138 Tasks. Alle 138 Tasks abgeschlossen, Gewicht 316/316, Fortschritt 100 %. Letzter Abschluss `task-22-1`: Anfrage-Seite neu geordnet. Lokal abgeschlossen, noch kein Commit/Push.
+Roadmap v29, 23 Phasen, 140 Tasks. Alle 140 Tasks abgeschlossen, Gewicht 322/322, Fortschritt 100 %. Letzter Abschluss `task-22-3`: KI-Antwortassistent. Commit 94fc4b8 und Bounce-Fix auf origin/main, CI grün, auf dem VPS aktiv. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Letzter Abschluss: Anfrage-Seite
+## Letzter Abschluss: Antwortassistent
 
-`task-22-1` (Nutzerwunsch 24.10.2026): Mitarbeiteransicht ohne Karte „Nächster Schritt“. Rechte Spalte nur Kontakt, Kundenstamm, Zuständigkeit und Fristen. Korrespondenz immer offen mit „Neue E-Mail an den Kunden“; am Entwurf Speichern, Senden (Warteschlange, Versand durch n8n) und Löschen über neue RPC `delete_message_draft` (Migration `20261024000100`, lokal per psql eingespielt). Erstbearbeitung mit Form „Einstufung und Status“ (Server Action `saveIntake`). Einsatz planen in „Einsätze“, Abschließen in „Arbeit“, Rechnung in „Rechnung“, Ablehnen eingeklappt am Ende. Technikeransicht unverändert. Details in docs/architecture.md („Prüfaktionen und E-Mail-Entwürfe“).
+`task-22-3`: Workflow 14 „RheinWerk · Antwortassistent“ (`rwReplyAssist2026`, `n8n/generate_reply_assist_workflow.py`) schreibt zu unbeantworteten Kunden-E-Mails nach der Erstbearbeitung einen Entwurf (Kennzeichen „KI-Entwurf“ mit Begründung in der Korrespondenz). Datenbank: `reply_assist_pending`, `reply_assist_slots` (freie Termine zum Wunsch), `save_reply_assist` (Entwurf, Lauf `reply_assist`, Rückrufbitte an den Techniker bei überfälligem Einsatz, `conversation_id` `email:<id>`). Workflow 13 geht vor; Bounces/Abwesenheit/No-Reply werden ignoriert (Migration 20261024000400 nach dem ersten Live-Lauf). Versand nur über „Senden“. Details docs/n8n-workflows.md Abschnitt 14.
 
-Prüfung: lint/typecheck/build, test:auth, test:ui (474 Prüfungen) gegen next start :3117 bestanden, Screenshots 768/1440 angesehen. Die Migration erreicht den VPS erst mit dem Push über `ops/vps/migrate.sh`.
+Vorher `task-22-1`/`22-2`: Anfrage-Seite ohne „Nächster Schritt“, Aktionen in den Abschnitten, Entwürfe löschbar (`delete_message_draft`), Kontaktknöpfe untereinander.
+
+Prüfung: test:db (1309 + 22), test:unit 158, test:ui 476, lint/typecheck/build; Live-Lauf auf dem VPS mit 5 Mails geprüft. Rückrufbitte per E-Mail nur per pgTAP geprüft (kein überfälliger Einsatz live). Auf dem VPS liegt noch ein Entwurf zur Gmail-Unzustellbarkeitsmeldung von RIS-2026-02167 aus dem ersten Lauf (bei Bedarf in der Korrespondenz löschen).
 
 ## Letzte drei abgeschlossene Tasks
 
-- `task-22-1` (24.10.2026): Anfrage-Seite, Aktionen in den Abschnitten, Entwürfe löschbar; lokal geprüft, kein Commit/Push.
-- `task-20-18` (23.10.2026): kompaktere Plantafel, Datumsklick, sichtbare Tagestrennung; lokal geprüft.
-- `task-21-1` (23.10.2026): Beszel/Kuma auf dem VPS, Access, 7/7 Monitore, Admin-E-Mail; Nutzer bestätigt beide Ansichten.
+- `task-22-3` (24.10.2026): KI-Antwortassistent, live auf dem VPS.
+- `task-22-2` (24.10.2026): Kontaktknöpfe untereinander, neue E-Mail unter den Nachrichten.
+- `task-22-1` (24.10.2026): Anfrage-Seite, Aktionen in den Abschnitten, Entwürfe löschbar; mit 22-3 gepusht.
 
 ## Arbeitsregeln
 
@@ -40,6 +42,6 @@ Prüfung: lint/typecheck/build, test:auth, test:ui (474 Prüfungen) gegen next s
 
 ## Nächster Schritt
 
-Lokal abgeschlossen, keine offenen/startbaren Tasks. Commit und Push nur auf Nutzerauftrag; danach spielt migrate.sh die neue Migration auf dem VPS ein. Keine weiteren Aufgaben automatisch beginnen.
+Keine offenen/startbaren Tasks; Stand auf origin/main und dem VPS. Keine weiteren Aufgaben automatisch beginnen.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

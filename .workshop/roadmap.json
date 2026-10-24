@@ -4809,7 +4809,7 @@
       "description": "Vom Nutzer beauftragte Neuordnung der Anfrage-Detailseite und KI-Antwortentwürfe für Kunden-E-Mails.",
       "order": 23,
       "weight": 9,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-22-1",
@@ -4881,7 +4881,7 @@
           "description": "n8n-Workflow erstellt zu Kunden-E-Mails nach der Erstbearbeitung einen geprüften Antwortentwurf aus dem Anfragekontext (Termin, Verfügbarkeit, Verspätung, Rechnung); bei Verspätung Rückrufbitte an den Techniker. Versand nur nach menschlicher Freigabe.",
           "order": 3,
           "weight": 5,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-22-2"
           ],
@@ -4893,12 +4893,21 @@
             "Datenbanktests und UI-Prüfung bestanden; VPS-Import dokumentiert."
           ],
           "startedAt": "2026-10-24T12:29:19.721Z",
-          "completedAt": null,
+          "completedAt": "2026-10-24T12:45:27.899Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Migrationen 20261024000200-400: reply_assist_pending (nach Erstbearbeitung, Workflow 13 zuerst, ohne bereits beantwortete, Demodaten, Bounces/Abwesenheit), reply_assist_slots (Wunschfenster frei oder nicht, bis zu drei Alternativen an verschiedenen Tagen), save_reply_assist (Entwurf, Lauf reply_assist, Rückrufbitte an Techniker bei überfälligem Einsatz). Workflow 14 rwReplyAssist2026 (10 Knoten, zwei OpenAI-Schritte, strikte Schemas). Korrespondenz: Kennzeichen KI-Entwurf mit Begründung; Rückrufbitte zeigt „per E-Mail“. Lokal: test:db 1309 + reply_assist 22, test:unit 158, test:ui 476, lint/typecheck/build. Push 94fc4b8 und Fix; CI grün, Migrationen auf dem VPS, Workflow importiert, veröffentlicht, n8n neu gestartet. Erster Live-Lauf: 5 Mails, 3 Entwürfe, Dank ohne Entwurf, zweite Mail derselben Anfrage ohne Doppel; Entwurf zu einer Gmail-Unzustellbarkeitsmeldung führte zum Filter (Migration 400). Rückruf live nicht ausgelöst (kein überfälliger Einsatz), nur per pgTAP geprüft.",
+            "commands": [
+              "npm run test:db",
+              "npm run test:unit",
+              "APP_URL=http://localhost:3117 npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build",
+              "python3 n8n/generate_reply_assist_workflow.py",
+              "n8n import:workflow + publish:workflow (VPS)"
+            ],
+            "checkedAt": "2026-10-24T12:45:27.899Z"
           }
         }
       ]
