@@ -109,6 +109,10 @@ export function PlanBoard(props: Props) {
   const { technicians, workingHours, busy, availability, view, days, anchor, focusDay, request } = props;
   const router = useRouter();
   const [navigating, startNavigation] = useTransition();
+  // Where a running page change goes (task-26-2): the chosen day is marked at once, not only when the server answers
+  const [target, setTarget] = useState<{ view?: "woche" | "tag"; day?: string } | null>(null);
+  const shownDay = navigating && target?.day && (target.view ?? view) === "tag" ? target.day : focusDay;
+  const urlBehind = useRef(false);
   const [duration, setDuration] = useState(props.initialDuration);
   const [pick, setPick] = useState<BoardPick | null>(props.initialPick);
   // Changes when the board sets a slot, so the form shows it; typing in the form keeps the key
@@ -140,6 +144,12 @@ export function PlanBoard(props: Props) {
     focusPick.current = false;
     document.querySelector<HTMLElement>(".plan3__blk--pick")?.focus();
   }, [pick]);
+  // A slot chosen during a page change: write the URL once the change is done
+  useEffect(() => {
+    if (navigating || !urlBehind.current) return;
+    urlBehind.current = false;
+    window.history.replaceState(null, "", href({}));
+  });
   const now = useMemo(() => new Date(availability.now), [availability.now]);
   const today = dayKeyOf(now);
 
@@ -261,10 +271,14 @@ export function PlanBoard(props: Props) {
     setPick(next);
     setNotice(options.notice ?? "");
     if (options.syncForm !== false) setFormKey((key) => key + 1);
-    window.history.replaceState(null, "", href({ pick: next, duration: options.nextDuration }));
+    // task-26-2: Next.js turns replaceState into a router restore with the tree shown so far, which cancels a running
+    // page change and leaves the board on the old day; the URL follows once the new days are there
+    if (navigating) urlBehind.current = true;
+    else window.history.replaceState(null, "", href({ pick: next, duration: options.nextDuration }));
   }
 
   function navigate(target: Parameters<typeof href>[0]) {
+    setTarget(target);
     startNavigation(() => router.push(href(target), { scroll: false }));
   }
 
@@ -547,7 +561,7 @@ export function PlanBoard(props: Props) {
   }
   const canPick = Boolean(request);
   const hasMovable = busy.some((block) => block.move !== null);
-  const rangeLabel = view === "tag" ? longDay(focusDay) : `KW ${isoWeek(days[0])}${isoWeek(days[days.length - 1]) !== isoWeek(days[0]) ? `/${isoWeek(days[days.length - 1])}` : ""}`;
+  const rangeLabel = view === "tag" ? longDay(shownDay) : `KW ${isoWeek(days[0])}${isoWeek(days[days.length - 1]) !== isoWeek(days[0]) ? `/${isoWeek(days[days.length - 1])}` : ""}`;
   const rangeDates = view === "tag" ? `KW ${isoWeek(focusDay)}` : `${shortDay(days[0])} – ${shortDay(days[days.length - 1])}`;
   // Panel for a customer's wish to move a visit (task-20-16): options on the board, then confirm, offer or close
   function renderChangePanel() {
@@ -854,7 +868,7 @@ export function PlanBoard(props: Props) {
         {view === "tag" && (
           <nav className="plan3__days" aria-label="Tag wählen">
             {nextWorkingDays(weekStart(focusDay), 5).map((day) => (
-              <button key={day} type="button" aria-pressed={day === focusDay} onClick={() => day !== focusDay && navigate({ day })}>{shortDay(day)}</button>
+              <button key={day} type="button" aria-pressed={day === shownDay} onClick={() => day !== shownDay && navigate({ day })}>{shortDay(day)}</button>
             ))}
           </nav>
         )}

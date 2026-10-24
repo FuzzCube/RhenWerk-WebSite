@@ -571,3 +571,11 @@
 {"timestamp":"2026-10-24T16:31:42.473Z","type":"phase_completed","summary":"phase-25 abgeschlossen."}
 {"timestamp":"2026-10-24T17:29:43.421Z","type":"roadmap_updated","summary":"phase-26 mit task-26-1 bis 26-3 ergänzt (Tempo, Plantafel-Tageswechsel, KI-Anzeige; Nutzerhinweis). Roadmap v33."}
 {"timestamp":"2026-10-24T17:29:43.421Z","type":"task_started","taskId":"task-26-1","summary":"Zugriffsregeln schneller: Rolle einmal je Abfrage."}
+{"timestamp":"2026-10-24T17:36:16.103Z","type":"verification_passed","taskId":"task-26-1","summary":"Ursache: messages_select rief je Zeile can_read_message(id) auf (erneute Suche der Nachricht, Rolle aus profiles je Aufruf), request_events/visits/holds/Änderungswünsche je Zeile can_access_request. D"}
+{"timestamp":"2026-10-24T17:36:16.103Z","type":"task_completed","taskId":"task-26-1","summary":"Zugriffsregeln schneller: Rolle einmal je Abfrage"}
+{"timestamp":"2026-10-24T17:36:16.103Z","type":"task_ready","taskId":"task-26-2","summary":"Task task-26-2 ist startbar."}
+{"timestamp":"2026-10-24T17:36:16.103Z","type":"task_started","taskId":"task-26-2","summary":"Plantafel: Tageswechsel ohne Zurückspringen."}
+{"timestamp":"2026-10-24T17:53:22.963Z","type":"verification_passed","taskId":"task-26-2","summary":"Nachgestellt mit Headless-Chrome (next start, 700 ms Netzlatenz, Zustand je Frame): Next.js setzt history.replaceState in einen Router-Restore mit dem bisher gezeigten Baum um und verwirft damit einen"}
+{"timestamp":"2026-10-24T17:53:22.963Z","type":"task_completed","taskId":"task-26-2","summary":"Plantafel: Tageswechsel ohne Zurückspringen"}
+{"timestamp":"2026-10-24T17:53:22.963Z","type":"task_ready","taskId":"task-26-3","summary":"Task task-26-3 ist startbar."}
+{"timestamp":"2026-10-24T17:53:22.963Z","type":"task_started","taskId":"task-26-3","summary":"„KI arbeitet …“ sichtbar, automatische Mails gekennzeichnet."}

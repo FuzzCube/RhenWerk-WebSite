@@ -1224,7 +1224,7 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 
 /* Board */
 .plan3__board { gap: var(--rw-space-16); }
-.plan3__board[aria-busy="true"] .plan3__scroll { cursor: progress; }
+.plan3__board[aria-busy="true"] .plan3__scroll { cursor: progress; opacity: .55; transition: opacity .15s .12s; }
 .plan3__board-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--rw-space-12); }
 .plan3__range { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--rw-space-8); margin-top: 2px; font-size: 14px; color: var(--rw-text-secondary); }
 .plan3__range strong { color: var(--rw-text-primary); font-weight: 600; }

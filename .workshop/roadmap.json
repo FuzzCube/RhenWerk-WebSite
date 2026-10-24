@@ -5132,14 +5132,25 @@
           "description": "messages_select prüft je Zeile über can_read_message erneut die Nachricht und die Rolle. Neue Regeln werten die Rolle einmal je Abfrage aus und nutzen die Spalten der Zeile; requests, request_events, visits ebenso prüfen.",
           "order": 1,
           "weight": 1,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [],
           "definitionOfDone": [
             "Migration mit gleichwertigen Regeln (gleiche Sichtbarkeit je Rolle).",
             "explain analyze vorher/nachher lokal belegt.",
             "test:db grün; Migration auf dem VPS, Abfragezeiten dort gemessen."
           ],
-          "startedAt": "2026-10-24T17:29:43.421Z"
+          "startedAt": "2026-10-24T17:29:43.421Z",
+          "completedAt": "2026-10-24T17:36:16.103Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Ursache: messages_select rief je Zeile can_read_message(id) auf (erneute Suche der Nachricht, Rolle aus profiles je Aufruf), request_events/visits/holds/Änderungswünsche je Zeile can_access_request. Der gemeinsame Abruf zählt ganze Tabellen alle 20 s; auf dem VPS 1326 ms im Mittel (max. 1981 ms) für die Zählung der Nachrichten plus 680 ms für fehlgeschlagene Mails. Migration 20261024000700: private.accessible_request_ids() (Menge, gleiche Regeln wie can_access_request) und private.allowed_visibilities(); Richtlinien von requests, request_events, messages, visits, automation_runs, visit_holds, visit_change_requests werten Rolle einmal je Anweisung aus, messages auf den Spalten der Zeile. Gleichwertigkeit lokal für alle aktiven Nutzer (Admin, Manager, 3 Dispatcher, 3 Techniker) zeilengenau gegen die alten Prüfungen verglichen: 0 Abweichungen in 7 Tabellen. Lokal gemessen: Nachrichten Admin 171 → 1 ms, Dispatcher 826 → 13 ms, Ereignisse Dispatcher 1209 → 16 ms. test:db 1321 bestanden. Push 00ec687, CI grün, Migration auf dem VPS; dort Nachrichten Admin 1–5 ms, Dispatcher ~27 ms (gleiche Messabfragen, Transaktion mit Rollback).",
+            "commands": [
+              "npx supabase test db",
+              "psql Gleichwertigkeitsvergleich je Nutzer (lokal)",
+              "psql Zeitmessung lokal und VPS"
+            ],
+            "checkedAt": "2026-10-24T17:36:16.103Z"
+          }
         },
         {
           "id": "task-26-2",
@@ -5147,7 +5158,7 @@
           "description": "Gewählter Tag sofort sichtbar; Aktualisierungen des gemeinsamen Abrufs laufen nicht während oder direkt nach einem Wechsel.",
           "order": 2,
           "weight": 1,
-          "status": "planned",
+          "status": "completed",
           "dependsOn": [
             "task-26-1"
           ],
@@ -5155,7 +5166,21 @@
             "Zurückspringen lokal nachgestellt und Ursache belegt.",
             "Tag wird beim Klick sofort markiert, kein Zurückspringen mehr.",
             "test:ui grün; lint/typecheck/build."
-          ]
+          ],
+          "startedAt": "2026-10-24T17:36:16.103Z",
+          "completedAt": "2026-10-24T17:53:22.963Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Nachgestellt mit Headless-Chrome (next start, 700 ms Netzlatenz, Zustand je Frame): Next.js setzt history.replaceState in einen Router-Restore mit dem bisher gezeigten Baum um und verwirft damit einen laufenden Seitenwechsel. Wählte man während des Ladens einen Zeitraum auf der Tafel (choose → replaceState), blieb die Tafel auf dem alten Tag, obwohl der neue geladen war (alter Build: 3 von 3 Fällen). Ohne Daten verfügbar war der geklickte Tag bis zur Serverantwort nicht markiert, ein zweiter Klick zeigte kurz den ersten Tag. Ein Neuladen des gemeinsamen Abrufs während des Wechsels wird von Next verworfen (belegt, kein Sprung); Vorab-Abrufe nach dem Neuladen sind billig (~7 ms, keine Snapshot-Abfragen). Lösung in plan-board.tsx: Ziel des Wechsels wird sofort als gewählter Tag gezeigt (Tagesleiste, Überschrift), Tafel während des Ladens abgeblendet; choose schreibt die URL während eines Wechsels nicht, sondern danach. Nachbau danach: Tag sofort markiert, Wechsel nicht mehr abgebrochen, Auswahl danach in der URL. Geprüft: lint, typecheck, build, test:ui 482 bestanden. Langsamkeit selbst: Zugriffsregeln (task-26-1); Vercel-Region cdg1 passt.",
+            "commands": [
+              "Nachbau headless Chrome (CDP, Netzlatenz 700 ms)",
+              "npm run lint",
+              "npx tsc --noEmit",
+              "npm run build",
+              "APP_URL=http://localhost:3117 npm run test:ui"
+            ],
+            "checkedAt": "2026-10-24T17:53:22.963Z"
+          }
         },
         {
           "id": "task-26-3",
@@ -5163,7 +5188,7 @@
           "description": "Während eine Automatisierung läuft, fragt der gemeinsame Abruf öfter ab; automatisch versendete Mails tragen in der Korrespondenz den Hinweis „automatisch versendet“.",
           "order": 3,
           "weight": 1,
-          "status": "planned",
+          "status": "in_progress",
           "dependsOn": [
             "task-26-2"
           ],
@@ -5171,7 +5196,8 @@
             "Abruf etwa alle 5 s, solange etwas aussteht, sonst wie bisher.",
             "Hinweis an automatisch versendeten Mails.",
             "test:notifications und test:ui grün; lint/typecheck/build."
-          ]
+          ],
+          "startedAt": "2026-10-24T17:53:22.963Z"
         }
       ]
     }
