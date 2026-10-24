@@ -4,11 +4,15 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v33, 27 Phasen, 149 Tasks (ohne ersetzte). Alle 149 Tasks abgeschlossen, Gewicht 338/338, Fortschritt 100 %. Letzter Abschluss `task-26-3`: „KI arbeitet …“ mit schnellerem Abruf, automatische Mails gekennzeichnet. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v34, 28 Phasen, 150 Tasks (ohne ersetzte). Alle 150 Tasks abgeschlossen, Gewicht 339/339, Fortschritt 100 %. Letzter Abschluss `task-27-1`: Hinweise mit Sonner animiert. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Letzter Abschluss: Tempo und Plantafel nach dem Live-Test (phase-26)
+## Letzter Abschluss: Hinweise mit Animation (phase-27)
+
+`task-27-1`: Hinweise unten rechts mit `sonner` (Einfahren unten, Aufrücken, weiches Ausblenden, Wischen); Logik bleibt in `DashboardUpdates`. Dabei behoben: `sr-only`-Texte der Navigationspunkte machten Dashboard-Seiten auf dem Handy 1014 px breit.
+
+## Davor: Tempo und Plantafel nach dem Live-Test (phase-26)
 
 `task-26-1`: Zugriffsregeln prüften je Zeile (can_read_message, can_access_request, Rolle je Aufruf); der gemeinsame Abruf zählte auf dem VPS ~3.100 Nachrichten in 1,3 s. Migration `20261024000700_rls_per_statement.sql`: Rolle einmal je Anweisung, erlaubte Anfragen als Menge `private.accessible_request_ids()`. Gleiche Sichtbarkeit (zeilengenau je Nutzer verglichen); VPS jetzt 1–5 ms (Admin), ~27 ms (Dispatcher).
 
@@ -20,9 +24,9 @@ Hinweis des Nutzers zur Kundennummer K-20181 (RIS-2026-02771) war ein Irrtum; Ma
 
 ## Letzte drei abgeschlossene Tasks
 
+- `task-27-1` (24.10.2026): Hinweise mit Sonner animiert, Handy-Seitenbreite behoben.
 - `task-26-3` (24.10.2026): „KI arbeitet …“ mit 5-s-Abruf, automatische Mails gekennzeichnet.
 - `task-26-2` (24.10.2026): Plantafel-Tageswechsel ohne Zurückspringen.
-- `task-26-1` (24.10.2026): Zugriffsregeln einmal je Abfrage, auf dem VPS.
 
 ## Arbeitsregeln
 

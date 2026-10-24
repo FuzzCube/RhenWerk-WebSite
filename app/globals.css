@@ -388,7 +388,8 @@ main > * { animation: rw-page-enter var(--rw-duration-slow) var(--rw-ease-out) b
 .dash-logout { min-height: 40px; padding: 0 14px; border: 1px solid var(--rw-border-on-dark-strong); border-radius: var(--rw-radius-sm); background: transparent; color: var(--rw-text-on-dark); font-size: 14px; cursor: pointer; }
 .dash-logout:hover { background: var(--rw-surface-inverse-raised); }
 .dash-nav { border-top: 1px solid var(--rw-border-on-dark); }
-.dash-nav ul { max-width: var(--rw-container-max); margin: 0 auto; padding: 0 8px; display: flex; overflow-x: auto; scrollbar-width: none; }
+.dash-nav ul { position: relative; max-width: var(--rw-container-max); margin: 0 auto; padding: 0 8px; display: flex; overflow-x: auto; scrollbar-width: none; }
+/* task-27-1: the scrolling list is the containing block of the absolute sr-only texts of the dots, else they widen the page on phones */
 .dash-nav a { display: flex; align-items: center; min-height: 48px; padding: 0 12px; white-space: nowrap; color: var(--rw-text-on-dark-secondary); text-decoration: none; font-size: 15px; border-bottom: 3px solid transparent; }
 .dash-nav a:hover { color: var(--rw-text-on-dark); }
 .dash-nav a[aria-current="page"] { color: var(--rw-text-on-dark); font-weight: 600; border-bottom-color: var(--rw-color-lime-500); }
@@ -2146,8 +2147,11 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .rw-banner--change .unread-banner__title { color: var(--rw-color-warning-900); }
 
 /* Shared dashboard updates: keyboard-accessible notices, separated new/reply badges, no layout shift. */
-.dash-notices { position: fixed; z-index: 90; right: 20px; bottom: 90px; display: grid; gap: 8px; width: min(380px, calc(100vw - 32px)); max-height: 50vh; overflow-y: auto; }
-.dash-notice { display: flex; flex-direction: row; align-items: center; gap: 16px; padding: 14px 16px; box-shadow: 0 4px 20px rgb(0 0 0 / 14%); border-left: 4px solid var(--rw-color-lime-500); }
+/* task-27-1: placement and motion come from sonner (Toaster in dashboard-updates.tsx); only width and the card here */
+.dash-notices { z-index: 90; }
+.dash-notices [data-sonner-toast] { font-family: inherit; }
+@media (min-width: 601px) { .dash-notices [data-sonner-toast] { width: var(--width); } }
+.dash-notice { box-sizing: border-box; width: 100%; display: flex; flex-direction: row; align-items: center; gap: 16px; padding: 14px 16px; box-shadow: 0 4px 20px rgb(0 0 0 / 14%); border-left: 4px solid var(--rw-color-lime-500); }
 .dash-notice a { flex: 1; font-weight: 600; overflow-wrap: anywhere; }
 .dash-notice button { padding: 4px 8px; font-size: 22px; }
 .dash-update-status { position: sticky; bottom: 0; z-index: 80; background: var(--rw-color-white); box-shadow: 0 -2px 12px rgb(0 0 0 / 8%); }
@@ -2155,6 +2159,5 @@ body.is-plan-resizing, body.is-plan-resizing * { cursor: ew-resize !important; u
 .dash-update-status p, .dash-update-status > div { margin: 0; padding: 12px 20px; }
 .dash-update-status > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 @media (max-width: 600px) {
-  .dash-notices { right: 16px; bottom: 150px; }
   .dash-update-status p, .dash-update-status > div { padding: 10px 16px; font-size: 13px; }
 }

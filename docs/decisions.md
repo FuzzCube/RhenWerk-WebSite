@@ -598,3 +598,7 @@ Nutzerentscheidung: Reine Ergebnisse unten rechts (Terminänderungen) verschwind
 
 Nutzerentscheidung nach dem Live-Test: Wer sofort reagiert, soll sehen, dass die Automatisierung noch arbeitet: Chip „KI arbeitet …“ mit drehendem Ring neben dem Status, höchstens 15 Minuten je Ereignis, damit ein Ausfall von n8n nicht als Dauerzustand erscheint. Die Kundennummer im KI-Entwurf setzt allein die Datenbank; Sätze des Modells mit einer Kundennummer werden entfernt statt geprüft. Plantafel: im Block nur die Anfragenummer, die wichtigsten Angaben zum Einsatz in der rechten Leiste nach Klick.
 
+
+## 24.10.2026 · Hinweise mit Sonner (task-27-1)
+
+Nutzerwunsch: Hinweise unten rechts erschienen und verschwanden abrupt. Die Anzeige übernimmt die Bibliothek `sonner` (2.0.8): neue Hinweise fahren unten ein, vorhandene rücken nach oben, Schließen und Ablauf blenden weich aus, Wischen auf Touchgeräten, `prefers-reduced-motion` wird beachtet. Welche Hinweise es gibt (gesehen, Schließen beim Öffnen des Ziels, Info nach 6 s, andere bis zum Schließen) bleibt in `DashboardUpdates`; die Karte ist weiter unsere `.dash-notice` mit `data-notification-id`. Dabei behoben: Die absolut positionierten `sr-only`-Texte der Navigationspunkte machten jede Dashboard-Seite auf dem Handy 1014 px breit (fest positionierte Elemente lagen außerhalb des Bildes); `.dash-nav ul` ist jetzt ihr Bezugsrahmen.

@@ -582,3 +582,8 @@
 {"timestamp":"2026-10-24T18:03:33.040Z","type":"verification_passed","taskId":"task-26-3","summary":"Live-Fall RIS-2026-02771 (24.10., 17:08): Kundenantwort 17:08:02, Analyse fertig 17:08:08, Eingangsbestätigung gesendet 17:08:18; bei 20-s-Abruf (der bis task-26-1 bis zu 2 s dauerte) war „KI arbeitet"}
 {"timestamp":"2026-10-24T18:03:33.040Z","type":"task_completed","taskId":"task-26-3","summary":"„KI arbeitet …“ sichtbar, automatische Mails gekennzeichnet"}
 {"timestamp":"2026-10-24T18:03:33.040Z","type":"phase_completed","summary":"phase-26 abgeschlossen."}
+{"timestamp":"2026-10-24T18:23:53.042Z","type":"roadmap_updated","summary":"phase-27 mit task-27-1 ergänzt (Hinweise mit Animation, Nutzerwunsch). Roadmap v34."}
+{"timestamp":"2026-10-24T18:23:53.042Z","type":"task_started","taskId":"task-27-1","summary":"Hinweise mit Sonner: Einfahren, Aufrücken, weiches Ausblenden."}
+{"timestamp":"2026-10-24T18:44:59.256Z","type":"verification_passed","taskId":"task-27-1","summary":"Hinweise des gemeinsamen Abrufs werden mit sonner 2.0.8 angezeigt (toast.custom mit unserer Karte .dash-notice, data-notification-id bleibt): unten rechts über der Aktualisierungsleiste (rechts 20 px,"}
+{"timestamp":"2026-10-24T18:44:59.256Z","type":"task_completed","taskId":"task-27-1","summary":"Hinweise mit Sonner: Einfahren, Aufrücken, weiches Ausblenden"}
+{"timestamp":"2026-10-24T18:44:59.256Z","type":"phase_completed","summary":"phase-27 abgeschlossen."}

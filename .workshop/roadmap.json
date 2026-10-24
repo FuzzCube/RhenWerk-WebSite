@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 33,
+  "roadmapVersion": 34,
   "status": "active",
   "phases": [
     {
@@ -5211,6 +5211,45 @@
               "Sichtprüfung 390 px (headless Chrome)"
             ],
             "checkedAt": "2026-10-24T18:03:33.040Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-27",
+      "title": "Hinweise mit ruhiger Animation",
+      "description": "Vom Nutzer gewünscht: Hinweise unten rechts erscheinen und verschwinden abrupt; neue sollen unten einfahren, vorhandene sanft nach oben rücken, Ausblenden weich.",
+      "order": 28,
+      "weight": 1,
+      "status": "completed",
+      "tasks": [
+        {
+          "id": "task-27-1",
+          "title": "Hinweise mit Sonner: Einfahren, Aufrücken, weiches Ausblenden",
+          "description": "Die Hinweise des gemeinsamen Abrufs werden mit der Bibliothek sonner angezeigt; Logik (gesehen, Schließen beim Öffnen des Ziels, Info nach 6 s) bleibt in DashboardUpdates.",
+          "order": 1,
+          "weight": 1,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Neue Hinweise fahren unten ein, vorhandene rücken nach oben, Schließen und Ablauf blenden weich aus; reduzierte Bewegung respektiert.",
+            "Info-Hinweise nach 6 s, andere bis zum Schließen; Halten bei Zeiger/Fokus.",
+            "test:notifications und test:ui grün; lint/typecheck/build; Sichtprüfung 390/768/1440."
+          ],
+          "startedAt": "2026-10-24T18:23:53.042Z",
+          "completedAt": "2026-10-24T18:44:59.256Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Hinweise des gemeinsamen Abrufs werden mit sonner 2.0.8 angezeigt (toast.custom mit unserer Karte .dash-notice, data-notification-id bleibt): unten rechts über der Aktualisierungsleiste (rechts 20 px, unten 90 px, Breite 380 px), auf dem Handy 16 px Rand, unten 150 px; neue fahren unten ein, vorhandene rücken nach oben (expand, bis 5 sichtbar), Schließen/Ablauf blenden weich aus, Wischen nach rechts, reduzierte Bewegung von sonner berücksichtigt. Info-Hinweise 6 s, andere bis zum Schließen; sonner hält die Zeit bei Zeiger und Fokus an. Logik (gesehen, Schließen beim Öffnen des Ziels) unverändert in DashboardUpdates. Nebenbefund behoben: sr-only-Texte der Navigationspunkte (absolut, ohne Bezugsrahmen) machten Dashboard-Seiten bei 390 px Handy-Emulation 1014 px breit; .dash-nav ul position: relative, danach scrollWidth 390. Geprüft: lint, typecheck, build, test:notifications 60 bestanden, test:ui 484 bestanden (ein erster Lauf hatte 1 Fehlschlag beim Tab-Titel-Zähler direkt nach Erscheinen des Rückrufbanners, Wiederholung bestanden, Zeitpunkt der Prüfung). Sichtprüfung mit Bildern während Einfahren und Ausblenden bei 390/768/1440 (Handy-Emulation).",
+            "commands": [
+              "npm run lint",
+              "npx tsc --noEmit",
+              "npm run build",
+              "APP_URL=http://localhost:3117 npm run test:notifications",
+              "APP_URL=http://localhost:3117 npm run test:ui (2 Läufe)",
+              "Sichtprüfung 390/768/1440 (headless Chrome)"
+            ],
+            "checkedAt": "2026-10-24T18:44:59.256Z"
           }
         }
       ]

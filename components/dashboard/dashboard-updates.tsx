@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { createContext, Suspense, useCallback, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { createContext, Suspense, useCallback, useContext, useEffect, useRef, useState, useTransition, type CSSProperties, type ReactNode } from "react";
+import { toast, Toaster } from "sonner";
 import { CallbackAlerts } from "./callback-alerts";
 import { SendBacklogAlert } from "./send-backlog-alert";
 import { SystemAlertBanner } from "./system-alert-banner";
@@ -191,22 +192,31 @@ function DashboardNotices({ toasts, setToasts, dismiss }: {
     setToasts((current) => current.some((event) => eventTargetOpen(event.href, pathname, search))
       ? current.filter((event) => !eventTargetOpen(event.href, pathname, search)) : current);
   }, [pathname, search, setToasts]);
-  return <aside className="dash-notices" aria-label="Neue Ereignisse" aria-live="polite" aria-relevant="additions">
-    {toasts.map((event) => <DashboardNotice key={event.id} event={event} dismiss={dismiss} />)}
-  </aside>;
+  // task-27-1: sonner shows and animates the notices (new ones slide in at the bottom, the others move up, closing
+  // fades out); which notices exist stays here. Info notices close after 6 s, held while pointer or focus rests on them.
+  const shown = useRef(new Set<string>());
+  useEffect(() => {
+    const ids = new Set(toasts.map((event) => event.id));
+    for (const event of toasts) {
+      if (shown.current.has(event.id)) continue;
+      shown.current.add(event.id);
+      toast.custom(() => <DashboardNotice event={event} dismiss={dismiss} />, {
+        id: event.id, duration: event.info ? 6_000 : Infinity, onDismiss: () => dismiss(event.id), onAutoClose: () => dismiss(event.id),
+      });
+    }
+    for (const id of shown.current) {
+      if (ids.has(id)) continue;
+      shown.current.delete(id);
+      toast.dismiss(id);
+    }
+  }, [toasts, dismiss]);
+  return <Toaster className="dash-notices" containerAriaLabel="Neue Ereignisse" position="bottom-right" expand visibleToasts={5} gap={8}
+    style={{ "--width": "380px" } as CSSProperties}
+    offset={{ right: 20, bottom: 90 }} mobileOffset={{ left: 16, right: 16, bottom: 150 }} swipeDirections={["right"]} />;
 }
 
-// Info notices fade out after a few seconds unless pointer or keyboard focus rests on them.
 function DashboardNotice({ event, dismiss }: { event: DashboardEvent; dismiss: (id: string) => void }) {
-  const [held, setHeld] = useState(false);
-  useEffect(() => {
-    if (!event.info || held) return;
-    const timer = window.setTimeout(() => dismiss(event.id), 6_000);
-    return () => window.clearTimeout(timer);
-  }, [event, held, dismiss]);
-  return <div className="dash-notice rw-card rw-card--neutral" data-notification-id={event.id} data-notification-info={event.info ? "true" : undefined}
-    onPointerEnter={() => setHeld(true)} onPointerLeave={() => setHeld(false)}
-    onFocus={() => setHeld(true)} onBlur={(blur) => { if (!blur.currentTarget.contains(blur.relatedTarget)) setHeld(false); }}>
+  return <div className="dash-notice rw-card rw-card--neutral" data-notification-id={event.id} data-notification-info={event.info ? "true" : undefined}>
     <Link href={event.href} onClick={() => dismiss(event.id)}>{event.title}</Link>
     <button className="rw-link-btn" type="button" aria-label="Hinweis schließen" onClick={() => dismiss(event.id)}>×</button>
   </div>;
