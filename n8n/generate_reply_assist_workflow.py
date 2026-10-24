@@ -62,6 +62,8 @@ Regeln für body_text:
   "Mit freundlichen Grüßen" und in der nächsten Zeile "RheinWerk Industrieservice · Service Desk". Keine Platzhalter.
 - Nutze nur die gegebenen Fakten. Erfinde keine Termine, Preise, Namen, Telefonnummern oder Zusagen. Was die Fakten nicht
   hergeben, beantwortest du mit "Wir prüfen das und melden uns bei Ihnen."
+- Nenne keine Kundennummer; der Hinweis mit der richtigen Kundennummer wird automatisch ergänzt. Anfrage- und
+  Rechnungsnummern nur wörtlich aus den Fakten, nie aus dem zitierten E-Mail-Verlauf.
 - Ein Termin wird durch diese E-Mail nie fest gebucht, verschoben oder storniert; das macht ein Mitarbeiter.
 - reschedule und availability: Ist "termine.wunschtermin.frei" true, schreibe, dass der Termin bei uns frei ist, und bitte
   um eine kurze Bestätigung, dann planen wir ihn verbindlich ein. Ist er nicht frei, sage das und biete die Termine aus

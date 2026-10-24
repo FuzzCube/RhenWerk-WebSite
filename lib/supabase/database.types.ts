@@ -1059,6 +1059,14 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"request_automation_pending": {
+                  Row: {
+                    "reason": string | null,"request_id": string | null,"since": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
                 },"request_unread_messages": {
                   Row: {
                     "latest_at": string | null,"oldest_at": string | null,"request_id": string | null,"unread_count": number | null

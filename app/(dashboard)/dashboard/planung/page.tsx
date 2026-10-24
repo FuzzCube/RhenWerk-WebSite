@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PlanBoard, type BoardPick } from "@/components/dashboard/plan-board";
 import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
-import { PriorityText, RequestStatusChip } from "@/components/dashboard/ui/status-chip";
+import { AutomationBusy, PriorityText, RequestStatusChip } from "@/components/dashboard/ui/status-chip";
 import { Icon } from "@/components/ui";
 import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay, weekStart } from "@/lib/berlin-time";
 import { rolesFor } from "@/lib/auth/roles";
@@ -222,6 +222,7 @@ export default async function PlanningPage({ searchParams }: Props) {
                   <Link href={link({ anfrage: row.id })} className="plan3__item" aria-current={row.id === selected?.id ? "true" : undefined} scroll={false}>
                     <span className="plan3__item-head"><span className="mono">{row.request_number}</span>{unreadOf(row.id) && <span className="plan3__badge plan3__badge--inline" title={unreadText(unreadOf(row.id)!.count)}>{unreadOf(row.id)!.count}<span className="sr-only"> ungelesene Nachrichten vom Kunden</span></span>}<PriorityText priority={row.priority} /></span>
                     <strong>{row.company_name}</strong>
+                    {row.id && data.automation[row.id] && <AutomationBusy reason={data.automation[row.id]} />}
                     <span className="plan3__muted">{row.city} · {label("service_kind", row.service_kind)}</span>
                     {row.work_status === "waiting_parts" && <span className="rw-flag rw-flag--info">Folgeeinsatz · wartet auf Teile</span>}
                     {row.safety_check_required && <span className="rw-hazard"><Icon name="hazard" size={14} />Sicherheitsprüfung nötig</span>}

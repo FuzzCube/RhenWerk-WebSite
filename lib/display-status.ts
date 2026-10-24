@@ -125,3 +125,6 @@ export function overdueAging(rows: ReadonlyArray<{ status: string; payment_due_d
   }
   return buckets;
 }
+
+// Why the automation is working on a request right now (task-24-1, view request_automation_pending)
+export type AutomationReason = "analyse" | "antwort";

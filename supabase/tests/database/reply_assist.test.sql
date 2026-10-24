@@ -2,7 +2,7 @@
 -- a draft for staff (never queued) and a callback request to the technician of an overdue visit.
 -- Run with: supabase test db
 begin;
-select plan(22);
+select plan(24);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000f1', 'f1@x.test'),
@@ -65,9 +65,11 @@ select ok((select not (s -> 'wunschtermin' ->> 'frei')::boolean from public.repl
 select ok((select jsonb_typeof(s -> 'wunschtermin') = 'null' and jsonb_array_length(s -> 'alternativen') between 1 and 3 and s ->> 'geplanter_termin' is not null
   from public.reply_assist_slots('00000000-0000-0000-0000-0000000000d3') s), 'without wish: only alternatives, planned visit named');
 
+insert into public.customers (id, customer_number, company_name, business_email) values ('00000000-0000-0000-0000-0000000000c1', 'K-1001', 'Antwort GmbH', 'anna@antwort.test');
+update public.requests set customer_id = '00000000-0000-0000-0000-0000000000c1' where id = '00000000-0000-0000-0000-0000000000b1';
 -- Results: draft for staff, callback to the technician of the overdue visit, nothing for a thank-you
 select is(public.save_reply_assist('00000000-0000-0000-0000-0000000000d1', 'availability', 'Kunde fragt nach einem Termin.', true,
-  'Re: Ihre Serviceanfrage', E'Guten Tag Anna Antwort,\n\nder Termin ist frei.\n\nMit freundlichen Grüßen\nRheinWerk Industrieservice · Service Desk',
+  'Re: Ihre Serviceanfrage', E'Guten Tag Anna Antwort,\n\nder Termin ist frei. Ihre Kundennummer lautet K-9999.\n\nBitte nennen Sie Ihre Kunden-Nr. K-9999 bei Rückfragen.\n\nMit freundlichen Grüßen\nRheinWerk Industrieservice · Service Desk',
   'Wunschtermin frei laut Plan.', false, 0.8, 'exec-1') ->> 'action', 'drafted', 'draft created');
 select is(public.save_reply_assist('00000000-0000-0000-0000-0000000000d1', 'availability', 'nochmal', true, 'x', 'y') ->> 'action', 'duplicate', 'handled once');
 select ok((public.save_reply_assist('00000000-0000-0000-0000-0000000000d2', 'where_is_technician', 'Kunde fragt, wo der Techniker bleibt.', true,
@@ -79,6 +81,11 @@ reset role;
 
 select ok((select m.status = 'draft' and m.approved_at is null and m.to_address = 'anna@antwort.test' and m.author_id is null and m.body_text like 'Guten Tag Anna Antwort,%'
   from public.messages m where m.request_id = '00000000-0000-0000-0000-0000000000b1' and m.direction = 'outgoing'), 'draft, not approved, to the request address');
+-- task-24-2: customer numbers of the model are removed, the note of the database names the right one once
+select is((select m.body_text from public.messages m where m.request_id = '00000000-0000-0000-0000-0000000000b1' and m.direction = 'outgoing'),
+  E'Guten Tag Anna Antwort,\n\nder Termin ist frei.\n\nIhre Kundennummer: K-1001 – bitte bei Rückfragen und Anrufen\nangeben.\n\nMit freundlichen Grüßen\nRheinWerk Industrieservice · Service Desk',
+  'model sentences with a customer number removed, the database note stays');
+select is((select count(*)::int from public.messages m where m.request_id = '00000000-0000-0000-0000-0000000000b1' and m.body_text like '%K-9999%'), 0, 'no wrong customer number');
 select ok((select r.step = 'reply_assist' and r.result ->> 'reason' = 'Wunschtermin frei laut Plan.' and (r.result ->> 'draft_id') is not null
   from public.automation_runs r where r.operation_key = 'reply_assist:00000000-0000-0000-0000-0000000000d1'), 'automation run with reason and draft');
 select ok((select c.status = 'open' and c.conversation_id = 'email:00000000-0000-0000-0000-0000000000d2' and c.callback_number = '+49 621 1234567' and c.technician_id = '00000000-0000-0000-0000-0000000000f2'

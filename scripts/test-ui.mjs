@@ -1856,6 +1856,28 @@ try {
   await page.open(`${BASE}/dashboard/planung?woche=${week}`);
   check("  in der Plantafel als eigene Anfrage sichtbar", await page.eval(`[...document.querySelectorAll(".plan3__blk--own")].some((b) => b.title.includes(${JSON.stringify(planA.request_number)}))`));
   check("  Anfrage verlässt „Zu planen“", await page.eval(`![...document.querySelectorAll(".plan3__item")].some((i) => i.textContent.includes(${JSON.stringify(planA.request_number)}))`));
+  // task-24-3: the block shows only the number, a click shows the card with the main facts in the panel
+  await page.open(`${BASE}/dashboard/planung?ansicht=tag&tag=${week}`);
+  const blockA = `[...document.querySelectorAll(".plan3__blk--own")].find((b) => b.title.includes(${JSON.stringify(planA.request_number)}))`;
+  check("  Tagesansicht: im Block nur die Anfragenummer", await page.eval(`${blockA}?.textContent.trim() === ${JSON.stringify(planA.request_number)}`), await page.eval(`${blockA}?.textContent`));
+  await page.eval(`${blockA}.click()`);
+  const card = await page.eval(`(() => { const c = document.querySelector("[data-visit-card]"); return c ? { text: c.textContent, open: c.querySelector('a[href="/dashboard/anfragen/${planA.id}"]')?.textContent, title: document.getElementById("auswahl-title").textContent } : null; })()`);
+  check("  Klick auf den Einsatz: Karte mit Zeit, Techniker, Firma, Adresse, Anlage und „Anfrage öffnen“",
+    !!card && card.title === "Einsatz" && card.text.includes("09:00–11:00") && card.text.includes(planA.company_name) && card.text.includes(planA.city) && card.text.includes("Anlage") && card.open === "Anfrage öffnen", JSON.stringify(card));
+  for (const [name, width, height] of [["390", 390, 844], ["768", 768, 1024], ["1440", 1440, 900]]) {
+    await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: width < 1000 });
+    await sleep(200);
+    const fit = await page.eval(`(() => { const c = document.querySelector("[data-visit-card]").getBoundingClientRect(); return { scroll: document.documentElement.scrollWidth, width: innerWidth, right: c.right }; })()`);
+    check(`  Karte „Einsatz“ @${name}: kein Überlauf`, fit.scroll <= fit.width && fit.right <= fit.width, JSON.stringify(fit));
+    if (SHOTS) {
+      await page.eval(`document.querySelector("[data-visit-card]").scrollIntoView({ block: "center", behavior: "instant" })`);
+      const shot = await page.send("Page.captureScreenshot", { format: "png" });
+      await writeFile(path.join(SHOTS, `plantafel-einsatzkarte-${name}.png`), Buffer.from(shot.data, "base64"));
+    }
+  }
+  await page.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await page.eval(`document.querySelector(".plan3__visit-close").click()`);
+  check("  Schließen: zurück zur Planung", await page.until(`!document.querySelector("[data-visit-card]") && document.getElementById("auswahl-title").textContent === "Einsatz planen"`, 3000));
 
   // Dragging the selection (task-10-7) with real mouse events in the day view: Monday, Tobias has visit A 09:00–11:00
   {

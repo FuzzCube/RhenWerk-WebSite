@@ -593,3 +593,8 @@ Die globale Route unterscheidet in der wiederverwendeten Sitzungsprüfung vorüb
 ## 24.10.2026 · Ruhigere Benachrichtigungen (task-23-1, task-23-2)
 
 Nutzerentscheidung: Reine Ergebnisse unten rechts (Terminänderungen) verschwinden nach einigen Sekunden von selbst; Hinweise mit Handlungsbedarf bleiben, bis sie angeklickt werden oder die Zielseite geöffnet wird. Die Navigation zeigt je Bereich nur einen Farbpunkt statt Zahlen und Wörtern, weil viele rote Zähler unruhig wirkten; die Einzelheiten zeigt der Bereich. Das Öffnen einer Anfrage markiert ihre Kundennachrichten als gelesen und ersetzt „Als gelesen markieren“ (ändert die Entscheidung vom 23.10.2026); der Hinweis mit den neuen Nachrichten bleibt für diesen Besuch sichtbar. Die Liste markiert weiterhin nichts.
+
+## 24.10.2026 · Laufende Automatisierung sichtbar, Plantafel-Karte (task-24-1 bis 24-3)
+
+Nutzerentscheidung nach dem Live-Test: Wer sofort reagiert, soll sehen, dass die Automatisierung noch arbeitet: Chip „KI arbeitet …“ mit drehendem Ring neben dem Status, höchstens 15 Minuten je Ereignis, damit ein Ausfall von n8n nicht als Dauerzustand erscheint. Die Kundennummer im KI-Entwurf setzt allein die Datenbank; Sätze des Modells mit einer Kundennummer werden entfernt statt geprüft. Plantafel: im Block nur die Anfragenummer, die wichtigsten Angaben zum Einsatz in der rechten Leiste nach Klick.
+

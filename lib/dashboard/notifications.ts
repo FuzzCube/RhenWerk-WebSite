@@ -46,6 +46,8 @@ export async function loadDashboardSnapshot(employee: Employee, cursor?: string)
       supabase.from("messages").select("id, updated_at", { count: "exact" }).order("updated_at", { ascending: false }).order("id").limit(1),
       supabase.from("visit_holds").select("id, updated_at", { count: "exact" }).order("updated_at", { ascending: false }).order("id").limit(1),
       supabase.from("visit_change_requests").select("id, updated_at", { count: "exact" }).order("updated_at", { ascending: false }).order("id").limit(1),
+      // task-24-1: "KI arbeitet …" appears and disappears with the next poll, also when only a run was recorded
+      supabase.from("request_automation_pending").select("request_id, reason", { count: "exact" }).order("request_id").order("reason"),
     ] : []),
   ];
   const [inbox, unreadRequests, newRequests, changes, callbacks, backlog, systemAlerts, incoming, requests, activity, failed, revisions] = await Promise.all([

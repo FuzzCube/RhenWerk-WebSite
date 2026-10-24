@@ -1,12 +1,15 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { closeVisitChange, confirmVisitChange, offerVisitChange, rescheduleVisit, scheduleVisit } from "@/app/(dashboard)/dashboard/planung/actions";
 import { CheckboxField, HiddenField, SaveForm, SelectField, TextField } from "@/components/dashboard/ui/save-form";
+import { AutomationBusy, PriorityText } from "@/components/dashboard/ui/status-chip";
 import { Icon } from "@/components/ui";
+import { routeHref, telHref } from "@/lib/contact-links";
 import { addDays, berlinToInstant, dayKeyOf, isDayKey, isoWeek, isoWeekday, isTime, minutesOfDay, weekStart } from "@/lib/berlin-time";
-import type { BusyBlock, Technician, WorkingHours } from "@/lib/dashboard/planning";
+import type { BusyBlock, Technician, VisitInfo, WorkingHours } from "@/lib/dashboard/planning";
 import { initialFormState, type FormState } from "@/lib/forms";
 import { formatWeekdayDate, TIME_ZONE } from "@/lib/format";
 import type { PlanningChange } from "@/lib/dashboard/planning";
@@ -59,6 +62,8 @@ const pickOf = (block: BusyBlock): BoardPick => ({
   start: toTime(minutesOfDay(new Date(block.start))),
   end: toTime(minutesOfDay(new Date(block.end))),
 });
+// Identity of a block on the board (task-24-3): technician and start, stable across refreshes
+const visitKeyOf = (block: BusyBlock) => `${block.technicianId}|${block.start}`;
 const shortDay = (day: string) => formatWeekdayDate(`${day}T12:00:00Z`).replace(/\d{4}$/, "");
 const longDayFormat = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "numeric", month: "long", timeZone: TIME_ZONE });
 const longDay = (day: string) => longDayFormat.format(new Date(`${day}T12:00:00Z`));
@@ -113,6 +118,8 @@ export function PlanBoard(props: Props) {
   const [move, setMove] = useState<Move | null>(null);
   // Visit chosen with one click (task-20-3): shows handles to change its length; a double click opens the request
   const [chosenVisit, setChosenVisit] = useState<string | null>(null);
+  // Visit whose card the panel shows (task-24-3), any readable visit; not an edit, so it does not block refreshes
+  const [shownVisit, setShownVisit] = useState<string | null>(null);
   // Saving a move: on success the server refreshes the board data, the pending move is cleared here
   const [, moveAction, moving] = useActionState(async (previous: FormState, formData: FormData) => {
     const result = await rescheduleVisit(previous, formData);
@@ -158,6 +165,47 @@ export function PlanBoard(props: Props) {
     : [], [request, props.suggest, technicians, workingHours, availability, now, duration]);
 
   const techName = (id: string) => technicians.find((tech) => tech.id === id)?.name ?? "Unbekannt";
+  const shownBlock = shownVisit ? busy.find((block) => block.visit && visitKeyOf(block) === shownVisit) ?? null : null;
+  // Narrow layouts put the panel below the board: bring the card into view when it is out of sight
+  useEffect(() => {
+    const panel = shownVisit ? document.getElementById("auswahl") : null;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    if (rect.top > window.innerHeight - 80 || rect.bottom < 0) panel.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }, [shownVisit]);
+
+  // task-24-3: the main facts of a visit in the panel; closing returns to planning
+  function renderVisitCard(block: BusyBlock, info: VisitInfo) {
+    const start = new Date(block.start), end = new Date(block.end);
+    return (
+      <div className="plan3__panel-sec plan3__visit" data-visit-card={block.requestId ?? undefined}>
+        <div className="plan3__visit-head">
+          <span className="mono">{block.requestNumber}</span>
+          <span className="plan3__visit-status">{info.status}</span>
+          <button type="button" className="rw-link-btn plan3__visit-close" aria-label="Einzelheiten schließen" onClick={() => { setShownVisit(null); setChosenVisit(null); }}>×</button>
+        </div>
+        <p className="plan3__visit-when"><strong>{shortDay(dayKeyOf(start))} · <span className="mono">{toTime(minutesOfDay(start))}–{toTime(minutesOfDay(end))}</span></strong><br />{techName(block.technicianId)}</p>
+        <div className="badge-row">
+          <PriorityText priority={info.priority} />
+          {info.waitingParts && <span className="rw-flag rw-flag--info">Wartet auf Teile</span>}
+          {block.automation && <AutomationBusy reason={block.automation} />}
+        </div>
+        {(block.unread || block.change) && <p className="plan3__visit-note">
+          {block.unread ? unreadText(block.unread) : ""}{block.unread && block.change ? " · " : ""}
+          {block.change ? (block.change.state === "offered" ? "Vorschlag gesendet, Kunde antwortet noch" : "Kunde möchte verschieben") : ""}
+        </p>}
+        <dl className="plan3__visit-facts">
+          <dt>Firma</dt><dd><strong>{info.company}</strong></dd>
+          {info.contact && <><dt>Ansprechpartner</dt><dd>{info.contact}</dd></>}
+          {info.phone && <><dt>Telefon</dt><dd><a className="mono" href={telHref(info.phone)}>{info.phone}</a></dd></>}
+          <dt>Adresse</dt><dd><a href={routeHref(info.address)} target="_blank" rel="noreferrer">{info.address}</a></dd>
+          <dt>Anlage</dt><dd>{info.equipment} · {info.service}</dd>
+          {info.description && <><dt>Beschreibung</dt><dd className="plan3__visit-desc">{info.description}</dd></>}
+        </dl>
+        {block.requestId && <Link className="button button--secondary plan3__visit-open" href={`/dashboard/anfragen/${block.requestId}`}>Anfrage öffnen</Link>}
+      </div>
+    );
+  }
 
   function check(candidate: BoardPick, ignore: Ignore | null = null): { ok: boolean; message: string } {
     if (!isDayKey(candidate.day) || !isTime(candidate.start) || !isTime(candidate.end)) return { ok: false, message: "Bitte Datum, Beginn und Ende angeben." };
@@ -280,7 +328,7 @@ export function PlanBoard(props: Props) {
         const end = dayKeyOf(new Date(block.end)) > day ? 24 * 60 : minutesOfDay(new Date(block.end));
         const kind = block.kind === "absence" ? "absence" : block.kind === "hold" ? "hold" : block.requestNumber ? "own" : "busy";
         const label = kind === "absence" ? "Abwesend" : kind === "hold" ? holdLabel(block) : block.requestNumber ?? "Belegt";
-        const unreadSuffix = (block.unread ? ` · ${unreadText(block.unread)}` : "") + (block.change ? (block.change.state === "offered" ? " · Vorschlag gesendet, Kunde antwortet noch" : " · Kunde möchte verschieben") : "");
+        const unreadSuffix = (block.unread ? ` · ${unreadText(block.unread)}` : "") + (block.automation ? " · KI arbeitet" : "") + (block.change ? (block.change.state === "offered" ? " · Vorschlag gesendet, Kunde antwortet noch" : " · Kunde möchte verschieben") : "");
         return { start, end, kind, label: label + unreadSuffix, block };
       });
   }
@@ -626,7 +674,7 @@ export function PlanBoard(props: Props) {
         role={interactive ? "button" : "img"}
         tabIndex={interactive ? 0 : undefined}
         aria-label={interactive ? `${label}. Auswählen` : label}
-        onClick={(event) => { if (suppressClick.current) return; setChosenVisit(null); if (interactive) select(event.clientX, event.currentTarget); }}
+        onClick={(event) => { if (suppressClick.current) return; setChosenVisit(null); setShownVisit(null); if (interactive) select(event.clientX, event.currentTarget); }}
         onKeyDown={interactive ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select(null, event.currentTarget); } } : undefined}
       >
         {halfHourLines.map((minute) => <i key={minute} className="plan3__grid plan3__grid--half" style={{ left: `${pct(minute)}%` }} />)}
@@ -638,12 +686,27 @@ export function PlanBoard(props: Props) {
           ? <span className="plan3__off-label">{hours.length === 0 ? "Keine Arbeitszeit" : "Abwesend"}</span>
           : segments.map((segment) => {
             const span = `${toTime(segment.start)}–${toTime(Math.min(segment.end, 24 * 60 - 1))}`;
-            const text = view === "tag" && <span className="plan3__blk-text">{segment.label} · {span}</span>;
             const visit = segment.block;
+            // task-24-3: only the request number in the block, the details are in the panel
+            const text = view === "tag" && <span className="plan3__blk-text">{visit.requestNumber ?? segment.label}</span>;
+            const shown = shownVisit !== null && shownVisit === visitKeyOf(visit);
             // Planned visits within one day may be dragged (task-10-8); the original stays faded while it is moved
             const movable = visit.move !== null && dayKeyOf(new Date(visit.start)) === day && dayKeyOf(new Date(Date.parse(visit.end) - 1)) === day;
             // Colours by time (task-20-3): coming visits blue, past ones dark grey
             const past = segment.kind === "own" && Date.parse(visit.end) <= now.getTime() ? " is-past" : "";
+            if (!movable && segment.kind === "own" && visit.visit) {
+              // Past or running visits cannot be moved, but show their card
+              return (
+                <span key={`${segment.start}-${segment.end}`} className={`plan3__blk plan3__blk--own is-info${past}${shown ? " is-chosen" : ""}${visit.change ? " has-change" : ""}`}
+                  style={place(segment.start, segment.end)} title={`${segment.label} · ${span} · Klick: Einzelheiten, Doppelklick: Anfrage öffnen`}
+                  role="button" tabIndex={0} aria-pressed={shown} aria-label={`Einsatz ${segment.label}, ${name}, ${shortDay(day)} ${span}. Einzelheiten anzeigen.`}
+                  onClick={(event) => { event.stopPropagation(); setChosenVisit(null); setShownVisit(shown ? null : visitKeyOf(visit)); }}
+                  onDoubleClick={(event) => { event.stopPropagation(); if (visit.requestId) router.push(`/dashboard/anfragen/${visit.requestId}`); }}
+                  onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); setShownVisit(shown ? null : visitKeyOf(visit)); } }}>
+                  {text}
+                </span>
+              );
+            }
             if (!movable) {
               const holdState = segment.kind === "hold" ? visit.hold?.state : undefined;
               return (
@@ -669,7 +732,10 @@ export function PlanBoard(props: Props) {
                 onPointerDown={(event) => startDrag(event, pickOf(visit), visit)}
                 onClick={(event) => {
                   event.stopPropagation();
-                  if (!suppressClick.current) setChosenVisit(chosen ? null : visit.move?.visitId ?? null);
+                  if (!suppressClick.current) {
+                    setChosenVisit(chosen ? null : visit.move?.visitId ?? null);
+                    setShownVisit(chosen ? null : visitKeyOf(visit));
+                  }
                 }}
                 onDoubleClick={(event) => {
                   event.stopPropagation();
@@ -688,6 +754,11 @@ export function PlanBoard(props: Props) {
         {/* Unread customer messages (task-20-14): red circle with the count at the top right of the block */}
         {!absentAllDay && segments.filter((segment) => (segment.block.unread ?? 0) > 0).map((segment) => (
           <span key={`unread-${segment.start}-${segment.end}`} className="plan3__badge" style={{ left: `${pct(Math.min(segment.end, bounds.to))}%` }} aria-hidden="true">{segment.block.unread}</span>
+        ))}
+        {/* The automation works on the request (task-24-1): a spinning ring at the bottom right of the block */}
+        {!absentAllDay && segments.filter((segment) => segment.block.automation).map((segment) => (
+          <span key={`busy-${segment.start}-${segment.end}`} className="plan3__busy" style={{ left: `${pct(Math.min(segment.end, bounds.to))}%` }}
+            title="KI arbeitet …" data-automation={segment.block.automation} aria-hidden="true" />
         ))}
         {/* Wish of the customer to move the visit (task-20-16): a marker that opens the wish in the panel */}
         {!absentAllDay && segments.filter((segment) => segment.block.change && segment.block.requestId).map((segment) => (
@@ -900,8 +971,8 @@ export function PlanBoard(props: Props) {
       </section>
 
       <aside id="auswahl" className="rw-card rw-card--action plan3__panel" aria-labelledby="auswahl-title">
-        <h2 id="auswahl-title" className="plan3__eyebrow">{props.change ? "Verschiebewunsch" : "Einsatz planen"}</h2>
-        {request ? (
+        <h2 id="auswahl-title" className="plan3__eyebrow">{shownBlock ? "Einsatz" : props.change ? "Verschiebewunsch" : "Einsatz planen"}</h2>
+        {shownBlock?.visit ? renderVisitCard(shownBlock, shownBlock.visit) : request ? (
           <>
             <div className="plan3__panel-sec plan3__panel-sec--head">{props.requestSummary}</div>
             {props.change ? renderChangePanel() : (

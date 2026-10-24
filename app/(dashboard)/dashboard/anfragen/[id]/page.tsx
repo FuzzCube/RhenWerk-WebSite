@@ -11,14 +11,14 @@ import { EmptyState, ErrorState } from "@/components/dashboard/ui/states";
 import { StatusBadge } from "@/components/dashboard/ui/status-badge";
 import { PaymentForm } from "@/components/dashboard/payment-form";
 import { PaymentReminders } from "@/components/dashboard/payment-reminders";
-import { InvoiceStatusChip, PriorityText, StatusChip } from "@/components/dashboard/ui/status-chip";
+import { AutomationBusy, InvoiceStatusChip, PriorityText, StatusChip } from "@/components/dashboard/ui/status-chip";
 import { Icon } from "@/components/ui";
-import { invoiceDisplayStatus, requestDisplayStatus, requestProgress } from "@/lib/display-status";
+import { invoiceDisplayStatus, requestDisplayStatus, requestProgress, type AutomationReason } from "@/lib/display-status";
 import { rolesFor } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { formatCallDuration } from "@/lib/dashboard/calls";
 import { isUnreadMessage, unreadText } from "@/lib/dashboard/unread";
-import { getEmployeeNames, getRequestDetail, sectionsFor, type CustomerSuggestion, type RequestDetail, type SectionId } from "@/lib/dashboard/requests";
+import { automationPending, getEmployeeNames, getRequestDetail, sectionsFor, type CustomerSuggestion, type RequestDetail, type SectionId } from "@/lib/dashboard/requests";
 import { describeEvent } from "@/lib/events";
 import { berlinDayKey, EMPTY, formatCalendarDate, formatCurrency, formatDateTime, formatMinutes, formatNumber, formatPercent, formatTimeRange, formatWish } from "@/lib/format";
 import { nextReminderText, stageLabel } from "@/lib/reminders";
@@ -36,7 +36,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function RequestPage({ params }: Props) {
   const employee = await requireRole(rolesFor("/dashboard/anfragen"));
   const { id } = await params;
-  const [detail, names] = await Promise.all([getRequestDetail(id, employee.role), getEmployeeNames()]);
+  const [detail, names, automation] = await Promise.all([getRequestDetail(id, employee.role), getEmployeeNames(),
+    employee.role === "technician" ? new Map<string, AutomationReason>() : automationPending([id])]);
   // Unknown id and missing access look the same
   if (!detail) notFound();
 
@@ -148,6 +149,7 @@ export default async function RequestPage({ params }: Props) {
         </div>
         <div className="badge-row">
           <StatusChip status={status} />
+          {automation.has(request.id) && <AutomationBusy reason={automation.get(request.id)!} />}
           {request.priority && <PriorityText priority={request.priority} />}
         </div>
       </header>

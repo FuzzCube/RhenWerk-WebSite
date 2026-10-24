@@ -4,7 +4,9 @@ import type { Employee } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { nextWorkingDays, suggestSlots, type SlotBusy, type SlotExperience, type SlotSuggestion } from "@/lib/slot-suggestions";
 import { formatWish } from "@/lib/format";
-import { unreadMessages } from "./requests";
+import { label, statusInfo } from "@/lib/status";
+import { automationPending, unreadMessages } from "./requests";
+import type { AutomationReason } from "@/lib/display-status";
 import type { UnreadInfo } from "./unread";
 import { monthDays, monthLoad, type MonthLoad } from "@/lib/technician-load";
 import type { QueueRow } from "./queues";
@@ -13,6 +15,11 @@ import type { QueueRow } from "./queues";
 // (only technician, time and kind – no customer, address or absence reason). Details are added only
 // for visits the user may read anyway via RLS (own requests for dispatchers, all for managers).
 export type Technician = { id: string; name: string };
+// Card "Einsatz" in the panel of the planning board (task-24-3); labels resolved on the server
+export type VisitInfo = {
+  status: string; company: string; contact: string | null; phone: string | null; address: string; equipment: string; service: string;
+  priority: string | null; description: string | null; waitingParts: boolean;
+};
 export type WorkingHours = { technicianId: string; weekday: number; start: string; end: string; validFrom: string | null; validTo: string | null };
 // Open hold on the board (task-20-13): at the wished time (form), deviating from the wish (form, nothing free then;
 // to be agreed with the customer) or agreed with the customer on the phone by Mira. wish: the customer's wish (form)
@@ -36,6 +43,10 @@ export type BusyBlock = {
   hold?: HoldInfo;
   // Unread customer messages of the request (task-20-14), only where the request is readable
   unread?: number;
+  // The automation works on the request right now (task-24-1)
+  automation?: AutomationReason;
+  // Readable visits: the main facts for the card in the panel (task-24-3)
+  visit?: VisitInfo;
   // Active wish of the customer to move this visit (task-20-16)
   change?: { id: string; state: ChangeState };
 };
@@ -51,6 +62,8 @@ export type PlanningData = {
   queue: PlanningRequest[];
   // Unread customer messages by request id: visits, holds and the queue (task-20-14)
   unread: Record<string, UnreadInfo>;
+  // Requests the automation works on right now (task-24-1)
+  automation: Record<string, AutomationReason>;
   // Active wishes of customers to move a visit (task-20-16), oldest first
   changes: PlanningChangeRow[];
   selected: PlanningRequest | null;
@@ -105,12 +118,26 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
   const readable = visits.data ?? [];
   const requestIds = [...new Set(readable.map((visit) => visit.request_id))];
   const queueRows = (queue.data ?? []) as PlanningRequest[];
-  const [numbers, unread] = await Promise.all([
-    requestIds.length ? supabase.from("requests").select("id, request_number, version").in("id", requestIds).then((result) => result.data ?? []) : Promise.resolve([]),
-    unreadMessages([...new Set([...requestIds, ...(holds?.data ?? []).map((hold) => hold.request_id), ...queueRows.map((row) => row.id)].filter((id): id is string => Boolean(id)))]),
+  const shownIds = [...new Set([...requestIds, ...(holds?.data ?? []).map((hold) => hold.request_id), ...queueRows.map((row) => row.id)].filter((id): id is string => Boolean(id)))];
+  const [numbers, unread, automation] = await Promise.all([
+    requestIds.length ? supabase.from("requests").select("id, request_number, version, company_name, contact_name, phone_number, street_house_number, postal_code, city, equipment_kind, service_kind, priority, description, work_status")
+      .in("id", requestIds).then((result) => result.data ?? []) : Promise.resolve([]),
+    unreadMessages(shownIds),
+    automationPending(shownIds),
   ]);
   const numberOf = new Map(numbers.map((request) => [request.id, request.request_number]));
   const versionOf = new Map(numbers.map((request) => [request.id, request.version]));
+  const requestOf = new Map(numbers.map((request) => [request.id, request]));
+  const visitInfo = (visit: (typeof readable)[number]): VisitInfo | undefined => {
+    const request = requestOf.get(visit.request_id);
+    if (!request) return undefined;
+    return {
+      status: statusInfo("visit_status", visit.status).label, company: request.company_name, contact: request.contact_name, phone: request.phone_number,
+      address: `${request.street_house_number}, ${request.postal_code} ${request.city}`,
+      equipment: label("equipment_kind", request.equipment_kind), service: label("service_kind", request.service_kind),
+      priority: request.priority, description: request.description ? request.description.slice(0, 280) : null, waitingParts: request.work_status === "waiting_parts",
+    };
+  };
   const loadedAt = Date.now();
   const readableBySlot = new Map(readable.map((visit) => [`${visit.technician_id}|${new Date(visit.scheduled_start).getTime()}|${new Date(visit.scheduled_end).getTime()}`, visit]));
 
@@ -145,6 +172,8 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
         requestId: visit?.request_id ?? null,
         requestNumber: visit ? numberOf.get(visit.request_id) ?? null : null,
         unread: visit ? unread.get(visit.request_id)?.count ?? 0 : 0,
+        automation: visit ? automation.get(visit.request_id) : undefined,
+        visit: visit ? visitInfo(visit) : undefined,
         change: visit ? changeByVisit.get(visit.id) : undefined,
         move: visit && visit.status === "scheduled" && Date.parse(visit.scheduled_start) > loadedAt && versionOf.has(visit.request_id)
           ? { visitId: visit.id, version: versionOf.get(visit.request_id) as number }
@@ -160,9 +189,11 @@ export async function loadPlanningDays(employee: Employee, days: string[], reque
       move: null,
       hold: holdInfo(hold),
       unread: unread.get(hold.request_id)?.count ?? 0,
+      automation: automation.get(hold.request_id),
     }))),
     queue: queueRows,
     unread: Object.fromEntries(unread),
+    automation: Object.fromEntries(automation),
     changes: (changeRows?.data ?? []).map((row): PlanningChangeRow => {
       const request = row.requests as unknown as { request_number: string | null; company_name: string | null };
       return { id: row.id, requestId: row.request_id, requestNumber: request.request_number, company: request.company_name, state: row.status as ChangeState,

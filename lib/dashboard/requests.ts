@@ -4,7 +4,7 @@ import { normalizeContractNumber } from "@/lib/service-contract";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import type { EmployeeRole } from "@/lib/auth/roles";
-import { REQUEST_DISPLAY_STATUSES, requestStatusFilter } from "@/lib/display-status";
+import { REQUEST_DISPLAY_STATUSES, requestStatusFilter, type AutomationReason } from "@/lib/display-status";
 import { parseSort, sortParam, type RequestSort } from "@/lib/request-sort";
 import type { ReminderState } from "@/lib/reminders";
 import type { UnreadInfo } from "./unread";
@@ -170,6 +170,14 @@ export async function unreadMessages(requestIds: string[]): Promise<Map<string, 
   const supabase = await createClient();
   const { data } = await supabase.from("request_unread_messages").select("request_id, unread_count, latest_at").in("request_id", requestIds);
   return new Map((data ?? []).filter((row) => row.request_id && row.unread_count).map((row) => [row.request_id as string, { count: row.unread_count as number, latestAt: row.latest_at }]));
+}
+
+// Requests the automation works on right now (task-24-1), within the user's rights
+export async function automationPending(requestIds: string[]): Promise<Map<string, AutomationReason>> {
+  if (requestIds.length === 0) return new Map();
+  const supabase = await createClient();
+  const { data } = await supabase.from("request_automation_pending").select("request_id, reason").in("request_id", requestIds);
+  return new Map((data ?? []).filter((row) => row.request_id).map((row) => [row.request_id as string, row.reason === "analyse" ? "analyse" : "antwort"]));
 }
 
 // Requests with unread customer messages (task-20-14), within the user's rights

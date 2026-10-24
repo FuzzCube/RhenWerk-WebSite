@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 30,
+  "roadmapVersion": 31,
   "status": "active",
   "phases": [
     {
@@ -4979,6 +4979,94 @@
               "npm run build"
             ],
             "checkedAt": "2026-10-24T13:31:58.331Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-24",
+      "title": "Automatisierung sichtbar, Plantafel-Details",
+      "description": "Vom Nutzer nach dem Live-Test beauftragt: laufende Automatisierung anzeigen, Kundennummer im KI-Entwurf korrigieren, Plantafel-Blöcke nur mit Nummer und Details in der Leiste.",
+      "order": 25,
+      "weight": 7,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-24-1",
+          "title": "Anzeige „KI arbeitet …“ bei laufender Automatisierung",
+          "description": "Drehender Kreis neben dem Status auf Anfrage-Seite, in der Liste und auf der Plantafel, solange eine neue Anfrage analysiert wird oder eine Kundenantwort auf Workflow 13/14 wartet (höchstens 15 Minuten).",
+          "order": 1,
+          "weight": 3,
+          "status": "completed",
+          "dependsOn": [],
+          "definitionOfDone": [
+            "Datenquelle: Anfrage in Analyse oder Kundenantwort ohne Lauf visit_reply/reply_assist und ohne Antwort, höchstens 15 Minuten alt; RLS bleibt.",
+            "Anzeige mit drehendem Kreis im Seitenstil an Anfrage-Seite, Anfragenliste und Plantafel; reduzierte Bewegung respektiert.",
+            "Verschwindet über den gemeinsamen Abruf ohne Neuladen.",
+            "test:ui/test:notifications, lint/typecheck grün."
+          ],
+          "startedAt": "2026-10-24T14:48:55.457Z",
+          "completedAt": "2026-10-24T15:10:46.872Z",
+          "verification": {
+            "status": "passed",
+            "summary": "Migration 20261024000500: View request_automation_pending (Besitzerrechte, can_access_request, nur Dispo/Manager/Admin): Anfrage new/analyzing höchstens 15 Minuten, oder Kundenantwort (nicht Demo, nach Erstbearbeitung) ohne Lauf reply_assist, ohne abschließendes Ergebnis von Workflow 13, ohne Antwort einer Person, keine Bounce/Abwesenheit, höchstens 15 Minuten. Anzeige AutomationBusy (blauer Chip mit drehendem Ring, KI arbeitet …, reduzierte Bewegung) neben dem Status auf der Anfrage-Seite, in der Anfragenliste und an „Zu planen“-Karten; Ring am Block der Plantafel. Die View fließt in die Revision des gemeinsamen Abrufs, die Anzeige kommt und geht ohne Neuladen. Geprüft: pgTAP automation_pending (9), gesamte test:db bestanden, test:notifications alle bestanden (neu: Anzeige während Analyse, verschwindet ohne Neuladen, keine Anzeige in der Liste ohne Lauf), test:ui 476 bestanden, lint, typecheck, build gegen next start 3117.",
+            "commands": [
+              "npx supabase test db",
+              "APP_URL=http://localhost:3117 npm run test:notifications",
+              "APP_URL=http://localhost:3117 npm run test:ui",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build"
+            ],
+            "checkedAt": "2026-10-24T15:10:46.872Z"
+          }
+        },
+        {
+          "id": "task-24-2",
+          "title": "Kundennummer im KI-Antwortentwurf nur einmal und richtig",
+          "description": "Die Datenbank entfernt Kundennummer-Zeilen aus dem KI-Text und setzt den eigenen Hinweis; der Prompt verbietet erfundene Nummern.",
+          "order": 2,
+          "weight": 1,
+          "status": "in_progress",
+          "dependsOn": [
+            "task-24-1"
+          ],
+          "definitionOfDone": [
+            "Migration: save_reply_assist entfernt Zeilen mit Kundennummer aus dem KI-Text vor dem eigenen Hinweis.",
+            "Prompt: keine Kunden-, Anfrage- oder Rechnungsnummern außer aus den Fakten.",
+            "pgTAP-Test; Migration und Workflow auf dem VPS."
+          ],
+          "startedAt": "2026-10-24T15:10:46.916Z",
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-24-3",
+          "title": "Plantafel: Block nur mit Nummer, Einsatzdetails in der Leiste",
+          "description": "Block zeigt nur die Anfragenummer; Klick auf einen Einsatz zeigt rechts Zeit, Techniker, Firma, Ansprechpartner, Telefon, Adresse, Anlage, Leistung, Priorität, Status und Beschreibung mit „Anfrage öffnen“.",
+          "order": 3,
+          "weight": 3,
+          "status": "planned",
+          "dependsOn": [
+            "task-24-2"
+          ],
+          "definitionOfDone": [
+            "Block nur mit Anfragenummer; ungelesen und Verschiebewunsch bleiben als Zeichen.",
+            "Klick auf jeden lesbaren Einsatz (auch vergangen/laufend) zeigt die Karte „Einsatz“ in der Leiste; Ziehen und Länge ändern bleiben.",
+            "Prüfung 390/768/1440; test:ui, lint/typecheck grün."
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
           }
         }
       ]

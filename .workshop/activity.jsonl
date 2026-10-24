@@ -553,3 +553,8 @@
 {"timestamp":"2026-10-24T13:31:58.331Z","type":"verification_passed","taskId":"task-23-2","summary":"test:notifications und test:ui 476 bestanden; Navigation mit Punkten, Anfrage beim Öffnen gelesen."}
 {"timestamp":"2026-10-24T13:31:58.331Z","type":"task_completed","taskId":"task-23-2","summary":"Navigation nur mit Farbpunkt, Anfrage beim Öffnen gelesen"}
 {"timestamp":"2026-10-24T13:31:58.331Z","type":"phase_completed","summary":"phase-23 abgeschlossen."}
+{"timestamp":"2026-10-24T14:48:55.457Z","type":"roadmap_updated","summary":"phase-24 mit task-24-1 bis 24-3 ergänzt (Nutzerwunsch nach Live-Test)."}
+{"timestamp":"2026-10-24T14:48:55.457Z","type":"task_started","taskId":"task-24-1","summary":"Anzeige KI arbeitet bei laufender Automatisierung."}
+{"timestamp":"2026-10-24T15:10:46.872Z","type":"verification_passed","taskId":"task-24-1","summary":"test:db, test:notifications, test:ui 476 bestanden; KI arbeitet sichtbar."}
+{"timestamp":"2026-10-24T15:10:46.872Z","type":"task_completed","taskId":"task-24-1","summary":"Anzeige „KI arbeitet …“ bei laufender Automatisierung"}
+{"timestamp":"2026-10-24T15:10:46.916Z","type":"task_started","taskId":"task-24-2","summary":"Kundennummer im KI-Entwurf nur einmal und richtig."}

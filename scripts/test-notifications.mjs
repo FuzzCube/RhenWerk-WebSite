@@ -316,6 +316,17 @@ try {
   await poll();
   check("Behobener Versandfehler: Marke verschwindet", await page.until(`${badge("Versandfehler")} === 0`, 27000));
 
+  // task-24-1: "KI arbeitet …" while the analysis runs, gone with the next poll once it is done, without reload.
+  const analysing = await newRequest("website_form", { intake_status: "analyzing" });
+  await page.open(`${BASE}/dashboard/anfragen/${analysing.id}`);
+  check("KI arbeitet: Anzeige neben dem Status während der Analyse", await page.until(`!!document.querySelector('.badge-row [data-automation="analyse"]')`, 8000));
+  await page.eval("window.__busyProbe = 'kept'");
+  must(await admin.from("requests").update({ intake_status: "needs_review" }).eq("id", analysing.id));
+  await poll();
+  check("KI arbeitet: verschwindet nach der Analyse ohne Neuladen", await page.until(`!document.querySelector('[data-automation]') && window.__busyProbe === 'kept'`, 27000));
+  await page.open(`${BASE}/dashboard/anfragen?ansicht=alle&suche=Notification`);
+  check("KI arbeitet: keine Anzeige ohne laufende Automatisierung in der Liste", await page.eval("!document.querySelector('[data-automation]')"));
+
   // Role/assignment data boundaries with actual Supabase identities.
   const foreign = await newRequest("website_form", { dispatcher_id: null });
   const foreignMail = must(await admin.from("messages").insert({ direction: "incoming", kind: "customer_reply", status: "received", subject: "Fremd", body_text: "Fremd", request_id: foreign.id, from_address: "foreign@example.com", received_at: new Date().toISOString() }).select().single()); messages.push(foreignMail.id);
