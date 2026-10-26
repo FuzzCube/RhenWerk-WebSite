@@ -18,7 +18,7 @@ services:
   db:
     <<: *restart
     container_name: supabase_db_rheinwerk
-    image: supabase/postgres:17.11.0.005
+    image: supabase/postgres:17.11.0.007
     mem_limit: 1g
     volumes:
       - ./supabase/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:ro
