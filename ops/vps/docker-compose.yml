@@ -143,7 +143,7 @@ services:
   rest:
     <<: *restart
     container_name: supabase_rest_rheinwerk
-    image: postgrest/postgrest:v16.4
+    image: postgrest/postgrest:v16.5
     mem_limit: 256m
     depends_on:
       db:
