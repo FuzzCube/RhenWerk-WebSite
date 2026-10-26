@@ -5304,7 +5304,7 @@
       "description": "Vom Nutzer gewünscht: Updates des Servers ohne GitHub-Bedienung. Kleine Image-Updates kommen gesammelt, werden nach grünen Prüfungen automatisch gemergt und ausgerollt; eine E-Mail meldet „Update bereit“, eingespielt wird mit „Update einspielen“.",
       "order": 30,
       "weight": 2,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-29-1",
@@ -5312,7 +5312,7 @@
           "description": "Dependabot fasst Minor/Patch-Updates von ops/vps/docker-compose.yml zu einem PR zusammen; CI mergt ihn nach grünen Prüfungen und startet das Deployment; nach dem Deployment meldet eine E-Mail einmal je Versionsstand „Update bereit“. Hauptversionen bleiben manuell.",
           "order": 1,
           "weight": 2,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-28-1"
           ],
@@ -5324,12 +5324,19 @@
             "docs/betrieb.md Abschnitt 6 beschreibt den neuen Ablauf; lint, typecheck, test:unit grün."
           ],
           "startedAt": "2026-10-26T22:17:28.946Z",
-          "completedAt": null,
+          "completedAt": "2026-10-26T22:27:47.939Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "dependabot.yml: Gruppe server-minor-patch für docker-compose. ci.yml: Job „Server-Update mergen“ (nur Dependabot, docker_compose, keine Hauptversion) mergt per gh und startet ci.yml per workflow_dispatch; deploy läuft auch bei workflow_dispatch auf main. versions-report.mjs schickt nach jedem Versionslauf auf dem Server einmal je Versionsstand „Systemupdate bereit“ (Merker update-ready.txt). Live geprüft: Dependabot ersetzte #14/#15 durch Gruppen-PR #17, Prüfungen grün, Job mergte #17 selbst, Deployment per workflow_dispatch erfolgreich; Merker auf dem VPS db:17.11.0.007,kong:v1.40.1,rest:v16.5,storage:v1.84.23 (E-Mail versendet, Zustellung nicht im Postfach geprüft). update-run.mjs unverändert. lint, typecheck, test:unit (160) grün. „Update einspielen“ selbst nicht ausgelöst (Nutzerschritt).",
+            "commands": [
+              "npm run lint",
+              "npm run typecheck",
+              "npm run test:unit",
+              "npx yaml valid (ci.yml, dependabot.yml)",
+              "gh run watch (push 4d08764, workflow_dispatch nach #17)",
+              "cat /opt/rheinwerk/state/update-ready.txt (VPS)"
+            ],
+            "checkedAt": "2026-10-26T22:27:47.939Z"
           }
         }
       ]

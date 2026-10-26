@@ -4,23 +4,23 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v35, 29 Phasen, 151 Tasks (ohne ersetzte). Alle 151 Tasks abgeschlossen, Gewicht 341/341, Fortschritt 100 %. Letzter Abschluss `task-28-1`: Homepage als Startseite des VPS. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v36, 30 Phasen, 152 Tasks (ohne ersetzte). Alle 152 Tasks abgeschlossen, Gewicht 343/343, Fortschritt 100 %. Letzter Abschluss `task-29-1`: Server-Updates ohne GitHub-Bedienung. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Letzter Abschluss: Startseite für den Server (phase-28)
+## Letzter Abschluss: Systemupdates mit einem Klick (phase-29)
+
+`task-29-1`: Dependabot sammelt Minor/Patch der Server-Images in einem PR, CI mergt ihn nach grünen Prüfungen selbst und startet das Deployment (workflow_dispatch); danach E-Mail „Systemupdate bereit“ einmal je Versionsstand. Betreiber drückt nur „Update einspielen“. Hauptversionen und npm-PRs bleiben manuell. Live geprüft mit PR #17. Offen: „Update einspielen“ für db/kong/rest/storage durch den Nutzer. Einzelheiten `docs/betrieb.md` 6.
+
+## Davor: Startseite für den Server (phase-28)
 
 `task-28-1`: Homepage v2.7.0 und docker-socket-proxy (nur lesend) im Stack `/opt/monitoring` laufen, Konfiguration in `ops/monitoring/homepage/`, Kuma-Statusseite `vps` angelegt; Containerstatus, Kuma- und Beszel-Widget lokal geprüft. `https://home.rheinwerk-service.online` hinter Cloudflare Access (Tunnel `vps-monitoring`). Einzelheiten `docs/betrieb.md` 3.11.
 
-## Davor: Hinweise mit Animation (phase-27)
-
-`task-27-1`: Hinweise unten rechts mit `sonner` (Einfahren unten, Aufrücken, weiches Ausblenden, Wischen); Logik bleibt in `DashboardUpdates`. Dabei behoben: `sr-only`-Texte der Navigationspunkte machten Dashboard-Seiten auf dem Handy 1014 px breit.
-
 ## Letzte drei abgeschlossene Tasks
 
+- `task-29-1` (26.10.2026): Server-Updates automatisch gemergt, E-Mail „Systemupdate bereit“.
 - `task-28-1` (26.10.2026): Homepage mit lesendem Docker-Status, Kuma- und Beszel-Widget.
 - `task-27-1` (24.10.2026): Hinweise mit Sonner animiert, Handy-Seitenbreite behoben.
-- `task-26-3` (24.10.2026): „KI arbeitet …“ mit 5-s-Abruf, automatische Mails gekennzeichnet.
 
 ## Arbeitsregeln
 
