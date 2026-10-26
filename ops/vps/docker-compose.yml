@@ -207,7 +207,7 @@ services:
     <<: *restart
     profiles: [studio]
     container_name: supabase_studio_rheinwerk
-    image: supabase/studio:2026.10.12-sha-3699278
+    image: supabase/studio:2026.10.19-sha-b375769
     mem_limit: 512m
     depends_on: [meta]
     ports:
