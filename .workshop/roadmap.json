@@ -5283,7 +5283,7 @@
           "completedAt": "2026-10-26T21:32:52.174Z",
           "verification": {
             "status": "passed",
-            "summary": "Homepage v2.7.0 und docker-socket-proxy v0.5.0 im Stack monitoring, beide healthy/up; nur 127.0.0.1:13002 bzw. 12375, Speicher ca. 110/24 MiB. Proxy: POST-Neustart und /images liefern 403. Fremder Host-Header 400. API: Containerstatus 18 Einträge, alle running; Beszel-Widget liefert systems, Kuma-Widget liefert Statusseite vps mit 7 Prüfungen. bootstrap.mjs auf dem VPS erneut ausgeführt, docker compose config ok. Projektcontainer nicht neu gestartet (Up 2–4 Tage). Nutzer hat home. im Tunnel vps-monitoring und in der Access-Anwendung eingetragen; anonymer HTTPS-Aufruf von home. liefert 302 zur Access-Anmeldung (wie monitor./uptime.). Die Seite nach Anmeldung wurde nicht per Browser geprüft (keine Browser-Automation).",
+            "summary": "Homepage v2.7.0 und docker-socket-proxy v0.5.0 im Stack monitoring, beide healthy/up; nur 127.0.0.1:13002 bzw. 12375, Speicher ca. 110/24 MiB. Proxy: POST-Neustart und /images liefern 403. Fremder Host-Header 400. API: Containerstatus 18 Einträge, alle running; Beszel-Widget liefert systems, Kuma-Widget liefert Statusseite vps mit 7 Prüfungen. bootstrap.mjs auf dem VPS erneut ausgeführt, docker compose config ok. Projektcontainer nicht neu gestartet (Up 2–4 Tage). Route zuerst im falschen Tunnel rheinwerk-vps (502); nach Umzug in vps-monitoring fehlte home. kurz in der Access-Anwendung (anonym 200), Homepage sofort gestoppt. Nach Korrektur durch den Nutzer liefern /, Docker-Status-API und Proxy-API anonym 302 zur Access-Anmeldung; Homepage wieder gestartet. Die Seite nach Anmeldung wurde nicht per Browser geprüft (keine Browser-Automation).",
             "commands": [
               "node --check ops/monitoring/bootstrap.mjs",
               "cd /opt/monitoring && node --env-file=/opt/rheinwerk/ops.env bootstrap.mjs (VPS)",
@@ -5293,7 +5293,7 @@
               "curl -X POST 127.0.0.1:12375/containers/…/restart (VPS, 403)",
               "curl https://home.rheinwerk-service.online/ (302)"
             ],
-            "checkedAt": "2026-10-26T21:32:52.174Z"
+            "checkedAt": "2026-10-26T21:48:32.015Z"
           }
         }
       ]

@@ -592,3 +592,4 @@
 {"timestamp":"2026-10-26T21:32:52.174Z","type":"verification_passed","taskId":"task-28-1","summary":"Homepage und lesender Docker-Proxy laufen, Widgets und Containerstatus geprüft, home. anonym 302 zu Cloudflare Access."}
 {"timestamp":"2026-10-26T21:32:52.174Z","type":"task_completed","taskId":"task-28-1","summary":"Homepage mit Docker-Status auf dem VPS"}
 {"timestamp":"2026-10-26T21:32:52.174Z","type":"phase_completed","summary":"phase-28 abgeschlossen."}
+{"timestamp":"2026-10-26T21:48:32.015Z","type":"verification_passed","taskId":"task-28-1","summary":"Nachprüfung: home. war nach Routenumzug kurz ohne Access erreichbar, Homepage gestoppt; nach Korrektur anonym 302, Homepage wieder gestartet."}
