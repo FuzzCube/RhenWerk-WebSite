@@ -143,7 +143,7 @@ services:
   rest:
     <<: *restart
     container_name: supabase_rest_rheinwerk
-    image: postgrest/postgrest:v16.4
+    image: postgrest/postgrest:v16.5
     mem_limit: 256m
     depends_on:
       db:
@@ -169,7 +169,7 @@ services:
   storage:
     <<: *restart
     container_name: supabase_storage_rheinwerk
-    image: supabase/storage-api:v1.84.19
+    image: supabase/storage-api:v1.84.23
     mem_limit: 384m
     depends_on:
       db:
@@ -207,7 +207,7 @@ services:
     <<: *restart
     profiles: [studio]
     container_name: supabase_studio_rheinwerk
-    image: supabase/studio:2026.10.12-sha-3699278
+    image: supabase/studio:2026.10.19-sha-b375769
     mem_limit: 512m
     depends_on: [meta]
     ports:
