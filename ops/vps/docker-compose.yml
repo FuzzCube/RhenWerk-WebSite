@@ -169,7 +169,7 @@ services:
   storage:
     <<: *restart
     container_name: supabase_storage_rheinwerk
-    image: supabase/storage-api:v1.84.1
+    image: supabase/storage-api:v1.84.19
     mem_limit: 384m
     depends_on:
       db:
