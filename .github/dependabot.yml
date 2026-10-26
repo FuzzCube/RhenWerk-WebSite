@@ -17,6 +17,11 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # Minor/Patch aller Server-Images in einem PR, den CI nach grünen Prüfungen selbst mergt (task-29-1);
+    # Hauptversionen kommen einzeln und werden von Hand gemergt
+    groups:
+      server-minor-patch:
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule:

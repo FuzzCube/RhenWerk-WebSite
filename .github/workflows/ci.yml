@@ -1,7 +1,9 @@
 # Prüfung und Deployment (task-18-5, docs/betrieb.md 3.8)
 #   Pull Request und Push: lint, typecheck, test:unit, build
-#   Push auf main, nur wenn alles grün ist: Sicherung und neue Migrationen auf dem VPS (ops/vps/migrate.sh über einen
-#   SSH-Schlüssel, der nur dieses Skript ausführen darf), danach Deployment auf Vercel. Vercel baut Pushes nicht mehr
+#   Dependabot-PR für Server-Images (Minor/Patch, task-29-1): nach grünen Prüfungen selbst mergen und das Deployment
+#   per workflow_dispatch starten (ein Merge mit GITHUB_TOKEN löst keinen Push-Lauf aus)
+#   Push oder manueller Lauf auf main, nur wenn alles grün ist: Sicherung und neue Migrationen auf dem VPS
+#   (ops/vps/migrate.sh über einen SSH-Schlüssel, der nur dieses Skript ausführen darf), danach Deployment auf Vercel. Vercel baut Pushes nicht mehr
 #   selbst (vercel.json git.deploymentEnabled).
 # Geheimnisse im Repository: VPS_HOST, VPS_KNOWN_HOSTS, VPS_SSH_KEY, VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 name: CI
@@ -37,10 +39,33 @@ jobs:
       - run: npm run test:unit
       - run: npm run build
 
+  automerge:
+    name: Server-Update mergen
+    needs: checks
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@v3.1.0
+      - name: Mergen und Deployment starten
+        if: steps.meta.outputs.package-ecosystem == 'docker_compose' && steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge "$PR_URL" --squash --delete-branch
+          gh workflow run ci.yml --ref main
+
   deploy:
     name: Migrationen und Deployment
     needs: checks
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:

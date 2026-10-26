@@ -174,3 +174,21 @@ export function versionRows(raw) {
   }
   return rows;
 }
+
+// E-mail "Update bereit" (task-29-1): once per version state of the row "Images (Server)". key identifies the state
+// (null: nothing pending, the remembered key is dropped); mail only when the key differs from the last one sent.
+export function updateReadyMail(rows, lastKey) {
+  const items = rows.find((row) => row.key === "server_images")?.items ?? [];
+  if (!items.length) return { key: null, mail: null };
+  const key = items.map((item) => `${item.name}:${item.latest}`).sort().join(",");
+  if (key === lastKey) return { key, mail: null };
+  const list = items.map((item) => `${item.name} ${item.current} → ${item.latest}`);
+  return {
+    key,
+    mail: {
+      subject: `Systemupdate bereit: ${list.join(", ")}`,
+      text: `Neue Versionen liegen auf dem Server und warten auf das Einspielen:\n\n${list.map((line) => `- ${line}`).join("\n")}\n\n`
+        + "Dashboard → System → Systemversionen → „Update einspielen“. Vorher wird gesichert, danach geprüft; bei einem Fehler läuft automatisch der Stand von vorher.",
+    },
+  };
+}

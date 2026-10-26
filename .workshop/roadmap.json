@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 35,
+  "roadmapVersion": 36,
   "status": "active",
   "phases": [
     {
@@ -5294,6 +5294,42 @@
               "curl https://home.rheinwerk-service.online/ (302)"
             ],
             "checkedAt": "2026-10-26T21:48:32.015Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-29",
+      "title": "Systemupdates mit einem Klick",
+      "description": "Vom Nutzer gewünscht: Updates des Servers ohne GitHub-Bedienung. Kleine Image-Updates kommen gesammelt, werden nach grünen Prüfungen automatisch gemergt und ausgerollt; eine E-Mail meldet „Update bereit“, eingespielt wird mit „Update einspielen“.",
+      "order": 30,
+      "weight": 2,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-29-1",
+          "title": "Dependabot-Server-Updates automatisch mergen, E-Mail bei „Update bereit“",
+          "description": "Dependabot fasst Minor/Patch-Updates von ops/vps/docker-compose.yml zu einem PR zusammen; CI mergt ihn nach grünen Prüfungen und startet das Deployment; nach dem Deployment meldet eine E-Mail einmal je Versionsstand „Update bereit“. Hauptversionen bleiben manuell.",
+          "order": 1,
+          "weight": 2,
+          "status": "in_progress",
+          "dependsOn": [
+            "task-28-1"
+          ],
+          "definitionOfDone": [
+            "dependabot.yml gruppiert Minor/Patch der Server-Images in einem PR, Hauptversionen einzeln.",
+            "CI-Job mergt nur Dependabot-PRs für docker_compose ohne Hauptversion nach grünen Prüfungen und startet das Deployment auf main.",
+            "Nach dem Deployment E-Mail „Systemupdate bereit“ einmal je Versionsstand, mit Unit-Test.",
+            "Bestehende Sicherung, Selbsttest und Rückfall von „Update einspielen“ unverändert.",
+            "docs/betrieb.md Abschnitt 6 beschreibt den neuen Ablauf; lint, typecheck, test:unit grün."
+          ],
+          "startedAt": "2026-10-26T22:17:28.946Z",
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
           }
         }
       ]

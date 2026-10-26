@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { imageChanges, imageUpdateActive, imageUpdateStatus } from "../../lib/backups.ts";
 import { diffImages, overrideYaml } from "../../scripts/ops/images.mjs";
-import { versionRows } from "../../scripts/ops/versions.mjs";
+import { updateReadyMail, versionRows } from "../../scripts/ops/versions.mjs";
 
 const services = [
   { service: "db", image: "supabase/postgres:17.11.0.005", container: "supabase_db_rheinwerk" },
@@ -54,4 +54,18 @@ test("Verlauf der Systemupdates", () => {
   assert.equal(imageUpdateStatus(row({ status: "rolled_back", error: "x" }), now).label, "Fehlgeschlagen, Stand von vorher läuft");
   assert.equal(imageChanges(row({ changes: [{ service: "n8n", from: "2.40.7", to: "2.44.4" }] })), "n8n 2.40.7 → 2.44.4");
   assert.equal(imageChanges(row()), "–");
+});
+
+test("E-Mail „Update bereit“ einmal je Versionsstand (task-29-1)", () => {
+  const rows = (items) => [{ key: "n8n" }, { key: "server_images", items }];
+  const ready = [{ name: "kong", current: "v1.40.0", latest: "v1.40.1" }, { name: "db", current: "17.11.0.005", latest: "17.11.0.007" }];
+  const first = updateReadyMail(rows(ready), null);
+  assert.equal(first.key, "db:17.11.0.007,kong:v1.40.1");
+  assert.equal(first.mail.subject, "Systemupdate bereit: kong v1.40.0 → v1.40.1, db 17.11.0.005 → 17.11.0.007");
+  assert.match(first.mail.text, /„Update einspielen“/);
+  assert.deepEqual(updateReadyMail(rows([...ready].reverse()), first.key), { key: first.key, mail: null });
+  const newer = updateReadyMail(rows([{ ...ready[0], latest: "v1.40.2" }, ready[1]]), first.key);
+  assert.ok(newer.mail);
+  assert.deepEqual(updateReadyMail(rows([]), first.key), { key: null, mail: null });
+  assert.deepEqual(updateReadyMail([{ key: "npm" }], null), { key: null, mail: null });
 });
