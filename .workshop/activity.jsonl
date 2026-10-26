@@ -587,3 +587,5 @@
 {"timestamp":"2026-10-24T18:44:59.256Z","type":"verification_passed","taskId":"task-27-1","summary":"Hinweise des gemeinsamen Abrufs werden mit sonner 2.0.8 angezeigt (toast.custom mit unserer Karte .dash-notice, data-notification-id bleibt): unten rechts über der Aktualisierungsleiste (rechts 20 px,"}
 {"timestamp":"2026-10-24T18:44:59.256Z","type":"task_completed","taskId":"task-27-1","summary":"Hinweise mit Sonner: Einfahren, Aufrücken, weiches Ausblenden"}
 {"timestamp":"2026-10-24T18:44:59.256Z","type":"phase_completed","summary":"phase-27 abgeschlossen."}
+{"timestamp":"2026-10-26T20:54:09.710Z","type":"roadmap_updated","summary":"phase-28 mit task-28-1 ergänzt (Homepage als Startseite des VPS, Nutzerwunsch). Roadmap v35."}
+{"timestamp":"2026-10-26T20:54:09.710Z","type":"task_started","taskId":"task-28-1","summary":"Homepage mit Docker-Status auf dem VPS."}

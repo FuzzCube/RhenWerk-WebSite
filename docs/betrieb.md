@@ -287,6 +287,18 @@ Auf ausdrücklichen Nutzerauftrag unter `/opt/monitoring`, eigenes Compose-Proje
 
 Die tägliche Anbieter-Sicherung umfasst auch den Monitoring-Stack auf dem Systemdisk; die anwendungseigene RheinWerk-Sicherung enthält ihn nicht. Für gezielte portable Sicherungen die beiden Monitoring-Dienste kurz stoppen, `/opt/monitoring` verschlüsselt außerhalb des VPS sichern und wieder starten (enthält SMTP-Passwörter). Kein Ausfall der bestehenden Projekte für einen Alarmtest ausgelöst. Vollständiger VPS-Ausfall braucht einen externen Prüfer, da lokales Kuma dann ebenfalls ausfällt.
 
+### 3.11 Startseite mit Homepage (task-28-1, 26.10.2026)
+
+[Homepage](https://gethomepage.dev) v2.7.0 im Stack `monitoring` als eine Startseite für alle Dienste des VPS: Links zu Website, n8n, Beszel und Kuma, Status (läuft/healthy) aller Container der drei Projekte, Widgets für Uptime Kuma (Statusseite `vps` mit allen sieben Prüfungen) und Beszel (CPU, RAM, Datenträger, Netz), oben CPU, RAM und Datenträger des Servers. Nur Anzeige; über die Seite lässt sich nichts starten oder stoppen.
+
+- **Docker nur lesend:** Homepage bekommt keinen `docker.sock`, sondern spricht mit `tecnativa/docker-socket-proxy:v0.5.0` auf `127.0.0.1:12375`. Erlaubt sind nur Container-Liste, Status und Statistik (`CONTAINERS=1`, `POST=0`); Neustart per POST und andere Bereiche wie Images liefern 403.
+- Homepage im Host-Netz, bindet nur `127.0.0.1:13002` (erreicht so Kuma `13001` und Beszel `18090`). `HOMEPAGE_ALLOWED_HOSTS` erlaubt nur `home.rheinwerk-service.online` und `127.0.0.1:13002`, andere Host-Header liefern 400. Speichergrenzen Homepage 256 MiB (im Betrieb ca. 110 MiB), Proxy 64 MiB.
+- **Konfiguration** im Repository unter `ops/monitoring/homepage/` (`services.yaml`, `widgets.yaml`, `settings.yaml`, `docker.yaml`, `bookmarks.yaml`), auf dem Server unter `/opt/monitoring/homepage/`. Neue Container dort in `services.yaml` mit `server: vps` und `container: <name>` eintragen, Datei kopieren; Homepage liest Änderungen ohne Neustart. Fehlende Dateien (z. B. `kubernetes.yaml`) und `logs/` legt Homepage selbst an.
+- **Zugangsdaten:** Das Beszel-Widget braucht den Superuser; `bootstrap.mjs` schreibt ihn aus `access.json` als `HOMEPAGE_VAR_BESZEL_EMAIL`/`HOMEPAGE_VAR_BESZEL_PASSWORD` in `/opt/monitoring/.env` und legt einmalig die Kuma-Statusseite `vps` an (Merker `kumaStatusPage` in `access.json`). Die Statusseite ist ohne Anmeldung nur auf `127.0.0.1` lesbar, von außen hinter Cloudflare Access.
+- **Starten:** `cd /opt/monitoring && docker compose up -d socket-proxy homepage` (startet nur diese beiden).
+- **Zugang von außen** (Schritt des Nutzers in Cloudflare): im Tunnel `vps-monitoring` Public Hostname `home.rheinwerk-service.online` → HTTP `127.0.0.1:13002`; den Hostnamen in die bestehende Access-Anwendung für `monitor.`/`uptime.` aufnehmen (gleiche Allow-Regel, kein Bypass). Anonymer Aufruf muss 302 zur Access-Anmeldung liefern. Über SSH: `ssh -N -L 13002:127.0.0.1:13002 vps`, dann `http://127.0.0.1:13002`.
+- **Rückweg:** `docker compose stop homepage socket-proxy`; die übrigen Monitoring-Dienste und Projekte laufen weiter.
+
 ## 4. Datensicherung
 
 **Seit 22.10.2026 auf dem VPS (task-18-6).** Die Abschnitte 4.1 bis 4.3 gelten unverändert (dieselben Skripte); Unterschiede auf dem Server:

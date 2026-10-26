@@ -4,9 +4,13 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v34, 28 Phasen, 150 Tasks (ohne ersetzte). Alle 150 Tasks abgeschlossen, Gewicht 339/339, Fortschritt 100 %. Letzter Abschluss `task-27-1`: Hinweise mit Sonner animiert. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v35, 29 Phasen, 151 Tasks (ohne ersetzte). 150 abgeschlossen, Gewicht 339/341. In Arbeit: `task-28-1` Homepage als Startseite des VPS. Letzter Abschluss `task-27-1`: Hinweise mit Sonner animiert. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
+
+## In Arbeit: Startseite für den Server (phase-28)
+
+`task-28-1`: Homepage v2.7.0 und docker-socket-proxy (nur lesend) im Stack `/opt/monitoring` laufen, Konfiguration in `ops/monitoring/homepage/`, Kuma-Statusseite `vps` angelegt; Containerstatus, Kuma- und Beszel-Widget lokal geprüft. Offen: Nutzer trägt `home.rheinwerk-service.online` im Tunnel `vps-monitoring` und in Cloudflare Access ein, danach anonymer Aufruf 302 prüfen und Task abschließen. Einzelheiten `docs/betrieb.md` 3.11.
 
 ## Letzter Abschluss: Hinweise mit Animation (phase-27)
 
@@ -48,6 +52,6 @@ Hinweis des Nutzers zur Kundennummer K-20181 (RIS-2026-02771) war ein Irrtum; Ma
 
 ## Nächster Schritt
 
-Keine offenen/startbaren Tasks; Stand auf origin/main und dem VPS.  Keine weiteren Aufgaben automatisch beginnen.
+`task-28-1` abschließen, sobald der Cloudflare-Schritt des Nutzers erledigt und geprüft ist. Keine weiteren Aufgaben automatisch beginnen.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 34,
+  "roadmapVersion": 35,
   "status": "active",
   "phases": [
     {
@@ -5250,6 +5250,42 @@
               "Sichtprüfung 390/768/1440 (headless Chrome)"
             ],
             "checkedAt": "2026-10-24T18:44:59.256Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-28",
+      "title": "Startseite für den Server",
+      "description": "Vom Nutzer gewünscht: Homepage (gethomepage.dev) als eine geschützte Startseite für alle Dienste und Container des VPS, ergänzend zu Beszel und Uptime Kuma.",
+      "order": 29,
+      "weight": 2,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-28-1",
+          "title": "Homepage mit Docker-Status auf dem VPS",
+          "description": "Homepage im Monitoring-Stack: Links und Containerstatus aller drei Projekte, Widgets für Uptime Kuma und Beszel; Docker nur lesend über docker-socket-proxy; Zugang über den Tunnel vps-monitoring hinter Cloudflare Access.",
+          "order": 1,
+          "weight": 2,
+          "status": "in_progress",
+          "dependsOn": [
+            "task-21-1"
+          ],
+          "definitionOfDone": [
+            "Homepage und docker-socket-proxy mit festen Versionen, Speichergrenzen und nur Loopback-Ports im Stack monitoring; Proxy ohne POST.",
+            "Konfiguration im Repository unter ops/monitoring/homepage/, Zugangsdaten nur in /opt/monitoring/.env.",
+            "Startseite zeigt Containerstatus aller drei Projekte sowie Kuma- und Beszel-Widget.",
+            "home.rheinwerk-service.online nur über Cloudflare Access erreichbar (anonym 302).",
+            "Bestehende Projektcontainer nicht neu gestartet; Betrieb und Rückweg in docs/betrieb.md dokumentiert."
+          ],
+          "startedAt": "2026-10-26T20:54:09.710Z",
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
           }
         }
       ]

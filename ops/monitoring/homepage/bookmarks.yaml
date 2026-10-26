@@ -1,0 +1,13 @@
+- Verwaltung:
+    - Cloudflare Zero Trust:
+        - icon: cloudflare.png
+          href: https://one.dash.cloudflare.com
+    - OVHcloud:
+        - icon: ovh.png
+          href: https://www.ovh.com/manager/
+    - Vercel:
+        - icon: vercel.png
+          href: https://vercel.com/dashboard
+    - GitHub:
+        - icon: github.png
+          href: https://github.com/FuzzCube/RhenWerk-WebSite

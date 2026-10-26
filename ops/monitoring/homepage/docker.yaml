@@ -1,0 +1,4 @@
+# Read-only Docker API via socket-proxy (only GET on containers).
+vps:
+  host: 127.0.0.1
+  port: 12375

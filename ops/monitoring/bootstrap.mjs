@@ -42,6 +42,8 @@ let fingerprint = fingerprints.items.find(s => s.system === system.id);
 if (!fingerprint) fingerprint = await api('/api/collections/fingerprints/records', 'POST', { system: system.id, token: secret() }, token);
 let env = parseEnv(fs.readFileSync(`${root}/.env`, 'utf8'));
 env.BESZEL_KEY = info.key.trim(); env.BESZEL_TOKEN = fingerprint.token;
+// Homepage reads the Beszel superuser via HOMEPAGE_VAR_* (task-28-1); compose requires them for every command.
+env.HOMEPAGE_VAR_BESZEL_EMAIL = credentials.beszelEmail; env.HOMEPAGE_VAR_BESZEL_PASSWORD = credentials.beszelPassword;
 fs.writeFileSync(`${root}/.env`, Object.entries(env).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join('\n') + '\n', { mode: 0o600 });
 const superuser = await api('/api/collections/_superusers/auth-with-password', 'POST', {
   identity: credentials.beszelEmail, password: credentials.beszelPassword,
@@ -114,5 +116,36 @@ if (!credentials.kumaConfigured) {
     cwd: root, input: JSON.stringify(input), stdio: ['pipe', 'inherit', 'inherit'], timeout: 95000,
   });
   credentials.kumaConfigured = true; save();
+}
+
+// Status page "vps" for the Homepage widget (task-28-1); public only on 127.0.0.1, outside behind Cloudflare Access.
+if (!credentials.kumaStatusPage) {
+  const code = `
+    const fs = require('fs'); const { io } = require('socket.io-client');
+    const c = JSON.parse(fs.readFileSync(0, 'utf8'));
+    const s = io('http://127.0.0.1:13001', { reconnection: false });
+    let monitors = {};
+    s.on('monitorList', list => { monitors = list; });
+    const timeout = setTimeout(() => { console.error('Kuma status page timeout'); process.exit(1); }, 60000);
+    const call = (name, ...args) => new Promise((resolve, reject) => s.timeout(30000).emit(name, ...args, (error, result) => {
+      if (error || result?.ok === false) reject(new Error(name + ': ' + (error?.message ?? result.msg))); else resolve(result);
+    }));
+    s.once('connect', async () => { try {
+      await call('login', { username: c.kumaUsername, password: c.kumaPassword, token: '' });
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      try { await call('getStatusPage', 'vps'); } catch { await call('addStatusPage', 'VPS', 'vps'); }
+      const monitorList = Object.values(monitors).map(m => ({ id: m.id }));
+      await call('saveStatusPage', 'vps', { slug: 'vps', title: 'VPS', description: '', autoRefreshInterval: 60,
+        theme: 'auto', showTags: false, footerText: '', customCSS: '', showPoweredBy: false, rssTitle: '',
+        showOnlyLastHeartbeat: false, showCertificateExpiry: false, analyticsId: null, analyticsScriptUrl: null,
+        analyticsType: null, domainNameList: [] }, '/icon.svg', [{ name: 'Alle Prüfungen', monitorList }]);
+      console.log('Kuma: Statusseite vps mit ' + monitorList.length + ' Prüfungen eingerichtet.');
+      clearTimeout(timeout); s.close(); process.exit(0);
+    } catch (error) { console.error(error.message); s.close(); process.exit(1); } });
+  `;
+  execFileSync('docker', ['compose', 'exec', '-T', 'kuma', 'node', '-e', code], {
+    cwd: root, input: JSON.stringify(credentials), stdio: ['pipe', 'inherit', 'inherit'], timeout: 65000,
+  });
+  credentials.kumaStatusPage = true; save();
 }
 console.log('Zugangsdaten nur in /opt/monitoring/access.json (0600).');

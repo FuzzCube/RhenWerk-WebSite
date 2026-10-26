@@ -1,0 +1,23 @@
+# Homepage settings (task-28-1). Copied to /opt/monitoring/homepage on the VPS.
+title: VPS · Startseite
+language: de
+theme: dark
+color: slate
+headerStyle: clean
+statusStyle: dot
+hideVersion: true
+disableUpdateCheck: true
+target: _blank
+layout:
+  RheinWerk:
+    style: row
+    columns: 4
+  Überwachung:
+    style: row
+    columns: 3
+  HouseItems:
+    style: row
+    columns: 3
+  Personal Copilot:
+    style: row
+    columns: 3

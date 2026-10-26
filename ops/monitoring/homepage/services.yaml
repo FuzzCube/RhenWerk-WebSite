@@ -1,0 +1,101 @@
+# Container names as on the VPS; status comes from the read-only socket-proxy.
+- RheinWerk:
+    - Website:
+        icon: mdi-web
+        href: https://rheinwerk-service.online/dashboard
+        description: Vercel, Dashboard
+        siteMonitor: https://rheinwerk-service.online/api/health
+    - n8n:
+        icon: n8n.png
+        href: https://n8n.rheinwerk-service.online
+        server: vps
+        container: rheinwerk-n8n
+    - Datenbank:
+        icon: postgres.png
+        server: vps
+        container: supabase_db_rheinwerk
+    - API-Gateway:
+        icon: supabase.png
+        description: api.rheinwerk-service.online
+        server: vps
+        container: supabase_kong_rheinwerk
+    - Auth:
+        icon: supabase.png
+        server: vps
+        container: supabase_auth_rheinwerk
+    - PostgREST:
+        icon: supabase.png
+        server: vps
+        container: supabase_rest_rheinwerk
+    - Storage:
+        icon: supabase.png
+        server: vps
+        container: supabase_storage_rheinwerk
+    - Tunnel:
+        icon: cloudflare.png
+        server: vps
+        container: rheinwerk-cloudflared
+
+- Überwachung:
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: https://uptime.rheinwerk-service.online
+        server: vps
+        container: monitoring-kuma-1
+        widget:
+          type: uptimekuma
+          url: http://127.0.0.1:13001
+          slug: vps
+    - Beszel:
+        icon: beszel.png
+        href: https://monitor.rheinwerk-service.online
+        server: vps
+        container: monitoring-beszel-1
+        widget:
+          type: beszel
+          url: http://127.0.0.1:18090
+          username: "{{HOMEPAGE_VAR_BESZEL_EMAIL}}"
+          password: "{{HOMEPAGE_VAR_BESZEL_PASSWORD}}"
+          systemId: OVHcloud VPS · alle Projekte
+          version: 2
+          fields: [cpu, memory, disk, network]
+    - Tunnel Monitoring:
+        icon: cloudflare.png
+        server: vps
+        container: monitoring-tunnel-1
+
+- HouseItems:
+    - Datenbank:
+        icon: postgres.png
+        server: vps
+        container: houseitems-db
+    - PostgREST:
+        icon: supabase.png
+        server: vps
+        container: houseitems-rest
+    - Gateway:
+        icon: mdi-gate
+        server: vps
+        container: houseitems-gateway
+    - n8n:
+        icon: n8n.png
+        server: vps
+        container: houseitems-n8n
+    - Tunnel:
+        icon: cloudflare.png
+        server: vps
+        container: houseitems-cloudflared
+
+- Personal Copilot:
+    - Datenbank:
+        icon: postgres.png
+        server: vps
+        container: personal-copilot-db
+    - PostgREST:
+        icon: supabase.png
+        server: vps
+        container: personal-copilot-rest
+    - Gateway:
+        icon: mdi-gate
+        server: vps
+        container: personal-copilot-gateway

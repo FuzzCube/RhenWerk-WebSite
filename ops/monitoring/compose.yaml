@@ -62,3 +62,32 @@ services:
     environment:
       TUNNEL_TOKEN: ${MONITORING_TUNNEL_TOKEN:-}
     command: tunnel --no-autoupdate run
+  # Docker only for reading container lists and stats; POST stays disabled (task-28-1).
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0
+    restart: unless-stopped
+    mem_limit: 64m
+    cpus: 0.25
+    security_opt: [no-new-privileges:true]
+    ports: ["127.0.0.1:12375:2375"]
+    environment:
+      CONTAINERS: 1
+      POST: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+  homepage:
+    image: ghcr.io/gethomepage/homepage:v2.7.0
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    network_mode: host
+    security_opt: [no-new-privileges:true]
+    depends_on: [socket-proxy]
+    environment:
+      HOSTNAME: 127.0.0.1
+      PORT: 13002
+      HOMEPAGE_ALLOWED_HOSTS: home.rheinwerk-service.online,127.0.0.1:13002
+      HOMEPAGE_VAR_BESZEL_EMAIL: ${HOMEPAGE_VAR_BESZEL_EMAIL:?Run bootstrap.mjs}
+      HOMEPAGE_VAR_BESZEL_PASSWORD: ${HOMEPAGE_VAR_BESZEL_PASSWORD:?Run bootstrap.mjs}
+    volumes:
+      - ./homepage:/app/config
