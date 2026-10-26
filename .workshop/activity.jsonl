@@ -589,3 +589,6 @@
 {"timestamp":"2026-10-24T18:44:59.256Z","type":"phase_completed","summary":"phase-27 abgeschlossen."}
 {"timestamp":"2026-10-26T20:54:09.710Z","type":"roadmap_updated","summary":"phase-28 mit task-28-1 ergänzt (Homepage als Startseite des VPS, Nutzerwunsch). Roadmap v35."}
 {"timestamp":"2026-10-26T20:54:09.710Z","type":"task_started","taskId":"task-28-1","summary":"Homepage mit Docker-Status auf dem VPS."}
+{"timestamp":"2026-10-26T21:32:52.174Z","type":"verification_passed","taskId":"task-28-1","summary":"Homepage und lesender Docker-Proxy laufen, Widgets und Containerstatus geprüft, home. anonym 302 zu Cloudflare Access."}
+{"timestamp":"2026-10-26T21:32:52.174Z","type":"task_completed","taskId":"task-28-1","summary":"Homepage mit Docker-Status auf dem VPS"}
+{"timestamp":"2026-10-26T21:32:52.174Z","type":"phase_completed","summary":"phase-28 abgeschlossen."}

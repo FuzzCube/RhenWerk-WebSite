@@ -4,33 +4,23 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v35, 29 Phasen, 151 Tasks (ohne ersetzte). 150 abgeschlossen, Gewicht 339/341. In Arbeit: `task-28-1` Homepage als Startseite des VPS. Letzter Abschluss `task-27-1`: Hinweise mit Sonner animiert. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v35, 29 Phasen, 151 Tasks (ohne ersetzte). Alle 151 Tasks abgeschlossen, Gewicht 341/341, Fortschritt 100 %. Letzter Abschluss `task-28-1`: Homepage als Startseite des VPS. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## In Arbeit: Startseite für den Server (phase-28)
+## Letzter Abschluss: Startseite für den Server (phase-28)
 
-`task-28-1`: Homepage v2.7.0 und docker-socket-proxy (nur lesend) im Stack `/opt/monitoring` laufen, Konfiguration in `ops/monitoring/homepage/`, Kuma-Statusseite `vps` angelegt; Containerstatus, Kuma- und Beszel-Widget lokal geprüft. Offen: Nutzer trägt `home.rheinwerk-service.online` im Tunnel `vps-monitoring` und in Cloudflare Access ein, danach anonymer Aufruf 302 prüfen und Task abschließen. Einzelheiten `docs/betrieb.md` 3.11.
+`task-28-1`: Homepage v2.7.0 und docker-socket-proxy (nur lesend) im Stack `/opt/monitoring` laufen, Konfiguration in `ops/monitoring/homepage/`, Kuma-Statusseite `vps` angelegt; Containerstatus, Kuma- und Beszel-Widget lokal geprüft. `https://home.rheinwerk-service.online` hinter Cloudflare Access (Tunnel `vps-monitoring`). Einzelheiten `docs/betrieb.md` 3.11.
 
-## Letzter Abschluss: Hinweise mit Animation (phase-27)
+## Davor: Hinweise mit Animation (phase-27)
 
 `task-27-1`: Hinweise unten rechts mit `sonner` (Einfahren unten, Aufrücken, weiches Ausblenden, Wischen); Logik bleibt in `DashboardUpdates`. Dabei behoben: `sr-only`-Texte der Navigationspunkte machten Dashboard-Seiten auf dem Handy 1014 px breit.
 
-## Davor: Tempo und Plantafel nach dem Live-Test (phase-26)
-
-`task-26-1`: Zugriffsregeln prüften je Zeile (can_read_message, can_access_request, Rolle je Aufruf); der gemeinsame Abruf zählte auf dem VPS ~3.100 Nachrichten in 1,3 s. Migration `20261024000700_rls_per_statement.sql`: Rolle einmal je Anweisung, erlaubte Anfragen als Menge `private.accessible_request_ids()`. Gleiche Sichtbarkeit (zeilengenau je Nutzer verglichen); VPS jetzt 1–5 ms (Admin), ~27 ms (Dispatcher).
-
-`task-26-2`: `history.replaceState` während eines Seitenwechsels bricht ihn in Next.js ab (Router-Restore) – die Tafel blieb auf dem alten Tag. Plantafel schreibt die URL erst nach dem Wechsel, der gewählte Tag ist sofort markiert, die Tafel beim Laden abgeblendet.
-
-`task-26-3`: Stand meldet `automationPending`, dann Abruf alle 5 s statt 20 s. Vom System ohne Person freigegebene Mails tragen „Automatisch versendet“. Sehr kurze Analysen (~6 s) können weiter zwischen zwei Abrufen liegen.
-
-Hinweis des Nutzers zur Kundennummer K-20181 (RIS-2026-02771) war ein Irrtum; Mail und Daten stimmen, keine Änderung.
-
 ## Letzte drei abgeschlossene Tasks
 
+- `task-28-1` (26.10.2026): Homepage mit lesendem Docker-Status, Kuma- und Beszel-Widget.
 - `task-27-1` (24.10.2026): Hinweise mit Sonner animiert, Handy-Seitenbreite behoben.
 - `task-26-3` (24.10.2026): „KI arbeitet …“ mit 5-s-Abruf, automatische Mails gekennzeichnet.
-- `task-26-2` (24.10.2026): Plantafel-Tageswechsel ohne Zurückspringen.
 
 ## Arbeitsregeln
 
@@ -52,6 +42,6 @@ Hinweis des Nutzers zur Kundennummer K-20181 (RIS-2026-02771) war ein Irrtum; Ma
 
 ## Nächster Schritt
 
-`task-28-1` abschließen, sobald der Cloudflare-Schritt des Nutzers erledigt und geprüft ist. Keine weiteren Aufgaben automatisch beginnen.
+Keine offenen/startbaren Tasks; Stand auf origin/main und dem VPS. Keine weiteren Aufgaben automatisch beginnen.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

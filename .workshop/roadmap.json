@@ -5260,7 +5260,7 @@
       "description": "Vom Nutzer gewünscht: Homepage (gethomepage.dev) als eine geschützte Startseite für alle Dienste und Container des VPS, ergänzend zu Beszel und Uptime Kuma.",
       "order": 29,
       "weight": 2,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-28-1",
@@ -5268,7 +5268,7 @@
           "description": "Homepage im Monitoring-Stack: Links und Containerstatus aller drei Projekte, Widgets für Uptime Kuma und Beszel; Docker nur lesend über docker-socket-proxy; Zugang über den Tunnel vps-monitoring hinter Cloudflare Access.",
           "order": 1,
           "weight": 2,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-21-1"
           ],
@@ -5280,12 +5280,20 @@
             "Bestehende Projektcontainer nicht neu gestartet; Betrieb und Rückweg in docs/betrieb.md dokumentiert."
           ],
           "startedAt": "2026-10-26T20:54:09.710Z",
-          "completedAt": null,
+          "completedAt": "2026-10-26T21:32:52.174Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "summary": "Homepage v2.7.0 und docker-socket-proxy v0.5.0 im Stack monitoring, beide healthy/up; nur 127.0.0.1:13002 bzw. 12375, Speicher ca. 110/24 MiB. Proxy: POST-Neustart und /images liefern 403. Fremder Host-Header 400. API: Containerstatus 18 Einträge, alle running; Beszel-Widget liefert systems, Kuma-Widget liefert Statusseite vps mit 7 Prüfungen. bootstrap.mjs auf dem VPS erneut ausgeführt, docker compose config ok. Projektcontainer nicht neu gestartet (Up 2–4 Tage). Nutzer hat home. im Tunnel vps-monitoring und in der Access-Anwendung eingetragen; anonymer HTTPS-Aufruf von home. liefert 302 zur Access-Anmeldung (wie monitor./uptime.). Die Seite nach Anmeldung wurde nicht per Browser geprüft (keine Browser-Automation).",
+            "commands": [
+              "node --check ops/monitoring/bootstrap.mjs",
+              "cd /opt/monitoring && node --env-file=/opt/rheinwerk/ops.env bootstrap.mjs (VPS)",
+              "cd /opt/monitoring && docker compose config --quiet (VPS)",
+              "curl 127.0.0.1:13002/api/docker/statuses?server=vps (VPS)",
+              "curl 127.0.0.1:13002/api/services/proxy Beszel/Kuma (VPS)",
+              "curl -X POST 127.0.0.1:12375/containers/…/restart (VPS, 403)",
+              "curl https://home.rheinwerk-service.online/ (302)"
+            ],
+            "checkedAt": "2026-10-26T21:32:52.174Z"
           }
         }
       ]
