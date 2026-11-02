@@ -55,7 +55,7 @@ services:
   kong:
     <<: *restart
     container_name: supabase_kong_rheinwerk
-    image: envoyproxy/envoy:v1.40.1
+    image: envoyproxy/envoy:v1.40.2
     mem_limit: 256m
     networks:
       default:
@@ -169,7 +169,7 @@ services:
   storage:
     <<: *restart
     container_name: supabase_storage_rheinwerk
-    image: supabase/storage-api:v1.84.23
+    image: supabase/storage-api:v1.87.0
     mem_limit: 384m
     depends_on:
       db:
@@ -207,7 +207,7 @@ services:
     <<: *restart
     profiles: [studio]
     container_name: supabase_studio_rheinwerk
-    image: supabase/studio:2026.10.19-sha-b375769
+    image: supabase/studio:2026.10.26-sha-478bd88
     mem_limit: 512m
     depends_on: [meta]
     ports:
@@ -256,7 +256,7 @@ services:
   n8n:
     <<: *restart
     container_name: rheinwerk-n8n
-    image: n8nio/n8n:2.44.6
+    image: n8nio/n8n:2.45.7
     mem_limit: 1g
     ports:
       - 127.0.0.1:5678:5678
@@ -279,7 +279,7 @@ services:
   cloudflared:
     <<: *restart
     container_name: rheinwerk-cloudflared
-    image: cloudflare/cloudflared:2026.10.3
+    image: cloudflare/cloudflared:2026.10.6
     mem_limit: 128m
     command: ["tunnel", "--no-autoupdate", "run"]
     environment:
