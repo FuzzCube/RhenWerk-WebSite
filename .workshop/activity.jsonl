@@ -606,3 +606,4 @@
 {"timestamp":"2026-11-04T15:45:52.818Z","type":"verification_passed","taskId":"task-30-2","summary":"Beide Gmail-Profilaufrufe live erfolgreich (91232/91233); Watchdog exit 0, alle Gmail-Warnungen automatisch geschlossen, n8n ok, Warteschlangen leer."}
 {"timestamp":"2026-11-04T15:45:52.818Z","type":"task_completed","taskId":"task-30-2","summary":"Google Cloud In production vom Nutzer bestätigt, Gmail neu verbunden und beide Richtungen verifiziert."}
 {"timestamp":"2026-11-04T15:45:52.818Z","type":"phase_completed","summary":"phase-30 abgeschlossen: Gmail-OAuth und verlässliche Betriebswarnungen."}
+{"timestamp": "2026-11-04T15:55:10.551Z", "type": "decision_recorded", "summary": "Nutzer gibt Commit und Push der abgeschlossenen Gmail-/Monitoring-Korrekturen nach origin/main frei; reguläre CI mit Deployment."}

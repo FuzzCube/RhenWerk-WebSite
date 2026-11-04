@@ -4,13 +4,13 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v37, 31 Phasen, 154 Tasks (ohne ersetzte). Alle 154 Tasks abgeschlossen, Gewicht 347/347, Fortschritt 100 %. Letzter Abschluss task-30-2: Gmail-Reconnect und beide Richtungen live verifiziert. Monitoring-Code lokal und auf VPS (95b8353), GitHub-Push nicht ausgeführt.
+Roadmap v37, 31 Phasen, 154 Tasks (ohne ersetzte). Alle 154 Tasks abgeschlossen, Gewicht 347/347, Fortschritt 100 %. Letzter Abschluss task-30-2: Gmail-Reconnect und beide Richtungen live verifiziert. Monitoring-Code lokal und auf VPS (95b8353); Commit und Push nach origin/main am 04.11.2026 vom Nutzer freigegeben.
 
 Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der bestehende Zusatz-Stack liegt in /opt/monitoring. Phase 30 ändert die Skripte des RheinWerk-Wächters; n8n-Workflows und Datenbankschema bleiben unverändert.
 
 ## Aktuell: Gmail und n8n-Warnungen (phase-30)
 
-`task-30-1` abgeschlossen: unbekannte API-Daten erzeugen keine Stillstandsmeldung; Zeitplan-Ausfall braucht drei getrennte Prüfungen. Gemeinsamer Gmail-Zugangsfehler: eine Warnung ohne Erinnerungen und eine Entwarnung erst nach erfolgreichen authentifizierten Profilaufrufen beider Workflows. Bestehende Einzelwarnungen werden übernommen. 169 Unit-Tests sowie lint/typecheck/build grün; 17 gezielte Tests zusätzlich auf VPS. Commit 95b8353 per Git-Bundle auf VPS, watchdog exit 0, n8n ohne Neustart; Backup `/opt/rheinwerk/state/monitor-fix.SZ9GpJ`. GitHub-Push nicht ausgeführt.
+`task-30-1` abgeschlossen: unbekannte API-Daten erzeugen keine Stillstandsmeldung; Zeitplan-Ausfall braucht drei getrennte Prüfungen. Gemeinsamer Gmail-Zugangsfehler: eine Warnung ohne Erinnerungen und eine Entwarnung erst nach erfolgreichen authentifizierten Profilaufrufen beider Workflows. Bestehende Einzelwarnungen werden übernommen. 169 Unit-Tests sowie lint/typecheck/build grün; 17 gezielte Tests zusätzlich auf VPS. Commit 95b8353 per Git-Bundle auf VPS, watchdog exit 0, n8n ohne Neustart; Backup `/opt/rheinwerk/state/monitor-fix.SZ9GpJ`. Anschließender Commit und Push am 04.11.2026 vom Nutzer freigegeben.
 
 `task-30-2` abgeschlossen: Nutzer bestätigte Google Cloud In production und Gmail-Reconnect. Versand 91232 am 04.11.2026 15:44:01 UTC und Eingang 91233 um 15:44:20 UTC jeweils success mit authentifiziertem Gmail-Profilaufruf des richtigen Postfachs. Watchdog exit 0, beide Einzelwarnungen und gemeinsamer Vorfall um 15:44:51 UTC automatisch geschlossen. Gespeicherter n8n-Zustand ok, keine Fehlerchecks; Versand- und Analysewarteschlange leer. Keine zusätzlichen Kunden-Testmails gesendet; Zustellung der gemeinsamen Entwarnungsmail nicht im Postfach geprüft.
 
@@ -48,6 +48,6 @@ Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Ver
 
 ## Nächster Schritt
 
-Keine offenen/startbaren Tasks. Monitoring und Gmail-Wiederherstellung auf VPS verifiziert. Änderungen lokal committed und Monitoring auf VPS angewendet; GitHub-Push nicht ausgeführt.
+Keine offenen/startbaren Tasks. Monitoring und Gmail-Wiederherstellung auf VPS verifiziert. Änderungen lokal committed und Monitoring auf VPS angewendet; Anschließender Commit und Push am 04.11.2026 vom Nutzer freigegeben.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

@@ -445,7 +445,7 @@ Danach: Anmeldung im Dashboard, n8n → Executions (Zeitpläne laufen grün), ei
 
 
 
-**Stand 04.11.2026:** Monitoring-Fix 95b8353 lokal und auf dem VPS angewendet, Backup `/opt/rheinwerk/state/monitor-fix.SZ9GpJ`; keine Migration und kein n8n-Neustart. GitHub-Push ausstehend. Rückweg bei Bedarf: die drei gesicherten Dateien unter `scripts/ops/` zurückkopieren.
+**Stand 04.11.2026:** Monitoring-Fix 95b8353 lokal und auf dem VPS angewendet, Backup `/opt/rheinwerk/state/monitor-fix.SZ9GpJ`; keine Migration und kein n8n-Neustart. Commit und Push am 04.11.2026 vom Nutzer freigegeben; die reguläre CI prüft und veröffentlicht den Stand. Rückweg bei Bedarf: die drei gesicherten Dateien unter `scripts/ops/` zurückkopieren.
 
 **Gmail-Wiederherstellung 04.11.2026 (task-30-2):** Google Cloud In production vom Nutzer bestätigt, Gmail neu verbunden. Beide Workflows mit authentifiziertem Profilaufruf erfolgreich (Versand 91232, 15:44:01 UTC; Eingang 91233, 15:44:20 UTC). Wächter schloss die drei offenen Gmail-Warnungen um 15:44:51 UTC automatisch; n8n-Status ok, Warteschlangen leer.
 
