@@ -603,3 +603,6 @@
 {"timestamp":"2026-11-04T15:39:03.423Z","type":"verification_passed","taskId":"task-30-1","summary":"169 Unit-Tests, lint/typecheck/build grün; 17 n8n-Tests zusätzlich auf VPS, watchdog exit 0, ein gemeinsamer Gmail-Vorfall ohne neue Warnmail übernommen."}
 {"timestamp":"2026-11-04T15:39:03.423Z","type":"task_completed","taskId":"task-30-1","summary":"n8n-Monitoring in Commit 95b8353 lokal und auf VPS; GitHub nicht gepusht."}
 {"timestamp":"2026-11-04T15:39:03.423Z","type":"task_started","taskId":"task-30-2","summary":"Google Cloud laut Nutzer jetzt In production; Gmail-Reconnect ausstehend. n8n in VS Code geöffnet, Cloudflare-Login erforderlich."}
+{"timestamp":"2026-11-04T15:45:52.818Z","type":"verification_passed","taskId":"task-30-2","summary":"Beide Gmail-Profilaufrufe live erfolgreich (91232/91233); Watchdog exit 0, alle Gmail-Warnungen automatisch geschlossen, n8n ok, Warteschlangen leer."}
+{"timestamp":"2026-11-04T15:45:52.818Z","type":"task_completed","taskId":"task-30-2","summary":"Google Cloud In production vom Nutzer bestätigt, Gmail neu verbunden und beide Richtungen verifiziert."}
+{"timestamp":"2026-11-04T15:45:52.818Z","type":"phase_completed","summary":"phase-30 abgeschlossen: Gmail-OAuth und verlässliche Betriebswarnungen."}

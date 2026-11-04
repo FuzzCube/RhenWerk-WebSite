@@ -5347,7 +5347,7 @@
       "description": "Vom Nutzer am 04.11.2026 beauftragt: OAuth-Testmodus beheben, falsche Zeitplanwarnungen verhindern, Gmail-Ausfälle zusammenfassen und Wiederherstellung nachweisen.",
       "order": 31,
       "weight": 4,
-      "status": "in_progress",
+      "status": "completed",
       "tasks": [
         {
           "id": "task-30-1",
@@ -5388,7 +5388,7 @@
           "description": "Google Cloud Publishing status prüfen, bei Testing durch den Nutzer veröffentlichen und Gmail erneut verbinden; danach erfolgreiche authentifizierte Aufrufe beider Workflows nachweisen.",
           "order": 2,
           "weight": 1,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-10-4"
           ],
@@ -5398,16 +5398,16 @@
             "Keine offenen Gmail-Zugangsfehler; Betriebszustand dokumentiert."
           ],
           "startedAt": "2026-11-04T15:39:03.423Z",
-          "completedAt": null,
+          "completedAt": "2026-11-04T15:45:52.818Z",
           "verification": {
-            "status": "partial",
-            "checkedAt": "2026-11-04T15:39:03.423Z",
+            "status": "passed",
+            "checkedAt": "2026-11-04T15:45:52.818Z",
             "commands": [
-              "User confirmed Google Cloud Publishing status Testing, then switched RhenWerk Gmail to In production",
-              "VPS: latest executions and authenticated Gmail profile checks for both workflows",
-              "VS Code integrated browser opened n8n, Cloudflare Access login displayed"
+              "VPS n8n API: executions 91232 and 91233 with includeData=true; gmailAccessSucceeded verified actual Gmail profile HTTP 2xx and correct mailbox",
+              "VPS: systemctl start rheinwerk-watchdog.service, ExecMainStatus=0",
+              "VPS Supabase API: system_alerts, system_status.monitoring.n8n, monitor_n8n_queues"
             ],
-            "summary": "Google Cloud In production vom Nutzer bestätigt. Korrektur des Nutzers: bisher nur Publishing status geändert; bestehendes Gmail-Credential braucht weiterhin Reconnect. Beide Workflows am 04.11.2026 15:36 UTC noch credential-invalid; letzter erfolgreicher Profilaufruf beider Workflows 03.11.2026 20:56 UTC. n8n im VS-Code-Browser geöffnet, aktuell Cloudflare-Access-Anmeldung. Neue Browseranmeldung und Gmail-Reconnect durch Nutzer ausstehend; keine Wiederherstellung behauptet."
+            "summary": "Nutzer bestätigt Google Cloud In production im Projekt RhenWerk Gmail und erneutes Verbinden am 04.11.2026. Live nachgewiesen: Gmail Versand 91232, 15:44:01.648 UTC, und Gmail Eingang 91233, 15:44:20.625 UTC, beide success mit erfolgreichem authentifiziertem Gmail-Profilaufruf des richtigen Postfachs. Watchdog exit 0; beide Einzelwarnungen und gemeinsamer Vorfall um 15:44:51 UTC automatisch geschlossen. Gespeicherter n8n-Zustand um 15:44:52 UTC ok, errors leer, keine fehlgeschlagenen Checks; Versand- und Analysewarteschlange jeweils 0. Keine zusätzlichen Kunden-Testmails versandt; Zustellung der gemeinsamen Entwarnungsmail nicht im Postfach geprüft. Kein Anwendungscode seit dem bestandenen Quality Gate von task-30-1 geändert."
           }
         }
       ]

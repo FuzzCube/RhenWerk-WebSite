@@ -447,6 +447,8 @@ Danach: Anmeldung im Dashboard, n8n → Executions (Zeitpläne laufen grün), ei
 
 **Stand 04.11.2026:** Monitoring-Fix 95b8353 lokal und auf dem VPS angewendet, Backup `/opt/rheinwerk/state/monitor-fix.SZ9GpJ`; keine Migration und kein n8n-Neustart. GitHub-Push ausstehend. Rückweg bei Bedarf: die drei gesicherten Dateien unter `scripts/ops/` zurückkopieren.
 
+**Gmail-Wiederherstellung 04.11.2026 (task-30-2):** Google Cloud In production vom Nutzer bestätigt, Gmail neu verbunden. Beide Workflows mit authentifiziertem Profilaufruf erfolgreich (Versand 91232, 15:44:01 UTC; Eingang 91233, 15:44:20 UTC). Wächter schloss die drei offenen Gmail-Warnungen um 15:44:51 UTC automatisch; n8n-Status ok, Warteschlangen leer.
+
 **n8n-Warnungen seit task-30-1:** Zeitplan-Ausfälle erst nach drei Prüfungen mit mindestens vier Minuten Abstand. Fehlende API-Daten melden einen Prüfungsfehler und keinen gestoppten Workflow. Ein gemeinsamer Gmail-Credential-Fehler löst eine Warnung für Eingang und Versand aus, ohne sechsstündliche Erinnerungen; die gemeinsame Entwarnung setzt erfolgreiche authentifizierte Gmail-Profilaufrufe beider Workflows voraus. Bei der Umstellung werden bereits versandte Einzelwarnungen übernommen. Allgemeine Error-Workflow-Warnungen brauchen neben einer ruhigen Stunde einen neueren erfolgreichen Lauf.
 
 ## 6. Wartungsplan
