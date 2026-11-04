@@ -5355,7 +5355,7 @@
           "description": "Fehlende API-Daten von einem gestoppten Zeitplan unterscheiden, Ausfälle über mehrere Prüfungen bestätigen, Gmail-Zugangsfehler gemeinsam melden und nur nach erfolgreichem Gmail-Zugriff beider Workflows auflösen.",
           "order": 1,
           "weight": 3,
-          "status": "in_progress",
+          "status": "completed",
           "dependsOn": [
             "task-17-8"
           ],
@@ -5366,12 +5366,20 @@
             "Regressionstests, lint, typecheck und build erfolgreich; Live-Verifikation und Betriebsdokumentation aktualisiert."
           ],
           "startedAt": "2026-11-04T15:20:55.644Z",
-          "completedAt": null,
+          "completedAt": "2026-11-04T15:39:03.423Z",
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "passed",
+            "checkedAt": "2026-11-04T15:39:03.423Z",
+            "commands": [
+              "node --test tests/unit/n8n-monitor.test.mjs (17 passed, local and VPS)",
+              "npm run test:unit (169 passed)",
+              "npm run lint",
+              "npm run typecheck",
+              "npm run build (network-enabled retry after Google Fonts DNS restriction)",
+              "VPS: read-only evaluation against real n8n API and successful Gmail profile execution records",
+              "VPS: git bundle verify, fast-forward 95b8353, systemd watchdog exit 0, monitoring payload and alert counters"
+            ],
+            "summary": "Leere/fehlerhafte Ausführungsdaten und neue Datensätze ohne startedAt erzeugen keine Stillstands- oder Entwarnungsmeldungen. Zehn Executions als Basis; Zeitplan-Ausfall erst nach drei Prüfungen mit mindestens vier Minuten Abstand; manuelle Wiederholungen zählen nicht mehrfach. Ein gemeinsamer Gmail-Credential-Vorfall mit Übernahme bestehender E-Mail, ohne Erinnerungen; Entwarnung erst nach erfolgreichem 2xx-Profilaufruf des richtigen Postfachs mit gemeinsamem Credential in beiden Workflows. Andere Fehlerwarnungen brauchen eine ruhige Stunde und einen neueren Erfolg. Auf VPS aus lokalem Git-Bundle ohne GitHub-Push angewendet (95b8353), Backup /opt/rheinwerk/state/monitor-fix.SZ9GpJ, n8n nicht neu gestartet; systemd-Prüfung exit 0, gespeicherter n8n-Zustand zeigt ausschließlich gemeinsamen Gmail-Zugangsfehler. Tatsächlicher OAuth-Reconnect und gemeinsame Entwarnung gehören zu task-30-2."
           }
         },
         {
@@ -5380,7 +5388,7 @@
           "description": "Google Cloud Publishing status prüfen, bei Testing durch den Nutzer veröffentlichen und Gmail erneut verbinden; danach erfolgreiche authentifizierte Aufrufe beider Workflows nachweisen.",
           "order": 2,
           "weight": 1,
-          "status": "ready",
+          "status": "in_progress",
           "dependsOn": [
             "task-10-4"
           ],
@@ -5389,13 +5397,17 @@
             "Gmail erneut verbunden und erfolgreiche authentifizierte Ausführungen für Eingang und Versand auf dem VPS nachgewiesen.",
             "Keine offenen Gmail-Zugangsfehler; Betriebszustand dokumentiert."
           ],
-          "startedAt": null,
+          "startedAt": "2026-11-04T15:39:03.423Z",
           "completedAt": null,
           "verification": {
-            "status": "not_run",
-            "summary": null,
-            "commands": [],
-            "checkedAt": null
+            "status": "partial",
+            "checkedAt": "2026-11-04T15:39:03.423Z",
+            "commands": [
+              "User confirmed Google Cloud Publishing status Testing, then switched RhenWerk Gmail to In production",
+              "VPS: latest executions and authenticated Gmail profile checks for both workflows",
+              "VS Code integrated browser opened n8n, Cloudflare Access login displayed"
+            ],
+            "summary": "Google Cloud In production vom Nutzer bestätigt. Korrektur des Nutzers: bisher nur Publishing status geändert; bestehendes Gmail-Credential braucht weiterhin Reconnect. Beide Workflows am 04.11.2026 15:36 UTC noch credential-invalid; letzter erfolgreicher Profilaufruf beider Workflows 03.11.2026 20:56 UTC. n8n im VS-Code-Browser geöffnet, aktuell Cloudflare-Access-Anmeldung. Neue Browseranmeldung und Gmail-Reconnect durch Nutzer ausstehend; keine Wiederherstellung behauptet."
           }
         }
       ]

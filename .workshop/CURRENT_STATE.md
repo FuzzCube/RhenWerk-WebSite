@@ -4,11 +4,17 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v37, 31 Phasen, 154 Tasks (ohne ersetzte). 152 Tasks abgeschlossen, Gewicht 343/347. Aktiv: task-30-1 (n8n-Monitoring); task-30-2 bereit (Gmail-OAuth, Google Cloud laut Nutzer Testing). Letzter Abschluss `task-29-1`: Server-Updates ohne GitHub-Bedienung. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v37, 31 Phasen, 154 Tasks (ohne ersetzte). 153 Tasks abgeschlossen, Gewicht 346/347, Fortschritt 99,71 %. Aktiv: task-30-2 (Gmail-Reconnect). Letzter Abschluss task-30-1: n8n-Monitoring lokal und auf VPS (95b8353), noch nicht auf GitHub gepusht.
 
-Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
+Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der bestehende Zusatz-Stack liegt in /opt/monitoring. Phase 30 ändert die Skripte des RheinWerk-Wächters; n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Letzter Abschluss: Systemupdates mit einem Klick (phase-29)
+## Aktuell: Gmail und n8n-Warnungen (phase-30)
+
+`task-30-1` abgeschlossen: unbekannte API-Daten erzeugen keine Stillstandsmeldung; Zeitplan-Ausfall braucht drei getrennte Prüfungen. Gemeinsamer Gmail-Zugangsfehler: eine Warnung ohne Erinnerungen und eine Entwarnung erst nach erfolgreichen authentifizierten Profilaufrufen beider Workflows. Bestehende Einzelwarnungen werden übernommen. 169 Unit-Tests sowie lint/typecheck/build grün; 17 gezielte Tests zusätzlich auf VPS. Commit 95b8353 per Git-Bundle auf VPS, watchdog exit 0, n8n ohne Neustart; Backup `/opt/rheinwerk/state/monitor-fix.SZ9GpJ`. GitHub-Push nicht ausgeführt.
+
+`task-30-2` in Arbeit: Nutzer bestätigte Wechsel von Google Cloud Testing auf In production im Projekt RhenWerk Gmail. Reconnect steht noch aus; am 04.11.2026 15:36 UTC weiterhin credential-invalid in Eingang und Versand. n8n im integrierten VS-Code-Browser geöffnet, derzeit Cloudflare Access „Log in to n8n Editor“. Nach Browseranmeldung Credentials → RheinWerk Gmail → Sign in with Google, anschließend beide Gmail-Pfade und gemeinsame Entwarnung über die API prüfen. Keine neuen Kunden-Testmails senden.
+
+## Letzter Abschluss vor phase-30: Systemupdates mit einem Klick (phase-29)
 
 `task-29-1`: Dependabot sammelt Minor/Patch der Server-Images in einem PR, CI mergt ihn nach grünen Prüfungen selbst und startet das Deployment (workflow_dispatch); danach E-Mail „Systemupdate bereit“ einmal je Versionsstand. Betreiber drückt nur „Update einspielen“. Hauptversionen und npm-PRs bleiben manuell. Live geprüft mit PR #17. Offen: „Update einspielen“ für db/kong/rest/storage durch den Nutzer. Einzelheiten `docs/betrieb.md` 6.
 
@@ -18,9 +24,9 @@ Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VP
 
 ## Letzte drei abgeschlossene Tasks
 
+- `task-30-1` (04.11.2026): n8n-Warnungen ohne Fehlalarme, gemeinsamer Gmail-Zugangsvorfall.
 - `task-29-1` (26.10.2026): Server-Updates automatisch gemergt, E-Mail „Systemupdate bereit“.
 - `task-28-1` (26.10.2026): Homepage mit lesendem Docker-Status, Kuma- und Beszel-Widget.
-- `task-27-1` (24.10.2026): Hinweise mit Sonner animiert, Handy-Seitenbreite behoben.
 
 ## Arbeitsregeln
 
@@ -42,6 +48,6 @@ Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VP
 
 ## Nächster Schritt
 
-task-30-1 umsetzen und prüfen. Der Nutzer nimmt Google OAuth von Testing auf In production und verbindet RheinWerk Gmail erneut; danach task-30-2 live verifizieren. Neue Änderungen zunächst lokal; früherer Stand auf origin/main/VPS.
+task-30-2: Cloudflare-Anmeldung im VS-Code-Browser und Gmail-Reconnect durch den Nutzer abwarten; danach echte erfolgreiche Profilaufrufe von Eingang und Versand sowie Auflösung des gemeinsamen Vorfalls prüfen. Code lokal und auf VPS; GitHub noch beim bisherigen Stand ad0959c.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

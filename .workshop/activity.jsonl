@@ -600,3 +600,6 @@
 {"timestamp":"2026-10-26T22:27:47.939Z","type":"phase_completed","summary":"phase-29 abgeschlossen."}
 {"timestamp":"2026-11-04T15:20:55.644Z","type":"roadmap_updated","summary":"Phase 30 nach Nutzerfreigabe ergänzt: zuverlässige n8n-Warnungen und Gmail-OAuth."}
 {"timestamp":"2026-11-04T15:20:55.644Z","type":"task_started","taskId":"task-30-1","summary":"Fehlalarme bei fehlenden API-Daten, doppelte Gmail-Zugangsfehler und falsche Entwarnungen beheben."}
+{"timestamp":"2026-11-04T15:39:03.423Z","type":"verification_passed","taskId":"task-30-1","summary":"169 Unit-Tests, lint/typecheck/build grün; 17 n8n-Tests zusätzlich auf VPS, watchdog exit 0, ein gemeinsamer Gmail-Vorfall ohne neue Warnmail übernommen."}
+{"timestamp":"2026-11-04T15:39:03.423Z","type":"task_completed","taskId":"task-30-1","summary":"n8n-Monitoring in Commit 95b8353 lokal und auf VPS; GitHub nicht gepusht."}
+{"timestamp":"2026-11-04T15:39:03.423Z","type":"task_started","taskId":"task-30-2","summary":"Google Cloud laut Nutzer jetzt In production; Gmail-Reconnect ausstehend. n8n in VS Code geöffnet, Cloudflare-Login erforderlich."}
