@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 36,
+  "roadmapVersion": 37,
   "status": "active",
   "phases": [
     {
@@ -5337,6 +5337,65 @@
               "cat /opt/rheinwerk/state/update-ready.txt (VPS)"
             ],
             "checkedAt": "2026-10-26T22:27:47.939Z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-30",
+      "title": "Gmail-Zugang und verlässliche Betriebswarnungen",
+      "description": "Vom Nutzer am 04.11.2026 beauftragt: OAuth-Testmodus beheben, falsche Zeitplanwarnungen verhindern, Gmail-Ausfälle zusammenfassen und Wiederherstellung nachweisen.",
+      "order": 31,
+      "weight": 4,
+      "status": "in_progress",
+      "tasks": [
+        {
+          "id": "task-30-1",
+          "title": "n8n-Monitoring gegen Fehlalarme und doppelte Gmail-Meldungen absichern",
+          "description": "Fehlende API-Daten von einem gestoppten Zeitplan unterscheiden, Ausfälle über mehrere Prüfungen bestätigen, Gmail-Zugangsfehler gemeinsam melden und nur nach erfolgreichem Gmail-Zugriff beider Workflows auflösen.",
+          "order": 1,
+          "weight": 3,
+          "status": "in_progress",
+          "dependsOn": [
+            "task-17-8"
+          ],
+          "definitionOfDone": [
+            "API-Fehler, leere Antworten und kurz laufende Executions erzeugen keine falschen Zeitplanwarnungen oder Entwarnungen.",
+            "Zeitplan-Ausfälle werden erst nach drei zeitlich getrennten Prüfungen gemeldet.",
+            "Gemeinsamer Gmail-Zugangsfehler erzeugt eine Benachrichtigung; Entwarnung erst nach nachgewiesenem Gmail-Erfolg beider Workflows.",
+            "Regressionstests, lint, typecheck und build erfolgreich; Live-Verifikation und Betriebsdokumentation aktualisiert."
+          ],
+          "startedAt": "2026-11-04T15:20:55.644Z",
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
+          }
+        },
+        {
+          "id": "task-30-2",
+          "title": "Gmail-OAuth aus dem Testmodus nehmen und beide Richtungen verifizieren",
+          "description": "Google Cloud Publishing status prüfen, bei Testing durch den Nutzer veröffentlichen und Gmail erneut verbinden; danach erfolgreiche authentifizierte Aufrufe beider Workflows nachweisen.",
+          "order": 2,
+          "weight": 1,
+          "status": "ready",
+          "dependsOn": [
+            "task-10-4"
+          ],
+          "definitionOfDone": [
+            "Google Cloud In production vom Nutzer oder live bestätigt.",
+            "Gmail erneut verbunden und erfolgreiche authentifizierte Ausführungen für Eingang und Versand auf dem VPS nachgewiesen.",
+            "Keine offenen Gmail-Zugangsfehler; Betriebszustand dokumentiert."
+          ],
+          "startedAt": null,
+          "completedAt": null,
+          "verification": {
+            "status": "not_run",
+            "summary": null,
+            "commands": [],
+            "checkedAt": null
           }
         }
       ]

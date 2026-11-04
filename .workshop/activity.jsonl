@@ -598,3 +598,5 @@
 {"timestamp":"2026-10-26T22:27:47.939Z","type":"verification_passed","taskId":"task-29-1","summary":"Gruppen-PR #17 nach grünen Prüfungen automatisch gemergt, Deployment per workflow_dispatch, E-Mail „Systemupdate bereit“ ausgelöst; lint/typecheck/test:unit grün."}
 {"timestamp":"2026-10-26T22:27:47.939Z","type":"task_completed","taskId":"task-29-1","summary":"Dependabot-Server-Updates automatisch mergen, E-Mail bei Update bereit"}
 {"timestamp":"2026-10-26T22:27:47.939Z","type":"phase_completed","summary":"phase-29 abgeschlossen."}
+{"timestamp":"2026-11-04T15:20:55.644Z","type":"roadmap_updated","summary":"Phase 30 nach Nutzerfreigabe ergänzt: zuverlässige n8n-Warnungen und Gmail-OAuth."}
+{"timestamp":"2026-11-04T15:20:55.644Z","type":"task_started","taskId":"task-30-1","summary":"Fehlalarme bei fehlenden API-Daten, doppelte Gmail-Zugangsfehler und falsche Entwarnungen beheben."}

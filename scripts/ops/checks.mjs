@@ -28,7 +28,7 @@ export async function runChecks({ force = false } = {}) {
   const n8nStart = containerStartedAt(process.env);
   const n8nStarting = Boolean(n8nStart) && Date.now() - Date.parse(n8nStart) < STARTUP_MINUTES * 60_000;
   const mira = evaluateMira(miraRaw, { creditMin: process.env.MIRA_CREDIT_MIN, n8nStarting });
-  const n8n = evaluateN8n(n8nRaw);
+  const n8n = evaluateN8n(n8nRaw, new Date(), previous.n8n);
   const systems = evaluateSystems(systemsRaw, process.env);
   for (const check of mira.checks) await report("mira", check);
   for (const check of n8n.checks) await report("n8n", check);
@@ -40,7 +40,8 @@ export async function runChecks({ force = false } = {}) {
   await notifyDue();
 
   await rpc("set_monitoring", { system_key: "mira", payload: { state: mira.state, credit: mira.credit, checks: strip(mira.checks) } });
-  await rpc("set_monitoring", { system_key: "n8n", payload: { state: n8n.state, checks: strip(n8n.checks), errors: n8n.errors } });
+  await rpc("set_monitoring", { system_key: "n8n", payload: { state: n8n.state, checks: strip(n8n.checks), errors: n8n.errors,
+    schedule_observations: n8n.schedule_observations } });
   if (backup) {
     await rpc("set_monitoring", { system_key: "backup", payload: {
       state: backup.state, summary: backup.summary, checks: strip(backup.checks), provider: backup.provider,

@@ -602,3 +602,10 @@ Nutzerentscheidung nach dem Live-Test: Wer sofort reagiert, soll sehen, dass die
 ## 24.10.2026 · Hinweise mit Sonner (task-27-1)
 
 Nutzerwunsch: Hinweise unten rechts erschienen und verschwanden abrupt. Die Anzeige übernimmt die Bibliothek `sonner` (2.0.8): neue Hinweise fahren unten ein, vorhandene rücken nach oben, Schließen und Ablauf blenden weich aus, Wischen auf Touchgeräten, `prefers-reduced-motion` wird beachtet. Welche Hinweise es gibt (gesehen, Schließen beim Öffnen des Ziels, Info nach 6 s, andere bis zum Schließen) bleibt in `DashboardUpdates`; die Karte ist weiter unsere `.dash-notice` mit `data-notification-id`. Dabei behoben: Die absolut positionierten `sr-only`-Texte der Navigationspunkte machten jede Dashboard-Seite auf dem Handy 1014 px breit (fest positionierte Elemente lagen außerhalb des Bildes); `.dash-nav ul` ist jetzt ihr Bezugsrahmen.
+
+
+## 04.11.2026: Gmail-Zugang und verlässliche n8n-Warnungen (task-30-1, task-30-2)
+
+Nutzerfreigabe: Wiederholtes Gmail-OAuth-Problem beheben und widersprüchliche E-Mails beruhigen. Live belegt: Zeitplanwarnungen bei „Seit unbekannt kein Lauf“, obwohl die Workflows im selben Zeitraum weiterliefen; die API-Auswertung behandelte fehlende startedAt-Daten als Stillstand. Separat seit 03.11.2026 20:57 UTC erneut ungültiges Credential RheinWerk Gmail; Nutzer bestätigte Google Cloud Publishing status Testing.
+
+Zeitpläne werden über mehrere Datensätze und drei getrennte Prüfungen bestätigt; unbekannte API-Daten bleiben unbekannt. Zwei Gmail-Workflows mit demselben Credential-Fehler bilden einen gemeinsamen Vorfall ohne wiederholte Erinnerungen. Er endet erst nach erfolgreichen authentifizierten Profilaufrufen beider Workflows. Andere Workflowfehler behalten eigene Meldungen. Google-OAuth-Veröffentlichung und Reconnect werden vom Nutzer im Browser durchgeführt; der Agent prüft danach die realen Executions über die API.

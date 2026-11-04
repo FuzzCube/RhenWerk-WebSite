@@ -4,7 +4,7 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v36, 30 Phasen, 152 Tasks (ohne ersetzte). Alle 152 Tasks abgeschlossen, Gewicht 343/343, Fortschritt 100 %. Letzter Abschluss `task-29-1`: Server-Updates ohne GitHub-Bedienung. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
+Roadmap v37, 31 Phasen, 154 Tasks (ohne ersetzte). 152 Tasks abgeschlossen, Gewicht 343/347. Aktiv: task-30-1 (n8n-Monitoring); task-30-2 bereit (Gmail-OAuth, Google Cloud laut Nutzer Testing). Letzter Abschluss `task-29-1`: Server-Updates ohne GitHub-Bedienung. Der Nutzer erlaubt Push zum Live-Test (Portfolio ohne echte Kunden).
 
 Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der aktuelle Monitoringauftrag ergänzt einen eigenen Stack in /opt/monitoring; bestehende Projekte, n8n-Workflows und Datenbankschema bleiben unverändert.
 
@@ -42,6 +42,6 @@ Laut bisherigem Betriebsstand laufen Supabase und n8n seit 22.10.2026 auf dem VP
 
 ## Nächster Schritt
 
-Keine offenen/startbaren Tasks; Stand auf origin/main und dem VPS. Keine weiteren Aufgaben automatisch beginnen.
+task-30-1 umsetzen und prüfen. Der Nutzer nimmt Google OAuth von Testing auf In production und verbindet RheinWerk Gmail erneut; danach task-30-2 live verifizieren. Neue Änderungen zunächst lokal; früherer Stand auf origin/main/VPS.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.
