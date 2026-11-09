@@ -169,7 +169,7 @@ services:
   storage:
     <<: *restart
     container_name: supabase_storage_rheinwerk
-    image: supabase/storage-api:v1.87.0
+    image: supabase/storage-api:v1.90.0
     mem_limit: 384m
     depends_on:
       db:
@@ -207,7 +207,7 @@ services:
     <<: *restart
     profiles: [studio]
     container_name: supabase_studio_rheinwerk
-    image: supabase/studio:2026.10.26-sha-478bd88
+    image: supabase/studio:2026.11.02-sha-a05e7ec
     mem_limit: 512m
     depends_on: [meta]
     ports:
@@ -256,7 +256,7 @@ services:
   n8n:
     <<: *restart
     container_name: rheinwerk-n8n
-    image: n8nio/n8n:2.45.7
+    image: n8nio/n8n:2.46.6
     mem_limit: 1g
     ports:
       - 127.0.0.1:5678:5678
@@ -279,7 +279,7 @@ services:
   cloudflared:
     <<: *restart
     container_name: rheinwerk-cloudflared
-    image: cloudflare/cloudflared:2026.10.6
+    image: cloudflare/cloudflared:2026.10.7
     mem_limit: 128m
     command: ["tunnel", "--no-autoupdate", "run"]
     environment:
