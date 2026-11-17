@@ -4,11 +4,17 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v37, 31 Phasen, 154 Tasks (ohne ersetzte). Alle 154 Tasks abgeschlossen, Gewicht 347/347, Fortschritt 100 %. Letzter Abschluss task-30-2: Gmail-Reconnect und beide Richtungen live verifiziert. Monitoring-Code lokal und auf VPS (95b8353); Commit und Push nach origin/main am 04.11.2026 vom Nutzer freigegeben.
+Roadmap v38, 32 Phasen, 155 Tasks (ohne ersetzte). Alle 155 Tasks abgeschlossen, Gewicht 349/349, Fortschritt 100 %. Letzter Abschluss task-31-1: Wiederherstellung bei n8n-Workflows ohne gespeicherte Erfolge erkannt und zwei alte Warnungen auf VPS automatisch geschlossen. Änderung lokal und direkt auf VPS installiert; Nutzer hat Commit und Push dieses Fixes nach origin/main freigegeben. Vorheriger GitHub-/Deployment-Stand bis d25cc14 am 04.11.2026 erfolgreich (Lauf 41862625748).
 
 Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der bestehende Zusatz-Stack liegt in /opt/monitoring. Phase 30 ändert die Skripte des RheinWerk-Wächters; n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Aktuell: Gmail und n8n-Warnungen (phase-30)
+## Aktuell: n8n-Fehlerwarnungen (phase-31)
+
+17.11.2026, `task-31-1` abgeschlossen nach ausdrücklicher VPS-Freigabe: `n8n-events.mjs` liest begrenzte Enden der JSON-Ereignislogs als Erfolgsnachweis für Workflows ohne gespeicherte Erfolge. Weiterhin gültige API-Antworten, frischer Erfolg und eine ruhige Stunde erforderlich. Alte Warnungen von `rwCallAnalysis26` und `rwVisitReply2026` vom 12./13.11. wurden durch den regulären Wächter am 17.11. um 13:01:52/54 UTC automatisch geschlossen. Zwei Wächterläufe exit 0, erneute Prüfung 13:03:09 UTC: n8n `ok`, keine offenen Fehler oder fälligen n8n-Erinnerungen. Timer aktiv. Sicherung `/opt/rheinwerk/state/n8n-recovery.Zbszxf`; zwei Module und zwei Tests SHA-256-identisch lokal/VPS. Kein n8n-Neustart, keine Workflow-/Schemaänderung und kein SQLite-Zugriff.
+
+22 gezielte Tests lokal und auf VPS erfolgreich; lint/typecheck/build vor Installation erfolgreich, Quellstand unverändert. Isolierter vollständiger Commit-Stand: 174/174 Unit-Tests erfolgreich. Der vorherige Fehler in `kpi-dictionary.test.mjs:41` betraf ausschließlich separate, nicht mitveröffentlichte Dokumentationsentwürfe. Keine sechsstündige Nachbeobachtung oder Postfachprüfung; produktive Auswahl fälliger Erinnerungen geprüft. Installation zunächst direkt auf VPS; anschließend Commit und Push nach origin/main vom Nutzer freigegeben.
+
+## Vorher: Gmail und n8n-Warnungen (phase-30)
 
 `task-30-1` abgeschlossen: unbekannte API-Daten erzeugen keine Stillstandsmeldung; Zeitplan-Ausfall braucht drei getrennte Prüfungen. Gemeinsamer Gmail-Zugangsfehler: eine Warnung ohne Erinnerungen und eine Entwarnung erst nach erfolgreichen authentifizierten Profilaufrufen beider Workflows. Bestehende Einzelwarnungen werden übernommen. 169 Unit-Tests sowie lint/typecheck/build grün; 17 gezielte Tests zusätzlich auf VPS. Commit 95b8353 per Git-Bundle auf VPS, watchdog exit 0, n8n ohne Neustart; Backup `/opt/rheinwerk/state/monitor-fix.SZ9GpJ`. Anschließender Commit und Push am 04.11.2026 vom Nutzer freigegeben.
 
@@ -24,9 +30,9 @@ Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Ver
 
 ## Letzte drei abgeschlossene Tasks
 
+- `task-31-1` (17.11.2026): n8n-Erfolg aus JSON-Log erkannt; zwei Altwarnungen auf VPS automatisch geschlossen.
 - `task-30-2` (04.11.2026): Gmail-OAuth In production, Reconnect und beide Richtungen live geprüft.
 - `task-30-1` (04.11.2026): n8n-Warnungen ohne Fehlalarme, gemeinsamer Gmail-Zugangsvorfall.
-- `task-29-1` (26.10.2026): Server-Updates automatisch gemergt, E-Mail „Systemupdate bereit“.
 
 ## Arbeitsregeln
 
@@ -48,6 +54,6 @@ Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Ver
 
 ## Nächster Schritt
 
-Keine offenen/startbaren Tasks. Monitoring und Gmail-Wiederherstellung auf VPS verifiziert. Änderungen lokal committed und Monitoring auf VPS angewendet; Anschließender Commit und Push am 04.11.2026 vom Nutzer freigegeben.
+Keine offenen/startbaren Tasks. task-31-1 auf VPS installiert und live verifiziert. Nutzer hat Commit und Push des Fixes nach origin/main freigegeben; CI und Git-Synchronisierung werden getrennt geprüft.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

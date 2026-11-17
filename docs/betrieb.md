@@ -503,6 +503,14 @@ npm run backup && npm run customers:backfill -- --apply  # Ausführung, verlangt
 
 Ein zweiter Lauf findet nichts mehr (Anfragen mit offenem Vorschlag warten auf die Entscheidung auf der Anfrageseite).
 
+### n8n-Erholung ohne gespeicherte Erfolge (task-31-1, VPS seit 17.11.2026)
+
+Die einmaligen Fehler von `rwCallAnalysis26` (12.11., ElevenLabs-Verbindungsabbruch) und `rwVisitReply2026` (13.11., Supabase HTTP 503) bleiben trotz erfolgreicher späterer Läufe offen. Beide Workflows speichern erfolgreiche Ausführungen nicht. Die automatische Entwarnung benötigt jedoch einen Erfolgsnachweis; die alte Telefonausführung 130442 wurde inzwischen gelöscht. Dadurch gehen alle sechs Stunden Erinnerungen über denselben Vorfall heraus.
+
+Auf VPS installiert: `scripts/ops/n8n-events.mjs` liest ausschließlich begrenzte Enden des aktuellen und vorigen n8n-JSON-Ereignislogs im konfigurierten Container. Für offene Vorfälle kann ein höchstens zehn Minuten altes Workflow-Erfolgsereignis den Nachweis liefern. Die API muss weiterhin gültige Ausführungslisten liefern; Fehlerzeitpunkte aus API, Log und Warnung werden gemeinsam berücksichtigt. Eine ruhige Stunde und ein neuerer Erfolg bleiben Pflicht. Kein SQLite-Zugriff, keine zusätzlichen gespeicherten Transkripte und keine Änderung der Workflows. Unlesbare/fehlende Logs sowie defekte API-Antworten erzeugen keine Entwarnung.
+
+22 gezielte Regressionstests lokal und auf VPS erfolgreich; lint/typecheck/build vor Installation erfolgreich. Nach ausdrücklicher Nutzerfreigabe zwei Monitoring-Module und zwei Tests mit Sicherung `/opt/rheinwerk/state/n8n-recovery.Zbszxf` installiert. SHA-256 lokal/VPS identisch. Der reguläre Wächter schloss die beiden Vorfälle am 17.11.2026 um 13:01:52/54 UTC automatisch. Zwei Läufe erfolgreich; Prüfung 13:03:09 UTC: n8n `ok`, keine offenen n8n-Warnungen und keine fälligen n8n-Erinnerungen. Timer aktiv, n8n nicht neu gestartet. Kein sechsstündiges Abwarten oder Postfachabgleich; Auswahl der Erinnerungen im produktiven System geprüft. Zunächst direkt auf VPS installiert; anschließend Commit und Push des Fixes nach origin/main vom Nutzer freigegeben. Der isolierte vollständige Commit-Stand besteht 174/174 Unit-Tests; die vorher fehlgeschlagene Dokumentationsassertion betraf ausschließlich separate, nicht mitveröffentlichte Entwürfe.
+
 ## 7. Notfallanleitungen
 
 | Notfall | Erkennen | Sofortmaßnahme | Danach |

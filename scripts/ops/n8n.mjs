@@ -6,6 +6,7 @@
 //   http://127.0.0.1:5678), ELEVENLABS_API_KEY (without it the two workflows of Mira are not expected)
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
+import { recentWorkflowEvents } from "./n8n-events.mjs";
 
 export const ERROR_WORKFLOW = "rwFehlerMeldung1";
 const MIRA_WORKFLOWS = ["rwAgentTools2026", "rwCallAnalysis26"];
@@ -33,9 +34,9 @@ const validDate = (value) => typeof value === "string" && Number.isFinite(Date.p
 export async function latestExecution(base, headers, query) {
   const response = await request(`${base}/api/v1/executions?limit=10&${query}`, headers);
   const rows = response.json?.data;
-  if (response.status !== 200 || !Array.isArray(rows)) return { available: false, lastRun: null };
+  if (response.status !== 200 || !Array.isArray(rows)) return { available: false, queryAvailable: false, lastRun: null };
   const dated = rows.filter((row) => row && validDate(row.startedAt)).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
-  return { available: dated.length > 0, lastRun: dated[0]?.startedAt ?? null, execution: dated[0] ?? null };
+  return { available: dated.length > 0, queryAvailable: rows.length === 0 || dated.length > 0, lastRun: dated[0]?.startedAt ?? null, execution: dated[0] ?? null };
 }
 
 // Successful workflow completion alone is insufficient: prove an authenticated Gmail node actually ran.
@@ -83,7 +84,7 @@ async function request(url, headers = {}) {
   }
 }
 
-export async function collectN8n(env, rpc) {
+export async function collectN8n(env, rpc, { readEvents = recentWorkflowEvents } = {}) {
   const base = env.N8N_API_URL ?? "http://127.0.0.1:5678";
   const health = await request(`${base}/healthz`);
   const queues = await rpc("monitor_n8n_queues");
@@ -107,11 +108,20 @@ export async function collectN8n(env, rpc) {
     return { id, name: expected.find((workflow) => workflow.id === id)?.name ?? id, maxGap,
       available: result.available, lastRun: result.lastRun };
   }));
-  const errors = await Promise.all(openErrors.filter((alert) => alert.alert_key.startsWith("n8n:fehler:") && !isGmailCredentialAlert(alert)).map(async (alert) => {
+  const workflowAlerts = openErrors.filter((alert) => alert.alert_key.startsWith("n8n:fehler:") && !isGmailCredentialAlert(alert));
+  // Some workflows deliberately save only failures. Their success events remain in n8n's JSON event log.
+  // Read it only for open incidents; never inspect the live SQLite database or infer recovery from silence.
+  const events = workflowAlerts.length ? readEvents(env, workflowAlerts.map((alert) => alert.alert_key.slice("n8n:fehler:".length))) : {};
+  const newest = (...dates) => dates.filter(validDate).sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
+  const errors = await Promise.all(workflowAlerts.map(async (alert) => {
     const id = alert.alert_key.slice("n8n:fehler:".length);
     const [failure, success] = await Promise.all([latest(`workflowId=${id}&status=error`), latest(`workflowId=${id}&status=success`)]);
-    return { key: alert.alert_key, title: alert.title, available: failure.available && success.available,
-      lastError: failure.lastRun, lastSuccess: success.lastRun };
+    const event = events[id];
+    const eventAge = Date.now() - Date.parse(event?.lastSuccess);
+    const recentSuccess = eventAge >= 0 && eventAge < 10 * 60_000 ? event.lastSuccess : null;
+    return { key: alert.alert_key, title: alert.title,
+      available: failure.queryAvailable && success.queryAvailable && (success.available || Boolean(recentSuccess)),
+      lastError: newest(failure.lastRun, event?.lastError), lastSuccess: newest(success.lastRun, recentSuccess) };
   }));
   const gmailAlerts = openErrors.filter((alert) => isGmailCredentialAlert(alert) || alert.alert_key === GMAIL_ALERT_KEY);
   let gmail = null;
@@ -236,7 +246,8 @@ export function evaluateN8n(raw, now = new Date(), previous = {}) {
   const quiet = new Set((raw.errors ?? [])
     .filter((error) => {
       const alert = (raw.openErrors ?? []).find((item) => item.alert_key === error.key);
-      const lastFailure = Math.max(Date.parse(error.lastError), Date.parse(alert?.last_seen_at ?? error.lastError));
+      const failureDates = [error.lastError, alert?.last_seen_at, alert?.first_seen_at].filter(validDate);
+      const lastFailure = Math.max(...failureDates.map((date) => Date.parse(date)));
       return error.available !== false && Number.isFinite(lastFailure) && validDate(error.lastSuccess)
         && now.getTime() - lastFailure > ERROR_QUIET_MINUTES * 60_000 && Date.parse(error.lastSuccess) > lastFailure;
     }).map((error) => error.key));

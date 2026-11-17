@@ -252,3 +252,39 @@ test("Bereits behobener Legacy-Vorfall erhält genau eine gemeinsame Entwarnung"
   await report("n8n", checkOf(result, GMAIL_ALERT_KEY), deps);
   assert.deepEqual(calls, ["raise_alert", "mark_alert_notified", "clear_alert", "Wieder in Ordnung: Gmail-Eingang und -Versand"]);
 });
+
+test("Несохраняемые успешные выполнения закрывают старый инцидент только по свежему событию", async (t) => {
+  const clock = Date.now();
+  const stamp = (minutes) => new Date(clock - minutes * 60_000).toISOString();
+  const alert = { alert_key: "n8n:fehler:rwCallAnalysis26", title: "Telefon fehlgeschlagen", severity: "warning", first_seen_at: stamp(300), last_seen_at: stamp(300) };
+  let apiStatus = 200;
+  let event = { lastSuccess: stamp(1) };
+  t.mock.method(globalThis, "fetch", async (url) => {
+    const u = new URL(url);
+    if (u.pathname === "/healthz") return Response.json({});
+    if (u.pathname.endsWith("/executions")) return Response.json({ data: [] }, { status: apiStatus });
+    return Response.json({ active: true, data: [] });
+  });
+  const rpc = async (name) => name === "open_alerts" ? [alert] : healthy.queues;
+  const collect = () => collectN8n({ N8N_API_KEY: "test", N8N_API_URL: "https://n8n.test" }, rpc, {
+    readEvents: () => ({ rwCallAnalysis26: event }),
+  });
+  let raw = await collect();
+  assert.equal(raw.errors[0].lastError, null, "pruned failure remains known from the alert timestamp");
+  assert.equal(checkOf(evaluateN8n(raw, new Date(clock)), alert.alert_key)?.ok, true);
+  for (const candidate of [{}, { lastSuccess: stamp(20) }, { lastSuccess: stamp(400) }, { lastSuccess: stamp(-1) },
+    { lastSuccess: stamp(1), lastError: stamp(5) }, { lastSuccess: stamp(3), lastError: stamp(1) }]) {
+    event = candidate;
+    assert.equal(checkOf(evaluateN8n(await collect(), new Date(clock)), alert.alert_key), undefined);
+  }
+  event = { lastSuccess: stamp(1) };
+  apiStatus = 503;
+  assert.equal(checkOf(evaluateN8n(await collect(), new Date(clock)), alert.alert_key), undefined, "API failure cannot become recovery");
+});
+
+test("Fehlendes Fehlerdatum aus API verdeckt einen neueren Triggerfehler nicht", () => {
+  const alert = { alert_key: "n8n:fehler:test", title: "Fehler", severity: "warning", first_seen_at: ago(200), last_seen_at: ago(5) };
+  assert.equal(checkOf(evaluateN8n({ ...healthy, openErrors: [alert], errors: [
+    { key: alert.alert_key, available: true, lastError: null, lastSuccess: ago(1) },
+  ] }, now), alert.alert_key), undefined);
+});
