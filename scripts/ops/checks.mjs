@@ -10,6 +10,7 @@ import { collectMira, evaluateMira } from "./mira.mjs";
 import { STARTUP_MINUTES, collectN8n, containerStartedAt, evaluateN8n } from "./n8n.mjs";
 import { OPENAI_CHECK_MINUTES, collectOpenAI, evaluateOpenAI } from "./openai.mjs";
 import { collectSystems, evaluateSystems } from "./systems.mjs";
+import { agentRecovery, isTransientAlert } from "./transient-alerts.mjs";
 
 const strip = (checks) => checks.map(({ key, label, ok, severity, title, detail }) => ({ key, label, ok, severity, title: ok === false ? title : null, detail }));
 
@@ -30,6 +31,16 @@ export async function runChecks({ force = false } = {}) {
   const mira = evaluateMira(miraRaw, { creditMin: process.env.MIRA_CREDIT_MIN, n8nStarting });
   const n8n = evaluateN8n(n8nRaw, new Date(), previous.n8n);
   const systems = evaluateSystems(systemsRaw, process.env);
+  const agent = mira.checks.find((check) => check.key === "mira:agent");
+  let agentObservation = previous.mira?.agent_recovery ?? null;
+  if (agent) {
+    if (agent.ok === false) agentObservation = isTransientAlert({ alert_key: agent.key, title: agent.title, detail: agent.detail }) ? { pending: true } : null;
+    else {
+      const recovery = agentRecovery(agent, agentObservation);
+      agentObservation = recovery.observation;
+      Object.assign(agent, recovery.check);
+    }
+  }
   for (const check of mira.checks) await report("mira", check);
   for (const check of n8n.checks) await report("n8n", check);
   for (const system of Object.values(systems)) for (const check of system.checks) await report("system", check);
@@ -39,9 +50,9 @@ export async function runChecks({ force = false } = {}) {
   await reportWithoutDatabase(systems.database.checks[0]);
   await notifyDue();
 
-  await rpc("set_monitoring", { system_key: "mira", payload: { state: mira.state, credit: mira.credit, checks: strip(mira.checks) } });
+  await rpc("set_monitoring", { system_key: "mira", payload: { state: mira.state, credit: mira.credit, checks: strip(mira.checks), agent_recovery: agentObservation } });
   await rpc("set_monitoring", { system_key: "n8n", payload: { state: n8n.state, checks: strip(n8n.checks), errors: n8n.errors,
-    schedule_observations: n8n.schedule_observations } });
+    schedule_observations: n8n.schedule_observations, transient_recoveries: n8n.transient_recoveries } });
   if (backup) {
     await rpc("set_monitoring", { system_key: "backup", payload: {
       state: backup.state, summary: backup.summary, checks: strip(backup.checks), provider: backup.provider,

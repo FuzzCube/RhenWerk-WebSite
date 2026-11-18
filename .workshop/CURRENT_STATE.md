@@ -4,11 +4,15 @@
 
 RheinWerk Service-Dashboard: geschützter Mitarbeiterbereich `/dashboard` der bestehenden Next.js-16-Website mit Supabase, n8n und Telefonassistent Mira. Portfolio-Projekt mit Demodaten. Zentraler Zustand ausschließlich unter `.workshop/`; Übersicht und aus der Roadmap neu berechneter Fortschritt: `npm run workshop:status`. Ältere Abschlüsse stehen im `verification`-Objekt der Roadmap und in `activity.jsonl`, dauerhafte Entscheidungen in `docs/decisions.md`, Dokumentenkarte in `README.md`.
 
-Roadmap v38, 32 Phasen, 155 Tasks (ohne ersetzte). Alle 155 Tasks abgeschlossen, Gewicht 349/349, Fortschritt 100 %. Letzter Abschluss task-31-1: Wiederherstellung bei n8n-Workflows ohne gespeicherte Erfolge erkannt und zwei alte Warnungen auf VPS automatisch geschlossen. Änderung lokal und direkt auf VPS installiert; Nutzer hat Commit und Push dieses Fixes nach origin/main freigegeben. Vorheriger GitHub-/Deployment-Stand bis d25cc14 am 04.11.2026 erfolgreich (Lauf 41862625748).
+Roadmap v39, 33 Phasen, 156 Tasks (ohne ersetzte). Alle 156 Tasks abgeschlossen, Gewicht 351/351, Fortschritt 100 %. Letzter Abschluss task-32-1: 20-Minuten-Hold auf VPS installiert und Wächter geprüft. Davor task-31-1: Wiederherstellung bei n8n-Workflows ohne gespeicherte Erfolge erkannt und zwei alte Warnungen auf VPS automatisch geschlossen. Änderung lokal und direkt auf VPS installiert; Nutzer hat Commit und Push dieses Fixes nach origin/main freigegeben. Vorheriger GitHub-/Deployment-Stand bis d25cc14 am 04.11.2026 erfolgreich (Lauf 41862625748).
 
 Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Vercel. Lokal bleibt die Entwicklungs-/Prüfumgebung. Der bestehende Zusatz-Stack liegt in /opt/monitoring. Phase 30 ändert die Skripte des RheinWerk-Wächters; n8n-Workflows und Datenbankschema bleiben unverändert.
 
-## Aktuell: n8n-Fehlerwarnungen (phase-31)
+## Aktuell: Betriebswarnungen beruhigen (phase-32)
+
+18.11.2026: task-32-1 nach ausdrücklicher Freigabe auf VPS installiert. 20-Minuten-Hold für bekannte vorübergehende Verbindungsfehler, bestätigte Erholung und sofortige kritische Zugangs- und Warteschlangenwarnungen. 34 gezielte Tests lokal und auf VPS erfolgreich, lint/typecheck/build erfolgreich; Dateien SHA-256-identisch. VPS-Wächter Result=success, Timer aktiv, keine offenen oder fälligen Warnungen, n8n und Mira ok, Warteschlangen leer. Backup /opt/rheinwerk/state/alert-hold.VHUXd7. Kein n8n-Neustart oder Schemaänderung. Unit-Suite im isolierten Commit-Stand 179/179 erfolgreich; im Arbeitsverzeichnis 178/179 wegen separater uncommitteter Änderung in docs/n8n-contract.md. Kein echter 20-Minuten-Ausfall oder Postfachzustellung nachgestellt; Commit und Push vom Nutzer freigegeben.
+
+## Vorher: n8n-Fehlerwarnungen (phase-31)
 
 17.11.2026, `task-31-1` abgeschlossen nach ausdrücklicher VPS-Freigabe: `n8n-events.mjs` liest begrenzte Enden der JSON-Ereignislogs als Erfolgsnachweis für Workflows ohne gespeicherte Erfolge. Weiterhin gültige API-Antworten, frischer Erfolg und eine ruhige Stunde erforderlich. Alte Warnungen von `rwCallAnalysis26` und `rwVisitReply2026` vom 12./13.11. wurden durch den regulären Wächter am 17.11. um 13:01:52/54 UTC automatisch geschlossen. Zwei Wächterläufe exit 0, erneute Prüfung 13:03:09 UTC: n8n `ok`, keine offenen Fehler oder fälligen n8n-Erinnerungen. Timer aktiv. Sicherung `/opt/rheinwerk/state/n8n-recovery.Zbszxf`; zwei Module und zwei Tests SHA-256-identisch lokal/VPS. Kein n8n-Neustart, keine Workflow-/Schemaänderung und kein SQLite-Zugriff.
 
@@ -29,6 +33,8 @@ Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Ver
 `task-28-1`: Homepage v2.7.0 und docker-socket-proxy (nur lesend) im Stack `/opt/monitoring` laufen, Konfiguration in `ops/monitoring/homepage/`, Kuma-Statusseite `vps` angelegt; Containerstatus, Kuma- und Beszel-Widget lokal geprüft. `https://home.rheinwerk-service.online` hinter Cloudflare Access (Tunnel `vps-monitoring`). Einzelheiten `docs/betrieb.md` 3.11.
 
 ## Letzte drei abgeschlossene Tasks
+
+- `task-32-1` (18.11.2026): Hold für temporäre Verbindungsfehler auf VPS installiert und Wächter geprüft.
 
 - `task-31-1` (17.11.2026): n8n-Erfolg aus JSON-Log erkannt; zwei Altwarnungen auf VPS automatisch geschlossen.
 - `task-30-2` (04.11.2026): Gmail-OAuth In production, Reconnect und beide Richtungen live geprüft.
@@ -54,6 +60,6 @@ Supabase und n8n laufen seit 22.10.2026 auf dem VPS (`ssh vps`), Website auf Ver
 
 ## Nächster Schritt
 
-Keine offenen/startbaren Tasks. task-31-1 auf VPS installiert und live verifiziert. Nutzer hat Commit und Push des Fixes nach origin/main freigegeben; CI und Git-Synchronisierung werden getrennt geprüft.
+Keine offenen/startbaren Tasks. task-32-1 ist auf VPS installiert und geprüft. Nutzer hat Commit und Push des Fixes freigegeben; CI und Git-Synchronisierung werden getrennt geprüft.
 
 Vorherige, in diesem Auftrag nicht erneut geprüfte Betriebsnotizen: OpenAI-Admin-Key für Costs auf dem VPS hinterlegen; alte Oracle-Instanz erst löschen, wenn nichts mehr benötigt wird. Optionale spätere Themen aus dem bisherigen Stand: SLA-Vertragspflege, eigene Rechnungsanschrift, SMTP für echte Passwort-E-Mails, KI-Vorbelegung im Posteingang und optionale E-Mail-Adresse bei Telefonanfragen.

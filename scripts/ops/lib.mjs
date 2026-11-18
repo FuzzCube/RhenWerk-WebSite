@@ -6,6 +6,7 @@ import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { sendAlert } from "../lib/notify.mjs";
 import { GMAIL_ALERT_KEY, isGmailCredentialAlert } from "./n8n.mjs";
+import { holdPending, isTransientAlert } from "./transient-alerts.mjs";
 
 export const DASHBOARD = "https://rheinwerk-service.online/dashboard/system";
 // OPS_LOG_DIR on the VPS (task-18-2: /opt/rheinwerk/state, logs in the journal of systemd)
@@ -67,6 +68,7 @@ export async function report(source, check, { call = rpc, send = sendAlert } = {
     return;
   }
   if (check.silent || (check.notifyOnce && alert?.reason === "reminder")) return;
+  if (isTransientAlert({ alert_key: check.key, title: check.title, detail: check.detail }) && alert?.reason === "new") return;
   if (!alert?.notify) return;
   const mail = await send({ subject: check.title, text: `${check.detail}\n\n${alert.reason === "reminder" ? "Erinnerung: besteht seit mehr als 6 Stunden.\n\n" : ""}${DASHBOARD}` });
   if (mail.ok) await call("mark_alert_notified", { alert_id: alert.alert_id });
@@ -88,9 +90,10 @@ export async function notifyDue({ call = rpc, send = sendAlert } = {}) {
   }
 }
 
-export function notificationCandidates(alerts, gmailGrouped) {
+export function notificationCandidates(alerts, gmailGrouped, now = Date.now()) {
   return alerts.filter((alert) => !(gmailGrouped && isGmailCredentialAlert(alert))
-    && !(alert.alert_key === GMAIL_ALERT_KEY && alert.notified_at));
+    && !(alert.alert_key === GMAIL_ALERT_KEY && alert.notified_at)
+    && !holdPending(alert, now));
 }
 
 // Previous results (task-17-15: SMTP is checked only once an hour); {} without database

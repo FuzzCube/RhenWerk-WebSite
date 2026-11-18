@@ -7,6 +7,7 @@
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { recentWorkflowEvents } from "./n8n-events.mjs";
+import { isTransientAlert } from "./transient-alerts.mjs";
 
 export const ERROR_WORKFLOW = "rwFehlerMeldung1";
 const MIRA_WORKFLOWS = ["rwAgentTools2026", "rwCallAnalysis26"];
@@ -144,6 +145,7 @@ const minutesSince = (iso, now) => (now.getTime() - Date.parse(iso)) / 60_000;
 export function evaluateN8n(raw, now = new Date(), previous = {}) {
   const checks = [];
   const observations = { ...previous.schedule_observations };
+  const recoveries = {};
   const gmailAlerts = (raw.openErrors ?? []).filter((alert) => isGmailCredentialAlert(alert) || alert.alert_key === GMAIL_ALERT_KEY);
   if (raw.health.status !== 200) {
     checks.push(check("n8n:down", "n8n erreichbar", false, "critical", "Automatisierung: n8n nicht erreichbar",
@@ -248,8 +250,15 @@ export function evaluateN8n(raw, now = new Date(), previous = {}) {
       const alert = (raw.openErrors ?? []).find((item) => item.alert_key === error.key);
       const failureDates = [error.lastError, alert?.last_seen_at, alert?.first_seen_at].filter(validDate);
       const lastFailure = Math.max(...failureDates.map((date) => Date.parse(date)));
-      return error.available !== false && Number.isFinite(lastFailure) && validDate(error.lastSuccess)
-        && now.getTime() - lastFailure > ERROR_QUIET_MINUTES * 60_000 && Date.parse(error.lastSuccess) > lastFailure;
+      const hasSuccess = error.available !== false && Number.isFinite(lastFailure) && validDate(error.lastSuccess)
+        && Date.parse(error.lastSuccess) > lastFailure;
+      if (!isTransientAlert(alert ?? {})) return hasSuccess && now.getTime() - lastFailure > ERROR_QUIET_MINUTES * 60_000;
+      if (!hasSuccess || raw.api?.status !== 200) return false;
+      const previousRecovery = previous.transient_recoveries?.[error.key];
+      const previousTime = Date.parse(previousRecovery?.observed_at);
+      const validPrevious = previousRecovery?.last_failure === lastFailure && Number.isFinite(previousTime) && now.getTime() >= previousTime;
+      recoveries[error.key] = validPrevious ? previousRecovery : { last_failure: lastFailure, observed_at: now.toISOString() };
+      return validPrevious && now.getTime() - previousTime >= CHECK_INTERVAL_MS && now.getTime() - lastFailure > 10 * 60_000;
     }).map((error) => error.key));
   for (const alert of raw.openErrors ?? []) {
     if (quiet.has(alert.alert_key)) checks.push(check(alert.alert_key, alert.title.replace(/ fehlgeschlagen$/, ""), true, alert.severity, alert.title));
@@ -262,5 +271,5 @@ export function evaluateN8n(raw, now = new Date(), previous = {}) {
   if (raw.health.status !== 200 || raw.api?.status !== 200) {
     for (const id of Object.keys(observations)) delete observations[id];
   }
-  return { state, checks, errors, schedule_observations: observations };
+  return { state, checks, errors, schedule_observations: observations, transient_recoveries: recoveries };
 }

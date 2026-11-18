@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "roadmapVersion": 38,
+  "roadmapVersion": 39,
   "status": "active",
   "phases": [
     {
@@ -5453,6 +5453,51 @@
               "npm run test:unit im isolierten vollständigen Commit-Stand: 174/174 passed"
             ],
             "summary": "Mit ausdrücklicher Nutzerfreigabe auf VPS installiert, Sicherung /opt/rheinwerk/state/n8n-recovery.Zbszxf. JSON-Ereignisse belegen neue Erfolge beider Workflows. Regulärer Wächter schloss n8n:fehler:rwCallAnalysis26 am 17.11.2026 13:01:52.874780 UTC und n8n:fehler:rwVisitReply2026 um 13:01:54.430851 UTC automatisch. Zwei Prüfläufe erfolgreich, erneute Abfrage 13:03:09 UTC: keine offenen n8n-Warnungen, keine fälligen n8n-Erinnerungen, Monitoring ok. Timer aktiv. n8n unverändert seit 16.11.2026 11:02:26 UTC gestartet; kein Neustart, keine Workflow-/Schemaänderungen. Isolierter vollständiger Commit-Stand: 174/174 Unit-Tests erfolgreich; vorheriger Dokumentationsfehler nur in separat gebliebenen Entwürfen. Keine sechsstündige Beobachtungszeit und keine Postfachprüfung; Wiederholungsauswahl im produktiven System geprüft. Zunächst direkt auf VPS installiert; anschließend Commit und Push dieses Fixes nach origin/main ausdrücklich vom Nutzer freigegeben."
+          }
+        }
+      ]
+    },
+    {
+      "id": "phase-32",
+      "title": "Betriebswarnungen beruhigen",
+      "description": "Zeitweilige Verbindungsfehler verzögert melden und Erholung bestätigen.",
+      "order": 33,
+      "weight": 2,
+      "status": "completed",
+      "tasks": [
+        {
+          "id": "task-32-1",
+          "title": "Hold für vorübergehende Verbindungsfehler",
+          "description": "Vom Nutzer bestätigter 20-Minuten-Hold und bestätigte Erholung für zeitweilige Verbindungsfehler; kritische Zugangs- und Warteschlangenwarnungen sofort.",
+          "order": 1,
+          "weight": 2,
+          "status": "completed",
+          "dependsOn": [
+            "task-31-1"
+          ],
+          "definitionOfDone": [
+            "20-Minuten-Hold und bestätigte Erholung für bekannte temporäre Verbindungsfehler",
+            "Kritische Zugangsfehler und Warteschlangen ohne zusätzliche Verzögerung",
+            "Regressionstests und Quality Gate",
+            "Betriebsdokumentation und zentraler Projektzustand aktualisiert"
+          ],
+          "startedAt": "2026-11-18T19:21:42.725Z",
+          "completedAt": "2026-11-18T22:11:43.994Z",
+          "verification": {
+            "status": "passed",
+            "checkedAt": "2026-11-18T22:11:43.994Z",
+            "commands": [
+              "node --test tests/unit/transient-alerts.test.mjs tests/unit/n8n-monitor.test.mjs tests/unit/mira-monitor.test.mjs tests/unit/n8n-events.test.mjs: 34/34 lokal und auf VPS erfolgreich",
+              "npm run lint: erfolgreich",
+              "npm run typecheck: erfolgreich",
+              "npm run build: erfolgreich mit Netzwerkzugang für Google Fonts",
+              "npm run test:unit: 178/179; ein Dokumentationstest scheitert an vorbestehendem uncommittetem docs/n8n-contract.md",
+              "VPS SHA-256: vier Module und neuer Test stimmen mit lokal überein",
+              "VPS watchdog: Result=success, ExecMainStatus=0; Timer active",
+              "VPS open_alerts und fällige Benachrichtigungen leer; n8n/mira ok, Versand- und Analysewarteschlangen leer",
+              "npm run test:unit im isolierten vollständigen Commit-Stand: 179/179 erfolgreich"
+            ],
+            "summary": "Nutzer hat VPS-Installation ausdrücklich freigegeben. 20-Minuten-Hold für bekannte temporäre Verbindungsfehler, Erholung nach getrennten Prüfungen; Zugangs- und Warteschlangenfehler unverzögert. VPS-Backup /opt/rheinwerk/state/alert-hold.VHUXd7. Kein n8n-Neustart, keine Workflow- oder Schemaänderung. Kein Push; kein echter 20-Minuten-Ausfall oder Postfachzustellung nachgestellt."
           }
         }
       ]
