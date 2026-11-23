@@ -18,7 +18,7 @@ services:
   db:
     <<: *restart
     container_name: supabase_db_rheinwerk
-    image: supabase/postgres:17.11.0.019
+    image: supabase/postgres:17.12.0.002
     mem_limit: 1g
     volumes:
       - ./supabase/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:ro
@@ -87,7 +87,7 @@ services:
   auth:
     <<: *restart
     container_name: supabase_auth_rheinwerk
-    image: supabase/gotrue:v2.197.0
+    image: supabase/gotrue:v2.198.0
     mem_limit: 256m
     depends_on:
       db:
@@ -143,7 +143,7 @@ services:
   rest:
     <<: *restart
     container_name: supabase_rest_rheinwerk
-    image: postgrest/postgrest:v16.5
+    image: postgrest/postgrest:v16.6
     mem_limit: 256m
     depends_on:
       db:
@@ -169,7 +169,7 @@ services:
   storage:
     <<: *restart
     container_name: supabase_storage_rheinwerk
-    image: supabase/storage-api:v1.94.2
+    image: supabase/storage-api:v1.98.2
     mem_limit: 384m
     depends_on:
       db:
@@ -207,7 +207,7 @@ services:
     <<: *restart
     profiles: [studio]
     container_name: supabase_studio_rheinwerk
-    image: supabase/studio:2026.11.09-sha-1567384
+    image: supabase/studio:2026.11.16-sha-51bd16d
     mem_limit: 512m
     depends_on: [meta]
     ports:
@@ -237,7 +237,7 @@ services:
     <<: *restart
     profiles: [studio]
     container_name: supabase_meta_rheinwerk
-    image: supabase/postgres-meta:v0.100.0
+    image: supabase/postgres-meta:v0.100.1
     mem_limit: 256m
     depends_on:
       db:
@@ -256,7 +256,7 @@ services:
   n8n:
     <<: *restart
     container_name: rheinwerk-n8n
-    image: n8nio/n8n:2.47.7
+    image: n8nio/n8n:2.48.7
     mem_limit: 1g
     ports:
       - 127.0.0.1:5678:5678
@@ -279,7 +279,7 @@ services:
   cloudflared:
     <<: *restart
     container_name: rheinwerk-cloudflared
-    image: cloudflare/cloudflared:2026.11.0
+    image: cloudflare/cloudflared:2026.11.1
     mem_limit: 128m
     command: ["tunnel", "--no-autoupdate", "run"]
     environment:
